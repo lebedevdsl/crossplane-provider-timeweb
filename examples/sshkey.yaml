@@ -1,0 +1,25 @@
+# Example SSHKey managed resource for the Timeweb Crossplane provider.
+#
+# CAUTION: `spec.forProvider.name` and `spec.forProvider.body` are IMMUTABLE
+# upstream. Editing either field after the resource is created triggers
+# FR-017 reject-and-surface — the controller sets Synced=False, emits a
+# `ImmutableFieldChange` event, and refuses the PATCH. To rotate a key,
+# delete and recreate the resource.
+#
+# See docs/resources/sshkey.md for full field reference.
+---
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: demo-key
+  namespace: timeweb-prod
+spec:
+  forProvider:
+    # IMMUTABLE — 1-255 chars.
+    name: "demo-key"
+    # IMMUTABLE — OpenSSH public key body (ssh-rsa / ssh-ed25519 / ssh-dss / ecdsa-sha2-*).
+    body: "ssh-ed25519 AAAAC3Nz... demo@example.com"
+    # MUTABLE — mark as the account's default for new servers.
+    isDefault: false
+  providerConfigRef:
+    name: default

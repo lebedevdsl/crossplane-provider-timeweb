@@ -1,0 +1,28 @@
+# oapi-codegen configuration for the Timeweb Cloud API client.
+#
+# Re-run via `make generate-client`. The generator emits a single file
+# `zz_generated_client.go` in this directory; do not hand-edit the output.
+#
+# References:
+#   - https://github.com/oapi-codegen/oapi-codegen
+#   - specs/001-mvp-scaffolding/research.md §R-7
+
+package: generated
+output: zz_generated_client.go
+generate:
+  models: true
+  client: true
+  embedded-spec: false
+output-options:
+  skip-prune: false
+  skip-fmt: true   # diagnose generation errors before fmt; we run gofmt separately
+  include-tags:
+    # Allowlist of API areas the provider models. Anything not on this list is
+    # excluded — keeps the generated surface scoped to the MVP and avoids being
+    # tripped by unrelated upstream OpenAPI defects.
+    - "Проекты"            # Project
+    - "SSH-ключи"          # SshKey
+    - "S3-хранилище"       # S3Bucket + storage users (for credentials)
+    - "Реестр контейнеров" # ContainerRegistry trio
+compatibility:
+  always-prefix-enum-values: true

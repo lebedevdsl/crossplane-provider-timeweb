@@ -1,0 +1,35 @@
+# Example S3Bucket managed resource for the Timeweb Crossplane provider.
+#
+# The controller publishes a connection Secret (type: Opaque) containing
+# endpoint / bucket / region / access_key / secret_key. Mount it via
+# `envFrom` or `volumeMounts.secretName` to give workloads programmatic
+# access to the bucket.
+#
+# IMMUTABLE FIELDS (FR-017 reject-and-surface):
+#   - name
+#   - sizing axis (switching presetID ↔ configuration)
+# Mutable: type, description, projectID, presetID-within-axis, configuration-within-axis.
+#
+# See docs/resources/s3bucket.md for the full field reference.
+---
+apiVersion: objectstorage.m.timeweb.crossplane.io/v1alpha1
+kind: S3Bucket
+metadata:
+  name: demo-images
+  namespace: timeweb-prod
+spec:
+  forProvider:
+    # IMMUTABLE — globally unique bucket name (3-63 chars, lowercase + digits + . -).
+    name: demo-images
+    # MUTABLE — access policy.
+    type: public
+    # Mutually exclusive with `configuration`. Within-axis values are mutable.
+    presetID: 100
+    description: "User-uploaded images for example.com"
+    projectID: 12345
+  # Connection Secret destination — keys: endpoint, bucket, region, access_key, secret_key.
+  writeConnectionSecretToRef:
+    name: demo-images-creds
+    # namespace defaults to the MR's namespace if omitted
+  providerConfigRef:
+    name: default

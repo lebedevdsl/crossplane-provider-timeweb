@@ -1,0 +1,54 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  reviewable:
+    name: lint + generate-clean + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          cache: true
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Lint (golangci-lint built from source via go run)
+        run: make lint
+
+      - name: Run code generation
+        run: make generate
+
+      - name: Verify clean tree (FR-008, SC-008)
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::Working tree dirty after 'make generate'. Run 'make generate' locally and commit the result."
+            git status --short
+            git diff
+            exit 1
+          fi
+
+      - name: Run unit tests
+        run: go test -race -cover -coverprofile=cover.out ./...
+
+      - name: Upload coverage profile
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: cover.out
+          if-no-files-found: warn
+          retention-days: 7

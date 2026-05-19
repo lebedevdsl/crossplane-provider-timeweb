@@ -1,0 +1,36 @@
+# Build artifacts
+bin/
+*.exe
+*.test
+*.out
+cover.out
+coverage.html
+
+# Go module cache (local development)
+vendor/
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Crossplane package output
+*.xpkg
+
+# Test artifacts
+test/e2e/_artifacts/
+test/live/runs/*.log
+
+# kubeconfig accidentally produced by kind during local development
+kubeconfig
+*.kubeconfig

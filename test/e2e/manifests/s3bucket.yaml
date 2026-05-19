@@ -1,0 +1,36 @@
+# Test S3Bucket manifest — FULL READ-WRITE LIFECYCLE.
+#
+# The controller CREATEs a fresh S3 bucket, the verify script PATCHes the
+# description to exercise the Update path, and the CR delete at the end of
+# the run removes the upstream bucket.
+#
+# Requirements:
+#   - The provider token must have bucket write permission inside the
+#     account/project.
+#   - The two env vars below MUST be set or verify.sh skips this manifest:
+#       TIMEWEB_S3_BUCKET_NAME  — globally unique S3 bucket name.
+#       TIMEWEB_S3_PRESET_ID    — Timeweb storage tariff ID (look up via the
+#                                 dashboard or `/api/v1/presets/storages`).
+#
+# Substituted placeholders: __E2E_NAMESPACE__, __TIMEWEB_S3_BUCKET_NAME__,
+# __TIMEWEB_S3_PRESET_ID__
+apiVersion: objectstorage.m.timeweb.crossplane.io/v1alpha1
+kind: S3Bucket
+metadata:
+  name: e2e-s3bucket
+  namespace: __E2E_NAMESPACE__
+spec:
+  forProvider:
+    # Globally unique within Timeweb. Supplied by the operator at run-time.
+    name: __TIMEWEB_S3_BUCKET_NAME__
+    type: private
+    # Tariff plan. Operator supplies a valid storage preset ID.
+    presetID: __TIMEWEB_S3_PRESET_ID__
+    description: "Created by the crossplane-provider-timeweb e2e bundle"
+  writeConnectionSecretToRef:
+    name: e2e-s3bucket-conn
+    namespace: __E2E_NAMESPACE__
+  # Omit managementPolicies → defaults to ["*"] (all actions) → full lifecycle
+  # including Delete on CR removal.
+  providerConfigRef:
+    name: e2e

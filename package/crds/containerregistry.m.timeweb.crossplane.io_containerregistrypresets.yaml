@@ -1,0 +1,170 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.0
+  name: containerregistrypresets.containerregistry.m.timeweb.crossplane.io
+spec:
+  group: containerregistry.m.timeweb.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - timeweb
+    - catalog
+    kind: ContainerRegistryPreset
+    listKind: ContainerRegistryPresetList
+    plural: containerregistrypresets
+    singular: containerregistrypreset
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.atProvider.presetID
+      name: PRESET-ID
+      type: integer
+    - jsonPath: .status.atProvider.diskGB
+      name: DISK-GB
+      type: integer
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          ContainerRegistryPreset is an observe-only Kubernetes representation of a
+          Timeweb Container Registry tariff plan. The provider reconciles these from
+          `/api/v1/container-registry/presets` on a timer (default every 30 min).
+          Operators reference one by Kubernetes name in `ContainerRegistry.spec.
+          forProvider.presetRef.name` instead of pasting a numeric `preset_id`.
+
+          `spec` is intentionally empty — a ValidatingAdmissionPolicy shipped with
+          the provider rejects operator edits.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              ContainerRegistryPresetSpec is intentionally near-empty — Preset is an
+              observe-only data-source CRD reconciled from `/api/v1/container-registry/
+              presets` by a timer-based catalog poller. Operators do NOT author Presets.
+            type: object
+          status:
+            description: ContainerRegistryPresetStatus is the observed state.
+            properties:
+              atProvider:
+                description: AtProvider holds the catalog data.
+                properties:
+                  description:
+                    description: |-
+                      Description is the Russian-language preset description (carried as-is
+                      from the upstream catalog).
+                    type: string
+                  descriptionShort:
+                    description: DescriptionShort is the short label.
+                    type: string
+                  diskGB:
+                    description: DiskGB is the included disk capacity.
+                    type: integer
+                  lastObservedAt:
+                    description: |-
+                      LastObservedAt is the RFC3339 timestamp of the most-recent successful
+                      catalog poll. Stale presets surface `Synced=False, reason=Stale`.
+                    type: string
+                  location:
+                    description: Location is the geographic region (if upstream advertises
+                      one).
+                    type: string
+                  presetID:
+                    description: PresetID is the Timeweb tariff ID (referenced by
+                      ContainerRegistry).
+                    type: integer
+                  prices:
+                    description: Prices is the price list.
+                    items:
+                      description: ContainerRegistryPresetPrice is a single billing
+                        entry.
+                      properties:
+                        amount:
+                          description: Amount is the price value (string to preserve
+                            currency precision).
+                          type: string
+                        currency:
+                          description: Currency is the ISO currency code (e.g. "RUB",
+                            "EUR").
+                          type: string
+                        period:
+                          description: Period is the billing period ("hour", "month",
+                            etc).
+                          type: string
+                      type: object
+                    type: array
+                required:
+                - presetID
+                type: object
+              conditions:
+                description: |-
+                  Conditions are the standard Crossplane reconciliation conditions —
+                  reused for consistency even though Preset is not a managed resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

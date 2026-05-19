@@ -1,0 +1,22 @@
+# Example Project managed resource for the Timeweb Crossplane provider.
+#
+# Apply after the ProviderConfig has been created and reports Synced=True.
+# All fields under spec.forProvider are mutable; edits to the manifest are
+# reconciled in-place against the Timeweb API.
+#
+# See docs/resources/project.md for the full field reference.
+---
+apiVersion: project.m.timeweb.crossplane.io/v1alpha1
+kind: Project
+metadata:
+  name: demo
+  namespace: timeweb-prod
+spec:
+  forProvider:
+    # Required, 1-255 characters.
+    name: "Demo Production"
+    # Optional, up to 255 characters.
+    description: "Demo environment for example.com"
+  # Crossplane standard fields.
+  providerConfigRef:
+    name: default

@@ -1,0 +1,28 @@
+# Test SSHKey manifest — FULL READ-WRITE LIFECYCLE.
+#
+# The controller will CREATE a fresh SSH key in the Timeweb account, the
+# verify script PATCHes `isDefault` to exercise the Update path, and the
+# CR delete at the end of the run removes the upstream key.
+#
+# Requirements:
+#   - The provider token must have SSH-key write permission.
+#   - No env vars needed — the key body is a stable test public key.
+#
+# Substituted placeholder: __E2E_NAMESPACE__
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: e2e-sshkey
+  namespace: __E2E_NAMESPACE__
+spec:
+  forProvider:
+    name: "crossplane-e2e"
+    # Stable test public key — clearly identifiable in the Timeweb dashboard
+    # as a throwaway. The private half does not exist (the base64 payload is
+    # synthetic) so the key can never authenticate a real session.
+    body: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE2E000000000000000000000000000000000000000000 crossplane-e2e-throwaway"
+    isDefault: false
+  # Omit managementPolicies → defaults to ["*"] (all actions) → full lifecycle
+  # including Delete on CR removal.
+  providerConfigRef:
+    name: e2e

@@ -1,0 +1,35 @@
+# Kubernetes ValidatingAdmissionPolicy that rejects operator edits to
+# `ContainerRegistryPreset.spec`. Presets are catalog data reconciled from
+# Timeweb's `/api/v1/container-registry/presets` endpoint by the provider's
+# timer-based PresetReconciler; operators read them and reference one by
+# Kubernetes name in `ContainerRegistry.spec.forProvider.presetRef.name`.
+#
+# Edits to `status.atProvider` by the provider's own ServiceAccount are
+# allowed via the userInfo match (the bound ClusterRole's SA is exempted).
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: containerregistrypreset-readonly
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups:    ["containerregistry.m.timeweb.crossplane.io"]
+        apiVersions:  ["v1alpha1"]
+        operations:   ["CREATE", "UPDATE"]
+        resources:    ["containerregistrypresets"]
+  validations:
+    - expression: >
+        request.userInfo.username.startsWith('system:serviceaccount:crossplane-system:provider-timeweb-')
+        || request.userInfo.username == 'system:serviceaccount:crossplane-system:crossplane'
+        || request.userInfo.username.startsWith('system:apiserver')
+      message: "ContainerRegistryPreset is observe-only; spec is controller-owned and cannot be edited by operators."
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: containerregistrypreset-readonly
+spec:
+  policyName: containerregistrypreset-readonly
+  validationActions: [Deny]

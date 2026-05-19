@@ -1,0 +1,182 @@
+/*
+Copyright 2026 Dmitry Lebedev.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package timeweb
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+)
+
+// ErrNotFound is returned when the Timeweb API replies with HTTP 404. Callers
+// (managed-resource external clients) MUST inspect for this sentinel via
+// errors.Is so that Observe can report ResourceExists=false without flapping
+// the Synced condition.
+var ErrNotFound = errors.New("timeweb: resource not found")
+
+// APIError is a terminal error carrying the upstream HTTP status, error code
+// (if present in the response body), and a human-readable message. The
+// reconciler should surface .Error() on the CR's Synced condition.
+type APIError struct {
+	StatusCode int
+	Code       string
+	Message    string
+}
+
+// Error implements error.
+func (e *APIError) Error() string {
+	if e == nil {
+		return "<nil timeweb.APIError>"
+	}
+	if e.Code != "" {
+		return fmt.Sprintf("timeweb api: %d %s: %s", e.StatusCode, e.Code, e.Message)
+	}
+	return fmt.Sprintf("timeweb api: %d: %s", e.StatusCode, e.Message)
+}
+
+// TransientError wraps a retryable failure (5xx, 408, 409, 425, 429, network).
+// Callers should requeue without flipping Synced=False. errors.Is(err, ErrTransient)
+// returns true on every TransientError.
+type TransientError struct {
+	StatusCode int // 0 for non-HTTP transient errors (network, DNS, …)
+	Reason     string
+	Underlying error
+}
+
+// Error implements error.
+func (e *TransientError) Error() string {
+	if e == nil {
+		return "<nil timeweb.TransientError>"
+	}
+	if e.Underlying != nil {
+		return fmt.Sprintf("timeweb transient (%s): %s", e.Reason, e.Underlying)
+	}
+	return fmt.Sprintf("timeweb transient (%s)", e.Reason)
+}
+
+// Unwrap exposes the underlying error for errors.Unwrap callers.
+func (e *TransientError) Unwrap() error { return e.Underlying }
+
+// ErrTransient is the sentinel returned by errors.Is(err, ErrTransient).
+var ErrTransient = errors.New("timeweb: transient error")
+
+// Is implements errors.Is so callers can branch on transience without a type
+// assertion: `errors.Is(err, timeweb.ErrTransient)` is the supported idiom.
+func (e *TransientError) Is(target error) bool { return target == ErrTransient }
+
+// errorResponseBody is the canonical Timeweb error envelope (status_code,
+// error_code, message, response_id). Anonymous oneOf message fields are
+// decoded into interface{} per the generator patch in the Makefile.
+type errorResponseBody struct {
+	StatusCode any    `json:"status_code"`
+	ErrorCode  string `json:"error_code"`
+	Message    any    `json:"message"`
+	ResponseID string `json:"response_id"`
+}
+
+// Classify converts a Timeweb HTTP response into a Go error following the
+// rules documented in research.md §R-3:
+//
+//	200, 201, 204                 → nil (success)
+//	404                           → ErrNotFound (sentinel)
+//	408, 409, 425, 429, 5xx       → *TransientError
+//	other 4xx                     → *APIError (terminal)
+//
+// On a nil response or an error returned by the HTTP layer (network, DNS,
+// context deadline) the caller should classify via ClassifyNetworkError.
+func Classify(resp *http.Response) error {
+	if resp == nil {
+		return &TransientError{Reason: "nil response"}
+	}
+
+	switch {
+	case resp.StatusCode >= 200 && resp.StatusCode < 300:
+		return nil
+	case resp.StatusCode == http.StatusNotFound:
+		return ErrNotFound
+	case isTransientStatus(resp.StatusCode):
+		return &TransientError{
+			StatusCode: resp.StatusCode,
+			Reason:     http.StatusText(resp.StatusCode),
+		}
+	default:
+		return decodeAPIError(resp)
+	}
+}
+
+// ClassifyNetworkError wraps a transport-level error (returned by http.Client.Do
+// before any HTTP response was produced) into a transient error so callers
+// requeue rather than surface Synced=False.
+func ClassifyNetworkError(err error) error {
+	if err == nil {
+		return nil
+	}
+	return &TransientError{Reason: "network", Underlying: err}
+}
+
+func isTransientStatus(code int) bool {
+	switch code {
+	case http.StatusRequestTimeout,
+		http.StatusConflict,
+		http.StatusTooEarly,
+		http.StatusTooManyRequests:
+		return true
+	}
+	return code >= 500 && code < 600
+}
+
+func decodeAPIError(resp *http.Response) error {
+	apiErr := &APIError{StatusCode: resp.StatusCode, Message: http.StatusText(resp.StatusCode)}
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
+	if err != nil || len(body) == 0 {
+		return apiErr
+	}
+
+	var b errorResponseBody
+	if err := json.Unmarshal(body, &b); err == nil {
+		if b.ErrorCode != "" {
+			apiErr.Code = b.ErrorCode
+		}
+		if m := stringifyMessage(b.Message); m != "" {
+			apiErr.Message = m
+		}
+	}
+	return apiErr
+}
+
+// stringifyMessage flattens the oneOf<string, []string> message into a single
+// line, joining array entries with "; ". Returns "" when the payload is
+// neither a string nor a non-empty array of strings.
+func stringifyMessage(v any) string {
+	switch m := v.(type) {
+	case string:
+		return strings.TrimSpace(m)
+	case []any:
+		parts := make([]string, 0, len(m))
+		for _, item := range m {
+			if s, ok := item.(string); ok && strings.TrimSpace(s) != "" {
+				parts = append(parts, strings.TrimSpace(s))
+			}
+		}
+		return strings.Join(parts, "; ")
+	}
+	return ""
+}

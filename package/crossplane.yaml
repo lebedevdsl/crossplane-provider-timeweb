@@ -1,0 +1,23 @@
+apiVersion: meta.pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-timeweb
+  annotations:
+    meta.crossplane.io/maintainer: "Dmitry Lebedev <lebedevdsl@gmail.com>"
+    meta.crossplane.io/source: "github.com/lebedevdsl/crossplane-provider-timeweb"
+    meta.crossplane.io/license: "Apache-2.0"
+    meta.crossplane.io/description: |
+      Crossplane v2 provider for Timeweb Cloud — a native, hand-written
+      controller (no Upjet / no Terraform-provider lineage). MVP resources
+      shipped so far: ProviderConfig, Project. Additional MRs (SshKey,
+      S3Bucket, ContainerRegistry, ContainerRegistryRepository,
+      ContainerRegistryPreset) land in subsequent Phase 3 / Phase 4 tasks.
+    meta.crossplane.io/readme: |
+      See `specs/001-mvp-scaffolding/quickstart.md` for an install walkthrough.
+spec:
+  controller:
+    image: ghcr.io/lebedevdsl/provider-timeweb:v0.1.0
+  crossplane:
+    # Provider targets Crossplane v2 from day one (namespaced managed
+    # resources, v2-only `pkg.crossplane.io/v1` Provider install model).
+    version: ">=v2.0.0-0"

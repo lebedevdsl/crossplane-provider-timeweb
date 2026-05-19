@@ -1,0 +1,93 @@
+# golangci-lint configuration (v2 schema) for crossplane-provider-timeweb.
+# Standard ecosystem tooling; no project-specific custom rules.
+
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - misspell
+    - revive
+    - staticcheck
+    - unconvert
+    - unused
+  settings:
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: exported
+        - name: increment-decrement
+        - name: var-naming
+        - name: var-declaration
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+        - name: errorf
+        - name: empty-block
+        - name: superfluous-else
+        - name: unused-parameter
+        - name: unreachable-code
+        - name: redefines-builtin-id
+  exclusions:
+    rules:
+      # Generated code — do not lint.
+      - path: internal/clients/timeweb/generated/.*
+        linters:
+          - errcheck
+          - govet
+          - ineffassign
+          - misspell
+          - revive
+          - staticcheck
+          - unconvert
+          - unused
+      - path: apis/.*/zz_generated.*
+        linters:
+          - errcheck
+          - govet
+          - ineffassign
+          - misspell
+          - revive
+          - staticcheck
+          - unconvert
+          - unused
+      - path: internal/clients/timeweb/fake\.go
+        linters:
+          - errcheck
+          - govet
+          - ineffassign
+          - misspell
+          - revive
+          - staticcheck
+          - unconvert
+          - unused
+      - path: _test\.go
+        text: "dot-imports"
+        linters:
+          - revive
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/lebedevdsl/crossplane-provider-timeweb

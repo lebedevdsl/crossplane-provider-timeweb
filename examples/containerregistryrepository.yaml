@@ -1,0 +1,26 @@
+# Example ContainerRegistryRepository managed resource.
+#
+# OBSERVE-ONLY: Timeweb's API exposes only a list-of-repositories endpoint —
+# no Create / Update / Delete for individual repositories. Repositories
+# materialize upstream when you `docker push` against the parent registry;
+# this CR gives operators a kubectl-native view of what's there.
+#
+# `kubectl delete` removes the CR but does NOT delete the upstream
+# repository (use `docker rmi` or the Timeweb dashboard for image cleanup).
+#
+# See docs/resources/containerregistryrepository.md.
+---
+apiVersion: containerregistry.m.timeweb.crossplane.io/v1alpha1
+kind: ContainerRegistryRepository
+metadata:
+  name: backend
+  namespace: timeweb-prod
+spec:
+  forProvider:
+    # Parent ContainerRegistry in the same namespace.
+    registryRef:
+      name: demo-prod
+    # Repository path within the registry (matches what you `docker push` to).
+    name: mygroup/backend
+  providerConfigRef:
+    name: default

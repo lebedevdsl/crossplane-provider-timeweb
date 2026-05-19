@@ -1,0 +1,37 @@
+# Example ContainerRegistry managed resource for the Timeweb Crossplane provider.
+#
+# The controller publishes a `kubernetes.io/dockerconfigjson` Secret that
+# workloads can reference directly as `imagePullSecrets[].name`. The Secret
+# also carries raw `endpoint`/`username`/`password` keys for non-K8s consumers.
+#
+# IMMUTABLE FIELDS (FR-017 reject-and-surface):
+#   - name
+#   - sizing axis (presetRef ↔ configuration)
+# Mutable: description, projectID, presetRef-within-axis, configuration-within-axis.
+#
+# See docs/resources/containerregistry.md for the full field reference,
+# including the credential-source caveat (R-1).
+---
+apiVersion: containerregistry.m.timeweb.crossplane.io/v1alpha1
+kind: ContainerRegistry
+metadata:
+  name: demo-prod
+  namespace: timeweb-prod
+spec:
+  forProvider:
+    # IMMUTABLE — 3-48 chars, lowercase alphanumeric + hyphen.
+    name: demo-prod
+    description: "Production registry for example.com images"
+    # References a ContainerRegistryPreset by Kubernetes name. The controller
+    # resolves it to the upstream numeric preset_id at create time.
+    presetRef:
+      name: cr-starter-5gb-1939
+    # OR use a custom configurator instead of presetRef:
+    # configuration:
+    #   id: 7
+    #   diskGB: 20
+  writeConnectionSecretToRef:
+    name: demo-prod-pull
+    # namespace defaults to MR's namespace if omitted
+  providerConfigRef:
+    name: default

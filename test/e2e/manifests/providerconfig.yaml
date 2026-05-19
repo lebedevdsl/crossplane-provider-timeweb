@@ -1,0 +1,13 @@
+# ProviderConfig manifest applied by the e2e bundle.
+# The literal __E2E_NAMESPACE__ is substituted by verify.sh.
+apiVersion: timeweb.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: e2e
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      name: timeweb-credentials
+      namespace: __E2E_NAMESPACE__
+      key: token
