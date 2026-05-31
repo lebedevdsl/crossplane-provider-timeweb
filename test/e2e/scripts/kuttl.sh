@@ -42,6 +42,30 @@ set -euo pipefail
 : "${E2E_NAMESPACE:?}"
 : "${KUTTL:=go run github.com/kudobuilder/kuttl/cmd/kubectl-kuttl}"
 
+# --- 0. Belt-and-suspenders: refuse to run unless E2E_KUBECONTEXT names a
+#       k3d cluster. The Makefile derives this from E2E_CLUSTER_NAME, but if
+#       the operator overrode it on the CLI we MUST NOT accidentally apply
+#       manifests to a production cluster.
+if [[ "$E2E_KUBECONTEXT" != k3d-* ]]; then
+  cat >&2 <<EOF
+ERROR: E2E_KUBECONTEXT="$E2E_KUBECONTEXT" does not start with "k3d-".
+
+This wrapper is hard-locked to k3d clusters to prevent accidentally
+applying e2e manifests against a production cluster. If you really do
+need to target a non-k3d cluster, the safe path is to rename your
+context to start with "k3d-".
+EOF
+  exit 1
+fi
+
+# Verify the named context actually exists locally — otherwise any
+# subsequent kubectl call would fail with a confusing "context not found"
+# AFTER we've already started creating Secrets etc.
+if ! kubectl config get-contexts -o name | grep -qxF "$E2E_KUBECONTEXT"; then
+  echo "ERROR: kubectl context $E2E_KUBECONTEXT does not exist on this host (kubectl config get-contexts)." >&2
+  exit 1
+fi
+
 if [ -z "${TIMEWEB_CLOUD_TOKEN:-}" ]; then
   cat >&2 <<'EOF'
 ERROR: TIMEWEB_CLOUD_TOKEN is not set.
@@ -154,19 +178,44 @@ TWE_PROJECT_ID=$(curl -fsS \
   | jq -er '.projects | sort_by(.id) | .[0].id | tostring')
 echo "[e2e]   → $TWE_PROJECT_ID"
 
+# --- 2b. Discover the cheapest msk-1 cloud-server preset slug ---------------
+#
+# The Server controller resolves operator-supplied `presetName` (e.g.
+# `premium-2-2-40-msk-1`) against /api/v1/presets/servers. The slug shape
+# is `<description_short>-<location>` (lowercased, periods → hyphens).
+# Picking the cheapest per spec SC-001 + the e2e canary cost cap.
+
+echo "[e2e] discovering cheapest ru-1 cloud-server preset slug"
+TWE_SERVER_PRESET=$(curl -fsS \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "${TW_API}/api/v1/presets/servers" \
+  | jq -er '
+      .server_presets
+      | map(select(.location == "ru-1"))
+      | sort_by(.price)
+      | .[0]
+      | (.description_short + "-" + .location)
+      | ascii_downcase
+      | gsub("[^a-z0-9-]+"; "-")
+      | gsub("^-+|-+$"; "")
+  ')
+echo "[e2e]   → $TWE_SERVER_PRESET"
+
 # --- 3. Generate unique names -----------------------------------------------
 
 TS="$(date +%s)"
 TWE_SSH_NAME="e2e-ssh-$TS"
 TWE_S3_NAME="e2e-s3-$TS"
 TWE_CR_NAME="e2e-cr-$TS"
+TWE_SERVER_NAME="e2e-srv-$TS"
 
-export TWE_PROJECT_ID TWE_SSH_NAME TWE_S3_NAME TWE_CR_NAME
+export TWE_PROJECT_ID TWE_SSH_NAME TWE_S3_NAME TWE_CR_NAME TWE_SERVER_NAME TWE_SERVER_PRESET
 
 echo "[e2e] generated names:"
 echo "[e2e]   SSHKey:        $TWE_SSH_NAME"
 echo "[e2e]   S3Bucket:      $TWE_S3_NAME"
 echo "[e2e]   ContainerReg:  $TWE_CR_NAME"
+echo "[e2e]   Server:        $TWE_SERVER_NAME"
 
 # --- 3a. Inspect leftover CRs (DO NOT auto-delete) --------------------------
 #
@@ -180,7 +229,10 @@ e2e_resources() {
     projects.project.m.timeweb.crossplane.io,\
 sshkeys.sshkey.m.timeweb.crossplane.io,\
 s3buckets.objectstorage.m.timeweb.crossplane.io,\
-containerregistries.containerregistry.m.timeweb.crossplane.io \
+containerregistries.containerregistry.m.timeweb.crossplane.io,\
+servers.compute.m.timeweb.crossplane.io,\
+networks.network.m.timeweb.crossplane.io,\
+floatingips.network.m.timeweb.crossplane.io \
     --no-headers 2>/dev/null || true
 }
 
@@ -220,7 +272,7 @@ cp -R test/e2e/kuttl/. "$TMP_BUNDLE/"
 # Restrict envsubst to the TWE_* allow-list so unrelated `$` literals
 # elsewhere in YAML (e.g. JSONPath expressions in assertions) are not
 # clobbered.
-TWE_VARS='${TWE_PROJECT_ID} ${TWE_SSH_NAME} ${TWE_S3_NAME} ${TWE_CR_NAME}'
+TWE_VARS='${TWE_PROJECT_ID} ${TWE_SSH_NAME} ${TWE_S3_NAME} ${TWE_CR_NAME} ${TWE_SERVER_NAME} ${TWE_SERVER_PRESET}'
 
 find "$TMP_BUNDLE" -type f \( -name '*.yaml' -o -name '*.yml' \) -print0 \
   | while IFS= read -r -d '' f; do
@@ -235,9 +287,41 @@ sed -i.bak \
 rm -f "$TMP_BUNDLE/kuttl-test.yaml.bak"
 
 # --- 6. One-off kubeconfig (so we don't mutate the operator's) --------------
+#
+# `kubectl config view --raw --minify --context=...` strips the kubeconfig
+# down to ONLY the named context, its cluster, and its user. The resulting
+# file cannot reach any other cluster even if kuttl tried — there are no
+# other entries in the served kubeconfig. Verified by two post-render
+# assertions below.
 
 kubectl config view --raw --minify --context="$E2E_KUBECONTEXT" > "$TMP_KUBECONFIG"
 export KUBECONFIG="$TMP_KUBECONFIG"
+
+# Sanity 1: the rendered kubeconfig's current-context MUST be the one
+# we expect. If --minify produced something else (unlikely but possible
+# on older kubectl versions), bail before kuttl applies anything.
+rendered_ctx=$(kubectl config current-context)
+if [ "$rendered_ctx" != "$E2E_KUBECONTEXT" ]; then
+  echo "ERROR: rendered kubeconfig current-context is $rendered_ctx, want $E2E_KUBECONTEXT" >&2
+  exit 1
+fi
+
+# Sanity 2: the cluster's API server URL MUST point at a local host
+# (k3d binds to 127.0.0.1 / 0.0.0.0 / localhost). Rejecting anything
+# else is the last line of defense against pointing at a remote cluster
+# that happens to also be named "k3d-..." in someone's kubeconfig.
+api_server=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')
+case "$api_server" in
+  https://127.0.0.1:*|https://0.0.0.0:*|https://localhost:*|https://host.docker.internal:*)
+    : # ok
+    ;;
+  *)
+    echo "ERROR: kubeconfig API server $api_server is not a local URL — refusing to run e2e against a non-local cluster." >&2
+    exit 1
+    ;;
+esac
+
+echo "[e2e] context safety checks passed: $E2E_KUBECONTEXT → $api_server"
 
 # --- 7. Run kuttl -----------------------------------------------------------
 

@@ -24,5 +24,8 @@ output-options:
     - "SSH-ключи"          # SshKey
     - "S3-хранилище"       # S3Bucket + storage users (for credentials)
     - "Реестр контейнеров" # ContainerRegistry trio
+    - "Облачные серверы"   # feat 003 — Server (40 paths: CRUD + /presets/servers + /os/servers + /configurator/servers + actions + disks)
+    - "VPC"                # feat 003 — Network kind (/api/v2/vpcs CRUD + /api/v1/vpcs/{id} delete)
+    - "Плавающие IP"       # feat 003 — FloatingIP kind (/api/v1/floating-ips CRUD + bind/unbind)
 compatibility:
   always-prefix-enum-values: true

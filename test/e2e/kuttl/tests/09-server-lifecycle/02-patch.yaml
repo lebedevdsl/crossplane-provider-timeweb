@@ -1,0 +1,11 @@
+# Step 2 - Mutable-field PATCH. R-5 says `comment` is mutable post-create
+# (along with `name`, `hostname`, `cloudInit`). The Server controller
+# PATCHes upstream and `Synced=True` stays true.
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-server
+  namespace: timeweb-e2e
+spec:
+  forProvider:
+    comment: "edited by kuttl 09 step 02"

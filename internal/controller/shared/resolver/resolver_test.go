@@ -57,6 +57,17 @@ func (f *fakeCatalog) GetStoragesPresetsWithResponse(_ context.Context, _ ...twg
 	return f.storPresets, f.storPresetsErr
 }
 
+// Stubs for the feature-003 catalog endpoints; existing tests don't exercise
+// them but the interface mandates the methods. T010 wires real fetchers; the
+// per-fetcher unit tests live alongside the Server controller in feature 003.
+func (f *fakeCatalog) GetServersPresetsWithResponse(_ context.Context, _ ...twgen.RequestEditorFn) (*twgen.GetServersPresetsResponse, error) {
+	return nil, nil
+}
+
+func (f *fakeCatalog) GetOsListWithResponse(_ context.Context, _ ...twgen.RequestEditorFn) (*twgen.GetOsListResponse, error) {
+	return nil, nil
+}
+
 // helpers to build the typed JSON200 payloads -------------------------------
 
 func mkRegResp(entries []struct {

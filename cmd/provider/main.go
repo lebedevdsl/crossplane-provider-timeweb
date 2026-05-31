@@ -37,6 +37,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/lebedevdsl/crossplane-provider-timeweb/apis"
+	computectrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/compute"
 	containerregistryctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/containerregistry"
 	projectctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/project"
 	providerconfigctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/providerconfig"
@@ -133,6 +134,10 @@ func main() {
 		PollInterval: pollInterval,
 	}); err != nil {
 		log.Info("unable to register ContainerRegistry controllers", "error", err.Error())
+		os.Exit(1)
+	}
+	if err := computectrl.Setup(mgr, log, pollInterval); err != nil {
+		log.Info("unable to register Server controller", "error", err.Error())
 		os.Exit(1)
 	}
 

@@ -1,0 +1,13 @@
+# After the PATCH the Server stays Ready=True + Synced=True (the comment
+# change PATCHes upstream cleanly; no condition flap).
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-server
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"

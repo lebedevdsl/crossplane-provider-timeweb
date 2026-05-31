@@ -14,7 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// K8s-readiness field → dimension mapping (SC-007, T062).
+// Resolver dimension registry.
+//
+// === Live dimensions (consumed by MR controllers today) ===
+//
+//	DimContainerRegistryPreset (Preset) → /api/v1/container-registry/presets
+//	DimS3BucketPreset          (Preset) → /api/v1/presets/storages
+//	DimServerPreset            (Preset) → /api/v1/presets/servers       — feature 003
+//	DimServerOSImage           (Preset) → /api/v1/os/servers            — feature 003
+//
+// Server OS is modeled as a Preset dimension (slug → upstream_id) because
+// the controller needs the resolved OS ID for the create-server call.
+// The slug rule is `Slugify(image, version)` where image is the
+// lowercased family name and version is the upstream version string —
+// e.g. `Slugify("ubuntu", "24.04")` → after normalization →
+// "ubuntu-24-04". Both spec-side and upstream-side strings flow through
+// the same `normalize()` so the period-to-hyphen flattening matches on
+// both sides.
+//
+// === K8s-readiness field → dimension mapping (SC-007, feature 002 T062) ===
 //
 // Walks the create-bodies of `POST /api/v1/k8s/clusters` (createCluster)
 // and `POST /api/v1/k8s/clusters/{cluster_id}/groups` (createClusterNodeGroup)
@@ -37,11 +55,11 @@ limitations under the License.
 //	  preset_id         → DimKubernetesWorkerPreset    (preset; XOR with `configuration`)
 //	  configuration     → DimServerConfigurator        (configurator; XOR with `preset_id`)
 //
-// The six dimensions above are registered (with stub fetchers returning
+// The six K8s dimensions are registered (with stub fetchers returning
 // ErrDimensionFetcherUnwired) in defaultRegistry below so the table
-// can't drift before the K8s feature work lands. Per data-model.md §2.2,
-// each dimension's full Resolve coverage ships alongside the MR that
-// consumes it.
+// can't drift before the K8s feature work lands. Per feature 002
+// data-model.md §2.2, each dimension's full Resolve coverage ships
+// alongside the MR that consumes it.
 
 package resolver
 
@@ -60,6 +78,8 @@ import (
 type CatalogClient interface {
 	GetRegistryPresetsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetRegistryPresetsResponse, error)
 	GetStoragesPresetsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetStoragesPresetsResponse, error)
+	GetServersPresetsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetServersPresetsResponse, error)
+	GetOsListWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetOsListResponse, error)
 }
 
 // Dimension names. The first two are live (consumed by S3Bucket /
@@ -72,8 +92,13 @@ const (
 	// Live dimensions.
 	DimContainerRegistryPreset = "ContainerRegistryPreset"
 	DimS3BucketPreset          = "S3BucketPreset"
+	DimServerPreset            = "ServerPreset"  // feature 003
+	DimServerOSImage           = "ServerOSImage" // feature 003
 
-	// Forward-compat (K8s + Server) dimensions — see header comment.
+	// Forward-compat (K8s) dimensions — see header comment. The
+	// ServerConfigurator dimension stays at fetchUnwired until the
+	// custom-configurator path lands (out of v0.3 scope per spec
+	// clarification).
 	DimServerConfigurator      = "ServerConfigurator"
 	DimKubernetesMasterPreset  = "KubernetesMasterPreset"
 	DimKubernetesWorkerPreset  = "KubernetesWorkerPreset"
@@ -98,8 +123,10 @@ func defaultRegistry() map[string]dimensionDef {
 		// Live.
 		DimContainerRegistryPreset: {kind: DimensionPreset, fetch: fetchContainerRegistryPresets},
 		DimS3BucketPreset:          {kind: DimensionPreset, fetch: fetchS3BucketPresets},
+		DimServerPreset:            {kind: DimensionPreset, fetch: fetchServerPresets},
+		DimServerOSImage:           {kind: DimensionPreset, fetch: fetchServerOSImages},
 
-		// Forward-compat — see header comment + data-model.md §2.2.
+		// Forward-compat — see header comment + feature 002 data-model.md §2.2.
 		DimServerConfigurator:      {kind: DimensionConfigurator, fetch: fetchUnwired},
 		DimKubernetesMasterPreset:  {kind: DimensionPreset, fetch: fetchUnwired},
 		DimKubernetesWorkerPreset:  {kind: DimensionPreset, fetch: fetchUnwired},
@@ -154,6 +181,68 @@ func fetchS3BucketPresets(ctx context.Context, c CatalogClient) (any, error) {
 			Location:     string(p.Location),
 			DiskGB:       int64(p.Disk) / 1024,
 			StorageClass: string(p.StorageClass),
+		})
+	}
+	return out, nil
+}
+
+func fetchServerPresets(ctx context.Context, c CatalogClient) (any, error) {
+	resp, err := c.GetServersPresetsWithResponse(ctx)
+	if err != nil {
+		return nil, classifyUpstream(0, err)
+	}
+	if resp.JSON200 == nil {
+		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+	}
+	out := make([]PresetEntry, 0, len(resp.JSON200.ServerPresets))
+	for _, p := range resp.JSON200.ServerPresets {
+		// Disk in the cloud-server preset payload is in MB
+		// ("Размер диска (в Мб)"); normalize to GB for consistency with
+		// the S3 fetcher and with operator-typed `initialSizeGB` on
+		// other MR kinds — even though Server v0.3 doesn't use DiskGB
+		// for matching (preset is selected by slug).
+		out = append(out, PresetEntry{
+			UpstreamID: int64(p.Id),
+			DescShort:  p.DescriptionShort,
+			Location:   string(p.Location),
+			DiskGB:     int64(p.Disk) / 1024,
+		})
+	}
+	return out, nil
+}
+
+func fetchServerOSImages(ctx context.Context, c CatalogClient) (any, error) {
+	resp, err := c.GetOsListWithResponse(ctx)
+	if err != nil {
+		return nil, classifyUpstream(0, err)
+	}
+	if resp.JSON200 == nil {
+		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+	}
+	// Each upstream OS entry becomes a Preset entry where DescShort is
+	// the family name (lowercased) and Location is the version. The
+	// operator-typed `(image, version)` pair flows through the same
+	// Slugify(short, location) helper on the controller side; the
+	// resolver's normalize() collapses any periods in the version
+	// string (e.g. "24.04" → "24-04") symmetrically on both sides.
+	out := make([]PresetEntry, 0, len(resp.JSON200.ServersOs))
+	for _, o := range resp.JSON200.ServersOs {
+		name := ""
+		if o.Name != nil {
+			name = *o.Name
+		}
+		version := ""
+		if o.Version != nil {
+			version = *o.Version
+		}
+		var id int64
+		if o.Id != nil {
+			id = int64(*o.Id)
+		}
+		out = append(out, PresetEntry{
+			UpstreamID: id,
+			DescShort:  name,
+			Location:   version,
 		})
 	}
 	return out, nil

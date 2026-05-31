@@ -1,0 +1,47 @@
+# Per-step assert timeout — Server provisioning takes longer than the
+# suite-wide default (240s). SC-001 caps `apply → Ready=True` at 10
+# minutes for the smallest preset; 600s gives the upstream
+# installing→starting→on transition room to complete.
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 600
+---
+# Both MRs reach Ready=True + Synced=True. The Server takes longer
+# (the upstream VM goes through installing→starting→on) so the bundle's
+# extended timeout governs (~10 min per spec SC-001).
+#
+# kuttl matches arrays positionally. Server's conditions slice ends up
+# in order [Synced, Ready] because the runtime appends Synced=True
+# (ReconcileSuccess) on first successful reconcile BEFORE the upstream
+# VM has booted; Ready=True (Available) flips later when the controller
+# observes state="on". Same dynamic as `02-project-import` (Observe-only
+# pattern); opposite of `04-s3bucket` / `05-containerregistry` whose
+# external clients call `Available()` from inside Observe so Ready lands
+# before Synced.
+#
+# The SSHKey is full-lifecycle (managementPolicies: ['*']) but follows
+# the same [Synced, Ready] order because the controller doesn't preset
+# the Ready condition during its Observe path.
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: e2e-server-sshkey
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Synced
+    status: "True"
+  - type: Ready
+    status: "True"
+---
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-server
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Synced
+    status: "True"
+  - type: Ready
+    status: "True"

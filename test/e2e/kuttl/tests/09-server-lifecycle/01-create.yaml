@@ -1,0 +1,49 @@
+# Step 1 - Cloud Server lifecycle bundle (feature 003 US1 MVP).
+#
+# Apply an SSHKey and a Server pointing at the smallest msk-1 server
+# preset (discovered at runtime by the wrapper as $TWE_SERVER_PRESET).
+# The Server controller resolves both `presetName` and `os.{image,version}`
+# against the in-controller catalog resolver, attaches the SSH key, and
+# creates the upstream VM. SC-001 caps `apply → Ready=True` at 10 minutes
+# for the smallest preset.
+#
+# The SSH body is a synthetic ed25519 public key — no real private half
+# exists, so it cannot authenticate. Unique name (`$TWE_SSH_NAME`) lets
+# the suite re-run safely against the same Timeweb account.
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: e2e-server-sshkey
+  namespace: timeweb-e2e
+spec:
+  forProvider:
+    name: "${TWE_SSH_NAME}"
+    # Operator-provided real public key — pairs with the operator's local
+    # ~/.ssh private half so the e2e canary can actually SSH in (SC-001
+    # "ssh login succeeds" — manual verification step).
+    body: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHLCQkE7gXn28djFRYNLzC6abZghcgTFXQ3MrYRvx07s dlebedev@Dmitrys-MacBook-Pro.local"
+    isDefault: false
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+---
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-server
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  writeConnectionSecretToRef:
+    name: e2e-server-conn
+  forProvider:
+    name: "${TWE_SERVER_NAME}"
+    presetName: "${TWE_SERVER_PRESET}"  # smallest msk-1 preset slug
+    location: ru-1
+    os:
+      image: ubuntu
+      version: "24.04"
+    sshKeyRefs:
+    - name: e2e-server-sshkey

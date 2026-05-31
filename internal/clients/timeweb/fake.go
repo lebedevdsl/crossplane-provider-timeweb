@@ -176,6 +176,39 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	AddServerIPStub        func(context.Context, generated.ServerId, generated.AddServerIPJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	addServerIPMutex       sync.RWMutex
+	addServerIPArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.AddServerIPJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	addServerIPReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	addServerIPReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	AddServerIPWithBodyStub        func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	addServerIPWithBodyMutex       sync.RWMutex
+	addServerIPWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	addServerIPWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	addServerIPWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	AddServerToProjectStub        func(context.Context, generated.ProjectId, generated.AddServerToProjectJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
 	addServerToProjectMutex       sync.RWMutex
 	addServerToProjectArgsForCall []struct {
@@ -306,6 +339,85 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	BindFloatingIpStub        func(context.Context, generated.FloatingIpId, generated.BindFloatingIpJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	bindFloatingIpMutex       sync.RWMutex
+	bindFloatingIpArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.FloatingIpId
+		arg3 generated.BindFloatingIpJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	bindFloatingIpReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	bindFloatingIpReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	BindFloatingIpWithBodyStub        func(context.Context, generated.FloatingIpId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	bindFloatingIpWithBodyMutex       sync.RWMutex
+	bindFloatingIpWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.FloatingIpId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	bindFloatingIpWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	bindFloatingIpWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	CloneServerStub        func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)
+	cloneServerMutex       sync.RWMutex
+	cloneServerArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}
+	cloneServerReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	cloneServerReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	CreateFloatingIpStub        func(context.Context, generated.CreateFloatingIpJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	createFloatingIpMutex       sync.RWMutex
+	createFloatingIpArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.CreateFloatingIpJSONRequestBody
+		arg3 []generated.RequestEditorFn
+	}
+	createFloatingIpReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createFloatingIpReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	CreateFloatingIpWithBodyStub        func(context.Context, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	createFloatingIpWithBodyMutex       sync.RWMutex
+	createFloatingIpWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 io.Reader
+		arg4 []generated.RequestEditorFn
+	}
+	createFloatingIpWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createFloatingIpWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	CreateKeyStub        func(context.Context, generated.CreateKeyJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
 	createKeyMutex       sync.RWMutex
 	createKeyArgsForCall []struct {
@@ -399,6 +511,105 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	CreateServerStub        func(context.Context, generated.CreateServerJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	createServerMutex       sync.RWMutex
+	createServerArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.CreateServerJSONRequestBody
+		arg3 []generated.RequestEditorFn
+	}
+	createServerReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createServerReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	CreateServerDiskStub        func(context.Context, generated.ServerId, generated.CreateServerDiskJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	createServerDiskMutex       sync.RWMutex
+	createServerDiskArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.CreateServerDiskJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	createServerDiskReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createServerDiskReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	CreateServerDiskBackupStub        func(context.Context, generated.ServerId, generated.DiskId, generated.CreateServerDiskBackupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	createServerDiskBackupMutex       sync.RWMutex
+	createServerDiskBackupArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.CreateServerDiskBackupJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}
+	createServerDiskBackupReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createServerDiskBackupReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	CreateServerDiskBackupWithBodyStub        func(context.Context, generated.ServerId, generated.DiskId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	createServerDiskBackupWithBodyMutex       sync.RWMutex
+	createServerDiskBackupWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}
+	createServerDiskBackupWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createServerDiskBackupWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	CreateServerDiskWithBodyStub        func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	createServerDiskWithBodyMutex       sync.RWMutex
+	createServerDiskWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	createServerDiskWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createServerDiskWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	CreateServerWithBodyStub        func(context.Context, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	createServerWithBodyMutex       sync.RWMutex
+	createServerWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 io.Reader
+		arg4 []generated.RequestEditorFn
+	}
+	createServerWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createServerWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	CreateStorageStub        func(context.Context, generated.CreateStorageJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
 	createStorageMutex       sync.RWMutex
 	createStorageArgsForCall []struct {
@@ -427,6 +638,52 @@ type FakeClient struct {
 		result2 error
 	}
 	createStorageWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	CreateVPCStub        func(context.Context, generated.CreateVPCJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	createVPCMutex       sync.RWMutex
+	createVPCArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.CreateVPCJSONRequestBody
+		arg3 []generated.RequestEditorFn
+	}
+	createVPCReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createVPCReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	CreateVPCWithBodyStub        func(context.Context, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	createVPCWithBodyMutex       sync.RWMutex
+	createVPCWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 io.Reader
+		arg4 []generated.RequestEditorFn
+	}
+	createVPCWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createVPCWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	DeleteFloatingIPStub        func(context.Context, generated.FloatingIpId, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteFloatingIPMutex       sync.RWMutex
+	deleteFloatingIPArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.FloatingIpId
+		arg3 []generated.RequestEditorFn
+	}
+	deleteFloatingIPReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteFloatingIPReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -491,6 +748,88 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	DeleteServerStub        func(context.Context, generated.ServerId, *generated.DeleteServerParams, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteServerMutex       sync.RWMutex
+	deleteServerArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 *generated.DeleteServerParams
+		arg4 []generated.RequestEditorFn
+	}
+	deleteServerReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteServerReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	DeleteServerDiskStub        func(context.Context, generated.ServerId, generated.DiskId, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteServerDiskMutex       sync.RWMutex
+	deleteServerDiskArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 []generated.RequestEditorFn
+	}
+	deleteServerDiskReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteServerDiskReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	DeleteServerDiskBackupStub        func(context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteServerDiskBackupMutex       sync.RWMutex
+	deleteServerDiskBackupArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.ServerBackupId
+		arg5 []generated.RequestEditorFn
+	}
+	deleteServerDiskBackupReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteServerDiskBackupReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	DeleteServerIPStub        func(context.Context, generated.ServerId, generated.DeleteServerIPJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteServerIPMutex       sync.RWMutex
+	deleteServerIPArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DeleteServerIPJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	deleteServerIPReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteServerIPReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	DeleteServerIPWithBodyStub        func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteServerIPWithBodyMutex       sync.RWMutex
+	deleteServerIPWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	deleteServerIPWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteServerIPWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	DeleteStorageStub        func(context.Context, generated.BucketId, *generated.DeleteStorageParams, ...generated.RequestEditorFn) (*http.Response, error)
 	deleteStorageMutex       sync.RWMutex
 	deleteStorageArgsForCall []struct {
@@ -537,6 +876,21 @@ type FakeClient struct {
 		result2 error
 	}
 	deleteStorageSubdomainsWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	DeleteVPCStub        func(context.Context, generated.VpcId, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteVPCMutex       sync.RWMutex
+	deleteVPCArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.VpcId
+		arg3 []generated.RequestEditorFn
+	}
+	deleteVPCReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteVPCReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -639,6 +993,49 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	GetConfiguratorsStub        func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)
+	getConfiguratorsMutex       sync.RWMutex
+	getConfiguratorsArgsForCall []struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}
+	getConfiguratorsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getConfiguratorsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetFloatingIpStub        func(context.Context, generated.FloatingIpId, ...generated.RequestEditorFn) (*http.Response, error)
+	getFloatingIpMutex       sync.RWMutex
+	getFloatingIpArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.FloatingIpId
+		arg3 []generated.RequestEditorFn
+	}
+	getFloatingIpReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getFloatingIpReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetFloatingIpsStub        func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)
+	getFloatingIpsMutex       sync.RWMutex
+	getFloatingIpsArgsForCall []struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}
+	getFloatingIpsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getFloatingIpsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	GetKeyStub        func(context.Context, generated.SshKeyId, ...generated.RequestEditorFn) (*http.Response, error)
 	getKeyMutex       sync.RWMutex
 	getKeyArgsForCall []struct {
@@ -665,6 +1062,20 @@ type FakeClient struct {
 		result2 error
 	}
 	getKeysReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetOsListStub        func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)
+	getOsListMutex       sync.RWMutex
+	getOsListArgsForCall []struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}
+	getOsListReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getOsListReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -845,6 +1256,209 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	GetServerStub        func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)
+	getServerMutex       sync.RWMutex
+	getServerArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}
+	getServerReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getServerReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetServerDiskStub        func(context.Context, generated.ServerId, generated.DiskId, ...generated.RequestEditorFn) (*http.Response, error)
+	getServerDiskMutex       sync.RWMutex
+	getServerDiskArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 []generated.RequestEditorFn
+	}
+	getServerDiskReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getServerDiskReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetServerDiskAutoBackupSettingsStub        func(context.Context, generated.ServerId, generated.DiskId, ...generated.RequestEditorFn) (*http.Response, error)
+	getServerDiskAutoBackupSettingsMutex       sync.RWMutex
+	getServerDiskAutoBackupSettingsArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 []generated.RequestEditorFn
+	}
+	getServerDiskAutoBackupSettingsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getServerDiskAutoBackupSettingsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetServerDiskBackupStub        func(context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, ...generated.RequestEditorFn) (*http.Response, error)
+	getServerDiskBackupMutex       sync.RWMutex
+	getServerDiskBackupArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.ServerBackupId
+		arg5 []generated.RequestEditorFn
+	}
+	getServerDiskBackupReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getServerDiskBackupReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetServerDiskBackupsStub        func(context.Context, generated.ServerId, generated.DiskId, ...generated.RequestEditorFn) (*http.Response, error)
+	getServerDiskBackupsMutex       sync.RWMutex
+	getServerDiskBackupsArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 []generated.RequestEditorFn
+	}
+	getServerDiskBackupsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getServerDiskBackupsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetServerDisksStub        func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)
+	getServerDisksMutex       sync.RWMutex
+	getServerDisksArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}
+	getServerDisksReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getServerDisksReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetServerIPsStub        func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)
+	getServerIPsMutex       sync.RWMutex
+	getServerIPsArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}
+	getServerIPsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getServerIPsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetServerLogsStub        func(context.Context, generated.ServerId, *generated.GetServerLogsParams, ...generated.RequestEditorFn) (*http.Response, error)
+	getServerLogsMutex       sync.RWMutex
+	getServerLogsArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 *generated.GetServerLogsParams
+		arg4 []generated.RequestEditorFn
+	}
+	getServerLogsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getServerLogsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetServerStatisticsStub        func(context.Context, generated.ServerId, *generated.GetServerStatisticsParams, ...generated.RequestEditorFn) (*http.Response, error)
+	getServerStatisticsMutex       sync.RWMutex
+	getServerStatisticsArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 *generated.GetServerStatisticsParams
+		arg4 []generated.RequestEditorFn
+	}
+	getServerStatisticsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getServerStatisticsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetServerStatisticsNewStub        func(context.Context, generated.ServerId, string, string, generated.GetServerStatisticsNewParamsKeys, ...generated.RequestEditorFn) (*http.Response, error)
+	getServerStatisticsNewMutex       sync.RWMutex
+	getServerStatisticsNewArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 string
+		arg5 generated.GetServerStatisticsNewParamsKeys
+		arg6 []generated.RequestEditorFn
+	}
+	getServerStatisticsNewReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getServerStatisticsNewReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetServersStub        func(context.Context, *generated.GetServersParams, ...generated.RequestEditorFn) (*http.Response, error)
+	getServersMutex       sync.RWMutex
+	getServersArgsForCall []struct {
+		arg1 context.Context
+		arg2 *generated.GetServersParams
+		arg3 []generated.RequestEditorFn
+	}
+	getServersReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getServersReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetServersPresetsStub        func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)
+	getServersPresetsMutex       sync.RWMutex
+	getServersPresetsArgsForCall []struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}
+	getServersPresetsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getServersPresetsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetSoftwareStub        func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)
+	getSoftwareMutex       sync.RWMutex
+	getSoftwareArgsForCall []struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}
+	getSoftwareReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getSoftwareReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	GetStorageStub        func(context.Context, generated.BucketId, ...generated.RequestEditorFn) (*http.Response, error)
 	getStorageMutex       sync.RWMutex
 	getStorageArgsForCall []struct {
@@ -932,6 +1546,240 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	GetVPCStub        func(context.Context, generated.VpcId, ...generated.RequestEditorFn) (*http.Response, error)
+	getVPCMutex       sync.RWMutex
+	getVPCArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.VpcId
+		arg3 []generated.RequestEditorFn
+	}
+	getVPCReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getVPCReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetVPCPortsStub        func(context.Context, generated.VpcId, ...generated.RequestEditorFn) (*http.Response, error)
+	getVPCPortsMutex       sync.RWMutex
+	getVPCPortsArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.VpcId
+		arg3 []generated.RequestEditorFn
+	}
+	getVPCPortsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getVPCPortsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetVPCServicesStub        func(context.Context, generated.VpcId, ...generated.RequestEditorFn) (*http.Response, error)
+	getVPCServicesMutex       sync.RWMutex
+	getVPCServicesArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.VpcId
+		arg3 []generated.RequestEditorFn
+	}
+	getVPCServicesReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getVPCServicesReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetVPCsStub        func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)
+	getVPCsMutex       sync.RWMutex
+	getVPCsArgsForCall []struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}
+	getVPCsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getVPCsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	HardShutdownServerStub        func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)
+	hardShutdownServerMutex       sync.RWMutex
+	hardShutdownServerArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}
+	hardShutdownServerReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	hardShutdownServerReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	ImageUnmountAndServerReloadStub        func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)
+	imageUnmountAndServerReloadMutex       sync.RWMutex
+	imageUnmountAndServerReloadArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}
+	imageUnmountAndServerReloadReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	imageUnmountAndServerReloadReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	PerformActionOnBackupStub        func(context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, generated.PerformActionOnBackupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	performActionOnBackupMutex       sync.RWMutex
+	performActionOnBackupArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.ServerBackupId
+		arg5 generated.PerformActionOnBackupJSONRequestBody
+		arg6 []generated.RequestEditorFn
+	}
+	performActionOnBackupReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	performActionOnBackupReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	PerformActionOnBackupWithBodyStub        func(context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	performActionOnBackupWithBodyMutex       sync.RWMutex
+	performActionOnBackupWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.ServerBackupId
+		arg5 string
+		arg6 io.Reader
+		arg7 []generated.RequestEditorFn
+	}
+	performActionOnBackupWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	performActionOnBackupWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	PerformActionOnServerStub        func(context.Context, generated.ServerId, generated.PerformActionOnServerJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	performActionOnServerMutex       sync.RWMutex
+	performActionOnServerArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.PerformActionOnServerJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	performActionOnServerReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	performActionOnServerReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	PerformActionOnServerWithBodyStub        func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	performActionOnServerWithBodyMutex       sync.RWMutex
+	performActionOnServerWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	performActionOnServerWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	performActionOnServerWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	RebootServerStub        func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)
+	rebootServerMutex       sync.RWMutex
+	rebootServerArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}
+	rebootServerReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	rebootServerReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	RebootServerHardStub        func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)
+	rebootServerHardMutex       sync.RWMutex
+	rebootServerHardArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}
+	rebootServerHardReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	rebootServerHardReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	ResetServerPasswordStub        func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)
+	resetServerPasswordMutex       sync.RWMutex
+	resetServerPasswordArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}
+	resetServerPasswordReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	resetServerPasswordReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	ShutdownServerStub        func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)
+	shutdownServerMutex       sync.RWMutex
+	shutdownServerArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}
+	shutdownServerReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	shutdownServerReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	StartServerStub        func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)
+	startServerMutex       sync.RWMutex
+	startServerArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}
+	startServerReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	startServerReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	TransferResourceToAnotherProjectStub        func(context.Context, generated.ProjectId, generated.TransferResourceToAnotherProjectJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
 	transferResourceToAnotherProjectMutex       sync.RWMutex
 	transferResourceToAnotherProjectArgsForCall []struct {
@@ -993,6 +1841,54 @@ type FakeClient struct {
 		result2 error
 	}
 	transferStorageWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UnbindFloatingIpStub        func(context.Context, generated.FloatingIpId, ...generated.RequestEditorFn) (*http.Response, error)
+	unbindFloatingIpMutex       sync.RWMutex
+	unbindFloatingIpArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.FloatingIpId
+		arg3 []generated.RequestEditorFn
+	}
+	unbindFloatingIpReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	unbindFloatingIpReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateFloatingIPStub        func(context.Context, generated.FloatingIpId, generated.UpdateFloatingIPJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	updateFloatingIPMutex       sync.RWMutex
+	updateFloatingIPArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.FloatingIpId
+		arg3 generated.UpdateFloatingIPJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	updateFloatingIPReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateFloatingIPReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateFloatingIPWithBodyStub        func(context.Context, generated.FloatingIpId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	updateFloatingIPWithBodyMutex       sync.RWMutex
+	updateFloatingIPWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.FloatingIpId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	updateFloatingIPWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateFloatingIPWithBodyReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -1095,6 +1991,245 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	UpdateServerStub        func(context.Context, generated.ServerId, generated.UpdateServerJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	updateServerMutex       sync.RWMutex
+	updateServerArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.UpdateServerJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	updateServerReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateServerReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateServerDiskStub        func(context.Context, generated.ServerId, generated.DiskId, generated.UpdateServerDiskJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	updateServerDiskMutex       sync.RWMutex
+	updateServerDiskArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.UpdateServerDiskJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}
+	updateServerDiskReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateServerDiskReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateServerDiskAutoBackupSettingsStub        func(context.Context, generated.ServerId, generated.DiskId, generated.UpdateServerDiskAutoBackupSettingsJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	updateServerDiskAutoBackupSettingsMutex       sync.RWMutex
+	updateServerDiskAutoBackupSettingsArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.UpdateServerDiskAutoBackupSettingsJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}
+	updateServerDiskAutoBackupSettingsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateServerDiskAutoBackupSettingsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateServerDiskAutoBackupSettingsWithBodyStub        func(context.Context, generated.ServerId, generated.DiskId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	updateServerDiskAutoBackupSettingsWithBodyMutex       sync.RWMutex
+	updateServerDiskAutoBackupSettingsWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}
+	updateServerDiskAutoBackupSettingsWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateServerDiskAutoBackupSettingsWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateServerDiskBackupStub        func(context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, generated.UpdateServerDiskBackupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	updateServerDiskBackupMutex       sync.RWMutex
+	updateServerDiskBackupArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.ServerBackupId
+		arg5 generated.UpdateServerDiskBackupJSONRequestBody
+		arg6 []generated.RequestEditorFn
+	}
+	updateServerDiskBackupReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateServerDiskBackupReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateServerDiskBackupWithBodyStub        func(context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	updateServerDiskBackupWithBodyMutex       sync.RWMutex
+	updateServerDiskBackupWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.ServerBackupId
+		arg5 string
+		arg6 io.Reader
+		arg7 []generated.RequestEditorFn
+	}
+	updateServerDiskBackupWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateServerDiskBackupWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateServerDiskWithBodyStub        func(context.Context, generated.ServerId, generated.DiskId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	updateServerDiskWithBodyMutex       sync.RWMutex
+	updateServerDiskWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}
+	updateServerDiskWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateServerDiskWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateServerIPStub        func(context.Context, generated.ServerId, generated.UpdateServerIPJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	updateServerIPMutex       sync.RWMutex
+	updateServerIPArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.UpdateServerIPJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	updateServerIPReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateServerIPReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateServerIPWithBodyStub        func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	updateServerIPWithBodyMutex       sync.RWMutex
+	updateServerIPWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	updateServerIPWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateServerIPWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateServerNATStub        func(context.Context, generated.ServerId, generated.UpdateServerNATJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	updateServerNATMutex       sync.RWMutex
+	updateServerNATArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.UpdateServerNATJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	updateServerNATReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateServerNATReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateServerNATWithBodyStub        func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	updateServerNATWithBodyMutex       sync.RWMutex
+	updateServerNATWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	updateServerNATWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateServerNATWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateServerOSBootModeStub        func(context.Context, generated.ServerId, generated.UpdateServerOSBootModeJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	updateServerOSBootModeMutex       sync.RWMutex
+	updateServerOSBootModeArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.UpdateServerOSBootModeJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	updateServerOSBootModeReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateServerOSBootModeReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateServerOSBootModeWithBodyStub        func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	updateServerOSBootModeWithBodyMutex       sync.RWMutex
+	updateServerOSBootModeWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	updateServerOSBootModeWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateServerOSBootModeWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateServerWithBodyStub        func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	updateServerWithBodyMutex       sync.RWMutex
+	updateServerWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	updateServerWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateServerWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	UpdateStorageStub        func(context.Context, generated.BucketId, generated.UpdateStorageJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
 	updateStorageMutex       sync.RWMutex
 	updateStorageArgsForCall []struct {
@@ -1158,6 +2293,39 @@ type FakeClient struct {
 		result2 error
 	}
 	updateStorageWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateVPCsStub        func(context.Context, generated.VpcId, generated.UpdateVPCsJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	updateVPCsMutex       sync.RWMutex
+	updateVPCsArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.VpcId
+		arg3 generated.UpdateVPCsJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	updateVPCsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateVPCsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateVPCsWithBodyStub        func(context.Context, generated.VpcId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	updateVPCsWithBodyMutex       sync.RWMutex
+	updateVPCsWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.VpcId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	updateVPCsWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateVPCsWithBodyReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -1840,6 +3008,141 @@ func (fake *FakeClient) AddKeyToServerWithBodyReturnsOnCall(i int, result1 *http
 	}{result1, result2}
 }
 
+func (fake *FakeClient) AddServerIP(arg1 context.Context, arg2 generated.ServerId, arg3 generated.AddServerIPJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.addServerIPMutex.Lock()
+	ret, specificReturn := fake.addServerIPReturnsOnCall[len(fake.addServerIPArgsForCall)]
+	fake.addServerIPArgsForCall = append(fake.addServerIPArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.AddServerIPJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.AddServerIPStub
+	fakeReturns := fake.addServerIPReturns
+	fake.recordInvocation("AddServerIP", []interface{}{arg1, arg2, arg3, arg4})
+	fake.addServerIPMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) AddServerIPCallCount() int {
+	fake.addServerIPMutex.RLock()
+	defer fake.addServerIPMutex.RUnlock()
+	return len(fake.addServerIPArgsForCall)
+}
+
+func (fake *FakeClient) AddServerIPCalls(stub func(context.Context, generated.ServerId, generated.AddServerIPJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.addServerIPMutex.Lock()
+	defer fake.addServerIPMutex.Unlock()
+	fake.AddServerIPStub = stub
+}
+
+func (fake *FakeClient) AddServerIPArgsForCall(i int) (context.Context, generated.ServerId, generated.AddServerIPJSONRequestBody, []generated.RequestEditorFn) {
+	fake.addServerIPMutex.RLock()
+	defer fake.addServerIPMutex.RUnlock()
+	argsForCall := fake.addServerIPArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) AddServerIPReturns(result1 *http.Response, result2 error) {
+	fake.addServerIPMutex.Lock()
+	defer fake.addServerIPMutex.Unlock()
+	fake.AddServerIPStub = nil
+	fake.addServerIPReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) AddServerIPReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.addServerIPMutex.Lock()
+	defer fake.addServerIPMutex.Unlock()
+	fake.AddServerIPStub = nil
+	if fake.addServerIPReturnsOnCall == nil {
+		fake.addServerIPReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.addServerIPReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) AddServerIPWithBody(arg1 context.Context, arg2 generated.ServerId, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.addServerIPWithBodyMutex.Lock()
+	ret, specificReturn := fake.addServerIPWithBodyReturnsOnCall[len(fake.addServerIPWithBodyArgsForCall)]
+	fake.addServerIPWithBodyArgsForCall = append(fake.addServerIPWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.AddServerIPWithBodyStub
+	fakeReturns := fake.addServerIPWithBodyReturns
+	fake.recordInvocation("AddServerIPWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.addServerIPWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) AddServerIPWithBodyCallCount() int {
+	fake.addServerIPWithBodyMutex.RLock()
+	defer fake.addServerIPWithBodyMutex.RUnlock()
+	return len(fake.addServerIPWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) AddServerIPWithBodyCalls(stub func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.addServerIPWithBodyMutex.Lock()
+	defer fake.addServerIPWithBodyMutex.Unlock()
+	fake.AddServerIPWithBodyStub = stub
+}
+
+func (fake *FakeClient) AddServerIPWithBodyArgsForCall(i int) (context.Context, generated.ServerId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.addServerIPWithBodyMutex.RLock()
+	defer fake.addServerIPWithBodyMutex.RUnlock()
+	argsForCall := fake.addServerIPWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) AddServerIPWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.addServerIPWithBodyMutex.Lock()
+	defer fake.addServerIPWithBodyMutex.Unlock()
+	fake.AddServerIPWithBodyStub = nil
+	fake.addServerIPWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) AddServerIPWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.addServerIPWithBodyMutex.Lock()
+	defer fake.addServerIPWithBodyMutex.Unlock()
+	fake.AddServerIPWithBodyStub = nil
+	if fake.addServerIPWithBodyReturnsOnCall == nil {
+		fake.addServerIPWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.addServerIPWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) AddServerToProject(arg1 context.Context, arg2 generated.ProjectId, arg3 generated.AddServerToProjectJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.addServerToProjectMutex.Lock()
 	ret, specificReturn := fake.addServerToProjectReturnsOnCall[len(fake.addServerToProjectArgsForCall)]
@@ -2378,6 +3681,340 @@ func (fake *FakeClient) AddStorageToProjectWithBodyReturnsOnCall(i int, result1 
 	}{result1, result2}
 }
 
+func (fake *FakeClient) BindFloatingIp(arg1 context.Context, arg2 generated.FloatingIpId, arg3 generated.BindFloatingIpJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.bindFloatingIpMutex.Lock()
+	ret, specificReturn := fake.bindFloatingIpReturnsOnCall[len(fake.bindFloatingIpArgsForCall)]
+	fake.bindFloatingIpArgsForCall = append(fake.bindFloatingIpArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.FloatingIpId
+		arg3 generated.BindFloatingIpJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.BindFloatingIpStub
+	fakeReturns := fake.bindFloatingIpReturns
+	fake.recordInvocation("BindFloatingIp", []interface{}{arg1, arg2, arg3, arg4})
+	fake.bindFloatingIpMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) BindFloatingIpCallCount() int {
+	fake.bindFloatingIpMutex.RLock()
+	defer fake.bindFloatingIpMutex.RUnlock()
+	return len(fake.bindFloatingIpArgsForCall)
+}
+
+func (fake *FakeClient) BindFloatingIpCalls(stub func(context.Context, generated.FloatingIpId, generated.BindFloatingIpJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.bindFloatingIpMutex.Lock()
+	defer fake.bindFloatingIpMutex.Unlock()
+	fake.BindFloatingIpStub = stub
+}
+
+func (fake *FakeClient) BindFloatingIpArgsForCall(i int) (context.Context, generated.FloatingIpId, generated.BindFloatingIpJSONRequestBody, []generated.RequestEditorFn) {
+	fake.bindFloatingIpMutex.RLock()
+	defer fake.bindFloatingIpMutex.RUnlock()
+	argsForCall := fake.bindFloatingIpArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) BindFloatingIpReturns(result1 *http.Response, result2 error) {
+	fake.bindFloatingIpMutex.Lock()
+	defer fake.bindFloatingIpMutex.Unlock()
+	fake.BindFloatingIpStub = nil
+	fake.bindFloatingIpReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) BindFloatingIpReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.bindFloatingIpMutex.Lock()
+	defer fake.bindFloatingIpMutex.Unlock()
+	fake.BindFloatingIpStub = nil
+	if fake.bindFloatingIpReturnsOnCall == nil {
+		fake.bindFloatingIpReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.bindFloatingIpReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) BindFloatingIpWithBody(arg1 context.Context, arg2 generated.FloatingIpId, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.bindFloatingIpWithBodyMutex.Lock()
+	ret, specificReturn := fake.bindFloatingIpWithBodyReturnsOnCall[len(fake.bindFloatingIpWithBodyArgsForCall)]
+	fake.bindFloatingIpWithBodyArgsForCall = append(fake.bindFloatingIpWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.FloatingIpId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.BindFloatingIpWithBodyStub
+	fakeReturns := fake.bindFloatingIpWithBodyReturns
+	fake.recordInvocation("BindFloatingIpWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.bindFloatingIpWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) BindFloatingIpWithBodyCallCount() int {
+	fake.bindFloatingIpWithBodyMutex.RLock()
+	defer fake.bindFloatingIpWithBodyMutex.RUnlock()
+	return len(fake.bindFloatingIpWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) BindFloatingIpWithBodyCalls(stub func(context.Context, generated.FloatingIpId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.bindFloatingIpWithBodyMutex.Lock()
+	defer fake.bindFloatingIpWithBodyMutex.Unlock()
+	fake.BindFloatingIpWithBodyStub = stub
+}
+
+func (fake *FakeClient) BindFloatingIpWithBodyArgsForCall(i int) (context.Context, generated.FloatingIpId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.bindFloatingIpWithBodyMutex.RLock()
+	defer fake.bindFloatingIpWithBodyMutex.RUnlock()
+	argsForCall := fake.bindFloatingIpWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) BindFloatingIpWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.bindFloatingIpWithBodyMutex.Lock()
+	defer fake.bindFloatingIpWithBodyMutex.Unlock()
+	fake.BindFloatingIpWithBodyStub = nil
+	fake.bindFloatingIpWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) BindFloatingIpWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.bindFloatingIpWithBodyMutex.Lock()
+	defer fake.bindFloatingIpWithBodyMutex.Unlock()
+	fake.BindFloatingIpWithBodyStub = nil
+	if fake.bindFloatingIpWithBodyReturnsOnCall == nil {
+		fake.bindFloatingIpWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.bindFloatingIpWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CloneServer(arg1 context.Context, arg2 generated.ServerId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.cloneServerMutex.Lock()
+	ret, specificReturn := fake.cloneServerReturnsOnCall[len(fake.cloneServerArgsForCall)]
+	fake.cloneServerArgsForCall = append(fake.cloneServerArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.CloneServerStub
+	fakeReturns := fake.cloneServerReturns
+	fake.recordInvocation("CloneServer", []interface{}{arg1, arg2, arg3})
+	fake.cloneServerMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CloneServerCallCount() int {
+	fake.cloneServerMutex.RLock()
+	defer fake.cloneServerMutex.RUnlock()
+	return len(fake.cloneServerArgsForCall)
+}
+
+func (fake *FakeClient) CloneServerCalls(stub func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.cloneServerMutex.Lock()
+	defer fake.cloneServerMutex.Unlock()
+	fake.CloneServerStub = stub
+}
+
+func (fake *FakeClient) CloneServerArgsForCall(i int) (context.Context, generated.ServerId, []generated.RequestEditorFn) {
+	fake.cloneServerMutex.RLock()
+	defer fake.cloneServerMutex.RUnlock()
+	argsForCall := fake.cloneServerArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) CloneServerReturns(result1 *http.Response, result2 error) {
+	fake.cloneServerMutex.Lock()
+	defer fake.cloneServerMutex.Unlock()
+	fake.CloneServerStub = nil
+	fake.cloneServerReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CloneServerReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.cloneServerMutex.Lock()
+	defer fake.cloneServerMutex.Unlock()
+	fake.CloneServerStub = nil
+	if fake.cloneServerReturnsOnCall == nil {
+		fake.cloneServerReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.cloneServerReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateFloatingIp(arg1 context.Context, arg2 generated.CreateFloatingIpJSONRequestBody, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createFloatingIpMutex.Lock()
+	ret, specificReturn := fake.createFloatingIpReturnsOnCall[len(fake.createFloatingIpArgsForCall)]
+	fake.createFloatingIpArgsForCall = append(fake.createFloatingIpArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.CreateFloatingIpJSONRequestBody
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.CreateFloatingIpStub
+	fakeReturns := fake.createFloatingIpReturns
+	fake.recordInvocation("CreateFloatingIp", []interface{}{arg1, arg2, arg3})
+	fake.createFloatingIpMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateFloatingIpCallCount() int {
+	fake.createFloatingIpMutex.RLock()
+	defer fake.createFloatingIpMutex.RUnlock()
+	return len(fake.createFloatingIpArgsForCall)
+}
+
+func (fake *FakeClient) CreateFloatingIpCalls(stub func(context.Context, generated.CreateFloatingIpJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createFloatingIpMutex.Lock()
+	defer fake.createFloatingIpMutex.Unlock()
+	fake.CreateFloatingIpStub = stub
+}
+
+func (fake *FakeClient) CreateFloatingIpArgsForCall(i int) (context.Context, generated.CreateFloatingIpJSONRequestBody, []generated.RequestEditorFn) {
+	fake.createFloatingIpMutex.RLock()
+	defer fake.createFloatingIpMutex.RUnlock()
+	argsForCall := fake.createFloatingIpArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) CreateFloatingIpReturns(result1 *http.Response, result2 error) {
+	fake.createFloatingIpMutex.Lock()
+	defer fake.createFloatingIpMutex.Unlock()
+	fake.CreateFloatingIpStub = nil
+	fake.createFloatingIpReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateFloatingIpReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createFloatingIpMutex.Lock()
+	defer fake.createFloatingIpMutex.Unlock()
+	fake.CreateFloatingIpStub = nil
+	if fake.createFloatingIpReturnsOnCall == nil {
+		fake.createFloatingIpReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createFloatingIpReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateFloatingIpWithBody(arg1 context.Context, arg2 string, arg3 io.Reader, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createFloatingIpWithBodyMutex.Lock()
+	ret, specificReturn := fake.createFloatingIpWithBodyReturnsOnCall[len(fake.createFloatingIpWithBodyArgsForCall)]
+	fake.createFloatingIpWithBodyArgsForCall = append(fake.createFloatingIpWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 io.Reader
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.CreateFloatingIpWithBodyStub
+	fakeReturns := fake.createFloatingIpWithBodyReturns
+	fake.recordInvocation("CreateFloatingIpWithBody", []interface{}{arg1, arg2, arg3, arg4})
+	fake.createFloatingIpWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateFloatingIpWithBodyCallCount() int {
+	fake.createFloatingIpWithBodyMutex.RLock()
+	defer fake.createFloatingIpWithBodyMutex.RUnlock()
+	return len(fake.createFloatingIpWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) CreateFloatingIpWithBodyCalls(stub func(context.Context, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createFloatingIpWithBodyMutex.Lock()
+	defer fake.createFloatingIpWithBodyMutex.Unlock()
+	fake.CreateFloatingIpWithBodyStub = stub
+}
+
+func (fake *FakeClient) CreateFloatingIpWithBodyArgsForCall(i int) (context.Context, string, io.Reader, []generated.RequestEditorFn) {
+	fake.createFloatingIpWithBodyMutex.RLock()
+	defer fake.createFloatingIpWithBodyMutex.RUnlock()
+	argsForCall := fake.createFloatingIpWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) CreateFloatingIpWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.createFloatingIpWithBodyMutex.Lock()
+	defer fake.createFloatingIpWithBodyMutex.Unlock()
+	fake.CreateFloatingIpWithBodyStub = nil
+	fake.createFloatingIpWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateFloatingIpWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createFloatingIpWithBodyMutex.Lock()
+	defer fake.createFloatingIpWithBodyMutex.Unlock()
+	fake.CreateFloatingIpWithBodyStub = nil
+	if fake.createFloatingIpWithBodyReturnsOnCall == nil {
+		fake.createFloatingIpWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createFloatingIpWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) CreateKey(arg1 context.Context, arg2 generated.CreateKeyJSONRequestBody, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.createKeyMutex.Lock()
 	ret, specificReturn := fake.createKeyReturnsOnCall[len(fake.createKeyArgsForCall)]
@@ -2777,6 +4414,411 @@ func (fake *FakeClient) CreateRegistryWithBodyReturnsOnCall(i int, result1 *http
 	}{result1, result2}
 }
 
+func (fake *FakeClient) CreateServer(arg1 context.Context, arg2 generated.CreateServerJSONRequestBody, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createServerMutex.Lock()
+	ret, specificReturn := fake.createServerReturnsOnCall[len(fake.createServerArgsForCall)]
+	fake.createServerArgsForCall = append(fake.createServerArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.CreateServerJSONRequestBody
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.CreateServerStub
+	fakeReturns := fake.createServerReturns
+	fake.recordInvocation("CreateServer", []interface{}{arg1, arg2, arg3})
+	fake.createServerMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateServerCallCount() int {
+	fake.createServerMutex.RLock()
+	defer fake.createServerMutex.RUnlock()
+	return len(fake.createServerArgsForCall)
+}
+
+func (fake *FakeClient) CreateServerCalls(stub func(context.Context, generated.CreateServerJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createServerMutex.Lock()
+	defer fake.createServerMutex.Unlock()
+	fake.CreateServerStub = stub
+}
+
+func (fake *FakeClient) CreateServerArgsForCall(i int) (context.Context, generated.CreateServerJSONRequestBody, []generated.RequestEditorFn) {
+	fake.createServerMutex.RLock()
+	defer fake.createServerMutex.RUnlock()
+	argsForCall := fake.createServerArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) CreateServerReturns(result1 *http.Response, result2 error) {
+	fake.createServerMutex.Lock()
+	defer fake.createServerMutex.Unlock()
+	fake.CreateServerStub = nil
+	fake.createServerReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateServerReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createServerMutex.Lock()
+	defer fake.createServerMutex.Unlock()
+	fake.CreateServerStub = nil
+	if fake.createServerReturnsOnCall == nil {
+		fake.createServerReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createServerReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateServerDisk(arg1 context.Context, arg2 generated.ServerId, arg3 generated.CreateServerDiskJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createServerDiskMutex.Lock()
+	ret, specificReturn := fake.createServerDiskReturnsOnCall[len(fake.createServerDiskArgsForCall)]
+	fake.createServerDiskArgsForCall = append(fake.createServerDiskArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.CreateServerDiskJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.CreateServerDiskStub
+	fakeReturns := fake.createServerDiskReturns
+	fake.recordInvocation("CreateServerDisk", []interface{}{arg1, arg2, arg3, arg4})
+	fake.createServerDiskMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateServerDiskCallCount() int {
+	fake.createServerDiskMutex.RLock()
+	defer fake.createServerDiskMutex.RUnlock()
+	return len(fake.createServerDiskArgsForCall)
+}
+
+func (fake *FakeClient) CreateServerDiskCalls(stub func(context.Context, generated.ServerId, generated.CreateServerDiskJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createServerDiskMutex.Lock()
+	defer fake.createServerDiskMutex.Unlock()
+	fake.CreateServerDiskStub = stub
+}
+
+func (fake *FakeClient) CreateServerDiskArgsForCall(i int) (context.Context, generated.ServerId, generated.CreateServerDiskJSONRequestBody, []generated.RequestEditorFn) {
+	fake.createServerDiskMutex.RLock()
+	defer fake.createServerDiskMutex.RUnlock()
+	argsForCall := fake.createServerDiskArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) CreateServerDiskReturns(result1 *http.Response, result2 error) {
+	fake.createServerDiskMutex.Lock()
+	defer fake.createServerDiskMutex.Unlock()
+	fake.CreateServerDiskStub = nil
+	fake.createServerDiskReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateServerDiskReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createServerDiskMutex.Lock()
+	defer fake.createServerDiskMutex.Unlock()
+	fake.CreateServerDiskStub = nil
+	if fake.createServerDiskReturnsOnCall == nil {
+		fake.createServerDiskReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createServerDiskReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateServerDiskBackup(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 generated.CreateServerDiskBackupJSONRequestBody, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createServerDiskBackupMutex.Lock()
+	ret, specificReturn := fake.createServerDiskBackupReturnsOnCall[len(fake.createServerDiskBackupArgsForCall)]
+	fake.createServerDiskBackupArgsForCall = append(fake.createServerDiskBackupArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.CreateServerDiskBackupJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.CreateServerDiskBackupStub
+	fakeReturns := fake.createServerDiskBackupReturns
+	fake.recordInvocation("CreateServerDiskBackup", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.createServerDiskBackupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateServerDiskBackupCallCount() int {
+	fake.createServerDiskBackupMutex.RLock()
+	defer fake.createServerDiskBackupMutex.RUnlock()
+	return len(fake.createServerDiskBackupArgsForCall)
+}
+
+func (fake *FakeClient) CreateServerDiskBackupCalls(stub func(context.Context, generated.ServerId, generated.DiskId, generated.CreateServerDiskBackupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createServerDiskBackupMutex.Lock()
+	defer fake.createServerDiskBackupMutex.Unlock()
+	fake.CreateServerDiskBackupStub = stub
+}
+
+func (fake *FakeClient) CreateServerDiskBackupArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, generated.CreateServerDiskBackupJSONRequestBody, []generated.RequestEditorFn) {
+	fake.createServerDiskBackupMutex.RLock()
+	defer fake.createServerDiskBackupMutex.RUnlock()
+	argsForCall := fake.createServerDiskBackupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) CreateServerDiskBackupReturns(result1 *http.Response, result2 error) {
+	fake.createServerDiskBackupMutex.Lock()
+	defer fake.createServerDiskBackupMutex.Unlock()
+	fake.CreateServerDiskBackupStub = nil
+	fake.createServerDiskBackupReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateServerDiskBackupReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createServerDiskBackupMutex.Lock()
+	defer fake.createServerDiskBackupMutex.Unlock()
+	fake.CreateServerDiskBackupStub = nil
+	if fake.createServerDiskBackupReturnsOnCall == nil {
+		fake.createServerDiskBackupReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createServerDiskBackupReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateServerDiskBackupWithBody(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 string, arg5 io.Reader, arg6 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createServerDiskBackupWithBodyMutex.Lock()
+	ret, specificReturn := fake.createServerDiskBackupWithBodyReturnsOnCall[len(fake.createServerDiskBackupWithBodyArgsForCall)]
+	fake.createServerDiskBackupWithBodyArgsForCall = append(fake.createServerDiskBackupWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6})
+	stub := fake.CreateServerDiskBackupWithBodyStub
+	fakeReturns := fake.createServerDiskBackupWithBodyReturns
+	fake.recordInvocation("CreateServerDiskBackupWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6})
+	fake.createServerDiskBackupWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateServerDiskBackupWithBodyCallCount() int {
+	fake.createServerDiskBackupWithBodyMutex.RLock()
+	defer fake.createServerDiskBackupWithBodyMutex.RUnlock()
+	return len(fake.createServerDiskBackupWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) CreateServerDiskBackupWithBodyCalls(stub func(context.Context, generated.ServerId, generated.DiskId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createServerDiskBackupWithBodyMutex.Lock()
+	defer fake.createServerDiskBackupWithBodyMutex.Unlock()
+	fake.CreateServerDiskBackupWithBodyStub = stub
+}
+
+func (fake *FakeClient) CreateServerDiskBackupWithBodyArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.createServerDiskBackupWithBodyMutex.RLock()
+	defer fake.createServerDiskBackupWithBodyMutex.RUnlock()
+	argsForCall := fake.createServerDiskBackupWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6
+}
+
+func (fake *FakeClient) CreateServerDiskBackupWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.createServerDiskBackupWithBodyMutex.Lock()
+	defer fake.createServerDiskBackupWithBodyMutex.Unlock()
+	fake.CreateServerDiskBackupWithBodyStub = nil
+	fake.createServerDiskBackupWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateServerDiskBackupWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createServerDiskBackupWithBodyMutex.Lock()
+	defer fake.createServerDiskBackupWithBodyMutex.Unlock()
+	fake.CreateServerDiskBackupWithBodyStub = nil
+	if fake.createServerDiskBackupWithBodyReturnsOnCall == nil {
+		fake.createServerDiskBackupWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createServerDiskBackupWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateServerDiskWithBody(arg1 context.Context, arg2 generated.ServerId, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createServerDiskWithBodyMutex.Lock()
+	ret, specificReturn := fake.createServerDiskWithBodyReturnsOnCall[len(fake.createServerDiskWithBodyArgsForCall)]
+	fake.createServerDiskWithBodyArgsForCall = append(fake.createServerDiskWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.CreateServerDiskWithBodyStub
+	fakeReturns := fake.createServerDiskWithBodyReturns
+	fake.recordInvocation("CreateServerDiskWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.createServerDiskWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateServerDiskWithBodyCallCount() int {
+	fake.createServerDiskWithBodyMutex.RLock()
+	defer fake.createServerDiskWithBodyMutex.RUnlock()
+	return len(fake.createServerDiskWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) CreateServerDiskWithBodyCalls(stub func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createServerDiskWithBodyMutex.Lock()
+	defer fake.createServerDiskWithBodyMutex.Unlock()
+	fake.CreateServerDiskWithBodyStub = stub
+}
+
+func (fake *FakeClient) CreateServerDiskWithBodyArgsForCall(i int) (context.Context, generated.ServerId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.createServerDiskWithBodyMutex.RLock()
+	defer fake.createServerDiskWithBodyMutex.RUnlock()
+	argsForCall := fake.createServerDiskWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) CreateServerDiskWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.createServerDiskWithBodyMutex.Lock()
+	defer fake.createServerDiskWithBodyMutex.Unlock()
+	fake.CreateServerDiskWithBodyStub = nil
+	fake.createServerDiskWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateServerDiskWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createServerDiskWithBodyMutex.Lock()
+	defer fake.createServerDiskWithBodyMutex.Unlock()
+	fake.CreateServerDiskWithBodyStub = nil
+	if fake.createServerDiskWithBodyReturnsOnCall == nil {
+		fake.createServerDiskWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createServerDiskWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateServerWithBody(arg1 context.Context, arg2 string, arg3 io.Reader, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createServerWithBodyMutex.Lock()
+	ret, specificReturn := fake.createServerWithBodyReturnsOnCall[len(fake.createServerWithBodyArgsForCall)]
+	fake.createServerWithBodyArgsForCall = append(fake.createServerWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 io.Reader
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.CreateServerWithBodyStub
+	fakeReturns := fake.createServerWithBodyReturns
+	fake.recordInvocation("CreateServerWithBody", []interface{}{arg1, arg2, arg3, arg4})
+	fake.createServerWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateServerWithBodyCallCount() int {
+	fake.createServerWithBodyMutex.RLock()
+	defer fake.createServerWithBodyMutex.RUnlock()
+	return len(fake.createServerWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) CreateServerWithBodyCalls(stub func(context.Context, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createServerWithBodyMutex.Lock()
+	defer fake.createServerWithBodyMutex.Unlock()
+	fake.CreateServerWithBodyStub = stub
+}
+
+func (fake *FakeClient) CreateServerWithBodyArgsForCall(i int) (context.Context, string, io.Reader, []generated.RequestEditorFn) {
+	fake.createServerWithBodyMutex.RLock()
+	defer fake.createServerWithBodyMutex.RUnlock()
+	argsForCall := fake.createServerWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) CreateServerWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.createServerWithBodyMutex.Lock()
+	defer fake.createServerWithBodyMutex.Unlock()
+	fake.CreateServerWithBodyStub = nil
+	fake.createServerWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateServerWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createServerWithBodyMutex.Lock()
+	defer fake.createServerWithBodyMutex.Unlock()
+	fake.CreateServerWithBodyStub = nil
+	if fake.createServerWithBodyReturnsOnCall == nil {
+		fake.createServerWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createServerWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) CreateStorage(arg1 context.Context, arg2 generated.CreateStorageJSONRequestBody, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.createStorageMutex.Lock()
 	ret, specificReturn := fake.createStorageReturnsOnCall[len(fake.createStorageArgsForCall)]
@@ -2905,6 +4947,205 @@ func (fake *FakeClient) CreateStorageWithBodyReturnsOnCall(i int, result1 *http.
 		})
 	}
 	fake.createStorageWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateVPC(arg1 context.Context, arg2 generated.CreateVPCJSONRequestBody, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createVPCMutex.Lock()
+	ret, specificReturn := fake.createVPCReturnsOnCall[len(fake.createVPCArgsForCall)]
+	fake.createVPCArgsForCall = append(fake.createVPCArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.CreateVPCJSONRequestBody
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.CreateVPCStub
+	fakeReturns := fake.createVPCReturns
+	fake.recordInvocation("CreateVPC", []interface{}{arg1, arg2, arg3})
+	fake.createVPCMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateVPCCallCount() int {
+	fake.createVPCMutex.RLock()
+	defer fake.createVPCMutex.RUnlock()
+	return len(fake.createVPCArgsForCall)
+}
+
+func (fake *FakeClient) CreateVPCCalls(stub func(context.Context, generated.CreateVPCJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createVPCMutex.Lock()
+	defer fake.createVPCMutex.Unlock()
+	fake.CreateVPCStub = stub
+}
+
+func (fake *FakeClient) CreateVPCArgsForCall(i int) (context.Context, generated.CreateVPCJSONRequestBody, []generated.RequestEditorFn) {
+	fake.createVPCMutex.RLock()
+	defer fake.createVPCMutex.RUnlock()
+	argsForCall := fake.createVPCArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) CreateVPCReturns(result1 *http.Response, result2 error) {
+	fake.createVPCMutex.Lock()
+	defer fake.createVPCMutex.Unlock()
+	fake.CreateVPCStub = nil
+	fake.createVPCReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateVPCReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createVPCMutex.Lock()
+	defer fake.createVPCMutex.Unlock()
+	fake.CreateVPCStub = nil
+	if fake.createVPCReturnsOnCall == nil {
+		fake.createVPCReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createVPCReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateVPCWithBody(arg1 context.Context, arg2 string, arg3 io.Reader, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createVPCWithBodyMutex.Lock()
+	ret, specificReturn := fake.createVPCWithBodyReturnsOnCall[len(fake.createVPCWithBodyArgsForCall)]
+	fake.createVPCWithBodyArgsForCall = append(fake.createVPCWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 io.Reader
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.CreateVPCWithBodyStub
+	fakeReturns := fake.createVPCWithBodyReturns
+	fake.recordInvocation("CreateVPCWithBody", []interface{}{arg1, arg2, arg3, arg4})
+	fake.createVPCWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateVPCWithBodyCallCount() int {
+	fake.createVPCWithBodyMutex.RLock()
+	defer fake.createVPCWithBodyMutex.RUnlock()
+	return len(fake.createVPCWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) CreateVPCWithBodyCalls(stub func(context.Context, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createVPCWithBodyMutex.Lock()
+	defer fake.createVPCWithBodyMutex.Unlock()
+	fake.CreateVPCWithBodyStub = stub
+}
+
+func (fake *FakeClient) CreateVPCWithBodyArgsForCall(i int) (context.Context, string, io.Reader, []generated.RequestEditorFn) {
+	fake.createVPCWithBodyMutex.RLock()
+	defer fake.createVPCWithBodyMutex.RUnlock()
+	argsForCall := fake.createVPCWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) CreateVPCWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.createVPCWithBodyMutex.Lock()
+	defer fake.createVPCWithBodyMutex.Unlock()
+	fake.CreateVPCWithBodyStub = nil
+	fake.createVPCWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateVPCWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createVPCWithBodyMutex.Lock()
+	defer fake.createVPCWithBodyMutex.Unlock()
+	fake.CreateVPCWithBodyStub = nil
+	if fake.createVPCWithBodyReturnsOnCall == nil {
+		fake.createVPCWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createVPCWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteFloatingIP(arg1 context.Context, arg2 generated.FloatingIpId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteFloatingIPMutex.Lock()
+	ret, specificReturn := fake.deleteFloatingIPReturnsOnCall[len(fake.deleteFloatingIPArgsForCall)]
+	fake.deleteFloatingIPArgsForCall = append(fake.deleteFloatingIPArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.FloatingIpId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.DeleteFloatingIPStub
+	fakeReturns := fake.deleteFloatingIPReturns
+	fake.recordInvocation("DeleteFloatingIP", []interface{}{arg1, arg2, arg3})
+	fake.deleteFloatingIPMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteFloatingIPCallCount() int {
+	fake.deleteFloatingIPMutex.RLock()
+	defer fake.deleteFloatingIPMutex.RUnlock()
+	return len(fake.deleteFloatingIPArgsForCall)
+}
+
+func (fake *FakeClient) DeleteFloatingIPCalls(stub func(context.Context, generated.FloatingIpId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteFloatingIPMutex.Lock()
+	defer fake.deleteFloatingIPMutex.Unlock()
+	fake.DeleteFloatingIPStub = stub
+}
+
+func (fake *FakeClient) DeleteFloatingIPArgsForCall(i int) (context.Context, generated.FloatingIpId, []generated.RequestEditorFn) {
+	fake.deleteFloatingIPMutex.RLock()
+	defer fake.deleteFloatingIPMutex.RUnlock()
+	argsForCall := fake.deleteFloatingIPArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) DeleteFloatingIPReturns(result1 *http.Response, result2 error) {
+	fake.deleteFloatingIPMutex.Lock()
+	defer fake.deleteFloatingIPMutex.Unlock()
+	fake.DeleteFloatingIPStub = nil
+	fake.deleteFloatingIPReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteFloatingIPReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteFloatingIPMutex.Lock()
+	defer fake.deleteFloatingIPMutex.Unlock()
+	fake.DeleteFloatingIPStub = nil
+	if fake.deleteFloatingIPReturnsOnCall == nil {
+		fake.deleteFloatingIPReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteFloatingIPReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -3175,6 +5416,343 @@ func (fake *FakeClient) DeleteRegistryReturnsOnCall(i int, result1 *http.Respons
 	}{result1, result2}
 }
 
+func (fake *FakeClient) DeleteServer(arg1 context.Context, arg2 generated.ServerId, arg3 *generated.DeleteServerParams, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteServerMutex.Lock()
+	ret, specificReturn := fake.deleteServerReturnsOnCall[len(fake.deleteServerArgsForCall)]
+	fake.deleteServerArgsForCall = append(fake.deleteServerArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 *generated.DeleteServerParams
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.DeleteServerStub
+	fakeReturns := fake.deleteServerReturns
+	fake.recordInvocation("DeleteServer", []interface{}{arg1, arg2, arg3, arg4})
+	fake.deleteServerMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteServerCallCount() int {
+	fake.deleteServerMutex.RLock()
+	defer fake.deleteServerMutex.RUnlock()
+	return len(fake.deleteServerArgsForCall)
+}
+
+func (fake *FakeClient) DeleteServerCalls(stub func(context.Context, generated.ServerId, *generated.DeleteServerParams, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteServerMutex.Lock()
+	defer fake.deleteServerMutex.Unlock()
+	fake.DeleteServerStub = stub
+}
+
+func (fake *FakeClient) DeleteServerArgsForCall(i int) (context.Context, generated.ServerId, *generated.DeleteServerParams, []generated.RequestEditorFn) {
+	fake.deleteServerMutex.RLock()
+	defer fake.deleteServerMutex.RUnlock()
+	argsForCall := fake.deleteServerArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) DeleteServerReturns(result1 *http.Response, result2 error) {
+	fake.deleteServerMutex.Lock()
+	defer fake.deleteServerMutex.Unlock()
+	fake.DeleteServerStub = nil
+	fake.deleteServerReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteServerReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteServerMutex.Lock()
+	defer fake.deleteServerMutex.Unlock()
+	fake.DeleteServerStub = nil
+	if fake.deleteServerReturnsOnCall == nil {
+		fake.deleteServerReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteServerReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteServerDisk(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteServerDiskMutex.Lock()
+	ret, specificReturn := fake.deleteServerDiskReturnsOnCall[len(fake.deleteServerDiskArgsForCall)]
+	fake.deleteServerDiskArgsForCall = append(fake.deleteServerDiskArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.DeleteServerDiskStub
+	fakeReturns := fake.deleteServerDiskReturns
+	fake.recordInvocation("DeleteServerDisk", []interface{}{arg1, arg2, arg3, arg4})
+	fake.deleteServerDiskMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteServerDiskCallCount() int {
+	fake.deleteServerDiskMutex.RLock()
+	defer fake.deleteServerDiskMutex.RUnlock()
+	return len(fake.deleteServerDiskArgsForCall)
+}
+
+func (fake *FakeClient) DeleteServerDiskCalls(stub func(context.Context, generated.ServerId, generated.DiskId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteServerDiskMutex.Lock()
+	defer fake.deleteServerDiskMutex.Unlock()
+	fake.DeleteServerDiskStub = stub
+}
+
+func (fake *FakeClient) DeleteServerDiskArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, []generated.RequestEditorFn) {
+	fake.deleteServerDiskMutex.RLock()
+	defer fake.deleteServerDiskMutex.RUnlock()
+	argsForCall := fake.deleteServerDiskArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) DeleteServerDiskReturns(result1 *http.Response, result2 error) {
+	fake.deleteServerDiskMutex.Lock()
+	defer fake.deleteServerDiskMutex.Unlock()
+	fake.DeleteServerDiskStub = nil
+	fake.deleteServerDiskReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteServerDiskReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteServerDiskMutex.Lock()
+	defer fake.deleteServerDiskMutex.Unlock()
+	fake.DeleteServerDiskStub = nil
+	if fake.deleteServerDiskReturnsOnCall == nil {
+		fake.deleteServerDiskReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteServerDiskReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteServerDiskBackup(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 generated.ServerBackupId, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteServerDiskBackupMutex.Lock()
+	ret, specificReturn := fake.deleteServerDiskBackupReturnsOnCall[len(fake.deleteServerDiskBackupArgsForCall)]
+	fake.deleteServerDiskBackupArgsForCall = append(fake.deleteServerDiskBackupArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.ServerBackupId
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.DeleteServerDiskBackupStub
+	fakeReturns := fake.deleteServerDiskBackupReturns
+	fake.recordInvocation("DeleteServerDiskBackup", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.deleteServerDiskBackupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteServerDiskBackupCallCount() int {
+	fake.deleteServerDiskBackupMutex.RLock()
+	defer fake.deleteServerDiskBackupMutex.RUnlock()
+	return len(fake.deleteServerDiskBackupArgsForCall)
+}
+
+func (fake *FakeClient) DeleteServerDiskBackupCalls(stub func(context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteServerDiskBackupMutex.Lock()
+	defer fake.deleteServerDiskBackupMutex.Unlock()
+	fake.DeleteServerDiskBackupStub = stub
+}
+
+func (fake *FakeClient) DeleteServerDiskBackupArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, []generated.RequestEditorFn) {
+	fake.deleteServerDiskBackupMutex.RLock()
+	defer fake.deleteServerDiskBackupMutex.RUnlock()
+	argsForCall := fake.deleteServerDiskBackupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) DeleteServerDiskBackupReturns(result1 *http.Response, result2 error) {
+	fake.deleteServerDiskBackupMutex.Lock()
+	defer fake.deleteServerDiskBackupMutex.Unlock()
+	fake.DeleteServerDiskBackupStub = nil
+	fake.deleteServerDiskBackupReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteServerDiskBackupReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteServerDiskBackupMutex.Lock()
+	defer fake.deleteServerDiskBackupMutex.Unlock()
+	fake.DeleteServerDiskBackupStub = nil
+	if fake.deleteServerDiskBackupReturnsOnCall == nil {
+		fake.deleteServerDiskBackupReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteServerDiskBackupReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteServerIP(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DeleteServerIPJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteServerIPMutex.Lock()
+	ret, specificReturn := fake.deleteServerIPReturnsOnCall[len(fake.deleteServerIPArgsForCall)]
+	fake.deleteServerIPArgsForCall = append(fake.deleteServerIPArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DeleteServerIPJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.DeleteServerIPStub
+	fakeReturns := fake.deleteServerIPReturns
+	fake.recordInvocation("DeleteServerIP", []interface{}{arg1, arg2, arg3, arg4})
+	fake.deleteServerIPMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteServerIPCallCount() int {
+	fake.deleteServerIPMutex.RLock()
+	defer fake.deleteServerIPMutex.RUnlock()
+	return len(fake.deleteServerIPArgsForCall)
+}
+
+func (fake *FakeClient) DeleteServerIPCalls(stub func(context.Context, generated.ServerId, generated.DeleteServerIPJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteServerIPMutex.Lock()
+	defer fake.deleteServerIPMutex.Unlock()
+	fake.DeleteServerIPStub = stub
+}
+
+func (fake *FakeClient) DeleteServerIPArgsForCall(i int) (context.Context, generated.ServerId, generated.DeleteServerIPJSONRequestBody, []generated.RequestEditorFn) {
+	fake.deleteServerIPMutex.RLock()
+	defer fake.deleteServerIPMutex.RUnlock()
+	argsForCall := fake.deleteServerIPArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) DeleteServerIPReturns(result1 *http.Response, result2 error) {
+	fake.deleteServerIPMutex.Lock()
+	defer fake.deleteServerIPMutex.Unlock()
+	fake.DeleteServerIPStub = nil
+	fake.deleteServerIPReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteServerIPReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteServerIPMutex.Lock()
+	defer fake.deleteServerIPMutex.Unlock()
+	fake.DeleteServerIPStub = nil
+	if fake.deleteServerIPReturnsOnCall == nil {
+		fake.deleteServerIPReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteServerIPReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteServerIPWithBody(arg1 context.Context, arg2 generated.ServerId, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteServerIPWithBodyMutex.Lock()
+	ret, specificReturn := fake.deleteServerIPWithBodyReturnsOnCall[len(fake.deleteServerIPWithBodyArgsForCall)]
+	fake.deleteServerIPWithBodyArgsForCall = append(fake.deleteServerIPWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.DeleteServerIPWithBodyStub
+	fakeReturns := fake.deleteServerIPWithBodyReturns
+	fake.recordInvocation("DeleteServerIPWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.deleteServerIPWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteServerIPWithBodyCallCount() int {
+	fake.deleteServerIPWithBodyMutex.RLock()
+	defer fake.deleteServerIPWithBodyMutex.RUnlock()
+	return len(fake.deleteServerIPWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) DeleteServerIPWithBodyCalls(stub func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteServerIPWithBodyMutex.Lock()
+	defer fake.deleteServerIPWithBodyMutex.Unlock()
+	fake.DeleteServerIPWithBodyStub = stub
+}
+
+func (fake *FakeClient) DeleteServerIPWithBodyArgsForCall(i int) (context.Context, generated.ServerId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.deleteServerIPWithBodyMutex.RLock()
+	defer fake.deleteServerIPWithBodyMutex.RUnlock()
+	argsForCall := fake.deleteServerIPWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) DeleteServerIPWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.deleteServerIPWithBodyMutex.Lock()
+	defer fake.deleteServerIPWithBodyMutex.Unlock()
+	fake.DeleteServerIPWithBodyStub = nil
+	fake.deleteServerIPWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteServerIPWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteServerIPWithBodyMutex.Lock()
+	defer fake.deleteServerIPWithBodyMutex.Unlock()
+	fake.DeleteServerIPWithBodyStub = nil
+	if fake.deleteServerIPWithBodyReturnsOnCall == nil {
+		fake.deleteServerIPWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteServerIPWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) DeleteStorage(arg1 context.Context, arg2 generated.BucketId, arg3 *generated.DeleteStorageParams, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.deleteStorageMutex.Lock()
 	ret, specificReturn := fake.deleteStorageReturnsOnCall[len(fake.deleteStorageArgsForCall)]
@@ -3372,6 +5950,72 @@ func (fake *FakeClient) DeleteStorageSubdomainsWithBodyReturnsOnCall(i int, resu
 		})
 	}
 	fake.deleteStorageSubdomainsWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteVPC(arg1 context.Context, arg2 generated.VpcId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteVPCMutex.Lock()
+	ret, specificReturn := fake.deleteVPCReturnsOnCall[len(fake.deleteVPCArgsForCall)]
+	fake.deleteVPCArgsForCall = append(fake.deleteVPCArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.VpcId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.DeleteVPCStub
+	fakeReturns := fake.deleteVPCReturns
+	fake.recordInvocation("DeleteVPC", []interface{}{arg1, arg2, arg3})
+	fake.deleteVPCMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteVPCCallCount() int {
+	fake.deleteVPCMutex.RLock()
+	defer fake.deleteVPCMutex.RUnlock()
+	return len(fake.deleteVPCArgsForCall)
+}
+
+func (fake *FakeClient) DeleteVPCCalls(stub func(context.Context, generated.VpcId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteVPCMutex.Lock()
+	defer fake.deleteVPCMutex.Unlock()
+	fake.DeleteVPCStub = stub
+}
+
+func (fake *FakeClient) DeleteVPCArgsForCall(i int) (context.Context, generated.VpcId, []generated.RequestEditorFn) {
+	fake.deleteVPCMutex.RLock()
+	defer fake.deleteVPCMutex.RUnlock()
+	argsForCall := fake.deleteVPCArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) DeleteVPCReturns(result1 *http.Response, result2 error) {
+	fake.deleteVPCMutex.Lock()
+	defer fake.deleteVPCMutex.Unlock()
+	fake.DeleteVPCStub = nil
+	fake.deleteVPCReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteVPCReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteVPCMutex.Lock()
+	defer fake.deleteVPCMutex.Unlock()
+	fake.DeleteVPCStub = nil
+	if fake.deleteVPCReturnsOnCall == nil {
+		fake.deleteVPCReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteVPCReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -3833,6 +6477,202 @@ func (fake *FakeClient) GetAllProjectResourcesReturnsOnCall(i int, result1 *http
 	}{result1, result2}
 }
 
+func (fake *FakeClient) GetConfigurators(arg1 context.Context, arg2 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getConfiguratorsMutex.Lock()
+	ret, specificReturn := fake.getConfiguratorsReturnsOnCall[len(fake.getConfiguratorsArgsForCall)]
+	fake.getConfiguratorsArgsForCall = append(fake.getConfiguratorsArgsForCall, struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}{arg1, arg2})
+	stub := fake.GetConfiguratorsStub
+	fakeReturns := fake.getConfiguratorsReturns
+	fake.recordInvocation("GetConfigurators", []interface{}{arg1, arg2})
+	fake.getConfiguratorsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetConfiguratorsCallCount() int {
+	fake.getConfiguratorsMutex.RLock()
+	defer fake.getConfiguratorsMutex.RUnlock()
+	return len(fake.getConfiguratorsArgsForCall)
+}
+
+func (fake *FakeClient) GetConfiguratorsCalls(stub func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getConfiguratorsMutex.Lock()
+	defer fake.getConfiguratorsMutex.Unlock()
+	fake.GetConfiguratorsStub = stub
+}
+
+func (fake *FakeClient) GetConfiguratorsArgsForCall(i int) (context.Context, []generated.RequestEditorFn) {
+	fake.getConfiguratorsMutex.RLock()
+	defer fake.getConfiguratorsMutex.RUnlock()
+	argsForCall := fake.getConfiguratorsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeClient) GetConfiguratorsReturns(result1 *http.Response, result2 error) {
+	fake.getConfiguratorsMutex.Lock()
+	defer fake.getConfiguratorsMutex.Unlock()
+	fake.GetConfiguratorsStub = nil
+	fake.getConfiguratorsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetConfiguratorsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getConfiguratorsMutex.Lock()
+	defer fake.getConfiguratorsMutex.Unlock()
+	fake.GetConfiguratorsStub = nil
+	if fake.getConfiguratorsReturnsOnCall == nil {
+		fake.getConfiguratorsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getConfiguratorsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetFloatingIp(arg1 context.Context, arg2 generated.FloatingIpId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getFloatingIpMutex.Lock()
+	ret, specificReturn := fake.getFloatingIpReturnsOnCall[len(fake.getFloatingIpArgsForCall)]
+	fake.getFloatingIpArgsForCall = append(fake.getFloatingIpArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.FloatingIpId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetFloatingIpStub
+	fakeReturns := fake.getFloatingIpReturns
+	fake.recordInvocation("GetFloatingIp", []interface{}{arg1, arg2, arg3})
+	fake.getFloatingIpMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetFloatingIpCallCount() int {
+	fake.getFloatingIpMutex.RLock()
+	defer fake.getFloatingIpMutex.RUnlock()
+	return len(fake.getFloatingIpArgsForCall)
+}
+
+func (fake *FakeClient) GetFloatingIpCalls(stub func(context.Context, generated.FloatingIpId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getFloatingIpMutex.Lock()
+	defer fake.getFloatingIpMutex.Unlock()
+	fake.GetFloatingIpStub = stub
+}
+
+func (fake *FakeClient) GetFloatingIpArgsForCall(i int) (context.Context, generated.FloatingIpId, []generated.RequestEditorFn) {
+	fake.getFloatingIpMutex.RLock()
+	defer fake.getFloatingIpMutex.RUnlock()
+	argsForCall := fake.getFloatingIpArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetFloatingIpReturns(result1 *http.Response, result2 error) {
+	fake.getFloatingIpMutex.Lock()
+	defer fake.getFloatingIpMutex.Unlock()
+	fake.GetFloatingIpStub = nil
+	fake.getFloatingIpReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetFloatingIpReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getFloatingIpMutex.Lock()
+	defer fake.getFloatingIpMutex.Unlock()
+	fake.GetFloatingIpStub = nil
+	if fake.getFloatingIpReturnsOnCall == nil {
+		fake.getFloatingIpReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getFloatingIpReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetFloatingIps(arg1 context.Context, arg2 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getFloatingIpsMutex.Lock()
+	ret, specificReturn := fake.getFloatingIpsReturnsOnCall[len(fake.getFloatingIpsArgsForCall)]
+	fake.getFloatingIpsArgsForCall = append(fake.getFloatingIpsArgsForCall, struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}{arg1, arg2})
+	stub := fake.GetFloatingIpsStub
+	fakeReturns := fake.getFloatingIpsReturns
+	fake.recordInvocation("GetFloatingIps", []interface{}{arg1, arg2})
+	fake.getFloatingIpsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetFloatingIpsCallCount() int {
+	fake.getFloatingIpsMutex.RLock()
+	defer fake.getFloatingIpsMutex.RUnlock()
+	return len(fake.getFloatingIpsArgsForCall)
+}
+
+func (fake *FakeClient) GetFloatingIpsCalls(stub func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getFloatingIpsMutex.Lock()
+	defer fake.getFloatingIpsMutex.Unlock()
+	fake.GetFloatingIpsStub = stub
+}
+
+func (fake *FakeClient) GetFloatingIpsArgsForCall(i int) (context.Context, []generated.RequestEditorFn) {
+	fake.getFloatingIpsMutex.RLock()
+	defer fake.getFloatingIpsMutex.RUnlock()
+	argsForCall := fake.getFloatingIpsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeClient) GetFloatingIpsReturns(result1 *http.Response, result2 error) {
+	fake.getFloatingIpsMutex.Lock()
+	defer fake.getFloatingIpsMutex.Unlock()
+	fake.GetFloatingIpsStub = nil
+	fake.getFloatingIpsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetFloatingIpsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getFloatingIpsMutex.Lock()
+	defer fake.getFloatingIpsMutex.Unlock()
+	fake.GetFloatingIpsStub = nil
+	if fake.getFloatingIpsReturnsOnCall == nil {
+		fake.getFloatingIpsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getFloatingIpsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) GetKey(arg1 context.Context, arg2 generated.SshKeyId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.getKeyMutex.Lock()
 	ret, specificReturn := fake.getKeyReturnsOnCall[len(fake.getKeyArgsForCall)]
@@ -3959,6 +6799,71 @@ func (fake *FakeClient) GetKeysReturnsOnCall(i int, result1 *http.Response, resu
 		})
 	}
 	fake.getKeysReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetOsList(arg1 context.Context, arg2 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getOsListMutex.Lock()
+	ret, specificReturn := fake.getOsListReturnsOnCall[len(fake.getOsListArgsForCall)]
+	fake.getOsListArgsForCall = append(fake.getOsListArgsForCall, struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}{arg1, arg2})
+	stub := fake.GetOsListStub
+	fakeReturns := fake.getOsListReturns
+	fake.recordInvocation("GetOsList", []interface{}{arg1, arg2})
+	fake.getOsListMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetOsListCallCount() int {
+	fake.getOsListMutex.RLock()
+	defer fake.getOsListMutex.RUnlock()
+	return len(fake.getOsListArgsForCall)
+}
+
+func (fake *FakeClient) GetOsListCalls(stub func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getOsListMutex.Lock()
+	defer fake.getOsListMutex.Unlock()
+	fake.GetOsListStub = stub
+}
+
+func (fake *FakeClient) GetOsListArgsForCall(i int) (context.Context, []generated.RequestEditorFn) {
+	fake.getOsListMutex.RLock()
+	defer fake.getOsListMutex.RUnlock()
+	argsForCall := fake.getOsListArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeClient) GetOsListReturns(result1 *http.Response, result2 error) {
+	fake.getOsListMutex.Lock()
+	defer fake.getOsListMutex.Unlock()
+	fake.GetOsListStub = nil
+	fake.getOsListReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetOsListReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getOsListMutex.Lock()
+	defer fake.getOsListMutex.Unlock()
+	fake.GetOsListStub = nil
+	if fake.getOsListReturnsOnCall == nil {
+		fake.getOsListReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getOsListReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -4753,6 +7658,872 @@ func (fake *FakeClient) GetRegistryRepositoriesReturnsOnCall(i int, result1 *htt
 	}{result1, result2}
 }
 
+func (fake *FakeClient) GetServer(arg1 context.Context, arg2 generated.ServerId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getServerMutex.Lock()
+	ret, specificReturn := fake.getServerReturnsOnCall[len(fake.getServerArgsForCall)]
+	fake.getServerArgsForCall = append(fake.getServerArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetServerStub
+	fakeReturns := fake.getServerReturns
+	fake.recordInvocation("GetServer", []interface{}{arg1, arg2, arg3})
+	fake.getServerMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetServerCallCount() int {
+	fake.getServerMutex.RLock()
+	defer fake.getServerMutex.RUnlock()
+	return len(fake.getServerArgsForCall)
+}
+
+func (fake *FakeClient) GetServerCalls(stub func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getServerMutex.Lock()
+	defer fake.getServerMutex.Unlock()
+	fake.GetServerStub = stub
+}
+
+func (fake *FakeClient) GetServerArgsForCall(i int) (context.Context, generated.ServerId, []generated.RequestEditorFn) {
+	fake.getServerMutex.RLock()
+	defer fake.getServerMutex.RUnlock()
+	argsForCall := fake.getServerArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetServerReturns(result1 *http.Response, result2 error) {
+	fake.getServerMutex.Lock()
+	defer fake.getServerMutex.Unlock()
+	fake.GetServerStub = nil
+	fake.getServerReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getServerMutex.Lock()
+	defer fake.getServerMutex.Unlock()
+	fake.GetServerStub = nil
+	if fake.getServerReturnsOnCall == nil {
+		fake.getServerReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getServerReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerDisk(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getServerDiskMutex.Lock()
+	ret, specificReturn := fake.getServerDiskReturnsOnCall[len(fake.getServerDiskArgsForCall)]
+	fake.getServerDiskArgsForCall = append(fake.getServerDiskArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.GetServerDiskStub
+	fakeReturns := fake.getServerDiskReturns
+	fake.recordInvocation("GetServerDisk", []interface{}{arg1, arg2, arg3, arg4})
+	fake.getServerDiskMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetServerDiskCallCount() int {
+	fake.getServerDiskMutex.RLock()
+	defer fake.getServerDiskMutex.RUnlock()
+	return len(fake.getServerDiskArgsForCall)
+}
+
+func (fake *FakeClient) GetServerDiskCalls(stub func(context.Context, generated.ServerId, generated.DiskId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getServerDiskMutex.Lock()
+	defer fake.getServerDiskMutex.Unlock()
+	fake.GetServerDiskStub = stub
+}
+
+func (fake *FakeClient) GetServerDiskArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, []generated.RequestEditorFn) {
+	fake.getServerDiskMutex.RLock()
+	defer fake.getServerDiskMutex.RUnlock()
+	argsForCall := fake.getServerDiskArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) GetServerDiskReturns(result1 *http.Response, result2 error) {
+	fake.getServerDiskMutex.Lock()
+	defer fake.getServerDiskMutex.Unlock()
+	fake.GetServerDiskStub = nil
+	fake.getServerDiskReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerDiskReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getServerDiskMutex.Lock()
+	defer fake.getServerDiskMutex.Unlock()
+	fake.GetServerDiskStub = nil
+	if fake.getServerDiskReturnsOnCall == nil {
+		fake.getServerDiskReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getServerDiskReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerDiskAutoBackupSettings(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getServerDiskAutoBackupSettingsMutex.Lock()
+	ret, specificReturn := fake.getServerDiskAutoBackupSettingsReturnsOnCall[len(fake.getServerDiskAutoBackupSettingsArgsForCall)]
+	fake.getServerDiskAutoBackupSettingsArgsForCall = append(fake.getServerDiskAutoBackupSettingsArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.GetServerDiskAutoBackupSettingsStub
+	fakeReturns := fake.getServerDiskAutoBackupSettingsReturns
+	fake.recordInvocation("GetServerDiskAutoBackupSettings", []interface{}{arg1, arg2, arg3, arg4})
+	fake.getServerDiskAutoBackupSettingsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetServerDiskAutoBackupSettingsCallCount() int {
+	fake.getServerDiskAutoBackupSettingsMutex.RLock()
+	defer fake.getServerDiskAutoBackupSettingsMutex.RUnlock()
+	return len(fake.getServerDiskAutoBackupSettingsArgsForCall)
+}
+
+func (fake *FakeClient) GetServerDiskAutoBackupSettingsCalls(stub func(context.Context, generated.ServerId, generated.DiskId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getServerDiskAutoBackupSettingsMutex.Lock()
+	defer fake.getServerDiskAutoBackupSettingsMutex.Unlock()
+	fake.GetServerDiskAutoBackupSettingsStub = stub
+}
+
+func (fake *FakeClient) GetServerDiskAutoBackupSettingsArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, []generated.RequestEditorFn) {
+	fake.getServerDiskAutoBackupSettingsMutex.RLock()
+	defer fake.getServerDiskAutoBackupSettingsMutex.RUnlock()
+	argsForCall := fake.getServerDiskAutoBackupSettingsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) GetServerDiskAutoBackupSettingsReturns(result1 *http.Response, result2 error) {
+	fake.getServerDiskAutoBackupSettingsMutex.Lock()
+	defer fake.getServerDiskAutoBackupSettingsMutex.Unlock()
+	fake.GetServerDiskAutoBackupSettingsStub = nil
+	fake.getServerDiskAutoBackupSettingsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerDiskAutoBackupSettingsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getServerDiskAutoBackupSettingsMutex.Lock()
+	defer fake.getServerDiskAutoBackupSettingsMutex.Unlock()
+	fake.GetServerDiskAutoBackupSettingsStub = nil
+	if fake.getServerDiskAutoBackupSettingsReturnsOnCall == nil {
+		fake.getServerDiskAutoBackupSettingsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getServerDiskAutoBackupSettingsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerDiskBackup(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 generated.ServerBackupId, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getServerDiskBackupMutex.Lock()
+	ret, specificReturn := fake.getServerDiskBackupReturnsOnCall[len(fake.getServerDiskBackupArgsForCall)]
+	fake.getServerDiskBackupArgsForCall = append(fake.getServerDiskBackupArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.ServerBackupId
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.GetServerDiskBackupStub
+	fakeReturns := fake.getServerDiskBackupReturns
+	fake.recordInvocation("GetServerDiskBackup", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.getServerDiskBackupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetServerDiskBackupCallCount() int {
+	fake.getServerDiskBackupMutex.RLock()
+	defer fake.getServerDiskBackupMutex.RUnlock()
+	return len(fake.getServerDiskBackupArgsForCall)
+}
+
+func (fake *FakeClient) GetServerDiskBackupCalls(stub func(context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getServerDiskBackupMutex.Lock()
+	defer fake.getServerDiskBackupMutex.Unlock()
+	fake.GetServerDiskBackupStub = stub
+}
+
+func (fake *FakeClient) GetServerDiskBackupArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, []generated.RequestEditorFn) {
+	fake.getServerDiskBackupMutex.RLock()
+	defer fake.getServerDiskBackupMutex.RUnlock()
+	argsForCall := fake.getServerDiskBackupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) GetServerDiskBackupReturns(result1 *http.Response, result2 error) {
+	fake.getServerDiskBackupMutex.Lock()
+	defer fake.getServerDiskBackupMutex.Unlock()
+	fake.GetServerDiskBackupStub = nil
+	fake.getServerDiskBackupReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerDiskBackupReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getServerDiskBackupMutex.Lock()
+	defer fake.getServerDiskBackupMutex.Unlock()
+	fake.GetServerDiskBackupStub = nil
+	if fake.getServerDiskBackupReturnsOnCall == nil {
+		fake.getServerDiskBackupReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getServerDiskBackupReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerDiskBackups(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getServerDiskBackupsMutex.Lock()
+	ret, specificReturn := fake.getServerDiskBackupsReturnsOnCall[len(fake.getServerDiskBackupsArgsForCall)]
+	fake.getServerDiskBackupsArgsForCall = append(fake.getServerDiskBackupsArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.GetServerDiskBackupsStub
+	fakeReturns := fake.getServerDiskBackupsReturns
+	fake.recordInvocation("GetServerDiskBackups", []interface{}{arg1, arg2, arg3, arg4})
+	fake.getServerDiskBackupsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetServerDiskBackupsCallCount() int {
+	fake.getServerDiskBackupsMutex.RLock()
+	defer fake.getServerDiskBackupsMutex.RUnlock()
+	return len(fake.getServerDiskBackupsArgsForCall)
+}
+
+func (fake *FakeClient) GetServerDiskBackupsCalls(stub func(context.Context, generated.ServerId, generated.DiskId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getServerDiskBackupsMutex.Lock()
+	defer fake.getServerDiskBackupsMutex.Unlock()
+	fake.GetServerDiskBackupsStub = stub
+}
+
+func (fake *FakeClient) GetServerDiskBackupsArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, []generated.RequestEditorFn) {
+	fake.getServerDiskBackupsMutex.RLock()
+	defer fake.getServerDiskBackupsMutex.RUnlock()
+	argsForCall := fake.getServerDiskBackupsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) GetServerDiskBackupsReturns(result1 *http.Response, result2 error) {
+	fake.getServerDiskBackupsMutex.Lock()
+	defer fake.getServerDiskBackupsMutex.Unlock()
+	fake.GetServerDiskBackupsStub = nil
+	fake.getServerDiskBackupsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerDiskBackupsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getServerDiskBackupsMutex.Lock()
+	defer fake.getServerDiskBackupsMutex.Unlock()
+	fake.GetServerDiskBackupsStub = nil
+	if fake.getServerDiskBackupsReturnsOnCall == nil {
+		fake.getServerDiskBackupsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getServerDiskBackupsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerDisks(arg1 context.Context, arg2 generated.ServerId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getServerDisksMutex.Lock()
+	ret, specificReturn := fake.getServerDisksReturnsOnCall[len(fake.getServerDisksArgsForCall)]
+	fake.getServerDisksArgsForCall = append(fake.getServerDisksArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetServerDisksStub
+	fakeReturns := fake.getServerDisksReturns
+	fake.recordInvocation("GetServerDisks", []interface{}{arg1, arg2, arg3})
+	fake.getServerDisksMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetServerDisksCallCount() int {
+	fake.getServerDisksMutex.RLock()
+	defer fake.getServerDisksMutex.RUnlock()
+	return len(fake.getServerDisksArgsForCall)
+}
+
+func (fake *FakeClient) GetServerDisksCalls(stub func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getServerDisksMutex.Lock()
+	defer fake.getServerDisksMutex.Unlock()
+	fake.GetServerDisksStub = stub
+}
+
+func (fake *FakeClient) GetServerDisksArgsForCall(i int) (context.Context, generated.ServerId, []generated.RequestEditorFn) {
+	fake.getServerDisksMutex.RLock()
+	defer fake.getServerDisksMutex.RUnlock()
+	argsForCall := fake.getServerDisksArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetServerDisksReturns(result1 *http.Response, result2 error) {
+	fake.getServerDisksMutex.Lock()
+	defer fake.getServerDisksMutex.Unlock()
+	fake.GetServerDisksStub = nil
+	fake.getServerDisksReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerDisksReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getServerDisksMutex.Lock()
+	defer fake.getServerDisksMutex.Unlock()
+	fake.GetServerDisksStub = nil
+	if fake.getServerDisksReturnsOnCall == nil {
+		fake.getServerDisksReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getServerDisksReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerIPs(arg1 context.Context, arg2 generated.ServerId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getServerIPsMutex.Lock()
+	ret, specificReturn := fake.getServerIPsReturnsOnCall[len(fake.getServerIPsArgsForCall)]
+	fake.getServerIPsArgsForCall = append(fake.getServerIPsArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetServerIPsStub
+	fakeReturns := fake.getServerIPsReturns
+	fake.recordInvocation("GetServerIPs", []interface{}{arg1, arg2, arg3})
+	fake.getServerIPsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetServerIPsCallCount() int {
+	fake.getServerIPsMutex.RLock()
+	defer fake.getServerIPsMutex.RUnlock()
+	return len(fake.getServerIPsArgsForCall)
+}
+
+func (fake *FakeClient) GetServerIPsCalls(stub func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getServerIPsMutex.Lock()
+	defer fake.getServerIPsMutex.Unlock()
+	fake.GetServerIPsStub = stub
+}
+
+func (fake *FakeClient) GetServerIPsArgsForCall(i int) (context.Context, generated.ServerId, []generated.RequestEditorFn) {
+	fake.getServerIPsMutex.RLock()
+	defer fake.getServerIPsMutex.RUnlock()
+	argsForCall := fake.getServerIPsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetServerIPsReturns(result1 *http.Response, result2 error) {
+	fake.getServerIPsMutex.Lock()
+	defer fake.getServerIPsMutex.Unlock()
+	fake.GetServerIPsStub = nil
+	fake.getServerIPsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerIPsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getServerIPsMutex.Lock()
+	defer fake.getServerIPsMutex.Unlock()
+	fake.GetServerIPsStub = nil
+	if fake.getServerIPsReturnsOnCall == nil {
+		fake.getServerIPsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getServerIPsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerLogs(arg1 context.Context, arg2 generated.ServerId, arg3 *generated.GetServerLogsParams, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getServerLogsMutex.Lock()
+	ret, specificReturn := fake.getServerLogsReturnsOnCall[len(fake.getServerLogsArgsForCall)]
+	fake.getServerLogsArgsForCall = append(fake.getServerLogsArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 *generated.GetServerLogsParams
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.GetServerLogsStub
+	fakeReturns := fake.getServerLogsReturns
+	fake.recordInvocation("GetServerLogs", []interface{}{arg1, arg2, arg3, arg4})
+	fake.getServerLogsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetServerLogsCallCount() int {
+	fake.getServerLogsMutex.RLock()
+	defer fake.getServerLogsMutex.RUnlock()
+	return len(fake.getServerLogsArgsForCall)
+}
+
+func (fake *FakeClient) GetServerLogsCalls(stub func(context.Context, generated.ServerId, *generated.GetServerLogsParams, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getServerLogsMutex.Lock()
+	defer fake.getServerLogsMutex.Unlock()
+	fake.GetServerLogsStub = stub
+}
+
+func (fake *FakeClient) GetServerLogsArgsForCall(i int) (context.Context, generated.ServerId, *generated.GetServerLogsParams, []generated.RequestEditorFn) {
+	fake.getServerLogsMutex.RLock()
+	defer fake.getServerLogsMutex.RUnlock()
+	argsForCall := fake.getServerLogsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) GetServerLogsReturns(result1 *http.Response, result2 error) {
+	fake.getServerLogsMutex.Lock()
+	defer fake.getServerLogsMutex.Unlock()
+	fake.GetServerLogsStub = nil
+	fake.getServerLogsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerLogsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getServerLogsMutex.Lock()
+	defer fake.getServerLogsMutex.Unlock()
+	fake.GetServerLogsStub = nil
+	if fake.getServerLogsReturnsOnCall == nil {
+		fake.getServerLogsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getServerLogsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerStatistics(arg1 context.Context, arg2 generated.ServerId, arg3 *generated.GetServerStatisticsParams, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getServerStatisticsMutex.Lock()
+	ret, specificReturn := fake.getServerStatisticsReturnsOnCall[len(fake.getServerStatisticsArgsForCall)]
+	fake.getServerStatisticsArgsForCall = append(fake.getServerStatisticsArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 *generated.GetServerStatisticsParams
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.GetServerStatisticsStub
+	fakeReturns := fake.getServerStatisticsReturns
+	fake.recordInvocation("GetServerStatistics", []interface{}{arg1, arg2, arg3, arg4})
+	fake.getServerStatisticsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetServerStatisticsCallCount() int {
+	fake.getServerStatisticsMutex.RLock()
+	defer fake.getServerStatisticsMutex.RUnlock()
+	return len(fake.getServerStatisticsArgsForCall)
+}
+
+func (fake *FakeClient) GetServerStatisticsCalls(stub func(context.Context, generated.ServerId, *generated.GetServerStatisticsParams, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getServerStatisticsMutex.Lock()
+	defer fake.getServerStatisticsMutex.Unlock()
+	fake.GetServerStatisticsStub = stub
+}
+
+func (fake *FakeClient) GetServerStatisticsArgsForCall(i int) (context.Context, generated.ServerId, *generated.GetServerStatisticsParams, []generated.RequestEditorFn) {
+	fake.getServerStatisticsMutex.RLock()
+	defer fake.getServerStatisticsMutex.RUnlock()
+	argsForCall := fake.getServerStatisticsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) GetServerStatisticsReturns(result1 *http.Response, result2 error) {
+	fake.getServerStatisticsMutex.Lock()
+	defer fake.getServerStatisticsMutex.Unlock()
+	fake.GetServerStatisticsStub = nil
+	fake.getServerStatisticsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerStatisticsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getServerStatisticsMutex.Lock()
+	defer fake.getServerStatisticsMutex.Unlock()
+	fake.GetServerStatisticsStub = nil
+	if fake.getServerStatisticsReturnsOnCall == nil {
+		fake.getServerStatisticsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getServerStatisticsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerStatisticsNew(arg1 context.Context, arg2 generated.ServerId, arg3 string, arg4 string, arg5 generated.GetServerStatisticsNewParamsKeys, arg6 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getServerStatisticsNewMutex.Lock()
+	ret, specificReturn := fake.getServerStatisticsNewReturnsOnCall[len(fake.getServerStatisticsNewArgsForCall)]
+	fake.getServerStatisticsNewArgsForCall = append(fake.getServerStatisticsNewArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 string
+		arg5 generated.GetServerStatisticsNewParamsKeys
+		arg6 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6})
+	stub := fake.GetServerStatisticsNewStub
+	fakeReturns := fake.getServerStatisticsNewReturns
+	fake.recordInvocation("GetServerStatisticsNew", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6})
+	fake.getServerStatisticsNewMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetServerStatisticsNewCallCount() int {
+	fake.getServerStatisticsNewMutex.RLock()
+	defer fake.getServerStatisticsNewMutex.RUnlock()
+	return len(fake.getServerStatisticsNewArgsForCall)
+}
+
+func (fake *FakeClient) GetServerStatisticsNewCalls(stub func(context.Context, generated.ServerId, string, string, generated.GetServerStatisticsNewParamsKeys, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getServerStatisticsNewMutex.Lock()
+	defer fake.getServerStatisticsNewMutex.Unlock()
+	fake.GetServerStatisticsNewStub = stub
+}
+
+func (fake *FakeClient) GetServerStatisticsNewArgsForCall(i int) (context.Context, generated.ServerId, string, string, generated.GetServerStatisticsNewParamsKeys, []generated.RequestEditorFn) {
+	fake.getServerStatisticsNewMutex.RLock()
+	defer fake.getServerStatisticsNewMutex.RUnlock()
+	argsForCall := fake.getServerStatisticsNewArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6
+}
+
+func (fake *FakeClient) GetServerStatisticsNewReturns(result1 *http.Response, result2 error) {
+	fake.getServerStatisticsNewMutex.Lock()
+	defer fake.getServerStatisticsNewMutex.Unlock()
+	fake.GetServerStatisticsNewStub = nil
+	fake.getServerStatisticsNewReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServerStatisticsNewReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getServerStatisticsNewMutex.Lock()
+	defer fake.getServerStatisticsNewMutex.Unlock()
+	fake.GetServerStatisticsNewStub = nil
+	if fake.getServerStatisticsNewReturnsOnCall == nil {
+		fake.getServerStatisticsNewReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getServerStatisticsNewReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServers(arg1 context.Context, arg2 *generated.GetServersParams, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getServersMutex.Lock()
+	ret, specificReturn := fake.getServersReturnsOnCall[len(fake.getServersArgsForCall)]
+	fake.getServersArgsForCall = append(fake.getServersArgsForCall, struct {
+		arg1 context.Context
+		arg2 *generated.GetServersParams
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetServersStub
+	fakeReturns := fake.getServersReturns
+	fake.recordInvocation("GetServers", []interface{}{arg1, arg2, arg3})
+	fake.getServersMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetServersCallCount() int {
+	fake.getServersMutex.RLock()
+	defer fake.getServersMutex.RUnlock()
+	return len(fake.getServersArgsForCall)
+}
+
+func (fake *FakeClient) GetServersCalls(stub func(context.Context, *generated.GetServersParams, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getServersMutex.Lock()
+	defer fake.getServersMutex.Unlock()
+	fake.GetServersStub = stub
+}
+
+func (fake *FakeClient) GetServersArgsForCall(i int) (context.Context, *generated.GetServersParams, []generated.RequestEditorFn) {
+	fake.getServersMutex.RLock()
+	defer fake.getServersMutex.RUnlock()
+	argsForCall := fake.getServersArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetServersReturns(result1 *http.Response, result2 error) {
+	fake.getServersMutex.Lock()
+	defer fake.getServersMutex.Unlock()
+	fake.GetServersStub = nil
+	fake.getServersReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServersReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getServersMutex.Lock()
+	defer fake.getServersMutex.Unlock()
+	fake.GetServersStub = nil
+	if fake.getServersReturnsOnCall == nil {
+		fake.getServersReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getServersReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServersPresets(arg1 context.Context, arg2 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getServersPresetsMutex.Lock()
+	ret, specificReturn := fake.getServersPresetsReturnsOnCall[len(fake.getServersPresetsArgsForCall)]
+	fake.getServersPresetsArgsForCall = append(fake.getServersPresetsArgsForCall, struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}{arg1, arg2})
+	stub := fake.GetServersPresetsStub
+	fakeReturns := fake.getServersPresetsReturns
+	fake.recordInvocation("GetServersPresets", []interface{}{arg1, arg2})
+	fake.getServersPresetsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetServersPresetsCallCount() int {
+	fake.getServersPresetsMutex.RLock()
+	defer fake.getServersPresetsMutex.RUnlock()
+	return len(fake.getServersPresetsArgsForCall)
+}
+
+func (fake *FakeClient) GetServersPresetsCalls(stub func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getServersPresetsMutex.Lock()
+	defer fake.getServersPresetsMutex.Unlock()
+	fake.GetServersPresetsStub = stub
+}
+
+func (fake *FakeClient) GetServersPresetsArgsForCall(i int) (context.Context, []generated.RequestEditorFn) {
+	fake.getServersPresetsMutex.RLock()
+	defer fake.getServersPresetsMutex.RUnlock()
+	argsForCall := fake.getServersPresetsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeClient) GetServersPresetsReturns(result1 *http.Response, result2 error) {
+	fake.getServersPresetsMutex.Lock()
+	defer fake.getServersPresetsMutex.Unlock()
+	fake.GetServersPresetsStub = nil
+	fake.getServersPresetsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetServersPresetsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getServersPresetsMutex.Lock()
+	defer fake.getServersPresetsMutex.Unlock()
+	fake.GetServersPresetsStub = nil
+	if fake.getServersPresetsReturnsOnCall == nil {
+		fake.getServersPresetsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getServersPresetsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetSoftware(arg1 context.Context, arg2 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getSoftwareMutex.Lock()
+	ret, specificReturn := fake.getSoftwareReturnsOnCall[len(fake.getSoftwareArgsForCall)]
+	fake.getSoftwareArgsForCall = append(fake.getSoftwareArgsForCall, struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}{arg1, arg2})
+	stub := fake.GetSoftwareStub
+	fakeReturns := fake.getSoftwareReturns
+	fake.recordInvocation("GetSoftware", []interface{}{arg1, arg2})
+	fake.getSoftwareMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetSoftwareCallCount() int {
+	fake.getSoftwareMutex.RLock()
+	defer fake.getSoftwareMutex.RUnlock()
+	return len(fake.getSoftwareArgsForCall)
+}
+
+func (fake *FakeClient) GetSoftwareCalls(stub func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getSoftwareMutex.Lock()
+	defer fake.getSoftwareMutex.Unlock()
+	fake.GetSoftwareStub = stub
+}
+
+func (fake *FakeClient) GetSoftwareArgsForCall(i int) (context.Context, []generated.RequestEditorFn) {
+	fake.getSoftwareMutex.RLock()
+	defer fake.getSoftwareMutex.RUnlock()
+	argsForCall := fake.getSoftwareArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeClient) GetSoftwareReturns(result1 *http.Response, result2 error) {
+	fake.getSoftwareMutex.Lock()
+	defer fake.getSoftwareMutex.Unlock()
+	fake.GetSoftwareStub = nil
+	fake.getSoftwareReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetSoftwareReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getSoftwareMutex.Lock()
+	defer fake.getSoftwareMutex.Unlock()
+	fake.GetSoftwareStub = nil
+	if fake.getSoftwareReturnsOnCall == nil {
+		fake.getSoftwareReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getSoftwareReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) GetStorage(arg1 context.Context, arg2 generated.BucketId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.getStorageMutex.Lock()
 	ret, specificReturn := fake.getStorageReturnsOnCall[len(fake.getStorageArgsForCall)]
@@ -5146,6 +8917,1005 @@ func (fake *FakeClient) GetStoragesPresetsReturnsOnCall(i int, result1 *http.Res
 	}{result1, result2}
 }
 
+func (fake *FakeClient) GetVPC(arg1 context.Context, arg2 generated.VpcId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getVPCMutex.Lock()
+	ret, specificReturn := fake.getVPCReturnsOnCall[len(fake.getVPCArgsForCall)]
+	fake.getVPCArgsForCall = append(fake.getVPCArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.VpcId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetVPCStub
+	fakeReturns := fake.getVPCReturns
+	fake.recordInvocation("GetVPC", []interface{}{arg1, arg2, arg3})
+	fake.getVPCMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetVPCCallCount() int {
+	fake.getVPCMutex.RLock()
+	defer fake.getVPCMutex.RUnlock()
+	return len(fake.getVPCArgsForCall)
+}
+
+func (fake *FakeClient) GetVPCCalls(stub func(context.Context, generated.VpcId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getVPCMutex.Lock()
+	defer fake.getVPCMutex.Unlock()
+	fake.GetVPCStub = stub
+}
+
+func (fake *FakeClient) GetVPCArgsForCall(i int) (context.Context, generated.VpcId, []generated.RequestEditorFn) {
+	fake.getVPCMutex.RLock()
+	defer fake.getVPCMutex.RUnlock()
+	argsForCall := fake.getVPCArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetVPCReturns(result1 *http.Response, result2 error) {
+	fake.getVPCMutex.Lock()
+	defer fake.getVPCMutex.Unlock()
+	fake.GetVPCStub = nil
+	fake.getVPCReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetVPCReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getVPCMutex.Lock()
+	defer fake.getVPCMutex.Unlock()
+	fake.GetVPCStub = nil
+	if fake.getVPCReturnsOnCall == nil {
+		fake.getVPCReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getVPCReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetVPCPorts(arg1 context.Context, arg2 generated.VpcId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getVPCPortsMutex.Lock()
+	ret, specificReturn := fake.getVPCPortsReturnsOnCall[len(fake.getVPCPortsArgsForCall)]
+	fake.getVPCPortsArgsForCall = append(fake.getVPCPortsArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.VpcId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetVPCPortsStub
+	fakeReturns := fake.getVPCPortsReturns
+	fake.recordInvocation("GetVPCPorts", []interface{}{arg1, arg2, arg3})
+	fake.getVPCPortsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetVPCPortsCallCount() int {
+	fake.getVPCPortsMutex.RLock()
+	defer fake.getVPCPortsMutex.RUnlock()
+	return len(fake.getVPCPortsArgsForCall)
+}
+
+func (fake *FakeClient) GetVPCPortsCalls(stub func(context.Context, generated.VpcId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getVPCPortsMutex.Lock()
+	defer fake.getVPCPortsMutex.Unlock()
+	fake.GetVPCPortsStub = stub
+}
+
+func (fake *FakeClient) GetVPCPortsArgsForCall(i int) (context.Context, generated.VpcId, []generated.RequestEditorFn) {
+	fake.getVPCPortsMutex.RLock()
+	defer fake.getVPCPortsMutex.RUnlock()
+	argsForCall := fake.getVPCPortsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetVPCPortsReturns(result1 *http.Response, result2 error) {
+	fake.getVPCPortsMutex.Lock()
+	defer fake.getVPCPortsMutex.Unlock()
+	fake.GetVPCPortsStub = nil
+	fake.getVPCPortsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetVPCPortsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getVPCPortsMutex.Lock()
+	defer fake.getVPCPortsMutex.Unlock()
+	fake.GetVPCPortsStub = nil
+	if fake.getVPCPortsReturnsOnCall == nil {
+		fake.getVPCPortsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getVPCPortsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetVPCServices(arg1 context.Context, arg2 generated.VpcId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getVPCServicesMutex.Lock()
+	ret, specificReturn := fake.getVPCServicesReturnsOnCall[len(fake.getVPCServicesArgsForCall)]
+	fake.getVPCServicesArgsForCall = append(fake.getVPCServicesArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.VpcId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetVPCServicesStub
+	fakeReturns := fake.getVPCServicesReturns
+	fake.recordInvocation("GetVPCServices", []interface{}{arg1, arg2, arg3})
+	fake.getVPCServicesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetVPCServicesCallCount() int {
+	fake.getVPCServicesMutex.RLock()
+	defer fake.getVPCServicesMutex.RUnlock()
+	return len(fake.getVPCServicesArgsForCall)
+}
+
+func (fake *FakeClient) GetVPCServicesCalls(stub func(context.Context, generated.VpcId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getVPCServicesMutex.Lock()
+	defer fake.getVPCServicesMutex.Unlock()
+	fake.GetVPCServicesStub = stub
+}
+
+func (fake *FakeClient) GetVPCServicesArgsForCall(i int) (context.Context, generated.VpcId, []generated.RequestEditorFn) {
+	fake.getVPCServicesMutex.RLock()
+	defer fake.getVPCServicesMutex.RUnlock()
+	argsForCall := fake.getVPCServicesArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetVPCServicesReturns(result1 *http.Response, result2 error) {
+	fake.getVPCServicesMutex.Lock()
+	defer fake.getVPCServicesMutex.Unlock()
+	fake.GetVPCServicesStub = nil
+	fake.getVPCServicesReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetVPCServicesReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getVPCServicesMutex.Lock()
+	defer fake.getVPCServicesMutex.Unlock()
+	fake.GetVPCServicesStub = nil
+	if fake.getVPCServicesReturnsOnCall == nil {
+		fake.getVPCServicesReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getVPCServicesReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetVPCs(arg1 context.Context, arg2 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getVPCsMutex.Lock()
+	ret, specificReturn := fake.getVPCsReturnsOnCall[len(fake.getVPCsArgsForCall)]
+	fake.getVPCsArgsForCall = append(fake.getVPCsArgsForCall, struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}{arg1, arg2})
+	stub := fake.GetVPCsStub
+	fakeReturns := fake.getVPCsReturns
+	fake.recordInvocation("GetVPCs", []interface{}{arg1, arg2})
+	fake.getVPCsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetVPCsCallCount() int {
+	fake.getVPCsMutex.RLock()
+	defer fake.getVPCsMutex.RUnlock()
+	return len(fake.getVPCsArgsForCall)
+}
+
+func (fake *FakeClient) GetVPCsCalls(stub func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getVPCsMutex.Lock()
+	defer fake.getVPCsMutex.Unlock()
+	fake.GetVPCsStub = stub
+}
+
+func (fake *FakeClient) GetVPCsArgsForCall(i int) (context.Context, []generated.RequestEditorFn) {
+	fake.getVPCsMutex.RLock()
+	defer fake.getVPCsMutex.RUnlock()
+	argsForCall := fake.getVPCsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeClient) GetVPCsReturns(result1 *http.Response, result2 error) {
+	fake.getVPCsMutex.Lock()
+	defer fake.getVPCsMutex.Unlock()
+	fake.GetVPCsStub = nil
+	fake.getVPCsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetVPCsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getVPCsMutex.Lock()
+	defer fake.getVPCsMutex.Unlock()
+	fake.GetVPCsStub = nil
+	if fake.getVPCsReturnsOnCall == nil {
+		fake.getVPCsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getVPCsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) HardShutdownServer(arg1 context.Context, arg2 generated.ServerId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.hardShutdownServerMutex.Lock()
+	ret, specificReturn := fake.hardShutdownServerReturnsOnCall[len(fake.hardShutdownServerArgsForCall)]
+	fake.hardShutdownServerArgsForCall = append(fake.hardShutdownServerArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.HardShutdownServerStub
+	fakeReturns := fake.hardShutdownServerReturns
+	fake.recordInvocation("HardShutdownServer", []interface{}{arg1, arg2, arg3})
+	fake.hardShutdownServerMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) HardShutdownServerCallCount() int {
+	fake.hardShutdownServerMutex.RLock()
+	defer fake.hardShutdownServerMutex.RUnlock()
+	return len(fake.hardShutdownServerArgsForCall)
+}
+
+func (fake *FakeClient) HardShutdownServerCalls(stub func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.hardShutdownServerMutex.Lock()
+	defer fake.hardShutdownServerMutex.Unlock()
+	fake.HardShutdownServerStub = stub
+}
+
+func (fake *FakeClient) HardShutdownServerArgsForCall(i int) (context.Context, generated.ServerId, []generated.RequestEditorFn) {
+	fake.hardShutdownServerMutex.RLock()
+	defer fake.hardShutdownServerMutex.RUnlock()
+	argsForCall := fake.hardShutdownServerArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) HardShutdownServerReturns(result1 *http.Response, result2 error) {
+	fake.hardShutdownServerMutex.Lock()
+	defer fake.hardShutdownServerMutex.Unlock()
+	fake.HardShutdownServerStub = nil
+	fake.hardShutdownServerReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) HardShutdownServerReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.hardShutdownServerMutex.Lock()
+	defer fake.hardShutdownServerMutex.Unlock()
+	fake.HardShutdownServerStub = nil
+	if fake.hardShutdownServerReturnsOnCall == nil {
+		fake.hardShutdownServerReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.hardShutdownServerReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) ImageUnmountAndServerReload(arg1 context.Context, arg2 generated.ServerId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.imageUnmountAndServerReloadMutex.Lock()
+	ret, specificReturn := fake.imageUnmountAndServerReloadReturnsOnCall[len(fake.imageUnmountAndServerReloadArgsForCall)]
+	fake.imageUnmountAndServerReloadArgsForCall = append(fake.imageUnmountAndServerReloadArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.ImageUnmountAndServerReloadStub
+	fakeReturns := fake.imageUnmountAndServerReloadReturns
+	fake.recordInvocation("ImageUnmountAndServerReload", []interface{}{arg1, arg2, arg3})
+	fake.imageUnmountAndServerReloadMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) ImageUnmountAndServerReloadCallCount() int {
+	fake.imageUnmountAndServerReloadMutex.RLock()
+	defer fake.imageUnmountAndServerReloadMutex.RUnlock()
+	return len(fake.imageUnmountAndServerReloadArgsForCall)
+}
+
+func (fake *FakeClient) ImageUnmountAndServerReloadCalls(stub func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.imageUnmountAndServerReloadMutex.Lock()
+	defer fake.imageUnmountAndServerReloadMutex.Unlock()
+	fake.ImageUnmountAndServerReloadStub = stub
+}
+
+func (fake *FakeClient) ImageUnmountAndServerReloadArgsForCall(i int) (context.Context, generated.ServerId, []generated.RequestEditorFn) {
+	fake.imageUnmountAndServerReloadMutex.RLock()
+	defer fake.imageUnmountAndServerReloadMutex.RUnlock()
+	argsForCall := fake.imageUnmountAndServerReloadArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) ImageUnmountAndServerReloadReturns(result1 *http.Response, result2 error) {
+	fake.imageUnmountAndServerReloadMutex.Lock()
+	defer fake.imageUnmountAndServerReloadMutex.Unlock()
+	fake.ImageUnmountAndServerReloadStub = nil
+	fake.imageUnmountAndServerReloadReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) ImageUnmountAndServerReloadReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.imageUnmountAndServerReloadMutex.Lock()
+	defer fake.imageUnmountAndServerReloadMutex.Unlock()
+	fake.ImageUnmountAndServerReloadStub = nil
+	if fake.imageUnmountAndServerReloadReturnsOnCall == nil {
+		fake.imageUnmountAndServerReloadReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.imageUnmountAndServerReloadReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PerformActionOnBackup(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 generated.ServerBackupId, arg5 generated.PerformActionOnBackupJSONRequestBody, arg6 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.performActionOnBackupMutex.Lock()
+	ret, specificReturn := fake.performActionOnBackupReturnsOnCall[len(fake.performActionOnBackupArgsForCall)]
+	fake.performActionOnBackupArgsForCall = append(fake.performActionOnBackupArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.ServerBackupId
+		arg5 generated.PerformActionOnBackupJSONRequestBody
+		arg6 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6})
+	stub := fake.PerformActionOnBackupStub
+	fakeReturns := fake.performActionOnBackupReturns
+	fake.recordInvocation("PerformActionOnBackup", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6})
+	fake.performActionOnBackupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PerformActionOnBackupCallCount() int {
+	fake.performActionOnBackupMutex.RLock()
+	defer fake.performActionOnBackupMutex.RUnlock()
+	return len(fake.performActionOnBackupArgsForCall)
+}
+
+func (fake *FakeClient) PerformActionOnBackupCalls(stub func(context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, generated.PerformActionOnBackupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.performActionOnBackupMutex.Lock()
+	defer fake.performActionOnBackupMutex.Unlock()
+	fake.PerformActionOnBackupStub = stub
+}
+
+func (fake *FakeClient) PerformActionOnBackupArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, generated.PerformActionOnBackupJSONRequestBody, []generated.RequestEditorFn) {
+	fake.performActionOnBackupMutex.RLock()
+	defer fake.performActionOnBackupMutex.RUnlock()
+	argsForCall := fake.performActionOnBackupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6
+}
+
+func (fake *FakeClient) PerformActionOnBackupReturns(result1 *http.Response, result2 error) {
+	fake.performActionOnBackupMutex.Lock()
+	defer fake.performActionOnBackupMutex.Unlock()
+	fake.PerformActionOnBackupStub = nil
+	fake.performActionOnBackupReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PerformActionOnBackupReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.performActionOnBackupMutex.Lock()
+	defer fake.performActionOnBackupMutex.Unlock()
+	fake.PerformActionOnBackupStub = nil
+	if fake.performActionOnBackupReturnsOnCall == nil {
+		fake.performActionOnBackupReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.performActionOnBackupReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PerformActionOnBackupWithBody(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 generated.ServerBackupId, arg5 string, arg6 io.Reader, arg7 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.performActionOnBackupWithBodyMutex.Lock()
+	ret, specificReturn := fake.performActionOnBackupWithBodyReturnsOnCall[len(fake.performActionOnBackupWithBodyArgsForCall)]
+	fake.performActionOnBackupWithBodyArgsForCall = append(fake.performActionOnBackupWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.ServerBackupId
+		arg5 string
+		arg6 io.Reader
+		arg7 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6, arg7})
+	stub := fake.PerformActionOnBackupWithBodyStub
+	fakeReturns := fake.performActionOnBackupWithBodyReturns
+	fake.recordInvocation("PerformActionOnBackupWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6, arg7})
+	fake.performActionOnBackupWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6, arg7...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PerformActionOnBackupWithBodyCallCount() int {
+	fake.performActionOnBackupWithBodyMutex.RLock()
+	defer fake.performActionOnBackupWithBodyMutex.RUnlock()
+	return len(fake.performActionOnBackupWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) PerformActionOnBackupWithBodyCalls(stub func(context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.performActionOnBackupWithBodyMutex.Lock()
+	defer fake.performActionOnBackupWithBodyMutex.Unlock()
+	fake.PerformActionOnBackupWithBodyStub = stub
+}
+
+func (fake *FakeClient) PerformActionOnBackupWithBodyArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.performActionOnBackupWithBodyMutex.RLock()
+	defer fake.performActionOnBackupWithBodyMutex.RUnlock()
+	argsForCall := fake.performActionOnBackupWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6, argsForCall.arg7
+}
+
+func (fake *FakeClient) PerformActionOnBackupWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.performActionOnBackupWithBodyMutex.Lock()
+	defer fake.performActionOnBackupWithBodyMutex.Unlock()
+	fake.PerformActionOnBackupWithBodyStub = nil
+	fake.performActionOnBackupWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PerformActionOnBackupWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.performActionOnBackupWithBodyMutex.Lock()
+	defer fake.performActionOnBackupWithBodyMutex.Unlock()
+	fake.PerformActionOnBackupWithBodyStub = nil
+	if fake.performActionOnBackupWithBodyReturnsOnCall == nil {
+		fake.performActionOnBackupWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.performActionOnBackupWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PerformActionOnServer(arg1 context.Context, arg2 generated.ServerId, arg3 generated.PerformActionOnServerJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.performActionOnServerMutex.Lock()
+	ret, specificReturn := fake.performActionOnServerReturnsOnCall[len(fake.performActionOnServerArgsForCall)]
+	fake.performActionOnServerArgsForCall = append(fake.performActionOnServerArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.PerformActionOnServerJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.PerformActionOnServerStub
+	fakeReturns := fake.performActionOnServerReturns
+	fake.recordInvocation("PerformActionOnServer", []interface{}{arg1, arg2, arg3, arg4})
+	fake.performActionOnServerMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PerformActionOnServerCallCount() int {
+	fake.performActionOnServerMutex.RLock()
+	defer fake.performActionOnServerMutex.RUnlock()
+	return len(fake.performActionOnServerArgsForCall)
+}
+
+func (fake *FakeClient) PerformActionOnServerCalls(stub func(context.Context, generated.ServerId, generated.PerformActionOnServerJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.performActionOnServerMutex.Lock()
+	defer fake.performActionOnServerMutex.Unlock()
+	fake.PerformActionOnServerStub = stub
+}
+
+func (fake *FakeClient) PerformActionOnServerArgsForCall(i int) (context.Context, generated.ServerId, generated.PerformActionOnServerJSONRequestBody, []generated.RequestEditorFn) {
+	fake.performActionOnServerMutex.RLock()
+	defer fake.performActionOnServerMutex.RUnlock()
+	argsForCall := fake.performActionOnServerArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) PerformActionOnServerReturns(result1 *http.Response, result2 error) {
+	fake.performActionOnServerMutex.Lock()
+	defer fake.performActionOnServerMutex.Unlock()
+	fake.PerformActionOnServerStub = nil
+	fake.performActionOnServerReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PerformActionOnServerReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.performActionOnServerMutex.Lock()
+	defer fake.performActionOnServerMutex.Unlock()
+	fake.PerformActionOnServerStub = nil
+	if fake.performActionOnServerReturnsOnCall == nil {
+		fake.performActionOnServerReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.performActionOnServerReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PerformActionOnServerWithBody(arg1 context.Context, arg2 generated.ServerId, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.performActionOnServerWithBodyMutex.Lock()
+	ret, specificReturn := fake.performActionOnServerWithBodyReturnsOnCall[len(fake.performActionOnServerWithBodyArgsForCall)]
+	fake.performActionOnServerWithBodyArgsForCall = append(fake.performActionOnServerWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.PerformActionOnServerWithBodyStub
+	fakeReturns := fake.performActionOnServerWithBodyReturns
+	fake.recordInvocation("PerformActionOnServerWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.performActionOnServerWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PerformActionOnServerWithBodyCallCount() int {
+	fake.performActionOnServerWithBodyMutex.RLock()
+	defer fake.performActionOnServerWithBodyMutex.RUnlock()
+	return len(fake.performActionOnServerWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) PerformActionOnServerWithBodyCalls(stub func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.performActionOnServerWithBodyMutex.Lock()
+	defer fake.performActionOnServerWithBodyMutex.Unlock()
+	fake.PerformActionOnServerWithBodyStub = stub
+}
+
+func (fake *FakeClient) PerformActionOnServerWithBodyArgsForCall(i int) (context.Context, generated.ServerId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.performActionOnServerWithBodyMutex.RLock()
+	defer fake.performActionOnServerWithBodyMutex.RUnlock()
+	argsForCall := fake.performActionOnServerWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) PerformActionOnServerWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.performActionOnServerWithBodyMutex.Lock()
+	defer fake.performActionOnServerWithBodyMutex.Unlock()
+	fake.PerformActionOnServerWithBodyStub = nil
+	fake.performActionOnServerWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PerformActionOnServerWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.performActionOnServerWithBodyMutex.Lock()
+	defer fake.performActionOnServerWithBodyMutex.Unlock()
+	fake.PerformActionOnServerWithBodyStub = nil
+	if fake.performActionOnServerWithBodyReturnsOnCall == nil {
+		fake.performActionOnServerWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.performActionOnServerWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) RebootServer(arg1 context.Context, arg2 generated.ServerId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.rebootServerMutex.Lock()
+	ret, specificReturn := fake.rebootServerReturnsOnCall[len(fake.rebootServerArgsForCall)]
+	fake.rebootServerArgsForCall = append(fake.rebootServerArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.RebootServerStub
+	fakeReturns := fake.rebootServerReturns
+	fake.recordInvocation("RebootServer", []interface{}{arg1, arg2, arg3})
+	fake.rebootServerMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) RebootServerCallCount() int {
+	fake.rebootServerMutex.RLock()
+	defer fake.rebootServerMutex.RUnlock()
+	return len(fake.rebootServerArgsForCall)
+}
+
+func (fake *FakeClient) RebootServerCalls(stub func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.rebootServerMutex.Lock()
+	defer fake.rebootServerMutex.Unlock()
+	fake.RebootServerStub = stub
+}
+
+func (fake *FakeClient) RebootServerArgsForCall(i int) (context.Context, generated.ServerId, []generated.RequestEditorFn) {
+	fake.rebootServerMutex.RLock()
+	defer fake.rebootServerMutex.RUnlock()
+	argsForCall := fake.rebootServerArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) RebootServerReturns(result1 *http.Response, result2 error) {
+	fake.rebootServerMutex.Lock()
+	defer fake.rebootServerMutex.Unlock()
+	fake.RebootServerStub = nil
+	fake.rebootServerReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) RebootServerReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.rebootServerMutex.Lock()
+	defer fake.rebootServerMutex.Unlock()
+	fake.RebootServerStub = nil
+	if fake.rebootServerReturnsOnCall == nil {
+		fake.rebootServerReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.rebootServerReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) RebootServerHard(arg1 context.Context, arg2 generated.ServerId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.rebootServerHardMutex.Lock()
+	ret, specificReturn := fake.rebootServerHardReturnsOnCall[len(fake.rebootServerHardArgsForCall)]
+	fake.rebootServerHardArgsForCall = append(fake.rebootServerHardArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.RebootServerHardStub
+	fakeReturns := fake.rebootServerHardReturns
+	fake.recordInvocation("RebootServerHard", []interface{}{arg1, arg2, arg3})
+	fake.rebootServerHardMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) RebootServerHardCallCount() int {
+	fake.rebootServerHardMutex.RLock()
+	defer fake.rebootServerHardMutex.RUnlock()
+	return len(fake.rebootServerHardArgsForCall)
+}
+
+func (fake *FakeClient) RebootServerHardCalls(stub func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.rebootServerHardMutex.Lock()
+	defer fake.rebootServerHardMutex.Unlock()
+	fake.RebootServerHardStub = stub
+}
+
+func (fake *FakeClient) RebootServerHardArgsForCall(i int) (context.Context, generated.ServerId, []generated.RequestEditorFn) {
+	fake.rebootServerHardMutex.RLock()
+	defer fake.rebootServerHardMutex.RUnlock()
+	argsForCall := fake.rebootServerHardArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) RebootServerHardReturns(result1 *http.Response, result2 error) {
+	fake.rebootServerHardMutex.Lock()
+	defer fake.rebootServerHardMutex.Unlock()
+	fake.RebootServerHardStub = nil
+	fake.rebootServerHardReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) RebootServerHardReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.rebootServerHardMutex.Lock()
+	defer fake.rebootServerHardMutex.Unlock()
+	fake.RebootServerHardStub = nil
+	if fake.rebootServerHardReturnsOnCall == nil {
+		fake.rebootServerHardReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.rebootServerHardReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) ResetServerPassword(arg1 context.Context, arg2 generated.ServerId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.resetServerPasswordMutex.Lock()
+	ret, specificReturn := fake.resetServerPasswordReturnsOnCall[len(fake.resetServerPasswordArgsForCall)]
+	fake.resetServerPasswordArgsForCall = append(fake.resetServerPasswordArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.ResetServerPasswordStub
+	fakeReturns := fake.resetServerPasswordReturns
+	fake.recordInvocation("ResetServerPassword", []interface{}{arg1, arg2, arg3})
+	fake.resetServerPasswordMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) ResetServerPasswordCallCount() int {
+	fake.resetServerPasswordMutex.RLock()
+	defer fake.resetServerPasswordMutex.RUnlock()
+	return len(fake.resetServerPasswordArgsForCall)
+}
+
+func (fake *FakeClient) ResetServerPasswordCalls(stub func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.resetServerPasswordMutex.Lock()
+	defer fake.resetServerPasswordMutex.Unlock()
+	fake.ResetServerPasswordStub = stub
+}
+
+func (fake *FakeClient) ResetServerPasswordArgsForCall(i int) (context.Context, generated.ServerId, []generated.RequestEditorFn) {
+	fake.resetServerPasswordMutex.RLock()
+	defer fake.resetServerPasswordMutex.RUnlock()
+	argsForCall := fake.resetServerPasswordArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) ResetServerPasswordReturns(result1 *http.Response, result2 error) {
+	fake.resetServerPasswordMutex.Lock()
+	defer fake.resetServerPasswordMutex.Unlock()
+	fake.ResetServerPasswordStub = nil
+	fake.resetServerPasswordReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) ResetServerPasswordReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.resetServerPasswordMutex.Lock()
+	defer fake.resetServerPasswordMutex.Unlock()
+	fake.ResetServerPasswordStub = nil
+	if fake.resetServerPasswordReturnsOnCall == nil {
+		fake.resetServerPasswordReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.resetServerPasswordReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) ShutdownServer(arg1 context.Context, arg2 generated.ServerId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.shutdownServerMutex.Lock()
+	ret, specificReturn := fake.shutdownServerReturnsOnCall[len(fake.shutdownServerArgsForCall)]
+	fake.shutdownServerArgsForCall = append(fake.shutdownServerArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.ShutdownServerStub
+	fakeReturns := fake.shutdownServerReturns
+	fake.recordInvocation("ShutdownServer", []interface{}{arg1, arg2, arg3})
+	fake.shutdownServerMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) ShutdownServerCallCount() int {
+	fake.shutdownServerMutex.RLock()
+	defer fake.shutdownServerMutex.RUnlock()
+	return len(fake.shutdownServerArgsForCall)
+}
+
+func (fake *FakeClient) ShutdownServerCalls(stub func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.shutdownServerMutex.Lock()
+	defer fake.shutdownServerMutex.Unlock()
+	fake.ShutdownServerStub = stub
+}
+
+func (fake *FakeClient) ShutdownServerArgsForCall(i int) (context.Context, generated.ServerId, []generated.RequestEditorFn) {
+	fake.shutdownServerMutex.RLock()
+	defer fake.shutdownServerMutex.RUnlock()
+	argsForCall := fake.shutdownServerArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) ShutdownServerReturns(result1 *http.Response, result2 error) {
+	fake.shutdownServerMutex.Lock()
+	defer fake.shutdownServerMutex.Unlock()
+	fake.ShutdownServerStub = nil
+	fake.shutdownServerReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) ShutdownServerReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.shutdownServerMutex.Lock()
+	defer fake.shutdownServerMutex.Unlock()
+	fake.ShutdownServerStub = nil
+	if fake.shutdownServerReturnsOnCall == nil {
+		fake.shutdownServerReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.shutdownServerReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) StartServer(arg1 context.Context, arg2 generated.ServerId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.startServerMutex.Lock()
+	ret, specificReturn := fake.startServerReturnsOnCall[len(fake.startServerArgsForCall)]
+	fake.startServerArgsForCall = append(fake.startServerArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.StartServerStub
+	fakeReturns := fake.startServerReturns
+	fake.recordInvocation("StartServer", []interface{}{arg1, arg2, arg3})
+	fake.startServerMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) StartServerCallCount() int {
+	fake.startServerMutex.RLock()
+	defer fake.startServerMutex.RUnlock()
+	return len(fake.startServerArgsForCall)
+}
+
+func (fake *FakeClient) StartServerCalls(stub func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.startServerMutex.Lock()
+	defer fake.startServerMutex.Unlock()
+	fake.StartServerStub = stub
+}
+
+func (fake *FakeClient) StartServerArgsForCall(i int) (context.Context, generated.ServerId, []generated.RequestEditorFn) {
+	fake.startServerMutex.RLock()
+	defer fake.startServerMutex.RUnlock()
+	argsForCall := fake.startServerArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) StartServerReturns(result1 *http.Response, result2 error) {
+	fake.startServerMutex.Lock()
+	defer fake.startServerMutex.Unlock()
+	fake.StartServerStub = nil
+	fake.startServerReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) StartServerReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.startServerMutex.Lock()
+	defer fake.startServerMutex.Unlock()
+	fake.StartServerStub = nil
+	if fake.startServerReturnsOnCall == nil {
+		fake.startServerReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.startServerReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) TransferResourceToAnotherProject(arg1 context.Context, arg2 generated.ProjectId, arg3 generated.TransferResourceToAnotherProjectJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.transferResourceToAnotherProjectMutex.Lock()
 	ret, specificReturn := fake.transferResourceToAnotherProjectReturnsOnCall[len(fake.transferResourceToAnotherProjectArgsForCall)]
@@ -5409,6 +10179,207 @@ func (fake *FakeClient) TransferStorageWithBodyReturnsOnCall(i int, result1 *htt
 		})
 	}
 	fake.transferStorageWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UnbindFloatingIp(arg1 context.Context, arg2 generated.FloatingIpId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.unbindFloatingIpMutex.Lock()
+	ret, specificReturn := fake.unbindFloatingIpReturnsOnCall[len(fake.unbindFloatingIpArgsForCall)]
+	fake.unbindFloatingIpArgsForCall = append(fake.unbindFloatingIpArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.FloatingIpId
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.UnbindFloatingIpStub
+	fakeReturns := fake.unbindFloatingIpReturns
+	fake.recordInvocation("UnbindFloatingIp", []interface{}{arg1, arg2, arg3})
+	fake.unbindFloatingIpMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UnbindFloatingIpCallCount() int {
+	fake.unbindFloatingIpMutex.RLock()
+	defer fake.unbindFloatingIpMutex.RUnlock()
+	return len(fake.unbindFloatingIpArgsForCall)
+}
+
+func (fake *FakeClient) UnbindFloatingIpCalls(stub func(context.Context, generated.FloatingIpId, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.unbindFloatingIpMutex.Lock()
+	defer fake.unbindFloatingIpMutex.Unlock()
+	fake.UnbindFloatingIpStub = stub
+}
+
+func (fake *FakeClient) UnbindFloatingIpArgsForCall(i int) (context.Context, generated.FloatingIpId, []generated.RequestEditorFn) {
+	fake.unbindFloatingIpMutex.RLock()
+	defer fake.unbindFloatingIpMutex.RUnlock()
+	argsForCall := fake.unbindFloatingIpArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) UnbindFloatingIpReturns(result1 *http.Response, result2 error) {
+	fake.unbindFloatingIpMutex.Lock()
+	defer fake.unbindFloatingIpMutex.Unlock()
+	fake.UnbindFloatingIpStub = nil
+	fake.unbindFloatingIpReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UnbindFloatingIpReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.unbindFloatingIpMutex.Lock()
+	defer fake.unbindFloatingIpMutex.Unlock()
+	fake.UnbindFloatingIpStub = nil
+	if fake.unbindFloatingIpReturnsOnCall == nil {
+		fake.unbindFloatingIpReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.unbindFloatingIpReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateFloatingIP(arg1 context.Context, arg2 generated.FloatingIpId, arg3 generated.UpdateFloatingIPJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateFloatingIPMutex.Lock()
+	ret, specificReturn := fake.updateFloatingIPReturnsOnCall[len(fake.updateFloatingIPArgsForCall)]
+	fake.updateFloatingIPArgsForCall = append(fake.updateFloatingIPArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.FloatingIpId
+		arg3 generated.UpdateFloatingIPJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.UpdateFloatingIPStub
+	fakeReturns := fake.updateFloatingIPReturns
+	fake.recordInvocation("UpdateFloatingIP", []interface{}{arg1, arg2, arg3, arg4})
+	fake.updateFloatingIPMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateFloatingIPCallCount() int {
+	fake.updateFloatingIPMutex.RLock()
+	defer fake.updateFloatingIPMutex.RUnlock()
+	return len(fake.updateFloatingIPArgsForCall)
+}
+
+func (fake *FakeClient) UpdateFloatingIPCalls(stub func(context.Context, generated.FloatingIpId, generated.UpdateFloatingIPJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateFloatingIPMutex.Lock()
+	defer fake.updateFloatingIPMutex.Unlock()
+	fake.UpdateFloatingIPStub = stub
+}
+
+func (fake *FakeClient) UpdateFloatingIPArgsForCall(i int) (context.Context, generated.FloatingIpId, generated.UpdateFloatingIPJSONRequestBody, []generated.RequestEditorFn) {
+	fake.updateFloatingIPMutex.RLock()
+	defer fake.updateFloatingIPMutex.RUnlock()
+	argsForCall := fake.updateFloatingIPArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) UpdateFloatingIPReturns(result1 *http.Response, result2 error) {
+	fake.updateFloatingIPMutex.Lock()
+	defer fake.updateFloatingIPMutex.Unlock()
+	fake.UpdateFloatingIPStub = nil
+	fake.updateFloatingIPReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateFloatingIPReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateFloatingIPMutex.Lock()
+	defer fake.updateFloatingIPMutex.Unlock()
+	fake.UpdateFloatingIPStub = nil
+	if fake.updateFloatingIPReturnsOnCall == nil {
+		fake.updateFloatingIPReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateFloatingIPReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateFloatingIPWithBody(arg1 context.Context, arg2 generated.FloatingIpId, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateFloatingIPWithBodyMutex.Lock()
+	ret, specificReturn := fake.updateFloatingIPWithBodyReturnsOnCall[len(fake.updateFloatingIPWithBodyArgsForCall)]
+	fake.updateFloatingIPWithBodyArgsForCall = append(fake.updateFloatingIPWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.FloatingIpId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.UpdateFloatingIPWithBodyStub
+	fakeReturns := fake.updateFloatingIPWithBodyReturns
+	fake.recordInvocation("UpdateFloatingIPWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.updateFloatingIPWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateFloatingIPWithBodyCallCount() int {
+	fake.updateFloatingIPWithBodyMutex.RLock()
+	defer fake.updateFloatingIPWithBodyMutex.RUnlock()
+	return len(fake.updateFloatingIPWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) UpdateFloatingIPWithBodyCalls(stub func(context.Context, generated.FloatingIpId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateFloatingIPWithBodyMutex.Lock()
+	defer fake.updateFloatingIPWithBodyMutex.Unlock()
+	fake.UpdateFloatingIPWithBodyStub = stub
+}
+
+func (fake *FakeClient) UpdateFloatingIPWithBodyArgsForCall(i int) (context.Context, generated.FloatingIpId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.updateFloatingIPWithBodyMutex.RLock()
+	defer fake.updateFloatingIPWithBodyMutex.RUnlock()
+	argsForCall := fake.updateFloatingIPWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) UpdateFloatingIPWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.updateFloatingIPWithBodyMutex.Lock()
+	defer fake.updateFloatingIPWithBodyMutex.Unlock()
+	fake.UpdateFloatingIPWithBodyStub = nil
+	fake.updateFloatingIPWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateFloatingIPWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateFloatingIPWithBodyMutex.Lock()
+	defer fake.updateFloatingIPWithBodyMutex.Unlock()
+	fake.UpdateFloatingIPWithBodyStub = nil
+	if fake.updateFloatingIPWithBodyReturnsOnCall == nil {
+		fake.updateFloatingIPWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateFloatingIPWithBodyReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -5819,6 +10790,959 @@ func (fake *FakeClient) UpdateRegistryWithBodyReturnsOnCall(i int, result1 *http
 	}{result1, result2}
 }
 
+func (fake *FakeClient) UpdateServer(arg1 context.Context, arg2 generated.ServerId, arg3 generated.UpdateServerJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateServerMutex.Lock()
+	ret, specificReturn := fake.updateServerReturnsOnCall[len(fake.updateServerArgsForCall)]
+	fake.updateServerArgsForCall = append(fake.updateServerArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.UpdateServerJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.UpdateServerStub
+	fakeReturns := fake.updateServerReturns
+	fake.recordInvocation("UpdateServer", []interface{}{arg1, arg2, arg3, arg4})
+	fake.updateServerMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateServerCallCount() int {
+	fake.updateServerMutex.RLock()
+	defer fake.updateServerMutex.RUnlock()
+	return len(fake.updateServerArgsForCall)
+}
+
+func (fake *FakeClient) UpdateServerCalls(stub func(context.Context, generated.ServerId, generated.UpdateServerJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateServerMutex.Lock()
+	defer fake.updateServerMutex.Unlock()
+	fake.UpdateServerStub = stub
+}
+
+func (fake *FakeClient) UpdateServerArgsForCall(i int) (context.Context, generated.ServerId, generated.UpdateServerJSONRequestBody, []generated.RequestEditorFn) {
+	fake.updateServerMutex.RLock()
+	defer fake.updateServerMutex.RUnlock()
+	argsForCall := fake.updateServerArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) UpdateServerReturns(result1 *http.Response, result2 error) {
+	fake.updateServerMutex.Lock()
+	defer fake.updateServerMutex.Unlock()
+	fake.UpdateServerStub = nil
+	fake.updateServerReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateServerMutex.Lock()
+	defer fake.updateServerMutex.Unlock()
+	fake.UpdateServerStub = nil
+	if fake.updateServerReturnsOnCall == nil {
+		fake.updateServerReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateServerReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerDisk(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 generated.UpdateServerDiskJSONRequestBody, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateServerDiskMutex.Lock()
+	ret, specificReturn := fake.updateServerDiskReturnsOnCall[len(fake.updateServerDiskArgsForCall)]
+	fake.updateServerDiskArgsForCall = append(fake.updateServerDiskArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.UpdateServerDiskJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.UpdateServerDiskStub
+	fakeReturns := fake.updateServerDiskReturns
+	fake.recordInvocation("UpdateServerDisk", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.updateServerDiskMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateServerDiskCallCount() int {
+	fake.updateServerDiskMutex.RLock()
+	defer fake.updateServerDiskMutex.RUnlock()
+	return len(fake.updateServerDiskArgsForCall)
+}
+
+func (fake *FakeClient) UpdateServerDiskCalls(stub func(context.Context, generated.ServerId, generated.DiskId, generated.UpdateServerDiskJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateServerDiskMutex.Lock()
+	defer fake.updateServerDiskMutex.Unlock()
+	fake.UpdateServerDiskStub = stub
+}
+
+func (fake *FakeClient) UpdateServerDiskArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, generated.UpdateServerDiskJSONRequestBody, []generated.RequestEditorFn) {
+	fake.updateServerDiskMutex.RLock()
+	defer fake.updateServerDiskMutex.RUnlock()
+	argsForCall := fake.updateServerDiskArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) UpdateServerDiskReturns(result1 *http.Response, result2 error) {
+	fake.updateServerDiskMutex.Lock()
+	defer fake.updateServerDiskMutex.Unlock()
+	fake.UpdateServerDiskStub = nil
+	fake.updateServerDiskReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerDiskReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateServerDiskMutex.Lock()
+	defer fake.updateServerDiskMutex.Unlock()
+	fake.UpdateServerDiskStub = nil
+	if fake.updateServerDiskReturnsOnCall == nil {
+		fake.updateServerDiskReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateServerDiskReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerDiskAutoBackupSettings(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 generated.UpdateServerDiskAutoBackupSettingsJSONRequestBody, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateServerDiskAutoBackupSettingsMutex.Lock()
+	ret, specificReturn := fake.updateServerDiskAutoBackupSettingsReturnsOnCall[len(fake.updateServerDiskAutoBackupSettingsArgsForCall)]
+	fake.updateServerDiskAutoBackupSettingsArgsForCall = append(fake.updateServerDiskAutoBackupSettingsArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.UpdateServerDiskAutoBackupSettingsJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.UpdateServerDiskAutoBackupSettingsStub
+	fakeReturns := fake.updateServerDiskAutoBackupSettingsReturns
+	fake.recordInvocation("UpdateServerDiskAutoBackupSettings", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.updateServerDiskAutoBackupSettingsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateServerDiskAutoBackupSettingsCallCount() int {
+	fake.updateServerDiskAutoBackupSettingsMutex.RLock()
+	defer fake.updateServerDiskAutoBackupSettingsMutex.RUnlock()
+	return len(fake.updateServerDiskAutoBackupSettingsArgsForCall)
+}
+
+func (fake *FakeClient) UpdateServerDiskAutoBackupSettingsCalls(stub func(context.Context, generated.ServerId, generated.DiskId, generated.UpdateServerDiskAutoBackupSettingsJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateServerDiskAutoBackupSettingsMutex.Lock()
+	defer fake.updateServerDiskAutoBackupSettingsMutex.Unlock()
+	fake.UpdateServerDiskAutoBackupSettingsStub = stub
+}
+
+func (fake *FakeClient) UpdateServerDiskAutoBackupSettingsArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, generated.UpdateServerDiskAutoBackupSettingsJSONRequestBody, []generated.RequestEditorFn) {
+	fake.updateServerDiskAutoBackupSettingsMutex.RLock()
+	defer fake.updateServerDiskAutoBackupSettingsMutex.RUnlock()
+	argsForCall := fake.updateServerDiskAutoBackupSettingsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) UpdateServerDiskAutoBackupSettingsReturns(result1 *http.Response, result2 error) {
+	fake.updateServerDiskAutoBackupSettingsMutex.Lock()
+	defer fake.updateServerDiskAutoBackupSettingsMutex.Unlock()
+	fake.UpdateServerDiskAutoBackupSettingsStub = nil
+	fake.updateServerDiskAutoBackupSettingsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerDiskAutoBackupSettingsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateServerDiskAutoBackupSettingsMutex.Lock()
+	defer fake.updateServerDiskAutoBackupSettingsMutex.Unlock()
+	fake.UpdateServerDiskAutoBackupSettingsStub = nil
+	if fake.updateServerDiskAutoBackupSettingsReturnsOnCall == nil {
+		fake.updateServerDiskAutoBackupSettingsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateServerDiskAutoBackupSettingsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerDiskAutoBackupSettingsWithBody(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 string, arg5 io.Reader, arg6 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateServerDiskAutoBackupSettingsWithBodyMutex.Lock()
+	ret, specificReturn := fake.updateServerDiskAutoBackupSettingsWithBodyReturnsOnCall[len(fake.updateServerDiskAutoBackupSettingsWithBodyArgsForCall)]
+	fake.updateServerDiskAutoBackupSettingsWithBodyArgsForCall = append(fake.updateServerDiskAutoBackupSettingsWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6})
+	stub := fake.UpdateServerDiskAutoBackupSettingsWithBodyStub
+	fakeReturns := fake.updateServerDiskAutoBackupSettingsWithBodyReturns
+	fake.recordInvocation("UpdateServerDiskAutoBackupSettingsWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6})
+	fake.updateServerDiskAutoBackupSettingsWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateServerDiskAutoBackupSettingsWithBodyCallCount() int {
+	fake.updateServerDiskAutoBackupSettingsWithBodyMutex.RLock()
+	defer fake.updateServerDiskAutoBackupSettingsWithBodyMutex.RUnlock()
+	return len(fake.updateServerDiskAutoBackupSettingsWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) UpdateServerDiskAutoBackupSettingsWithBodyCalls(stub func(context.Context, generated.ServerId, generated.DiskId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateServerDiskAutoBackupSettingsWithBodyMutex.Lock()
+	defer fake.updateServerDiskAutoBackupSettingsWithBodyMutex.Unlock()
+	fake.UpdateServerDiskAutoBackupSettingsWithBodyStub = stub
+}
+
+func (fake *FakeClient) UpdateServerDiskAutoBackupSettingsWithBodyArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.updateServerDiskAutoBackupSettingsWithBodyMutex.RLock()
+	defer fake.updateServerDiskAutoBackupSettingsWithBodyMutex.RUnlock()
+	argsForCall := fake.updateServerDiskAutoBackupSettingsWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6
+}
+
+func (fake *FakeClient) UpdateServerDiskAutoBackupSettingsWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.updateServerDiskAutoBackupSettingsWithBodyMutex.Lock()
+	defer fake.updateServerDiskAutoBackupSettingsWithBodyMutex.Unlock()
+	fake.UpdateServerDiskAutoBackupSettingsWithBodyStub = nil
+	fake.updateServerDiskAutoBackupSettingsWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerDiskAutoBackupSettingsWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateServerDiskAutoBackupSettingsWithBodyMutex.Lock()
+	defer fake.updateServerDiskAutoBackupSettingsWithBodyMutex.Unlock()
+	fake.UpdateServerDiskAutoBackupSettingsWithBodyStub = nil
+	if fake.updateServerDiskAutoBackupSettingsWithBodyReturnsOnCall == nil {
+		fake.updateServerDiskAutoBackupSettingsWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateServerDiskAutoBackupSettingsWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerDiskBackup(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 generated.ServerBackupId, arg5 generated.UpdateServerDiskBackupJSONRequestBody, arg6 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateServerDiskBackupMutex.Lock()
+	ret, specificReturn := fake.updateServerDiskBackupReturnsOnCall[len(fake.updateServerDiskBackupArgsForCall)]
+	fake.updateServerDiskBackupArgsForCall = append(fake.updateServerDiskBackupArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.ServerBackupId
+		arg5 generated.UpdateServerDiskBackupJSONRequestBody
+		arg6 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6})
+	stub := fake.UpdateServerDiskBackupStub
+	fakeReturns := fake.updateServerDiskBackupReturns
+	fake.recordInvocation("UpdateServerDiskBackup", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6})
+	fake.updateServerDiskBackupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateServerDiskBackupCallCount() int {
+	fake.updateServerDiskBackupMutex.RLock()
+	defer fake.updateServerDiskBackupMutex.RUnlock()
+	return len(fake.updateServerDiskBackupArgsForCall)
+}
+
+func (fake *FakeClient) UpdateServerDiskBackupCalls(stub func(context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, generated.UpdateServerDiskBackupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateServerDiskBackupMutex.Lock()
+	defer fake.updateServerDiskBackupMutex.Unlock()
+	fake.UpdateServerDiskBackupStub = stub
+}
+
+func (fake *FakeClient) UpdateServerDiskBackupArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, generated.UpdateServerDiskBackupJSONRequestBody, []generated.RequestEditorFn) {
+	fake.updateServerDiskBackupMutex.RLock()
+	defer fake.updateServerDiskBackupMutex.RUnlock()
+	argsForCall := fake.updateServerDiskBackupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6
+}
+
+func (fake *FakeClient) UpdateServerDiskBackupReturns(result1 *http.Response, result2 error) {
+	fake.updateServerDiskBackupMutex.Lock()
+	defer fake.updateServerDiskBackupMutex.Unlock()
+	fake.UpdateServerDiskBackupStub = nil
+	fake.updateServerDiskBackupReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerDiskBackupReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateServerDiskBackupMutex.Lock()
+	defer fake.updateServerDiskBackupMutex.Unlock()
+	fake.UpdateServerDiskBackupStub = nil
+	if fake.updateServerDiskBackupReturnsOnCall == nil {
+		fake.updateServerDiskBackupReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateServerDiskBackupReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerDiskBackupWithBody(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 generated.ServerBackupId, arg5 string, arg6 io.Reader, arg7 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateServerDiskBackupWithBodyMutex.Lock()
+	ret, specificReturn := fake.updateServerDiskBackupWithBodyReturnsOnCall[len(fake.updateServerDiskBackupWithBodyArgsForCall)]
+	fake.updateServerDiskBackupWithBodyArgsForCall = append(fake.updateServerDiskBackupWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 generated.ServerBackupId
+		arg5 string
+		arg6 io.Reader
+		arg7 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6, arg7})
+	stub := fake.UpdateServerDiskBackupWithBodyStub
+	fakeReturns := fake.updateServerDiskBackupWithBodyReturns
+	fake.recordInvocation("UpdateServerDiskBackupWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6, arg7})
+	fake.updateServerDiskBackupWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6, arg7...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateServerDiskBackupWithBodyCallCount() int {
+	fake.updateServerDiskBackupWithBodyMutex.RLock()
+	defer fake.updateServerDiskBackupWithBodyMutex.RUnlock()
+	return len(fake.updateServerDiskBackupWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) UpdateServerDiskBackupWithBodyCalls(stub func(context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateServerDiskBackupWithBodyMutex.Lock()
+	defer fake.updateServerDiskBackupWithBodyMutex.Unlock()
+	fake.UpdateServerDiskBackupWithBodyStub = stub
+}
+
+func (fake *FakeClient) UpdateServerDiskBackupWithBodyArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.updateServerDiskBackupWithBodyMutex.RLock()
+	defer fake.updateServerDiskBackupWithBodyMutex.RUnlock()
+	argsForCall := fake.updateServerDiskBackupWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6, argsForCall.arg7
+}
+
+func (fake *FakeClient) UpdateServerDiskBackupWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.updateServerDiskBackupWithBodyMutex.Lock()
+	defer fake.updateServerDiskBackupWithBodyMutex.Unlock()
+	fake.UpdateServerDiskBackupWithBodyStub = nil
+	fake.updateServerDiskBackupWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerDiskBackupWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateServerDiskBackupWithBodyMutex.Lock()
+	defer fake.updateServerDiskBackupWithBodyMutex.Unlock()
+	fake.UpdateServerDiskBackupWithBodyStub = nil
+	if fake.updateServerDiskBackupWithBodyReturnsOnCall == nil {
+		fake.updateServerDiskBackupWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateServerDiskBackupWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerDiskWithBody(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 string, arg5 io.Reader, arg6 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateServerDiskWithBodyMutex.Lock()
+	ret, specificReturn := fake.updateServerDiskWithBodyReturnsOnCall[len(fake.updateServerDiskWithBodyArgsForCall)]
+	fake.updateServerDiskWithBodyArgsForCall = append(fake.updateServerDiskWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.DiskId
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6})
+	stub := fake.UpdateServerDiskWithBodyStub
+	fakeReturns := fake.updateServerDiskWithBodyReturns
+	fake.recordInvocation("UpdateServerDiskWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6})
+	fake.updateServerDiskWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateServerDiskWithBodyCallCount() int {
+	fake.updateServerDiskWithBodyMutex.RLock()
+	defer fake.updateServerDiskWithBodyMutex.RUnlock()
+	return len(fake.updateServerDiskWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) UpdateServerDiskWithBodyCalls(stub func(context.Context, generated.ServerId, generated.DiskId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateServerDiskWithBodyMutex.Lock()
+	defer fake.updateServerDiskWithBodyMutex.Unlock()
+	fake.UpdateServerDiskWithBodyStub = stub
+}
+
+func (fake *FakeClient) UpdateServerDiskWithBodyArgsForCall(i int) (context.Context, generated.ServerId, generated.DiskId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.updateServerDiskWithBodyMutex.RLock()
+	defer fake.updateServerDiskWithBodyMutex.RUnlock()
+	argsForCall := fake.updateServerDiskWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6
+}
+
+func (fake *FakeClient) UpdateServerDiskWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.updateServerDiskWithBodyMutex.Lock()
+	defer fake.updateServerDiskWithBodyMutex.Unlock()
+	fake.UpdateServerDiskWithBodyStub = nil
+	fake.updateServerDiskWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerDiskWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateServerDiskWithBodyMutex.Lock()
+	defer fake.updateServerDiskWithBodyMutex.Unlock()
+	fake.UpdateServerDiskWithBodyStub = nil
+	if fake.updateServerDiskWithBodyReturnsOnCall == nil {
+		fake.updateServerDiskWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateServerDiskWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerIP(arg1 context.Context, arg2 generated.ServerId, arg3 generated.UpdateServerIPJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateServerIPMutex.Lock()
+	ret, specificReturn := fake.updateServerIPReturnsOnCall[len(fake.updateServerIPArgsForCall)]
+	fake.updateServerIPArgsForCall = append(fake.updateServerIPArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.UpdateServerIPJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.UpdateServerIPStub
+	fakeReturns := fake.updateServerIPReturns
+	fake.recordInvocation("UpdateServerIP", []interface{}{arg1, arg2, arg3, arg4})
+	fake.updateServerIPMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateServerIPCallCount() int {
+	fake.updateServerIPMutex.RLock()
+	defer fake.updateServerIPMutex.RUnlock()
+	return len(fake.updateServerIPArgsForCall)
+}
+
+func (fake *FakeClient) UpdateServerIPCalls(stub func(context.Context, generated.ServerId, generated.UpdateServerIPJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateServerIPMutex.Lock()
+	defer fake.updateServerIPMutex.Unlock()
+	fake.UpdateServerIPStub = stub
+}
+
+func (fake *FakeClient) UpdateServerIPArgsForCall(i int) (context.Context, generated.ServerId, generated.UpdateServerIPJSONRequestBody, []generated.RequestEditorFn) {
+	fake.updateServerIPMutex.RLock()
+	defer fake.updateServerIPMutex.RUnlock()
+	argsForCall := fake.updateServerIPArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) UpdateServerIPReturns(result1 *http.Response, result2 error) {
+	fake.updateServerIPMutex.Lock()
+	defer fake.updateServerIPMutex.Unlock()
+	fake.UpdateServerIPStub = nil
+	fake.updateServerIPReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerIPReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateServerIPMutex.Lock()
+	defer fake.updateServerIPMutex.Unlock()
+	fake.UpdateServerIPStub = nil
+	if fake.updateServerIPReturnsOnCall == nil {
+		fake.updateServerIPReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateServerIPReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerIPWithBody(arg1 context.Context, arg2 generated.ServerId, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateServerIPWithBodyMutex.Lock()
+	ret, specificReturn := fake.updateServerIPWithBodyReturnsOnCall[len(fake.updateServerIPWithBodyArgsForCall)]
+	fake.updateServerIPWithBodyArgsForCall = append(fake.updateServerIPWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.UpdateServerIPWithBodyStub
+	fakeReturns := fake.updateServerIPWithBodyReturns
+	fake.recordInvocation("UpdateServerIPWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.updateServerIPWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateServerIPWithBodyCallCount() int {
+	fake.updateServerIPWithBodyMutex.RLock()
+	defer fake.updateServerIPWithBodyMutex.RUnlock()
+	return len(fake.updateServerIPWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) UpdateServerIPWithBodyCalls(stub func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateServerIPWithBodyMutex.Lock()
+	defer fake.updateServerIPWithBodyMutex.Unlock()
+	fake.UpdateServerIPWithBodyStub = stub
+}
+
+func (fake *FakeClient) UpdateServerIPWithBodyArgsForCall(i int) (context.Context, generated.ServerId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.updateServerIPWithBodyMutex.RLock()
+	defer fake.updateServerIPWithBodyMutex.RUnlock()
+	argsForCall := fake.updateServerIPWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) UpdateServerIPWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.updateServerIPWithBodyMutex.Lock()
+	defer fake.updateServerIPWithBodyMutex.Unlock()
+	fake.UpdateServerIPWithBodyStub = nil
+	fake.updateServerIPWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerIPWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateServerIPWithBodyMutex.Lock()
+	defer fake.updateServerIPWithBodyMutex.Unlock()
+	fake.UpdateServerIPWithBodyStub = nil
+	if fake.updateServerIPWithBodyReturnsOnCall == nil {
+		fake.updateServerIPWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateServerIPWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerNAT(arg1 context.Context, arg2 generated.ServerId, arg3 generated.UpdateServerNATJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateServerNATMutex.Lock()
+	ret, specificReturn := fake.updateServerNATReturnsOnCall[len(fake.updateServerNATArgsForCall)]
+	fake.updateServerNATArgsForCall = append(fake.updateServerNATArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.UpdateServerNATJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.UpdateServerNATStub
+	fakeReturns := fake.updateServerNATReturns
+	fake.recordInvocation("UpdateServerNAT", []interface{}{arg1, arg2, arg3, arg4})
+	fake.updateServerNATMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateServerNATCallCount() int {
+	fake.updateServerNATMutex.RLock()
+	defer fake.updateServerNATMutex.RUnlock()
+	return len(fake.updateServerNATArgsForCall)
+}
+
+func (fake *FakeClient) UpdateServerNATCalls(stub func(context.Context, generated.ServerId, generated.UpdateServerNATJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateServerNATMutex.Lock()
+	defer fake.updateServerNATMutex.Unlock()
+	fake.UpdateServerNATStub = stub
+}
+
+func (fake *FakeClient) UpdateServerNATArgsForCall(i int) (context.Context, generated.ServerId, generated.UpdateServerNATJSONRequestBody, []generated.RequestEditorFn) {
+	fake.updateServerNATMutex.RLock()
+	defer fake.updateServerNATMutex.RUnlock()
+	argsForCall := fake.updateServerNATArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) UpdateServerNATReturns(result1 *http.Response, result2 error) {
+	fake.updateServerNATMutex.Lock()
+	defer fake.updateServerNATMutex.Unlock()
+	fake.UpdateServerNATStub = nil
+	fake.updateServerNATReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerNATReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateServerNATMutex.Lock()
+	defer fake.updateServerNATMutex.Unlock()
+	fake.UpdateServerNATStub = nil
+	if fake.updateServerNATReturnsOnCall == nil {
+		fake.updateServerNATReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateServerNATReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerNATWithBody(arg1 context.Context, arg2 generated.ServerId, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateServerNATWithBodyMutex.Lock()
+	ret, specificReturn := fake.updateServerNATWithBodyReturnsOnCall[len(fake.updateServerNATWithBodyArgsForCall)]
+	fake.updateServerNATWithBodyArgsForCall = append(fake.updateServerNATWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.UpdateServerNATWithBodyStub
+	fakeReturns := fake.updateServerNATWithBodyReturns
+	fake.recordInvocation("UpdateServerNATWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.updateServerNATWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateServerNATWithBodyCallCount() int {
+	fake.updateServerNATWithBodyMutex.RLock()
+	defer fake.updateServerNATWithBodyMutex.RUnlock()
+	return len(fake.updateServerNATWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) UpdateServerNATWithBodyCalls(stub func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateServerNATWithBodyMutex.Lock()
+	defer fake.updateServerNATWithBodyMutex.Unlock()
+	fake.UpdateServerNATWithBodyStub = stub
+}
+
+func (fake *FakeClient) UpdateServerNATWithBodyArgsForCall(i int) (context.Context, generated.ServerId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.updateServerNATWithBodyMutex.RLock()
+	defer fake.updateServerNATWithBodyMutex.RUnlock()
+	argsForCall := fake.updateServerNATWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) UpdateServerNATWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.updateServerNATWithBodyMutex.Lock()
+	defer fake.updateServerNATWithBodyMutex.Unlock()
+	fake.UpdateServerNATWithBodyStub = nil
+	fake.updateServerNATWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerNATWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateServerNATWithBodyMutex.Lock()
+	defer fake.updateServerNATWithBodyMutex.Unlock()
+	fake.UpdateServerNATWithBodyStub = nil
+	if fake.updateServerNATWithBodyReturnsOnCall == nil {
+		fake.updateServerNATWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateServerNATWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerOSBootMode(arg1 context.Context, arg2 generated.ServerId, arg3 generated.UpdateServerOSBootModeJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateServerOSBootModeMutex.Lock()
+	ret, specificReturn := fake.updateServerOSBootModeReturnsOnCall[len(fake.updateServerOSBootModeArgsForCall)]
+	fake.updateServerOSBootModeArgsForCall = append(fake.updateServerOSBootModeArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 generated.UpdateServerOSBootModeJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.UpdateServerOSBootModeStub
+	fakeReturns := fake.updateServerOSBootModeReturns
+	fake.recordInvocation("UpdateServerOSBootMode", []interface{}{arg1, arg2, arg3, arg4})
+	fake.updateServerOSBootModeMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateServerOSBootModeCallCount() int {
+	fake.updateServerOSBootModeMutex.RLock()
+	defer fake.updateServerOSBootModeMutex.RUnlock()
+	return len(fake.updateServerOSBootModeArgsForCall)
+}
+
+func (fake *FakeClient) UpdateServerOSBootModeCalls(stub func(context.Context, generated.ServerId, generated.UpdateServerOSBootModeJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateServerOSBootModeMutex.Lock()
+	defer fake.updateServerOSBootModeMutex.Unlock()
+	fake.UpdateServerOSBootModeStub = stub
+}
+
+func (fake *FakeClient) UpdateServerOSBootModeArgsForCall(i int) (context.Context, generated.ServerId, generated.UpdateServerOSBootModeJSONRequestBody, []generated.RequestEditorFn) {
+	fake.updateServerOSBootModeMutex.RLock()
+	defer fake.updateServerOSBootModeMutex.RUnlock()
+	argsForCall := fake.updateServerOSBootModeArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) UpdateServerOSBootModeReturns(result1 *http.Response, result2 error) {
+	fake.updateServerOSBootModeMutex.Lock()
+	defer fake.updateServerOSBootModeMutex.Unlock()
+	fake.UpdateServerOSBootModeStub = nil
+	fake.updateServerOSBootModeReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerOSBootModeReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateServerOSBootModeMutex.Lock()
+	defer fake.updateServerOSBootModeMutex.Unlock()
+	fake.UpdateServerOSBootModeStub = nil
+	if fake.updateServerOSBootModeReturnsOnCall == nil {
+		fake.updateServerOSBootModeReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateServerOSBootModeReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerOSBootModeWithBody(arg1 context.Context, arg2 generated.ServerId, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateServerOSBootModeWithBodyMutex.Lock()
+	ret, specificReturn := fake.updateServerOSBootModeWithBodyReturnsOnCall[len(fake.updateServerOSBootModeWithBodyArgsForCall)]
+	fake.updateServerOSBootModeWithBodyArgsForCall = append(fake.updateServerOSBootModeWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.UpdateServerOSBootModeWithBodyStub
+	fakeReturns := fake.updateServerOSBootModeWithBodyReturns
+	fake.recordInvocation("UpdateServerOSBootModeWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.updateServerOSBootModeWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateServerOSBootModeWithBodyCallCount() int {
+	fake.updateServerOSBootModeWithBodyMutex.RLock()
+	defer fake.updateServerOSBootModeWithBodyMutex.RUnlock()
+	return len(fake.updateServerOSBootModeWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) UpdateServerOSBootModeWithBodyCalls(stub func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateServerOSBootModeWithBodyMutex.Lock()
+	defer fake.updateServerOSBootModeWithBodyMutex.Unlock()
+	fake.UpdateServerOSBootModeWithBodyStub = stub
+}
+
+func (fake *FakeClient) UpdateServerOSBootModeWithBodyArgsForCall(i int) (context.Context, generated.ServerId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.updateServerOSBootModeWithBodyMutex.RLock()
+	defer fake.updateServerOSBootModeWithBodyMutex.RUnlock()
+	argsForCall := fake.updateServerOSBootModeWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) UpdateServerOSBootModeWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.updateServerOSBootModeWithBodyMutex.Lock()
+	defer fake.updateServerOSBootModeWithBodyMutex.Unlock()
+	fake.UpdateServerOSBootModeWithBodyStub = nil
+	fake.updateServerOSBootModeWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerOSBootModeWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateServerOSBootModeWithBodyMutex.Lock()
+	defer fake.updateServerOSBootModeWithBodyMutex.Unlock()
+	fake.UpdateServerOSBootModeWithBodyStub = nil
+	if fake.updateServerOSBootModeWithBodyReturnsOnCall == nil {
+		fake.updateServerOSBootModeWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateServerOSBootModeWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerWithBody(arg1 context.Context, arg2 generated.ServerId, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateServerWithBodyMutex.Lock()
+	ret, specificReturn := fake.updateServerWithBodyReturnsOnCall[len(fake.updateServerWithBodyArgsForCall)]
+	fake.updateServerWithBodyArgsForCall = append(fake.updateServerWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.ServerId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.UpdateServerWithBodyStub
+	fakeReturns := fake.updateServerWithBodyReturns
+	fake.recordInvocation("UpdateServerWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.updateServerWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateServerWithBodyCallCount() int {
+	fake.updateServerWithBodyMutex.RLock()
+	defer fake.updateServerWithBodyMutex.RUnlock()
+	return len(fake.updateServerWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) UpdateServerWithBodyCalls(stub func(context.Context, generated.ServerId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateServerWithBodyMutex.Lock()
+	defer fake.updateServerWithBodyMutex.Unlock()
+	fake.UpdateServerWithBodyStub = stub
+}
+
+func (fake *FakeClient) UpdateServerWithBodyArgsForCall(i int) (context.Context, generated.ServerId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.updateServerWithBodyMutex.RLock()
+	defer fake.updateServerWithBodyMutex.RUnlock()
+	argsForCall := fake.updateServerWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) UpdateServerWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.updateServerWithBodyMutex.Lock()
+	defer fake.updateServerWithBodyMutex.Unlock()
+	fake.UpdateServerWithBodyStub = nil
+	fake.updateServerWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateServerWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateServerWithBodyMutex.Lock()
+	defer fake.updateServerWithBodyMutex.Unlock()
+	fake.UpdateServerWithBodyStub = nil
+	if fake.updateServerWithBodyReturnsOnCall == nil {
+		fake.updateServerWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateServerWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) UpdateStorage(arg1 context.Context, arg2 generated.BucketId, arg3 generated.UpdateStorageJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.updateStorageMutex.Lock()
 	ret, specificReturn := fake.updateStorageReturnsOnCall[len(fake.updateStorageArgsForCall)]
@@ -6089,6 +12013,141 @@ func (fake *FakeClient) UpdateStorageWithBodyReturnsOnCall(i int, result1 *http.
 	}{result1, result2}
 }
 
+func (fake *FakeClient) UpdateVPCs(arg1 context.Context, arg2 generated.VpcId, arg3 generated.UpdateVPCsJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateVPCsMutex.Lock()
+	ret, specificReturn := fake.updateVPCsReturnsOnCall[len(fake.updateVPCsArgsForCall)]
+	fake.updateVPCsArgsForCall = append(fake.updateVPCsArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.VpcId
+		arg3 generated.UpdateVPCsJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.UpdateVPCsStub
+	fakeReturns := fake.updateVPCsReturns
+	fake.recordInvocation("UpdateVPCs", []interface{}{arg1, arg2, arg3, arg4})
+	fake.updateVPCsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateVPCsCallCount() int {
+	fake.updateVPCsMutex.RLock()
+	defer fake.updateVPCsMutex.RUnlock()
+	return len(fake.updateVPCsArgsForCall)
+}
+
+func (fake *FakeClient) UpdateVPCsCalls(stub func(context.Context, generated.VpcId, generated.UpdateVPCsJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateVPCsMutex.Lock()
+	defer fake.updateVPCsMutex.Unlock()
+	fake.UpdateVPCsStub = stub
+}
+
+func (fake *FakeClient) UpdateVPCsArgsForCall(i int) (context.Context, generated.VpcId, generated.UpdateVPCsJSONRequestBody, []generated.RequestEditorFn) {
+	fake.updateVPCsMutex.RLock()
+	defer fake.updateVPCsMutex.RUnlock()
+	argsForCall := fake.updateVPCsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) UpdateVPCsReturns(result1 *http.Response, result2 error) {
+	fake.updateVPCsMutex.Lock()
+	defer fake.updateVPCsMutex.Unlock()
+	fake.UpdateVPCsStub = nil
+	fake.updateVPCsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateVPCsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateVPCsMutex.Lock()
+	defer fake.updateVPCsMutex.Unlock()
+	fake.UpdateVPCsStub = nil
+	if fake.updateVPCsReturnsOnCall == nil {
+		fake.updateVPCsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateVPCsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateVPCsWithBody(arg1 context.Context, arg2 generated.VpcId, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateVPCsWithBodyMutex.Lock()
+	ret, specificReturn := fake.updateVPCsWithBodyReturnsOnCall[len(fake.updateVPCsWithBodyArgsForCall)]
+	fake.updateVPCsWithBodyArgsForCall = append(fake.updateVPCsWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.VpcId
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.UpdateVPCsWithBodyStub
+	fakeReturns := fake.updateVPCsWithBodyReturns
+	fake.recordInvocation("UpdateVPCsWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.updateVPCsWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateVPCsWithBodyCallCount() int {
+	fake.updateVPCsWithBodyMutex.RLock()
+	defer fake.updateVPCsWithBodyMutex.RUnlock()
+	return len(fake.updateVPCsWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) UpdateVPCsWithBodyCalls(stub func(context.Context, generated.VpcId, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateVPCsWithBodyMutex.Lock()
+	defer fake.updateVPCsWithBodyMutex.Unlock()
+	fake.UpdateVPCsWithBodyStub = stub
+}
+
+func (fake *FakeClient) UpdateVPCsWithBodyArgsForCall(i int) (context.Context, generated.VpcId, string, io.Reader, []generated.RequestEditorFn) {
+	fake.updateVPCsWithBodyMutex.RLock()
+	defer fake.updateVPCsWithBodyMutex.RUnlock()
+	argsForCall := fake.updateVPCsWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) UpdateVPCsWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.updateVPCsWithBodyMutex.Lock()
+	defer fake.updateVPCsWithBodyMutex.Unlock()
+	fake.UpdateVPCsWithBodyStub = nil
+	fake.updateVPCsWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateVPCsWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateVPCsWithBodyMutex.Lock()
+	defer fake.updateVPCsWithBodyMutex.Unlock()
+	fake.UpdateVPCsWithBodyStub = nil
+	if fake.updateVPCsWithBodyReturnsOnCall == nil {
+		fake.updateVPCsWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateVPCsWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -6112,6 +12171,10 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.addKeyToServerMutex.RUnlock()
 	fake.addKeyToServerWithBodyMutex.RLock()
 	defer fake.addKeyToServerWithBodyMutex.RUnlock()
+	fake.addServerIPMutex.RLock()
+	defer fake.addServerIPMutex.RUnlock()
+	fake.addServerIPWithBodyMutex.RLock()
+	defer fake.addServerIPWithBodyMutex.RUnlock()
 	fake.addServerToProjectMutex.RLock()
 	defer fake.addServerToProjectMutex.RUnlock()
 	fake.addServerToProjectWithBodyMutex.RLock()
@@ -6128,6 +12191,16 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.addStorageToProjectMutex.RUnlock()
 	fake.addStorageToProjectWithBodyMutex.RLock()
 	defer fake.addStorageToProjectWithBodyMutex.RUnlock()
+	fake.bindFloatingIpMutex.RLock()
+	defer fake.bindFloatingIpMutex.RUnlock()
+	fake.bindFloatingIpWithBodyMutex.RLock()
+	defer fake.bindFloatingIpWithBodyMutex.RUnlock()
+	fake.cloneServerMutex.RLock()
+	defer fake.cloneServerMutex.RUnlock()
+	fake.createFloatingIpMutex.RLock()
+	defer fake.createFloatingIpMutex.RUnlock()
+	fake.createFloatingIpWithBodyMutex.RLock()
+	defer fake.createFloatingIpWithBodyMutex.RUnlock()
 	fake.createKeyMutex.RLock()
 	defer fake.createKeyMutex.RUnlock()
 	fake.createKeyWithBodyMutex.RLock()
@@ -6140,10 +12213,28 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.createRegistryMutex.RUnlock()
 	fake.createRegistryWithBodyMutex.RLock()
 	defer fake.createRegistryWithBodyMutex.RUnlock()
+	fake.createServerMutex.RLock()
+	defer fake.createServerMutex.RUnlock()
+	fake.createServerDiskMutex.RLock()
+	defer fake.createServerDiskMutex.RUnlock()
+	fake.createServerDiskBackupMutex.RLock()
+	defer fake.createServerDiskBackupMutex.RUnlock()
+	fake.createServerDiskBackupWithBodyMutex.RLock()
+	defer fake.createServerDiskBackupWithBodyMutex.RUnlock()
+	fake.createServerDiskWithBodyMutex.RLock()
+	defer fake.createServerDiskWithBodyMutex.RUnlock()
+	fake.createServerWithBodyMutex.RLock()
+	defer fake.createServerWithBodyMutex.RUnlock()
 	fake.createStorageMutex.RLock()
 	defer fake.createStorageMutex.RUnlock()
 	fake.createStorageWithBodyMutex.RLock()
 	defer fake.createStorageWithBodyMutex.RUnlock()
+	fake.createVPCMutex.RLock()
+	defer fake.createVPCMutex.RUnlock()
+	fake.createVPCWithBodyMutex.RLock()
+	defer fake.createVPCWithBodyMutex.RUnlock()
+	fake.deleteFloatingIPMutex.RLock()
+	defer fake.deleteFloatingIPMutex.RUnlock()
 	fake.deleteKeyMutex.RLock()
 	defer fake.deleteKeyMutex.RUnlock()
 	fake.deleteKeyFromServerMutex.RLock()
@@ -6152,12 +12243,24 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.deleteProjectMutex.RUnlock()
 	fake.deleteRegistryMutex.RLock()
 	defer fake.deleteRegistryMutex.RUnlock()
+	fake.deleteServerMutex.RLock()
+	defer fake.deleteServerMutex.RUnlock()
+	fake.deleteServerDiskMutex.RLock()
+	defer fake.deleteServerDiskMutex.RUnlock()
+	fake.deleteServerDiskBackupMutex.RLock()
+	defer fake.deleteServerDiskBackupMutex.RUnlock()
+	fake.deleteServerIPMutex.RLock()
+	defer fake.deleteServerIPMutex.RUnlock()
+	fake.deleteServerIPWithBodyMutex.RLock()
+	defer fake.deleteServerIPWithBodyMutex.RUnlock()
 	fake.deleteStorageMutex.RLock()
 	defer fake.deleteStorageMutex.RUnlock()
 	fake.deleteStorageSubdomainsMutex.RLock()
 	defer fake.deleteStorageSubdomainsMutex.RUnlock()
 	fake.deleteStorageSubdomainsWithBodyMutex.RLock()
 	defer fake.deleteStorageSubdomainsWithBodyMutex.RUnlock()
+	fake.deleteVPCMutex.RLock()
+	defer fake.deleteVPCMutex.RUnlock()
 	fake.getAccountBalancersMutex.RLock()
 	defer fake.getAccountBalancersMutex.RUnlock()
 	fake.getAccountClustersMutex.RLock()
@@ -6172,10 +12275,18 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.getAccountStoragesMutex.RUnlock()
 	fake.getAllProjectResourcesMutex.RLock()
 	defer fake.getAllProjectResourcesMutex.RUnlock()
+	fake.getConfiguratorsMutex.RLock()
+	defer fake.getConfiguratorsMutex.RUnlock()
+	fake.getFloatingIpMutex.RLock()
+	defer fake.getFloatingIpMutex.RUnlock()
+	fake.getFloatingIpsMutex.RLock()
+	defer fake.getFloatingIpsMutex.RUnlock()
 	fake.getKeyMutex.RLock()
 	defer fake.getKeyMutex.RUnlock()
 	fake.getKeysMutex.RLock()
 	defer fake.getKeysMutex.RUnlock()
+	fake.getOsListMutex.RLock()
+	defer fake.getOsListMutex.RUnlock()
 	fake.getProjectMutex.RLock()
 	defer fake.getProjectMutex.RUnlock()
 	fake.getProjectBalancersMutex.RLock()
@@ -6200,6 +12311,32 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.getRegistryPresetsMutex.RUnlock()
 	fake.getRegistryRepositoriesMutex.RLock()
 	defer fake.getRegistryRepositoriesMutex.RUnlock()
+	fake.getServerMutex.RLock()
+	defer fake.getServerMutex.RUnlock()
+	fake.getServerDiskMutex.RLock()
+	defer fake.getServerDiskMutex.RUnlock()
+	fake.getServerDiskAutoBackupSettingsMutex.RLock()
+	defer fake.getServerDiskAutoBackupSettingsMutex.RUnlock()
+	fake.getServerDiskBackupMutex.RLock()
+	defer fake.getServerDiskBackupMutex.RUnlock()
+	fake.getServerDiskBackupsMutex.RLock()
+	defer fake.getServerDiskBackupsMutex.RUnlock()
+	fake.getServerDisksMutex.RLock()
+	defer fake.getServerDisksMutex.RUnlock()
+	fake.getServerIPsMutex.RLock()
+	defer fake.getServerIPsMutex.RUnlock()
+	fake.getServerLogsMutex.RLock()
+	defer fake.getServerLogsMutex.RUnlock()
+	fake.getServerStatisticsMutex.RLock()
+	defer fake.getServerStatisticsMutex.RUnlock()
+	fake.getServerStatisticsNewMutex.RLock()
+	defer fake.getServerStatisticsNewMutex.RUnlock()
+	fake.getServersMutex.RLock()
+	defer fake.getServersMutex.RUnlock()
+	fake.getServersPresetsMutex.RLock()
+	defer fake.getServersPresetsMutex.RUnlock()
+	fake.getSoftwareMutex.RLock()
+	defer fake.getSoftwareMutex.RUnlock()
 	fake.getStorageMutex.RLock()
 	defer fake.getStorageMutex.RUnlock()
 	fake.getStorageSubdomainsMutex.RLock()
@@ -6212,6 +12349,36 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.getStoragesMutex.RUnlock()
 	fake.getStoragesPresetsMutex.RLock()
 	defer fake.getStoragesPresetsMutex.RUnlock()
+	fake.getVPCMutex.RLock()
+	defer fake.getVPCMutex.RUnlock()
+	fake.getVPCPortsMutex.RLock()
+	defer fake.getVPCPortsMutex.RUnlock()
+	fake.getVPCServicesMutex.RLock()
+	defer fake.getVPCServicesMutex.RUnlock()
+	fake.getVPCsMutex.RLock()
+	defer fake.getVPCsMutex.RUnlock()
+	fake.hardShutdownServerMutex.RLock()
+	defer fake.hardShutdownServerMutex.RUnlock()
+	fake.imageUnmountAndServerReloadMutex.RLock()
+	defer fake.imageUnmountAndServerReloadMutex.RUnlock()
+	fake.performActionOnBackupMutex.RLock()
+	defer fake.performActionOnBackupMutex.RUnlock()
+	fake.performActionOnBackupWithBodyMutex.RLock()
+	defer fake.performActionOnBackupWithBodyMutex.RUnlock()
+	fake.performActionOnServerMutex.RLock()
+	defer fake.performActionOnServerMutex.RUnlock()
+	fake.performActionOnServerWithBodyMutex.RLock()
+	defer fake.performActionOnServerWithBodyMutex.RUnlock()
+	fake.rebootServerMutex.RLock()
+	defer fake.rebootServerMutex.RUnlock()
+	fake.rebootServerHardMutex.RLock()
+	defer fake.rebootServerHardMutex.RUnlock()
+	fake.resetServerPasswordMutex.RLock()
+	defer fake.resetServerPasswordMutex.RUnlock()
+	fake.shutdownServerMutex.RLock()
+	defer fake.shutdownServerMutex.RUnlock()
+	fake.startServerMutex.RLock()
+	defer fake.startServerMutex.RUnlock()
 	fake.transferResourceToAnotherProjectMutex.RLock()
 	defer fake.transferResourceToAnotherProjectMutex.RUnlock()
 	fake.transferResourceToAnotherProjectWithBodyMutex.RLock()
@@ -6220,6 +12387,12 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.transferStorageMutex.RUnlock()
 	fake.transferStorageWithBodyMutex.RLock()
 	defer fake.transferStorageWithBodyMutex.RUnlock()
+	fake.unbindFloatingIpMutex.RLock()
+	defer fake.unbindFloatingIpMutex.RUnlock()
+	fake.updateFloatingIPMutex.RLock()
+	defer fake.updateFloatingIPMutex.RUnlock()
+	fake.updateFloatingIPWithBodyMutex.RLock()
+	defer fake.updateFloatingIPWithBodyMutex.RUnlock()
 	fake.updateKeyMutex.RLock()
 	defer fake.updateKeyMutex.RUnlock()
 	fake.updateKeyWithBodyMutex.RLock()
@@ -6232,6 +12405,34 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.updateRegistryMutex.RUnlock()
 	fake.updateRegistryWithBodyMutex.RLock()
 	defer fake.updateRegistryWithBodyMutex.RUnlock()
+	fake.updateServerMutex.RLock()
+	defer fake.updateServerMutex.RUnlock()
+	fake.updateServerDiskMutex.RLock()
+	defer fake.updateServerDiskMutex.RUnlock()
+	fake.updateServerDiskAutoBackupSettingsMutex.RLock()
+	defer fake.updateServerDiskAutoBackupSettingsMutex.RUnlock()
+	fake.updateServerDiskAutoBackupSettingsWithBodyMutex.RLock()
+	defer fake.updateServerDiskAutoBackupSettingsWithBodyMutex.RUnlock()
+	fake.updateServerDiskBackupMutex.RLock()
+	defer fake.updateServerDiskBackupMutex.RUnlock()
+	fake.updateServerDiskBackupWithBodyMutex.RLock()
+	defer fake.updateServerDiskBackupWithBodyMutex.RUnlock()
+	fake.updateServerDiskWithBodyMutex.RLock()
+	defer fake.updateServerDiskWithBodyMutex.RUnlock()
+	fake.updateServerIPMutex.RLock()
+	defer fake.updateServerIPMutex.RUnlock()
+	fake.updateServerIPWithBodyMutex.RLock()
+	defer fake.updateServerIPWithBodyMutex.RUnlock()
+	fake.updateServerNATMutex.RLock()
+	defer fake.updateServerNATMutex.RUnlock()
+	fake.updateServerNATWithBodyMutex.RLock()
+	defer fake.updateServerNATWithBodyMutex.RUnlock()
+	fake.updateServerOSBootModeMutex.RLock()
+	defer fake.updateServerOSBootModeMutex.RUnlock()
+	fake.updateServerOSBootModeWithBodyMutex.RLock()
+	defer fake.updateServerOSBootModeWithBodyMutex.RUnlock()
+	fake.updateServerWithBodyMutex.RLock()
+	defer fake.updateServerWithBodyMutex.RUnlock()
 	fake.updateStorageMutex.RLock()
 	defer fake.updateStorageMutex.RUnlock()
 	fake.updateStorageUserMutex.RLock()
@@ -6240,6 +12441,10 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.updateStorageUserWithBodyMutex.RUnlock()
 	fake.updateStorageWithBodyMutex.RLock()
 	defer fake.updateStorageWithBodyMutex.RUnlock()
+	fake.updateVPCsMutex.RLock()
+	defer fake.updateVPCsMutex.RUnlock()
+	fake.updateVPCsWithBodyMutex.RLock()
+	defer fake.updateVPCsWithBodyMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

@@ -34,11 +34,13 @@ func TestDefaultRegistry_Discoverable(t *testing.T) {
 		// ErrDimensionFetcherUnwired until the K8s feature wires them.
 		wiredUpstream bool
 	}{
-		// Live dimensions exercised by v0.2 MR controllers.
+		// Live dimensions exercised by v0.2/v0.3 MR controllers.
 		{DimContainerRegistryPreset, DimensionPreset, true},
 		{DimS3BucketPreset, DimensionPreset, true},
+		{DimServerPreset, DimensionPreset, true},  // feature 003
+		{DimServerOSImage, DimensionPreset, true}, // feature 003
 
-		// Forward-compat — K8s + Server. See dimensions.go header comment.
+		// Forward-compat — K8s. See dimensions.go header comment.
 		{DimServerConfigurator, DimensionConfigurator, false},
 		{DimKubernetesMasterPreset, DimensionPreset, false},
 		{DimKubernetesWorkerPreset, DimensionPreset, false},

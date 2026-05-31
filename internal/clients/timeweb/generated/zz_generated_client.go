@@ -30,6 +30,13 @@ const (
 	AddedSubdomainStatusSuccess    AddedSubdomainStatus = "success"
 )
 
+// Defines values for AutoBackupInterval.
+const (
+	Day   AutoBackupInterval = "day"
+	Month AutoBackupInterval = "month"
+	Week  AutoBackupInterval = "week"
+)
+
 // Defines values for AvailabilityZone.
 const (
 	Ala1 AvailabilityZone = "ala-1"
@@ -90,6 +97,14 @@ const (
 	BalancerStatusStoped   BalancerStatus = "stoped"
 )
 
+// Defines values for BindFloatingIpResourceType.
+const (
+	BindFloatingIpResourceTypeBalancer BindFloatingIpResourceType = "balancer"
+	BindFloatingIpResourceTypeDatabase BindFloatingIpResourceType = "database"
+	BindFloatingIpResourceTypeNetwork  BindFloatingIpResourceType = "network"
+	BindFloatingIpResourceTypeServer   BindFloatingIpResourceType = "server"
+)
+
 // Defines values for BucketStatus.
 const (
 	BucketStatusCreated  BucketStatus = "created"
@@ -115,6 +130,14 @@ const (
 	Clusterk8sStatusInstalling   Clusterk8sStatus = "installing"
 	Clusterk8sStatusProvisioning Clusterk8sStatus = "provisioning"
 	Clusterk8sStatusUnpaid       Clusterk8sStatus = "unpaid"
+)
+
+// Defines values for CreateVpcLocation.
+const (
+	CreateVpcLocationNl1 CreateVpcLocation = "nl-1"
+	CreateVpcLocationPl1 CreateVpcLocation = "pl-1"
+	CreateVpcLocationRu1 CreateVpcLocation = "ru-1"
+	CreateVpcLocationRu2 CreateVpcLocation = "ru-2"
 )
 
 // Defines values for DbHashType.
@@ -181,6 +204,14 @@ const (
 	DedicatedServerStatusOn         DedicatedServerStatus = "on"
 )
 
+// Defines values for FloatingIpResourceType.
+const (
+	FloatingIpResourceTypeBalancer FloatingIpResourceType = "balancer"
+	FloatingIpResourceTypeDatabase FloatingIpResourceType = "database"
+	FloatingIpResourceTypeNetwork  FloatingIpResourceType = "network"
+	FloatingIpResourceTypeServer   FloatingIpResourceType = "server"
+)
+
 // Defines values for PresetsStorageLocation.
 const (
 	PresetsStorageLocationRu1 PresetsStorageLocation = "ru-1"
@@ -235,6 +266,57 @@ const (
 	SslReleased       S3SubdomainStatus = "ssl_released"
 )
 
+// Defines values for ServerBackupStatus.
+const (
+	ServerBackupStatusCreate    ServerBackupStatus = "create"
+	ServerBackupStatusDelete    ServerBackupStatus = "delete"
+	ServerBackupStatusDone      ServerBackupStatus = "done"
+	ServerBackupStatusFail      ServerBackupStatus = "fail"
+	ServerBackupStatusPrecreate ServerBackupStatus = "precreate"
+	ServerBackupStatusRecover   ServerBackupStatus = "recover"
+	ServerBackupStatusShutdown  ServerBackupStatus = "shutdown"
+)
+
+// Defines values for ServerBackupType.
+const (
+	Auto   ServerBackupType = "auto"
+	Manual ServerBackupType = "manual"
+)
+
+// Defines values for ServerIpType.
+const (
+	ServerIpTypeIpv4 ServerIpType = "ipv4"
+	ServerIpTypeIpv6 ServerIpType = "ipv6"
+)
+
+// Defines values for ServersConfiguratorDiskType.
+const (
+	ServersConfiguratorDiskTypeHdd  ServersConfiguratorDiskType = "hdd"
+	ServersConfiguratorDiskTypeNvme ServersConfiguratorDiskType = "nvme"
+	ServersConfiguratorDiskTypeSsd  ServersConfiguratorDiskType = "ssd"
+)
+
+// Defines values for ServersConfiguratorLocation.
+const (
+	ServersConfiguratorLocationKz1 ServersConfiguratorLocation = "kz-1"
+	ServersConfiguratorLocationPl1 ServersConfiguratorLocation = "pl-1"
+	ServersConfiguratorLocationRu1 ServersConfiguratorLocation = "ru-1"
+)
+
+// Defines values for ServersPresetDiskType.
+const (
+	ServersPresetDiskTypeHdd  ServersPresetDiskType = "hdd"
+	ServersPresetDiskTypeNvme ServersPresetDiskType = "nvme"
+	ServersPresetDiskTypeSsd  ServersPresetDiskType = "ssd"
+)
+
+// Defines values for ServersPresetLocation.
+const (
+	ServersPresetLocationKz1 ServersPresetLocation = "kz-1"
+	ServersPresetLocationPl1 ServersPresetLocation = "pl-1"
+	ServersPresetLocationRu1 ServersPresetLocation = "ru-1"
+)
+
 // Defines values for TransferStatusStatus.
 const (
 	TransferStatusStatusFailed    TransferStatusStatus = "failed"
@@ -244,19 +326,19 @@ const (
 
 // Defines values for VdsBootMode.
 const (
-	Cd     VdsBootMode = "cd"
-	Single VdsBootMode = "single"
-	Std    VdsBootMode = "std"
+	VdsBootModeCd     VdsBootMode = "cd"
+	VdsBootModeSingle VdsBootMode = "single"
+	VdsBootModeStd    VdsBootMode = "std"
 )
 
 // Defines values for VdsLocation.
 const (
-	Kz1 VdsLocation = "kz-1"
-	Nl1 VdsLocation = "nl-1"
-	Pl1 VdsLocation = "pl-1"
-	Ru1 VdsLocation = "ru-1"
-	Ru2 VdsLocation = "ru-2"
-	Ru3 VdsLocation = "ru-3"
+	VdsLocationKz1 VdsLocation = "kz-1"
+	VdsLocationNl1 VdsLocation = "nl-1"
+	VdsLocationPl1 VdsLocation = "pl-1"
+	VdsLocationRu1 VdsLocation = "ru-1"
+	VdsLocationRu2 VdsLocation = "ru-2"
+	VdsLocationRu3 VdsLocation = "ru-3"
 )
 
 // Defines values for VdsNetworksIpsType.
@@ -312,6 +394,94 @@ const (
 	VdsStatusTransfer         VdsStatus = "transfer"
 	VdsStatusTurningOff       VdsStatus = "turning_off"
 	VdsStatusTurningOn        VdsStatus = "turning_on"
+)
+
+// Defines values for VpcLocation.
+const (
+	Nl1 VpcLocation = "nl-1"
+	Pl1 VpcLocation = "pl-1"
+	Ru1 VpcLocation = "ru-1"
+	Ru2 VpcLocation = "ru-2"
+)
+
+// Defines values for VpcType.
+const (
+	Bgp VpcType = "bgp"
+	Ovn VpcType = "ovn"
+)
+
+// Defines values for VpcPortNatMode.
+const (
+	VpcPortNatModeDnatAndSnat VpcPortNatMode = "dnat_and_snat"
+	VpcPortNatModeNoNat       VpcPortNatMode = "no_nat"
+	VpcPortNatModeSnat        VpcPortNatMode = "snat"
+)
+
+// Defines values for VpcPortServiceType.
+const (
+	VpcPortServiceTypeBalancer VpcPortServiceType = "balancer"
+	VpcPortServiceTypeDbaas    VpcPortServiceType = "dbaas"
+	VpcPortServiceTypeServer   VpcPortServiceType = "server"
+)
+
+// Defines values for VpcServiceType.
+const (
+	VpcServiceTypeBalancer VpcServiceType = "balancer"
+	VpcServiceTypeDbaas    VpcServiceType = "dbaas"
+	VpcServiceTypeServer   VpcServiceType = "server"
+)
+
+// Defines values for PerformActionOnServerJSONBodyAction.
+const (
+	PerformActionOnServerJSONBodyActionClone         PerformActionOnServerJSONBodyAction = "clone"
+	PerformActionOnServerJSONBodyActionHardReboot    PerformActionOnServerJSONBodyAction = "hard_reboot"
+	PerformActionOnServerJSONBodyActionHardShutdown  PerformActionOnServerJSONBodyAction = "hard_shutdown"
+	PerformActionOnServerJSONBodyActionInstall       PerformActionOnServerJSONBodyAction = "install"
+	PerformActionOnServerJSONBodyActionReboot        PerformActionOnServerJSONBodyAction = "reboot"
+	PerformActionOnServerJSONBodyActionRemove        PerformActionOnServerJSONBodyAction = "remove"
+	PerformActionOnServerJSONBodyActionResetPassword PerformActionOnServerJSONBodyAction = "reset_password"
+	PerformActionOnServerJSONBodyActionShutdown      PerformActionOnServerJSONBodyAction = "shutdown"
+	PerformActionOnServerJSONBodyActionStart         PerformActionOnServerJSONBodyAction = "start"
+)
+
+// Defines values for UpdateServerOSBootModeJSONBodyBootMode.
+const (
+	UpdateServerOSBootModeJSONBodyBootModeDefault      UpdateServerOSBootModeJSONBodyBootMode = "default"
+	UpdateServerOSBootModeJSONBodyBootModeRecoveryDisk UpdateServerOSBootModeJSONBodyBootMode = "recovery_disk"
+	UpdateServerOSBootModeJSONBodyBootModeSingle       UpdateServerOSBootModeJSONBodyBootMode = "single"
+)
+
+// Defines values for PerformActionOnBackupJSONBodyAction.
+const (
+	Mount   PerformActionOnBackupJSONBodyAction = "mount"
+	Restore PerformActionOnBackupJSONBodyAction = "restore"
+	Unmount PerformActionOnBackupJSONBodyAction = "unmount"
+)
+
+// Defines values for AddServerIPJSONBodyType.
+const (
+	AddServerIPJSONBodyTypeIpv4 AddServerIPJSONBodyType = "ipv4"
+	AddServerIPJSONBodyTypeIpv6 AddServerIPJSONBodyType = "ipv6"
+)
+
+// Defines values for UpdateServerNATJSONBodyNatMode.
+const (
+	UpdateServerNATJSONBodyNatModeDnatAndSnat UpdateServerNATJSONBodyNatMode = "dnat_and_snat"
+	UpdateServerNATJSONBodyNatModeNoNat       UpdateServerNATJSONBodyNatMode = "no_nat"
+	UpdateServerNATJSONBodyNatModeSnat        UpdateServerNATJSONBodyNatMode = "snat"
+)
+
+// Defines values for GetServerLogsParamsOrder.
+const (
+	Asc  GetServerLogsParamsOrder = "asc"
+	Desc GetServerLogsParamsOrder = "desc"
+)
+
+// Defines values for GetServerStatisticsNewParamsKeys.
+const (
+	NetworkRequest  GetServerStatisticsNewParamsKeys = "network.request"
+	NetworkResponse GetServerStatisticsNewParamsKeys = "network.response"
+	SystemCpuUtil   GetServerStatisticsNewParamsKeys = "system.cpu.util"
 )
 
 // Defines values for CreateStorageJSONBodyType.
@@ -462,6 +632,27 @@ type AddedSubdomain struct {
 // AddedSubdomainStatus Результат добавления поддомена.
 type AddedSubdomainStatus string
 
+// AutoBackup defines model for auto-backup.
+type AutoBackup struct {
+	// CopyCount Количество копий для хранения. Минимальное количество `1`, максимальное `99`
+	CopyCount *float32 `json:"copy_count,omitempty"`
+
+	// CreationStartAt Дата начала создания первого автобэкапа. Значение в формате `ISO8601`. Время не учитывается.
+	CreationStartAt *time.Time `json:"creation_start_at,omitempty"`
+
+	// DayOfWeek День недели, в который будут создаваться автобэкапы. Работает только со значением `interval`: `week`. Доступные значение от `1 `до `7`.
+	DayOfWeek *float32 `json:"day_of_week,omitempty"`
+
+	// Interval Периодичность создания автобэкапов
+	Interval *AutoBackupInterval `json:"interval,omitempty"`
+
+	// IsEnabled Включено ли автобэкапирование
+	IsEnabled bool `json:"is_enabled"`
+}
+
+// AutoBackupInterval Периодичность создания автобэкапов
+type AutoBackupInterval string
+
 // AvailabilityZone Зона доступности.
 type AvailabilityZone string
 
@@ -603,6 +794,29 @@ type BalancerProto string
 
 // BalancerStatus Статус балансировщика.
 type BalancerStatus string
+
+// BindFloatingIp defines model for bind-floating-ip.
+type BindFloatingIp struct {
+	// ResourceId Id ресурса.
+	ResourceId BindFloatingIp_ResourceId `json:"resource_id"`
+
+	// ResourceType Тип ресурса.
+	ResourceType BindFloatingIpResourceType `json:"resource_type"`
+}
+
+// BindFloatingIpResourceId0 defines model for .
+type BindFloatingIpResourceId0 = float32
+
+// BindFloatingIpResourceId1 defines model for .
+type BindFloatingIpResourceId1 = string
+
+// BindFloatingIp_ResourceId Id ресурса.
+type BindFloatingIp_ResourceId struct {
+	union json.RawMessage
+}
+
+// BindFloatingIpResourceType Тип ресурса.
+type BindFloatingIpResourceType string
 
 // Bucket Хранилище S3
 type Bucket struct {
@@ -844,6 +1058,15 @@ type ConfigParameters struct {
 	WorkMem *string `json:"work_mem,omitempty"`
 }
 
+// CreateFloatingIp defines model for create-floating-ip.
+type CreateFloatingIp struct {
+	// AvailabilityZone Зона доступности.
+	AvailabilityZone AvailabilityZone `json:"availability_zone"`
+
+	// IsDdosGuard Это логическое значение, которое показывает, включена ли защита от DDoS.
+	IsDdosGuard bool `json:"is_ddos_guard"`
+}
+
 // CreateProject defines model for create-project.
 type CreateProject struct {
 	// AvatarId ID аватара пользователя. Описание методов работы с аватарами появится позднее.
@@ -855,6 +1078,114 @@ type CreateProject struct {
 	// Name Удобочитаемое имя проекта. Максимальная длина — 255 символов.
 	Name string `json:"name"`
 }
+
+// CreateServer defines model for create-server.
+type CreateServer struct {
+	// AvailabilityZone Зона доступности.
+	AvailabilityZone *AvailabilityZone `json:"availability_zone,omitempty"`
+
+	// AvatarId ID аватара сервера.
+	// Deprecated:
+	AvatarId *string `json:"avatar_id,omitempty"`
+
+	// Bandwidth Пропускная способность тарифа. Доступные значения от 100 до 1000 с шагом 100.
+	Bandwidth *float32 `json:"bandwidth,omitempty"`
+
+	// CloudInit Cloud-init скрипт
+	CloudInit *string `json:"cloud_init,omitempty"`
+
+	// Comment Комментарий к облачному серверу. Максимальная длина — 255 символов.
+	Comment *string `json:"comment,omitempty"`
+
+	// Configuration Параметры конфигурации сервера. Нельзя передавать вместе с `preset_id`.
+	Configuration *struct {
+		// ConfiguratorId ID конфигуратора сервера.
+		ConfiguratorId float32 `json:"configurator_id"`
+
+		// Cpu Количество ядер процессора.
+		Cpu float32 `json:"cpu"`
+
+		// Disk Размер диска в МБ.
+		Disk float32 `json:"disk"`
+
+		// Gpu Количество видеокарт.
+		Gpu *float32 `json:"gpu,omitempty"`
+
+		// Ram Размер ОЗУ сервера в МБ.
+		Ram float32 `json:"ram"`
+	} `json:"configuration,omitempty"`
+
+	// Hostname Сетевое имя сервера
+	Hostname *string `json:"hostname,omitempty"`
+
+	// ImageId ID образа, который будет установлен на облачный сервер. Нельзя передавать вместе с `os_id`.
+	ImageId *openapi_types.UUID `json:"image_id,omitempty"`
+
+	// IsDdosGuard Защита от DDoS. Серверу выдается защищенный IP-адрес с защитой уровня L3 / L4. Для включения защиты уровня L7 необходимо создать тикет в техническую поддержку.
+	IsDdosGuard *bool `json:"is_ddos_guard,omitempty"`
+
+	// IsLocalNetwork Локальная сеть.
+	// Deprecated:
+	IsLocalNetwork *bool `json:"is_local_network,omitempty"`
+
+	// Name Имя облачного сервера. Максимальная длина — 255 символов.
+	Name string `json:"name"`
+
+	// Network Параметры конфигурации приватной сети сервера
+	Network *struct {
+		// FloatingIp Публичный IP
+		FloatingIp *string `json:"floating_ip,omitempty"`
+
+		// Id ID сети
+		Id *string `json:"id,omitempty"`
+
+		// Ip Приватный IP
+		// Deprecated:
+		Ip *string `json:"ip,omitempty"`
+
+		// LocalIp Приватный IP
+		LocalIp *string `json:"local_ip,omitempty"`
+
+		// NetworkDriveIds Массив ID сетевых дисков
+		NetworkDriveIds *[]string `json:"network_drive_ids,omitempty"`
+	} `json:"network,omitempty"`
+
+	// OsId ID операционной системы, которая будет установлена на облачный сервер. Нельзя передавать вместе с `image_id`.
+	OsId *float32 `json:"os_id,omitempty"`
+
+	// PresetId ID тарифа сервера. Нельзя передавать вместе с ключом `configurator`.
+	PresetId *float32 `json:"preset_id,omitempty"`
+
+	// ProjectId ID проекта.
+	ProjectId *float32 `json:"project_id,omitempty"`
+
+	// SoftwareId ID программного обеспечения сервера.
+	SoftwareId *float32 `json:"software_id,omitempty"`
+
+	// SshKeysIds Список SSH-ключей.
+	SshKeysIds *[]float32 `json:"ssh_keys_ids,omitempty"`
+}
+
+// CreateVpc defines model for create-vpc.
+type CreateVpc struct {
+	// AvailabilityZone Зона доступности.
+	AvailabilityZone *AvailabilityZone `json:"availability_zone,omitempty"`
+
+	// Description Описание.
+	Description *string `json:"description,omitempty"`
+
+	// Location Локация сети.
+	Location CreateVpcLocation `json:"location"`
+
+	// Name Имя сети.
+	Name string `json:"name"`
+
+	// SubnetV4 Маска подсети.
+	SubnetV4 string `json:"subnet_v4"`
+}
+
+// CreateVpcLocation Локация сети.
+type CreateVpcLocation string
 
 // Db База данных
 type Db struct {
@@ -1039,6 +1370,47 @@ type DeleteServiceResponse struct {
 	IsMovedInQuarantine *bool `json:"is_moved_in_quarantine,omitempty"`
 }
 
+// FloatingIp defines model for floating-ip.
+type FloatingIp struct {
+	// AvailabilityZone Зона доступности.
+	AvailabilityZone AvailabilityZone `json:"availability_zone"`
+
+	// Comment Комментарий
+	Comment *string `json:"comment"`
+
+	// Id ID IP.
+	Id string `json:"id"`
+
+	// Ip IP-адрес
+	Ip *string `json:"ip"`
+
+	// IsDdosGuard Это логическое значение, которое показывает, включена ли защита от DDoS.
+	IsDdosGuard bool `json:"is_ddos_guard"`
+
+	// Ptr Запись имени узла.
+	Ptr *string `json:"ptr"`
+
+	// ResourceId Id ресурса.
+	ResourceId *FloatingIp_ResourceId `json:"resource_id"`
+
+	// ResourceType Тип ресурса.
+	ResourceType *FloatingIpResourceType `json:"resource_type"`
+}
+
+// FloatingIpResourceId0 defines model for .
+type FloatingIpResourceId0 = float32
+
+// FloatingIpResourceId1 defines model for .
+type FloatingIpResourceId1 = string
+
+// FloatingIp_ResourceId Id ресурса.
+type FloatingIp_ResourceId struct {
+	union json.RawMessage
+}
+
+// FloatingIpResourceType Тип ресурса.
+type FloatingIpResourceType string
+
 // Meta Вспомогательная информация о возвращаемой сущности.
 type Meta struct {
 	// Total Общее количество элементов в коллекции.
@@ -1213,6 +1585,298 @@ type SchemasPresetsResponse struct {
 	ResponseId *string `json:"response_id,omitempty"`
 }
 
+// ServerBackup defines model for server-backup.
+type ServerBackup struct {
+	// Comment Комментарий к бэкапу.
+	Comment *string `json:"comment"`
+
+	// CreatedAt Дата создания бэкапа.
+	CreatedAt string `json:"created_at"`
+
+	// Id ID бэкапа сервера.
+	Id float32 `json:"id"`
+
+	// Name Название бэкапа.
+	Name string `json:"name"`
+
+	// Progress Прогресс создания бэкапа. Значение будет меняться в статусе бэкапа `create` от 0 до 99, для остальных статусов всегда будет возвращаться 0.
+	Progress float32 `json:"progress"`
+
+	// Size Размер бэкапа (в Мб).
+	Size float32 `json:"size"`
+
+	// Status Статус бэкапа.
+	Status ServerBackupStatus `json:"status"`
+
+	// Type Тип бэкапа.
+	Type ServerBackupType `json:"type"`
+}
+
+// ServerBackupStatus Статус бэкапа.
+type ServerBackupStatus string
+
+// ServerBackupType Тип бэкапа.
+type ServerBackupType string
+
+// ServerDisk Диск сервера
+type ServerDisk struct {
+	// Id ID диска.
+	Id float32 `json:"id"`
+
+	// IsMounted Является ли диск примонтированным.
+	IsMounted bool `json:"is_mounted"`
+
+	// IsSystem Является ли диск системным.
+	IsSystem bool `json:"is_system"`
+
+	// Size Размер диска (в Мб).
+	Size float32 `json:"size"`
+
+	// Status Статус диска.
+	Status string `json:"status"`
+
+	// SystemName Системное название диска.
+	SystemName string `json:"system_name"`
+
+	// Type Тип диска.
+	Type string `json:"type"`
+
+	// Used Количество использованной памяти диска (в Мб).
+	Used float32 `json:"used"`
+}
+
+// ServerIp IP-адрес сервера
+type ServerIp struct {
+	// Ip IP-адрес сети.
+	Ip string `json:"ip"`
+
+	// IsMain Является ли сеть основной.
+	IsMain bool `json:"is_main"`
+
+	// Ptr Запись имени узла.
+	Ptr string `json:"ptr"`
+
+	// Type Тип IP-адреса сети.
+	Type ServerIpType `json:"type"`
+}
+
+// ServerIpType Тип IP-адреса сети.
+type ServerIpType string
+
+// ServerLog Лог сервера
+type ServerLog struct {
+	// Event Событие сервера.
+	Event string `json:"event"`
+
+	// Id ID диска.
+	Id float32 `json:"id"`
+
+	// LoggedAt Дата лога.
+	LoggedAt time.Time `json:"logged_at"`
+}
+
+// ServersConfigurator defines model for servers-configurator.
+type ServersConfigurator struct {
+	// CpuFrequency Частота процессора.
+	CpuFrequency string `json:"cpu_frequency"`
+
+	// DiskType Тип диска.
+	DiskType ServersConfiguratorDiskType `json:"disk_type"`
+
+	// Id ID конфигуратора сервера.
+	Id float32 `json:"id"`
+
+	// IsAllowedLocalNetwork Есть возможность подключения локальной сети
+	IsAllowedLocalNetwork bool `json:"is_allowed_local_network"`
+
+	// Location Локация сервера.
+	Location     ServersConfiguratorLocation `json:"location"`
+	Requirements struct {
+		// CpuMax Максимальное количество ядер процессора.
+		CpuMax float32 `json:"cpu_max"`
+
+		// CpuMin Минимальное количество ядер процессора.
+		CpuMin float32 `json:"cpu_min"`
+
+		// CpuStep Размер шага ядер процессора.
+		CpuStep float32 `json:"cpu_step"`
+
+		// DiskMax Максимальный размер диска (в Мб).
+		DiskMax float32 `json:"disk_max"`
+
+		// DiskMin Минимальный размер диска (в Мб).
+		DiskMin float32 `json:"disk_min"`
+
+		// DiskStep Размер шага диска
+		DiskStep float32 `json:"disk_step"`
+
+		// GpuMax Максимальное количество видеокарт
+		GpuMax *float32 `json:"gpu_max"`
+
+		// GpuMin Минимальное количество видеокарт
+		GpuMin *float32 `json:"gpu_min"`
+
+		// GpuStep Размер шага видеокарт
+		GpuStep *float32 `json:"gpu_step"`
+
+		// NetworkBandwidthMax Максимальная пропускная способноть интернет-канала (в Мб)
+		NetworkBandwidthMax float32 `json:"network_bandwidth_max"`
+
+		// NetworkBandwidthMin Минимальныая пропускная способноть интернет-канала (в Мб)
+		NetworkBandwidthMin float32 `json:"network_bandwidth_min"`
+
+		// NetworkBandwidthStep Размер шага пропускной способноти интернет-канала (в Мб)
+		NetworkBandwidthStep float32 `json:"network_bandwidth_step"`
+
+		// RamMax Максимальное количество оперативной памяти (в Мб).
+		RamMax float32 `json:"ram_max"`
+
+		// RamMin Минимальное количество оперативной памяти (в Мб).
+		RamMin float32 `json:"ram_min"`
+
+		// RamStep Размер шага оперативной памяти.
+		RamStep float32 `json:"ram_step"`
+	} `json:"requirements"`
+}
+
+// ServersConfiguratorDiskType Тип диска.
+type ServersConfiguratorDiskType string
+
+// ServersConfiguratorLocation Локация сервера.
+type ServersConfiguratorLocation string
+
+// ServersOs defines model for servers-os.
+type ServersOs struct {
+	// Description Описание операционной системы.
+	Description *string `json:"description,omitempty"`
+
+	// Family Семейство операционной системы.
+	Family *string `json:"family,omitempty"`
+
+	// Id ID операционной системы.
+	Id *float32 `json:"id,omitempty"`
+
+	// Name Название операционной системы.
+	Name *string `json:"name,omitempty"`
+
+	// Requirements Требования к облачному серверу для установки операционной системы.
+	Requirements *struct {
+		// BandwidthMin Минимальное значение пропускной способности.
+		BandwidthMin *float32 `json:"bandwidth_min,omitempty"`
+
+		// CpuMin Минимальной значение процессора.
+		CpuMin *float32 `json:"cpu_min,omitempty"`
+
+		// DiskMin Минимальное значение диска.
+		DiskMin *float32 `json:"disk_min,omitempty"`
+
+		// RamMin Минимальное значение оперативной памяти.
+		RamMin *float32 `json:"ram_min,omitempty"`
+	} `json:"requirements,omitempty"`
+
+	// Version Версия операционной системы.
+	Version *string `json:"version,omitempty"`
+
+	// VersionCodename Кодовое имя версии операционной системы.
+	VersionCodename *string `json:"version_codename,omitempty"`
+}
+
+// ServersPreset defines model for servers-preset.
+type ServersPreset struct {
+	// Bandwidth Пропускная способность тарифа.
+	Bandwidth float32 `json:"bandwidth"`
+
+	// Cpu Количество ядер процессора.
+	Cpu float32 `json:"cpu"`
+
+	// CpuFrequency Частота процессора.
+	CpuFrequency string `json:"cpu_frequency"`
+
+	// Description Описание тарифа.
+	Description string `json:"description"`
+
+	// DescriptionShort Короткое описание тарифа.
+	DescriptionShort string `json:"description_short"`
+
+	// Disk Размер диска (в Мб).
+	Disk float32 `json:"disk"`
+
+	// DiskType Тип диска.
+	DiskType ServersPresetDiskType `json:"disk_type"`
+
+	// Id ID тарифа сервера.
+	Id float32 `json:"id"`
+
+	// IsAllowedLocalNetwork Есть возможность подключения локальной сети
+	IsAllowedLocalNetwork bool `json:"is_allowed_local_network"`
+
+	// Location Локация сервера.
+	Location ServersPresetLocation `json:"location"`
+
+	// Price Стоимость в рублях.
+	Price float32 `json:"price"`
+
+	// Ram Количество (в Мб) оперативной памяти.
+	Ram float32 `json:"ram"`
+
+	// Tags Список тегов тарифа.
+	Tags []string `json:"tags"`
+}
+
+// ServersPresetDiskType Тип диска.
+type ServersPresetDiskType string
+
+// ServersPresetLocation Локация сервера.
+type ServersPresetLocation string
+
+// ServersSoftware defines model for servers-software.
+type ServersSoftware struct {
+	// Description Описание ПО из маркетплейса.
+	Description *string `json:"description,omitempty"`
+
+	// Id ID ПО из маркетплейса.
+	Id *float32 `json:"id,omitempty"`
+
+	// Installations Количество установок ПО.
+	Installations *float32 `json:"installations,omitempty"`
+
+	// Name Имя ПО из маркетплейса.
+	Name *string `json:"name,omitempty"`
+
+	// OsIds Список id операционных систем, на которых доступна установка ПО.
+	OsIds *[]float32 `json:"os_ids,omitempty"`
+
+	// Requirements Требования к облачному серверу для установки ПО.
+	Requirements *struct {
+		// BandwidthMin Минимальное значение пропускной способности.
+		BandwidthMin *float32 `json:"bandwidth_min,omitempty"`
+
+		// CpuMin Минимальной значение процессора.
+		CpuMin *float32 `json:"cpu_min,omitempty"`
+
+		// DiskMin Минимальное значение диска.
+		DiskMin *float32 `json:"disk_min,omitempty"`
+
+		// RamMin Минимальное значение оперативной памяти.
+		RamMin *float32 `json:"ram_min,omitempty"`
+	} `json:"requirements,omitempty"`
+}
+
+// ServersStatistics defines model for servers-statistics.
+type ServersStatistics struct {
+	List *[]struct {
+		Time  time.Time `json:"time"`
+		Value float32   `json:"value"`
+	} `json:"list,omitempty"`
+	Meta *struct {
+		// Amount Число элементов в результате
+		Amount int `json:"amount"`
+	} `json:"meta,omitempty"`
+
+	// Name Имя статистики.
+	Name *string `json:"name,omitempty"`
+}
+
 // SshKey defines model for ssh-key.
 type SshKey struct {
 	// Body Тело SSH-ключа.
@@ -1272,6 +1936,15 @@ type TransferStatus struct {
 // TransferStatusStatus Общий статус трансфера.
 type TransferStatusStatus string
 
+// UpdateFloatingIp defines model for update-floating-ip.
+type UpdateFloatingIp struct {
+	// Comment Комментарий
+	Comment *string `json:"comment,omitempty"`
+
+	// Ptr Запись имени узла.
+	Ptr *string `json:"ptr,omitempty"`
+}
+
 // UpdateProject defines model for update-project.
 type UpdateProject struct {
 	// AvatarId ID аватара пользователя. Описание методов работы с аватарами появится позднее.
@@ -1281,6 +1954,63 @@ type UpdateProject struct {
 	Description *string `json:"description"`
 
 	// Name Удобочитаемое имя проекта. Максимальная длина — 255 символов.
+	Name *string `json:"name,omitempty"`
+}
+
+// UpdateServer defines model for update-server.
+type UpdateServer struct {
+	// AvatarId ID аватара сервера. Описание методов работы с аватарами появится позднее.
+	AvatarId *string `json:"avatar_id,omitempty"`
+
+	// Bandwidth Пропускная способность тарифа. Доступные значения от 100 до 1000 с шагом 100.
+	Bandwidth *float32 `json:"bandwidth,omitempty"`
+
+	// CloudInit Cloud-init скрипт
+	CloudInit *string `json:"cloud_init,omitempty"`
+
+	// Comment Комментарий к облачному серверу. Максимальная длина — 255 символов.
+	Comment *string `json:"comment,omitempty"`
+
+	// Configurator Параметры конфигурации сервера. Нельзя передавать вместе с `preset_id`.
+	Configurator *struct {
+		// ConfiguratorId ID конфигуратора сервера.
+		ConfiguratorId *float32 `json:"configurator_id,omitempty"`
+
+		// Cpu Количество ядер процессора.
+		Cpu *float32 `json:"cpu,omitempty"`
+
+		// Disk Размер диска в МБ.
+		Disk *float32 `json:"disk,omitempty"`
+
+		// Gpu Количество видеокарт.
+		Gpu *float32 `json:"gpu,omitempty"`
+
+		// Ram Размер ОЗУ сервера в МБ.
+		Ram *float32 `json:"ram,omitempty"`
+	} `json:"configurator,omitempty"`
+
+	// ImageId ID образа, который будет установлен на облачный сервер. Нельзя передавать вместе с `os_id`.
+	ImageId *openapi_types.UUID `json:"image_id,omitempty"`
+
+	// Name Имя облачного сервера. Максимальная длина — 255 символов.
+	Name *string `json:"name,omitempty"`
+
+	// OsId ID операционной системы, которая будет установлена на облачный сервер.
+	OsId *float32 `json:"os_id,omitempty"`
+
+	// PresetId ID тарифа сервера. Нельзя передавать вместе с ключом `configurator`.
+	PresetId *float32 `json:"preset_id,omitempty"`
+
+	// SoftwareId ID программного обеспечения сервера.
+	SoftwareId *float32 `json:"software_id,omitempty"`
+}
+
+// UpdateVpc defines model for update-vpc.
+type UpdateVpc struct {
+	// Description Описание.
+	Description *string `json:"description,omitempty"`
+
+	// Name Имя сети.
 	Name *string `json:"name,omitempty"`
 }
 
@@ -1480,17 +2210,125 @@ type VdsOsName string
 // VdsStatus Статус сервера.
 type VdsStatus string
 
+// Vpc defines model for vpc.
+type Vpc struct {
+	// AvailabilityZone Зона доступности.
+	AvailabilityZone AvailabilityZone `json:"availability_zone"`
+
+	// BusyAddress Занятые адреса в сети
+	BusyAddress []string `json:"busy_address"`
+
+	// CreatedAt Дата создания сети.
+	CreatedAt time.Time `json:"created_at"`
+
+	// Description Описание.
+	Description string `json:"description"`
+
+	// Id ID сети.
+	Id string `json:"id"`
+
+	// Location Локация сети.
+	Location VpcLocation `json:"location"`
+
+	// Name Имя сети.
+	Name string `json:"name"`
+
+	// PublicIp Публичный IP-адрес сети.
+	PublicIp *string `json:"public_ip"`
+
+	// SubnetV4 Маска подсети.
+	SubnetV4 string `json:"subnet_v4"`
+
+	// Type Тип сети.
+	Type VpcType `json:"type"`
+}
+
+// VpcLocation Локация сети.
+type VpcLocation string
+
+// VpcType Тип сети.
+type VpcType string
+
+// VpcPort defines model for vpc-port.
+type VpcPort struct {
+	// Id ID порта.
+	Id string `json:"id"`
+
+	// Ipv4 Внутренний адрес.
+	Ipv4 string `json:"ipv4"`
+
+	// Mac MAC адрес.
+	Mac string `json:"mac"`
+
+	// NatMode Тип преобразования сетевых адресов.
+	NatMode VpcPortNatMode `json:"nat_mode"`
+
+	// Service Сервис, к которому привязан порт.
+	Service struct {
+		// Id ID сервиса.
+		Id int `json:"id"`
+
+		// Name Название сервиса.
+		Name string `json:"name"`
+
+		// Type Тип сервиса.
+		Type VpcPortServiceType `json:"type"`
+	} `json:"service"`
+}
+
+// VpcPortNatMode Тип преобразования сетевых адресов.
+type VpcPortNatMode string
+
+// VpcPortServiceType Тип сервиса.
+type VpcPortServiceType string
+
+// VpcService defines model for vpc-service.
+type VpcService struct {
+	// Id ID сервисв.
+	Id float32 `json:"id"`
+
+	// LocalIp Приватный IP-адрес сервиса
+	LocalIp *string `json:"local_ip,omitempty"`
+
+	// Name Имя сервиса.
+	Name string `json:"name"`
+
+	// PublicIp Публичный IP-адрес сервиса
+	PublicIp *string `json:"public_ip,omitempty"`
+
+	// Type Тип сервиса.
+	Type *VpcServiceType `json:"type,omitempty"`
+}
+
+// VpcServiceType Тип сервиса.
+type VpcServiceType string
+
 // BucketId defines model for bucket-id.
 type BucketId = int
 
 // Code defines model for code.
 type Code = string
 
+// DiskId defines model for disk-id.
+type DiskId = int
+
+// FloatingIpId ID плавающего IP
+type FloatingIpId = string
+
 // Hash defines model for hash.
 type Hash = string
 
+// Limit defines model for limit.
+type Limit = int
+
+// Offset defines model for offset.
+type Offset = int
+
 // ProjectId defines model for project-id.
 type ProjectId = int
+
+// ServerBackupId defines model for server-backup-id.
+type ServerBackupId = int
 
 // ServerId defines model for server-id.
 type ServerId = int
@@ -1500,6 +2338,9 @@ type SshKeyId = int
 
 // UserId defines model for user-id.
 type UserId = int
+
+// VpcId ID сети
+type VpcId = string
 
 // BadRequest defines model for 400.
 type BadRequest struct {
@@ -1642,11 +2483,146 @@ type AddServerToProjectJSONBody struct {
 	ResourceId float32 `json:"resource_id"`
 }
 
+// GetServersParams defines parameters for GetServers.
+type GetServersParams struct {
+	// Limit Обозначает количество записей, которое необходимо вернуть.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Указывает на смещение относительно начала списка.
+	Offset *Offset `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// DeleteServerParams defines parameters for DeleteServer.
+type DeleteServerParams struct {
+	// Hash Хеш, который совместно с кодом авторизации надо отправить для удаления, если включено подтверждение удаления сервисов через Телеграм.
+	Hash *Hash `form:"hash,omitempty" json:"hash,omitempty"`
+
+	// Code Код подтверждения, который придет к вам в Телеграм, после запроса удаления, если включено подтверждение удаления сервисов.
+	//
+	// При помощи API токена сервисы можно удалять без подтверждения, если параметр токена `is_able_to_delete` установлен в значение `true`
+	Code *Code `form:"code,omitempty" json:"code,omitempty"`
+}
+
+// PerformActionOnServerJSONBody defines parameters for PerformActionOnServer.
+type PerformActionOnServerJSONBody struct {
+	Action PerformActionOnServerJSONBodyAction `json:"action"`
+}
+
+// PerformActionOnServerJSONBodyAction defines parameters for PerformActionOnServer.
+type PerformActionOnServerJSONBodyAction string
+
+// UpdateServerOSBootModeJSONBody defines parameters for UpdateServerOSBootMode.
+type UpdateServerOSBootModeJSONBody struct {
+	// BootMode Тип загрузки операционной системы. \
+	//  Параметры: `default` – стандартный режим, `single` – однопользовательский режим, `recovery_disk` – загрузка с диска восстановления.
+	BootMode UpdateServerOSBootModeJSONBodyBootMode `json:"boot_mode"`
+}
+
+// UpdateServerOSBootModeJSONBodyBootMode defines parameters for UpdateServerOSBootMode.
+type UpdateServerOSBootModeJSONBodyBootMode string
+
+// CreateServerDiskJSONBody defines parameters for CreateServerDisk.
+type CreateServerDiskJSONBody struct {
+	// Size Минимальный размер 5120. Максимальный размер 512000. Шаг 5120
+	Size float32 `json:"size"`
+}
+
+// UpdateServerDiskJSONBody defines parameters for UpdateServerDisk.
+type UpdateServerDiskJSONBody struct {
+	// Size Минимальный размер 5120. Максимальный размер 512000. Шаг 5120. Нельзя передавать значение меньше текущего размера диска.
+	Size float32 `json:"size"`
+}
+
+// CreateServerDiskBackupJSONBody defines parameters for CreateServerDiskBackup.
+type CreateServerDiskBackupJSONBody struct {
+	// Comment Комментарий к бэкапу.
+	Comment *string `json:"comment,omitempty"`
+}
+
+// UpdateServerDiskBackupJSONBody defines parameters for UpdateServerDiskBackup.
+type UpdateServerDiskBackupJSONBody struct {
+	// Comment Комментарий к бэкапу.
+	Comment string `json:"comment"`
+}
+
+// PerformActionOnBackupJSONBody defines parameters for PerformActionOnBackup.
+type PerformActionOnBackupJSONBody struct {
+	// Action Действие над бэкапом.
+	Action PerformActionOnBackupJSONBodyAction `json:"action"`
+}
+
+// PerformActionOnBackupJSONBodyAction defines parameters for PerformActionOnBackup.
+type PerformActionOnBackupJSONBodyAction string
+
+// DeleteServerIPJSONBody defines parameters for DeleteServerIP.
+type DeleteServerIPJSONBody struct {
+	// Ip IP-адрес (IPv4 или IPv6)
+	Ip string `json:"ip"`
+}
+
+// UpdateServerIPJSONBody defines parameters for UpdateServerIP.
+type UpdateServerIPJSONBody struct {
+	// Ip IP-адрес (IPv4 или IPv6)
+	Ip string `json:"ip"`
+
+	// Ptr PTR-запись IP-адреса
+	Ptr string `json:"ptr"`
+}
+
+// AddServerIPJSONBody defines parameters for AddServerIP.
+type AddServerIPJSONBody struct {
+	// Ptr PTR-запись IP-адреса
+	Ptr *string `json:"ptr,omitempty"`
+
+	// Type Тип IP-адреса
+	Type AddServerIPJSONBodyType `json:"type"`
+}
+
+// AddServerIPJSONBodyType defines parameters for AddServerIP.
+type AddServerIPJSONBodyType string
+
+// UpdateServerNATJSONBody defines parameters for UpdateServerNAT.
+type UpdateServerNATJSONBody struct {
+	// NatMode Правило для маршрутизации трафика. \
+	//  Досутпные правила: `dnat_and_snat` – разрешен входящий и исходящий трафик, `snat` – разрешен только исходящий трафик, `no_nat` – разрешен трафик только в локальной сети.
+	NatMode UpdateServerNATJSONBodyNatMode `json:"nat_mode"`
+}
+
+// UpdateServerNATJSONBodyNatMode defines parameters for UpdateServerNAT.
+type UpdateServerNATJSONBodyNatMode string
+
+// GetServerLogsParams defines parameters for GetServerLogs.
+type GetServerLogsParams struct {
+	// Limit Обозначает количество записей, которое необходимо вернуть.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Указывает на смещение относительно начала списка.
+	Offset *Offset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Order Сортировка элементов по дате
+	Order *GetServerLogsParamsOrder `form:"order,omitempty" json:"order,omitempty"`
+}
+
+// GetServerLogsParamsOrder defines parameters for GetServerLogs.
+type GetServerLogsParamsOrder string
+
 // AddKeyToServerJSONBody defines parameters for AddKeyToServer.
 type AddKeyToServerJSONBody struct {
 	// SshKeyIds Массив ID SSH-ключей
 	SshKeyIds []float32 `json:"ssh_key_ids"`
 }
+
+// GetServerStatisticsParams defines parameters for GetServerStatistics.
+type GetServerStatisticsParams struct {
+	// DateFrom Дата начала сбора статистики. Строка в формате ISO 8061, закодированная в ASCII, пример: `2023-05-25T14%3A35%3A38`
+	DateFrom string `form:"date_from" json:"date_from"`
+
+	// DateTo Дата окончания сбора статистики. Строка в формате ISO 8061, закодированная в ASCII, пример: `2023-05-26T14%3A35%3A38`
+	DateTo string `form:"date_to" json:"date_to"`
+}
+
+// GetServerStatisticsNewParamsKeys defines parameters for GetServerStatisticsNew.
+type GetServerStatisticsNewParamsKeys string
 
 // CreateKeyJSONBody defines parameters for CreateKey.
 type CreateKeyJSONBody struct {
@@ -1789,6 +2765,15 @@ type CreateRegistryJSONRequestBody = RegistryIn
 // UpdateRegistryJSONRequestBody defines body for UpdateRegistry for application/json ContentType.
 type UpdateRegistryJSONRequestBody = RegistryEdit
 
+// CreateFloatingIpJSONRequestBody defines body for CreateFloatingIp for application/json ContentType.
+type CreateFloatingIpJSONRequestBody = CreateFloatingIp
+
+// UpdateFloatingIPJSONRequestBody defines body for UpdateFloatingIP for application/json ContentType.
+type UpdateFloatingIPJSONRequestBody = UpdateFloatingIp
+
+// BindFloatingIpJSONRequestBody defines body for BindFloatingIp for application/json ContentType.
+type BindFloatingIpJSONRequestBody = BindFloatingIp
+
 // CreateProjectJSONRequestBody defines body for CreateProject for application/json ContentType.
 type CreateProjectJSONRequestBody = CreateProject
 
@@ -1815,6 +2800,48 @@ type AddServerToProjectJSONRequestBody AddServerToProjectJSONBody
 
 // TransferResourceToAnotherProjectJSONRequestBody defines body for TransferResourceToAnotherProject for application/json ContentType.
 type TransferResourceToAnotherProjectJSONRequestBody = ResourceTransfer
+
+// CreateServerJSONRequestBody defines body for CreateServer for application/json ContentType.
+type CreateServerJSONRequestBody = CreateServer
+
+// UpdateServerJSONRequestBody defines body for UpdateServer for application/json ContentType.
+type UpdateServerJSONRequestBody = UpdateServer
+
+// PerformActionOnServerJSONRequestBody defines body for PerformActionOnServer for application/json ContentType.
+type PerformActionOnServerJSONRequestBody PerformActionOnServerJSONBody
+
+// UpdateServerOSBootModeJSONRequestBody defines body for UpdateServerOSBootMode for application/json ContentType.
+type UpdateServerOSBootModeJSONRequestBody UpdateServerOSBootModeJSONBody
+
+// CreateServerDiskJSONRequestBody defines body for CreateServerDisk for application/json ContentType.
+type CreateServerDiskJSONRequestBody CreateServerDiskJSONBody
+
+// UpdateServerDiskJSONRequestBody defines body for UpdateServerDisk for application/json ContentType.
+type UpdateServerDiskJSONRequestBody UpdateServerDiskJSONBody
+
+// UpdateServerDiskAutoBackupSettingsJSONRequestBody defines body for UpdateServerDiskAutoBackupSettings for application/json ContentType.
+type UpdateServerDiskAutoBackupSettingsJSONRequestBody = AutoBackup
+
+// CreateServerDiskBackupJSONRequestBody defines body for CreateServerDiskBackup for application/json ContentType.
+type CreateServerDiskBackupJSONRequestBody CreateServerDiskBackupJSONBody
+
+// UpdateServerDiskBackupJSONRequestBody defines body for UpdateServerDiskBackup for application/json ContentType.
+type UpdateServerDiskBackupJSONRequestBody UpdateServerDiskBackupJSONBody
+
+// PerformActionOnBackupJSONRequestBody defines body for PerformActionOnBackup for application/json ContentType.
+type PerformActionOnBackupJSONRequestBody PerformActionOnBackupJSONBody
+
+// DeleteServerIPJSONRequestBody defines body for DeleteServerIP for application/json ContentType.
+type DeleteServerIPJSONRequestBody DeleteServerIPJSONBody
+
+// UpdateServerIPJSONRequestBody defines body for UpdateServerIP for application/json ContentType.
+type UpdateServerIPJSONRequestBody UpdateServerIPJSONBody
+
+// AddServerIPJSONRequestBody defines body for AddServerIP for application/json ContentType.
+type AddServerIPJSONRequestBody AddServerIPJSONBody
+
+// UpdateServerNATJSONRequestBody defines body for UpdateServerNAT for application/json ContentType.
+type UpdateServerNATJSONRequestBody UpdateServerNATJSONBody
 
 // AddKeyToServerJSONRequestBody defines body for AddKeyToServer for application/json ContentType.
 type AddKeyToServerJSONRequestBody AddKeyToServerJSONBody
@@ -1845,6 +2872,136 @@ type TransferStorageJSONRequestBody TransferStorageJSONBody
 
 // UpdateStorageUserJSONRequestBody defines body for UpdateStorageUser for application/json ContentType.
 type UpdateStorageUserJSONRequestBody UpdateStorageUserJSONBody
+
+// CreateVPCJSONRequestBody defines body for CreateVPC for application/json ContentType.
+type CreateVPCJSONRequestBody = CreateVpc
+
+// UpdateVPCsJSONRequestBody defines body for UpdateVPCs for application/json ContentType.
+type UpdateVPCsJSONRequestBody = UpdateVpc
+
+// AsBindFloatingIpResourceId0 returns the union data inside the BindFloatingIp_ResourceId as a BindFloatingIpResourceId0
+func (t BindFloatingIp_ResourceId) AsBindFloatingIpResourceId0() (BindFloatingIpResourceId0, error) {
+	var body BindFloatingIpResourceId0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBindFloatingIpResourceId0 overwrites any union data inside the BindFloatingIp_ResourceId as the provided BindFloatingIpResourceId0
+func (t *BindFloatingIp_ResourceId) FromBindFloatingIpResourceId0(v BindFloatingIpResourceId0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBindFloatingIpResourceId0 performs a merge with any union data inside the BindFloatingIp_ResourceId, using the provided BindFloatingIpResourceId0
+func (t *BindFloatingIp_ResourceId) MergeBindFloatingIpResourceId0(v BindFloatingIpResourceId0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBindFloatingIpResourceId1 returns the union data inside the BindFloatingIp_ResourceId as a BindFloatingIpResourceId1
+func (t BindFloatingIp_ResourceId) AsBindFloatingIpResourceId1() (BindFloatingIpResourceId1, error) {
+	var body BindFloatingIpResourceId1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBindFloatingIpResourceId1 overwrites any union data inside the BindFloatingIp_ResourceId as the provided BindFloatingIpResourceId1
+func (t *BindFloatingIp_ResourceId) FromBindFloatingIpResourceId1(v BindFloatingIpResourceId1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBindFloatingIpResourceId1 performs a merge with any union data inside the BindFloatingIp_ResourceId, using the provided BindFloatingIpResourceId1
+func (t *BindFloatingIp_ResourceId) MergeBindFloatingIpResourceId1(v BindFloatingIpResourceId1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t BindFloatingIp_ResourceId) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *BindFloatingIp_ResourceId) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsFloatingIpResourceId0 returns the union data inside the FloatingIp_ResourceId as a FloatingIpResourceId0
+func (t FloatingIp_ResourceId) AsFloatingIpResourceId0() (FloatingIpResourceId0, error) {
+	var body FloatingIpResourceId0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFloatingIpResourceId0 overwrites any union data inside the FloatingIp_ResourceId as the provided FloatingIpResourceId0
+func (t *FloatingIp_ResourceId) FromFloatingIpResourceId0(v FloatingIpResourceId0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFloatingIpResourceId0 performs a merge with any union data inside the FloatingIp_ResourceId, using the provided FloatingIpResourceId0
+func (t *FloatingIp_ResourceId) MergeFloatingIpResourceId0(v FloatingIpResourceId0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsFloatingIpResourceId1 returns the union data inside the FloatingIp_ResourceId as a FloatingIpResourceId1
+func (t FloatingIp_ResourceId) AsFloatingIpResourceId1() (FloatingIpResourceId1, error) {
+	var body FloatingIpResourceId1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFloatingIpResourceId1 overwrites any union data inside the FloatingIp_ResourceId as the provided FloatingIpResourceId1
+func (t *FloatingIp_ResourceId) FromFloatingIpResourceId1(v FloatingIpResourceId1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFloatingIpResourceId1 performs a merge with any union data inside the FloatingIp_ResourceId, using the provided FloatingIpResourceId1
+func (t *FloatingIp_ResourceId) MergeFloatingIpResourceId1(v FloatingIpResourceId1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t FloatingIp_ResourceId) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *FloatingIp_ResourceId) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -1919,6 +3076,9 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// GetConfigurators request
+	GetConfigurators(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetRegistries request
 	GetRegistries(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1943,6 +3103,39 @@ type ClientInterface interface {
 
 	// GetRegistryRepositories request
 	GetRegistryRepositories(ctx context.Context, registryId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetFloatingIps request
+	GetFloatingIps(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateFloatingIpWithBody request with any body
+	CreateFloatingIpWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateFloatingIp(ctx context.Context, body CreateFloatingIpJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteFloatingIP request
+	DeleteFloatingIP(ctx context.Context, floatingIpId FloatingIpId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetFloatingIp request
+	GetFloatingIp(ctx context.Context, floatingIpId FloatingIpId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateFloatingIPWithBody request with any body
+	UpdateFloatingIPWithBody(ctx context.Context, floatingIpId FloatingIpId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateFloatingIP(ctx context.Context, floatingIpId FloatingIpId, body UpdateFloatingIPJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BindFloatingIpWithBody request with any body
+	BindFloatingIpWithBody(ctx context.Context, floatingIpId FloatingIpId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BindFloatingIp(ctx context.Context, floatingIpId FloatingIpId, body BindFloatingIpJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnbindFloatingIp request
+	UnbindFloatingIp(ctx context.Context, floatingIpId FloatingIpId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetOsList request
+	GetOsList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetServersPresets request
+	GetServersPresets(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetStoragesPresets request
 	GetStoragesPresets(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -2040,6 +3233,133 @@ type ClientInterface interface {
 
 	TransferResourceToAnotherProject(ctx context.Context, projectId ProjectId, body TransferResourceToAnotherProjectJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetServers request
+	GetServers(ctx context.Context, params *GetServersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateServerWithBody request with any body
+	CreateServerWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateServer(ctx context.Context, body CreateServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteServer request
+	DeleteServer(ctx context.Context, serverId ServerId, params *DeleteServerParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetServer request
+	GetServer(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateServerWithBody request with any body
+	UpdateServerWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateServer(ctx context.Context, serverId ServerId, body UpdateServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PerformActionOnServerWithBody request with any body
+	PerformActionOnServerWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PerformActionOnServer(ctx context.Context, serverId ServerId, body PerformActionOnServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateServerOSBootModeWithBody request with any body
+	UpdateServerOSBootModeWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateServerOSBootMode(ctx context.Context, serverId ServerId, body UpdateServerOSBootModeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CloneServer request
+	CloneServer(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetServerDisks request
+	GetServerDisks(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateServerDiskWithBody request with any body
+	CreateServerDiskWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateServerDisk(ctx context.Context, serverId ServerId, body CreateServerDiskJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteServerDisk request
+	DeleteServerDisk(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetServerDisk request
+	GetServerDisk(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateServerDiskWithBody request with any body
+	UpdateServerDiskWithBody(ctx context.Context, serverId ServerId, diskId DiskId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateServerDisk(ctx context.Context, serverId ServerId, diskId DiskId, body UpdateServerDiskJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetServerDiskAutoBackupSettings request
+	GetServerDiskAutoBackupSettings(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateServerDiskAutoBackupSettingsWithBody request with any body
+	UpdateServerDiskAutoBackupSettingsWithBody(ctx context.Context, serverId ServerId, diskId DiskId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateServerDiskAutoBackupSettings(ctx context.Context, serverId ServerId, diskId DiskId, body UpdateServerDiskAutoBackupSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetServerDiskBackups request
+	GetServerDiskBackups(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateServerDiskBackupWithBody request with any body
+	CreateServerDiskBackupWithBody(ctx context.Context, serverId ServerId, diskId DiskId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateServerDiskBackup(ctx context.Context, serverId ServerId, diskId DiskId, body CreateServerDiskBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteServerDiskBackup request
+	DeleteServerDiskBackup(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetServerDiskBackup request
+	GetServerDiskBackup(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateServerDiskBackupWithBody request with any body
+	UpdateServerDiskBackupWithBody(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateServerDiskBackup(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, body UpdateServerDiskBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PerformActionOnBackupWithBody request with any body
+	PerformActionOnBackupWithBody(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PerformActionOnBackup(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, body PerformActionOnBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RebootServerHard request
+	RebootServerHard(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// HardShutdownServer request
+	HardShutdownServer(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ImageUnmountAndServerReload request
+	ImageUnmountAndServerReload(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteServerIPWithBody request with any body
+	DeleteServerIPWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	DeleteServerIP(ctx context.Context, serverId ServerId, body DeleteServerIPJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetServerIPs request
+	GetServerIPs(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateServerIPWithBody request with any body
+	UpdateServerIPWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateServerIP(ctx context.Context, serverId ServerId, body UpdateServerIPJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddServerIPWithBody request with any body
+	AddServerIPWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AddServerIP(ctx context.Context, serverId ServerId, body AddServerIPJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateServerNATWithBody request with any body
+	UpdateServerNATWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateServerNAT(ctx context.Context, serverId ServerId, body UpdateServerNATJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetServerLogs request
+	GetServerLogs(ctx context.Context, serverId ServerId, params *GetServerLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RebootServer request
+	RebootServer(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ResetServerPassword request
+	ResetServerPassword(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ShutdownServer request
+	ShutdownServer(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AddKeyToServerWithBody request with any body
 	AddKeyToServerWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -2047,6 +3367,18 @@ type ClientInterface interface {
 
 	// DeleteKeyFromServer request
 	DeleteKeyFromServer(ctx context.Context, serverId ServerId, sshKeyId SshKeyId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// StartServer request
+	StartServer(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetServerStatistics request
+	GetServerStatistics(ctx context.Context, serverId ServerId, params *GetServerStatisticsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetServerStatisticsNew request
+	GetServerStatisticsNew(ctx context.Context, serverId ServerId, timeFrom string, period string, keys GetServerStatisticsNewParamsKeys, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetSoftware request
+	GetSoftware(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetKeys request
 	GetKeys(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -2119,6 +3451,43 @@ type ClientInterface interface {
 	UpdateStorageUserWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateStorageUser(ctx context.Context, userId UserId, body UpdateStorageUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteVPC request
+	DeleteVPC(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetVPCPorts request
+	GetVPCPorts(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetVPCs request
+	GetVPCs(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateVPCWithBody request with any body
+	CreateVPCWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateVPC(ctx context.Context, body CreateVPCJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetVPC request
+	GetVPC(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateVPCsWithBody request with any body
+	UpdateVPCsWithBody(ctx context.Context, vpcId VpcId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateVPCs(ctx context.Context, vpcId VpcId, body UpdateVPCsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetVPCServices request
+	GetVPCServices(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) GetConfigurators(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetConfiguratorsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) GetRegistries(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -2219,6 +3588,150 @@ func (c *Client) UpdateRegistry(ctx context.Context, registryId int, body Update
 
 func (c *Client) GetRegistryRepositories(ctx context.Context, registryId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetRegistryRepositoriesRequest(c.Server, registryId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetFloatingIps(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetFloatingIpsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateFloatingIpWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateFloatingIpRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateFloatingIp(ctx context.Context, body CreateFloatingIpJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateFloatingIpRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteFloatingIP(ctx context.Context, floatingIpId FloatingIpId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteFloatingIPRequest(c.Server, floatingIpId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetFloatingIp(ctx context.Context, floatingIpId FloatingIpId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetFloatingIpRequest(c.Server, floatingIpId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateFloatingIPWithBody(ctx context.Context, floatingIpId FloatingIpId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateFloatingIPRequestWithBody(c.Server, floatingIpId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateFloatingIP(ctx context.Context, floatingIpId FloatingIpId, body UpdateFloatingIPJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateFloatingIPRequest(c.Server, floatingIpId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BindFloatingIpWithBody(ctx context.Context, floatingIpId FloatingIpId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBindFloatingIpRequestWithBody(c.Server, floatingIpId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BindFloatingIp(ctx context.Context, floatingIpId FloatingIpId, body BindFloatingIpJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBindFloatingIpRequest(c.Server, floatingIpId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UnbindFloatingIp(ctx context.Context, floatingIpId FloatingIpId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnbindFloatingIpRequest(c.Server, floatingIpId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetOsList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetOsListRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetServersPresets(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServersPresetsRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -2649,6 +4162,570 @@ func (c *Client) TransferResourceToAnotherProject(ctx context.Context, projectId
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetServers(ctx context.Context, params *GetServersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServersRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateServerWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateServerRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateServer(ctx context.Context, body CreateServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateServerRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteServer(ctx context.Context, serverId ServerId, params *DeleteServerParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteServerRequest(c.Server, serverId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetServer(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServerRequest(c.Server, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateServerWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateServerRequestWithBody(c.Server, serverId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateServer(ctx context.Context, serverId ServerId, body UpdateServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateServerRequest(c.Server, serverId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PerformActionOnServerWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPerformActionOnServerRequestWithBody(c.Server, serverId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PerformActionOnServer(ctx context.Context, serverId ServerId, body PerformActionOnServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPerformActionOnServerRequest(c.Server, serverId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateServerOSBootModeWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateServerOSBootModeRequestWithBody(c.Server, serverId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateServerOSBootMode(ctx context.Context, serverId ServerId, body UpdateServerOSBootModeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateServerOSBootModeRequest(c.Server, serverId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CloneServer(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCloneServerRequest(c.Server, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetServerDisks(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServerDisksRequest(c.Server, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateServerDiskWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateServerDiskRequestWithBody(c.Server, serverId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateServerDisk(ctx context.Context, serverId ServerId, body CreateServerDiskJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateServerDiskRequest(c.Server, serverId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteServerDisk(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteServerDiskRequest(c.Server, serverId, diskId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetServerDisk(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServerDiskRequest(c.Server, serverId, diskId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateServerDiskWithBody(ctx context.Context, serverId ServerId, diskId DiskId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateServerDiskRequestWithBody(c.Server, serverId, diskId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateServerDisk(ctx context.Context, serverId ServerId, diskId DiskId, body UpdateServerDiskJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateServerDiskRequest(c.Server, serverId, diskId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetServerDiskAutoBackupSettings(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServerDiskAutoBackupSettingsRequest(c.Server, serverId, diskId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateServerDiskAutoBackupSettingsWithBody(ctx context.Context, serverId ServerId, diskId DiskId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateServerDiskAutoBackupSettingsRequestWithBody(c.Server, serverId, diskId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateServerDiskAutoBackupSettings(ctx context.Context, serverId ServerId, diskId DiskId, body UpdateServerDiskAutoBackupSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateServerDiskAutoBackupSettingsRequest(c.Server, serverId, diskId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetServerDiskBackups(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServerDiskBackupsRequest(c.Server, serverId, diskId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateServerDiskBackupWithBody(ctx context.Context, serverId ServerId, diskId DiskId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateServerDiskBackupRequestWithBody(c.Server, serverId, diskId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateServerDiskBackup(ctx context.Context, serverId ServerId, diskId DiskId, body CreateServerDiskBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateServerDiskBackupRequest(c.Server, serverId, diskId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteServerDiskBackup(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteServerDiskBackupRequest(c.Server, serverId, diskId, backupId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetServerDiskBackup(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServerDiskBackupRequest(c.Server, serverId, diskId, backupId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateServerDiskBackupWithBody(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateServerDiskBackupRequestWithBody(c.Server, serverId, diskId, backupId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateServerDiskBackup(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, body UpdateServerDiskBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateServerDiskBackupRequest(c.Server, serverId, diskId, backupId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PerformActionOnBackupWithBody(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPerformActionOnBackupRequestWithBody(c.Server, serverId, diskId, backupId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PerformActionOnBackup(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, body PerformActionOnBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPerformActionOnBackupRequest(c.Server, serverId, diskId, backupId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RebootServerHard(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRebootServerHardRequest(c.Server, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) HardShutdownServer(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewHardShutdownServerRequest(c.Server, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ImageUnmountAndServerReload(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewImageUnmountAndServerReloadRequest(c.Server, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteServerIPWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteServerIPRequestWithBody(c.Server, serverId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteServerIP(ctx context.Context, serverId ServerId, body DeleteServerIPJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteServerIPRequest(c.Server, serverId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetServerIPs(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServerIPsRequest(c.Server, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateServerIPWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateServerIPRequestWithBody(c.Server, serverId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateServerIP(ctx context.Context, serverId ServerId, body UpdateServerIPJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateServerIPRequest(c.Server, serverId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddServerIPWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddServerIPRequestWithBody(c.Server, serverId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddServerIP(ctx context.Context, serverId ServerId, body AddServerIPJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddServerIPRequest(c.Server, serverId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateServerNATWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateServerNATRequestWithBody(c.Server, serverId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateServerNAT(ctx context.Context, serverId ServerId, body UpdateServerNATJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateServerNATRequest(c.Server, serverId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetServerLogs(ctx context.Context, serverId ServerId, params *GetServerLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServerLogsRequest(c.Server, serverId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RebootServer(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRebootServerRequest(c.Server, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ResetServerPassword(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewResetServerPasswordRequest(c.Server, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ShutdownServer(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewShutdownServerRequest(c.Server, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) AddKeyToServerWithBody(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAddKeyToServerRequestWithBody(c.Server, serverId, contentType, body)
 	if err != nil {
@@ -2675,6 +4752,54 @@ func (c *Client) AddKeyToServer(ctx context.Context, serverId ServerId, body Add
 
 func (c *Client) DeleteKeyFromServer(ctx context.Context, serverId ServerId, sshKeyId SshKeyId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteKeyFromServerRequest(c.Server, serverId, sshKeyId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) StartServer(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewStartServerRequest(c.Server, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetServerStatistics(ctx context.Context, serverId ServerId, params *GetServerStatisticsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServerStatisticsRequest(c.Server, serverId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetServerStatisticsNew(ctx context.Context, serverId ServerId, timeFrom string, period string, keys GetServerStatisticsNewParamsKeys, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServerStatisticsNewRequest(c.Server, serverId, timeFrom, period, keys)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetSoftware(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSoftwareRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -3009,6 +5134,141 @@ func (c *Client) UpdateStorageUser(ctx context.Context, userId UserId, body Upda
 	return c.Client.Do(req)
 }
 
+func (c *Client) DeleteVPC(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteVPCRequest(c.Server, vpcId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetVPCPorts(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetVPCPortsRequest(c.Server, vpcId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetVPCs(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetVPCsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateVPCWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateVPCRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateVPC(ctx context.Context, body CreateVPCJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateVPCRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetVPC(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetVPCRequest(c.Server, vpcId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateVPCsWithBody(ctx context.Context, vpcId VpcId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateVPCsRequestWithBody(c.Server, vpcId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateVPCs(ctx context.Context, vpcId VpcId, body UpdateVPCsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateVPCsRequest(c.Server, vpcId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetVPCServices(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetVPCServicesRequest(c.Server, vpcId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// NewGetConfiguratorsRequest generates requests for GetConfigurators
+func NewGetConfiguratorsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/configurator/servers")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetRegistriesRequest generates requests for GetRegistries
 func NewGetRegistriesRequest(server string) (*http.Request, error) {
 	var err error
@@ -3235,6 +5495,323 @@ func NewGetRegistryRepositoriesRequest(server string, registryId int) (*http.Req
 	}
 
 	operationPath := fmt.Sprintf("/api/v1/container-registry/%s/repositories", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetFloatingIpsRequest generates requests for GetFloatingIps
+func NewGetFloatingIpsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/floating-ips")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateFloatingIpRequest calls the generic CreateFloatingIp builder with application/json body
+func NewCreateFloatingIpRequest(server string, body CreateFloatingIpJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateFloatingIpRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateFloatingIpRequestWithBody generates requests for CreateFloatingIp with any type of body
+func NewCreateFloatingIpRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/floating-ips")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteFloatingIPRequest generates requests for DeleteFloatingIP
+func NewDeleteFloatingIPRequest(server string, floatingIpId FloatingIpId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "floating_ip_id", runtime.ParamLocationPath, floatingIpId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/floating-ips/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetFloatingIpRequest generates requests for GetFloatingIp
+func NewGetFloatingIpRequest(server string, floatingIpId FloatingIpId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "floating_ip_id", runtime.ParamLocationPath, floatingIpId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/floating-ips/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateFloatingIPRequest calls the generic UpdateFloatingIP builder with application/json body
+func NewUpdateFloatingIPRequest(server string, floatingIpId FloatingIpId, body UpdateFloatingIPJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateFloatingIPRequestWithBody(server, floatingIpId, "application/json", bodyReader)
+}
+
+// NewUpdateFloatingIPRequestWithBody generates requests for UpdateFloatingIP with any type of body
+func NewUpdateFloatingIPRequestWithBody(server string, floatingIpId FloatingIpId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "floating_ip_id", runtime.ParamLocationPath, floatingIpId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/floating-ips/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBindFloatingIpRequest calls the generic BindFloatingIp builder with application/json body
+func NewBindFloatingIpRequest(server string, floatingIpId FloatingIpId, body BindFloatingIpJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBindFloatingIpRequestWithBody(server, floatingIpId, "application/json", bodyReader)
+}
+
+// NewBindFloatingIpRequestWithBody generates requests for BindFloatingIp with any type of body
+func NewBindFloatingIpRequestWithBody(server string, floatingIpId FloatingIpId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "floating_ip_id", runtime.ParamLocationPath, floatingIpId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/floating-ips/%s/bind", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUnbindFloatingIpRequest generates requests for UnbindFloatingIp
+func NewUnbindFloatingIpRequest(server string, floatingIpId FloatingIpId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "floating_ip_id", runtime.ParamLocationPath, floatingIpId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/floating-ips/%s/unbind", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetOsListRequest generates requests for GetOsList
+func NewGetOsListRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/os/servers")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetServersPresetsRequest generates requests for GetServersPresets
+func NewGetServersPresetsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/presets/servers")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -4190,6 +6767,1531 @@ func NewTransferResourceToAnotherProjectRequestWithBody(server string, projectId
 	return req, nil
 }
 
+// NewGetServersRequest generates requests for GetServers
+func NewGetServersRequest(server string, params *GetServersParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateServerRequest calls the generic CreateServer builder with application/json body
+func NewCreateServerRequest(server string, body CreateServerJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateServerRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateServerRequestWithBody generates requests for CreateServer with any type of body
+func NewCreateServerRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteServerRequest generates requests for DeleteServer
+func NewDeleteServerRequest(server string, serverId ServerId, params *DeleteServerParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Hash != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "hash", runtime.ParamLocationQuery, *params.Hash); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Code != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "code", runtime.ParamLocationQuery, *params.Code); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetServerRequest generates requests for GetServer
+func NewGetServerRequest(server string, serverId ServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateServerRequest calls the generic UpdateServer builder with application/json body
+func NewUpdateServerRequest(server string, serverId ServerId, body UpdateServerJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateServerRequestWithBody(server, serverId, "application/json", bodyReader)
+}
+
+// NewUpdateServerRequestWithBody generates requests for UpdateServer with any type of body
+func NewUpdateServerRequestWithBody(server string, serverId ServerId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPerformActionOnServerRequest calls the generic PerformActionOnServer builder with application/json body
+func NewPerformActionOnServerRequest(server string, serverId ServerId, body PerformActionOnServerJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPerformActionOnServerRequestWithBody(server, serverId, "application/json", bodyReader)
+}
+
+// NewPerformActionOnServerRequestWithBody generates requests for PerformActionOnServer with any type of body
+func NewPerformActionOnServerRequestWithBody(server string, serverId ServerId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/action", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUpdateServerOSBootModeRequest calls the generic UpdateServerOSBootMode builder with application/json body
+func NewUpdateServerOSBootModeRequest(server string, serverId ServerId, body UpdateServerOSBootModeJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateServerOSBootModeRequestWithBody(server, serverId, "application/json", bodyReader)
+}
+
+// NewUpdateServerOSBootModeRequestWithBody generates requests for UpdateServerOSBootMode with any type of body
+func NewUpdateServerOSBootModeRequestWithBody(server string, serverId ServerId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/boot-mode", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewCloneServerRequest generates requests for CloneServer
+func NewCloneServerRequest(server string, serverId ServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/clone", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetServerDisksRequest generates requests for GetServerDisks
+func NewGetServerDisksRequest(server string, serverId ServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/disks", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateServerDiskRequest calls the generic CreateServerDisk builder with application/json body
+func NewCreateServerDiskRequest(server string, serverId ServerId, body CreateServerDiskJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateServerDiskRequestWithBody(server, serverId, "application/json", bodyReader)
+}
+
+// NewCreateServerDiskRequestWithBody generates requests for CreateServerDisk with any type of body
+func NewCreateServerDiskRequestWithBody(server string, serverId ServerId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/disks", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteServerDiskRequest generates requests for DeleteServerDisk
+func NewDeleteServerDiskRequest(server string, serverId ServerId, diskId DiskId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "disk_id", runtime.ParamLocationPath, diskId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/disks/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetServerDiskRequest generates requests for GetServerDisk
+func NewGetServerDiskRequest(server string, serverId ServerId, diskId DiskId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "disk_id", runtime.ParamLocationPath, diskId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/disks/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateServerDiskRequest calls the generic UpdateServerDisk builder with application/json body
+func NewUpdateServerDiskRequest(server string, serverId ServerId, diskId DiskId, body UpdateServerDiskJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateServerDiskRequestWithBody(server, serverId, diskId, "application/json", bodyReader)
+}
+
+// NewUpdateServerDiskRequestWithBody generates requests for UpdateServerDisk with any type of body
+func NewUpdateServerDiskRequestWithBody(server string, serverId ServerId, diskId DiskId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "disk_id", runtime.ParamLocationPath, diskId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/disks/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetServerDiskAutoBackupSettingsRequest generates requests for GetServerDiskAutoBackupSettings
+func NewGetServerDiskAutoBackupSettingsRequest(server string, serverId ServerId, diskId DiskId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "disk_id", runtime.ParamLocationPath, diskId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/disks/%s/auto-backups", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateServerDiskAutoBackupSettingsRequest calls the generic UpdateServerDiskAutoBackupSettings builder with application/json body
+func NewUpdateServerDiskAutoBackupSettingsRequest(server string, serverId ServerId, diskId DiskId, body UpdateServerDiskAutoBackupSettingsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateServerDiskAutoBackupSettingsRequestWithBody(server, serverId, diskId, "application/json", bodyReader)
+}
+
+// NewUpdateServerDiskAutoBackupSettingsRequestWithBody generates requests for UpdateServerDiskAutoBackupSettings with any type of body
+func NewUpdateServerDiskAutoBackupSettingsRequestWithBody(server string, serverId ServerId, diskId DiskId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "disk_id", runtime.ParamLocationPath, diskId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/disks/%s/auto-backups", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetServerDiskBackupsRequest generates requests for GetServerDiskBackups
+func NewGetServerDiskBackupsRequest(server string, serverId ServerId, diskId DiskId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "disk_id", runtime.ParamLocationPath, diskId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/disks/%s/backups", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateServerDiskBackupRequest calls the generic CreateServerDiskBackup builder with application/json body
+func NewCreateServerDiskBackupRequest(server string, serverId ServerId, diskId DiskId, body CreateServerDiskBackupJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateServerDiskBackupRequestWithBody(server, serverId, diskId, "application/json", bodyReader)
+}
+
+// NewCreateServerDiskBackupRequestWithBody generates requests for CreateServerDiskBackup with any type of body
+func NewCreateServerDiskBackupRequestWithBody(server string, serverId ServerId, diskId DiskId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "disk_id", runtime.ParamLocationPath, diskId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/disks/%s/backups", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteServerDiskBackupRequest generates requests for DeleteServerDiskBackup
+func NewDeleteServerDiskBackupRequest(server string, serverId ServerId, diskId DiskId, backupId ServerBackupId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "disk_id", runtime.ParamLocationPath, diskId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "backup_id", runtime.ParamLocationPath, backupId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/disks/%s/backups/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetServerDiskBackupRequest generates requests for GetServerDiskBackup
+func NewGetServerDiskBackupRequest(server string, serverId ServerId, diskId DiskId, backupId ServerBackupId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "disk_id", runtime.ParamLocationPath, diskId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "backup_id", runtime.ParamLocationPath, backupId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/disks/%s/backups/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateServerDiskBackupRequest calls the generic UpdateServerDiskBackup builder with application/json body
+func NewUpdateServerDiskBackupRequest(server string, serverId ServerId, diskId DiskId, backupId ServerBackupId, body UpdateServerDiskBackupJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateServerDiskBackupRequestWithBody(server, serverId, diskId, backupId, "application/json", bodyReader)
+}
+
+// NewUpdateServerDiskBackupRequestWithBody generates requests for UpdateServerDiskBackup with any type of body
+func NewUpdateServerDiskBackupRequestWithBody(server string, serverId ServerId, diskId DiskId, backupId ServerBackupId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "disk_id", runtime.ParamLocationPath, diskId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "backup_id", runtime.ParamLocationPath, backupId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/disks/%s/backups/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPerformActionOnBackupRequest calls the generic PerformActionOnBackup builder with application/json body
+func NewPerformActionOnBackupRequest(server string, serverId ServerId, diskId DiskId, backupId ServerBackupId, body PerformActionOnBackupJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPerformActionOnBackupRequestWithBody(server, serverId, diskId, backupId, "application/json", bodyReader)
+}
+
+// NewPerformActionOnBackupRequestWithBody generates requests for PerformActionOnBackup with any type of body
+func NewPerformActionOnBackupRequestWithBody(server string, serverId ServerId, diskId DiskId, backupId ServerBackupId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "disk_id", runtime.ParamLocationPath, diskId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "backup_id", runtime.ParamLocationPath, backupId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/disks/%s/backups/%s/action", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRebootServerHardRequest generates requests for RebootServerHard
+func NewRebootServerHardRequest(server string, serverId ServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/hard-reboot", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewHardShutdownServerRequest generates requests for HardShutdownServer
+func NewHardShutdownServerRequest(server string, serverId ServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/hard-shutdown", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewImageUnmountAndServerReloadRequest generates requests for ImageUnmountAndServerReload
+func NewImageUnmountAndServerReloadRequest(server string, serverId ServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/image-unmount", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteServerIPRequest calls the generic DeleteServerIP builder with application/json body
+func NewDeleteServerIPRequest(server string, serverId ServerId, body DeleteServerIPJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDeleteServerIPRequestWithBody(server, serverId, "application/json", bodyReader)
+}
+
+// NewDeleteServerIPRequestWithBody generates requests for DeleteServerIP with any type of body
+func NewDeleteServerIPRequestWithBody(server string, serverId ServerId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/ips", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetServerIPsRequest generates requests for GetServerIPs
+func NewGetServerIPsRequest(server string, serverId ServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/ips", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateServerIPRequest calls the generic UpdateServerIP builder with application/json body
+func NewUpdateServerIPRequest(server string, serverId ServerId, body UpdateServerIPJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateServerIPRequestWithBody(server, serverId, "application/json", bodyReader)
+}
+
+// NewUpdateServerIPRequestWithBody generates requests for UpdateServerIP with any type of body
+func NewUpdateServerIPRequestWithBody(server string, serverId ServerId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/ips", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAddServerIPRequest calls the generic AddServerIP builder with application/json body
+func NewAddServerIPRequest(server string, serverId ServerId, body AddServerIPJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddServerIPRequestWithBody(server, serverId, "application/json", bodyReader)
+}
+
+// NewAddServerIPRequestWithBody generates requests for AddServerIP with any type of body
+func NewAddServerIPRequestWithBody(server string, serverId ServerId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/ips", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUpdateServerNATRequest calls the generic UpdateServerNAT builder with application/json body
+func NewUpdateServerNATRequest(server string, serverId ServerId, body UpdateServerNATJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateServerNATRequestWithBody(server, serverId, "application/json", bodyReader)
+}
+
+// NewUpdateServerNATRequestWithBody generates requests for UpdateServerNAT with any type of body
+func NewUpdateServerNATRequestWithBody(server string, serverId ServerId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/local-networks/nat-mode", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetServerLogsRequest generates requests for GetServerLogs
+func NewGetServerLogsRequest(server string, serverId ServerId, params *GetServerLogsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/logs", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Order != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "order", runtime.ParamLocationQuery, *params.Order); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRebootServerRequest generates requests for RebootServer
+func NewRebootServerRequest(server string, serverId ServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/reboot", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewResetServerPasswordRequest generates requests for ResetServerPassword
+func NewResetServerPasswordRequest(server string, serverId ServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/reset-password", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewShutdownServerRequest generates requests for ShutdownServer
+func NewShutdownServerRequest(server string, serverId ServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/shutdown", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewAddKeyToServerRequest calls the generic AddKeyToServer builder with application/json body
 func NewAddKeyToServerRequest(server string, serverId ServerId, body AddKeyToServerJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -4271,6 +8373,186 @@ func NewDeleteKeyFromServerRequest(server string, serverId ServerId, sshKeyId Ss
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewStartServerRequest generates requests for StartServer
+func NewStartServerRequest(server string, serverId ServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/start", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetServerStatisticsRequest generates requests for GetServerStatistics
+func NewGetServerStatisticsRequest(server string, serverId ServerId, params *GetServerStatisticsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/statistics", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "date_from", runtime.ParamLocationQuery, params.DateFrom); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "date_to", runtime.ParamLocationQuery, params.DateTo); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetServerStatisticsNewRequest generates requests for GetServerStatisticsNew
+func NewGetServerStatisticsNewRequest(server string, serverId ServerId, timeFrom string, period string, keys GetServerStatisticsNewParamsKeys) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "server_id", runtime.ParamLocationPath, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "time_from", runtime.ParamLocationPath, timeFrom)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "period", runtime.ParamLocationPath, period)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithLocation("simple", false, "keys", runtime.ParamLocationPath, keys)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/servers/%s/statistics/%s/%s/%s", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetSoftwareRequest generates requests for GetSoftware
+func NewGetSoftwareRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/software/servers")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -4996,6 +9278,256 @@ func NewUpdateStorageUserRequestWithBody(server string, userId UserId, contentTy
 	return req, nil
 }
 
+// NewDeleteVPCRequest generates requests for DeleteVPC
+func NewDeleteVPCRequest(server string, vpcId VpcId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "vpc_id", runtime.ParamLocationPath, vpcId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/vpcs/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetVPCPortsRequest generates requests for GetVPCPorts
+func NewGetVPCPortsRequest(server string, vpcId VpcId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "vpc_id", runtime.ParamLocationPath, vpcId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/vpcs/%s/ports", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetVPCsRequest generates requests for GetVPCs
+func NewGetVPCsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v2/vpcs")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateVPCRequest calls the generic CreateVPC builder with application/json body
+func NewCreateVPCRequest(server string, body CreateVPCJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateVPCRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateVPCRequestWithBody generates requests for CreateVPC with any type of body
+func NewCreateVPCRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v2/vpcs")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetVPCRequest generates requests for GetVPC
+func NewGetVPCRequest(server string, vpcId VpcId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "vpc_id", runtime.ParamLocationPath, vpcId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v2/vpcs/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateVPCsRequest calls the generic UpdateVPCs builder with application/json body
+func NewUpdateVPCsRequest(server string, vpcId VpcId, body UpdateVPCsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateVPCsRequestWithBody(server, vpcId, "application/json", bodyReader)
+}
+
+// NewUpdateVPCsRequestWithBody generates requests for UpdateVPCs with any type of body
+func NewUpdateVPCsRequestWithBody(server string, vpcId VpcId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "vpc_id", runtime.ParamLocationPath, vpcId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v2/vpcs/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetVPCServicesRequest generates requests for GetVPCServices
+func NewGetVPCServicesRequest(server string, vpcId VpcId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "vpc_id", runtime.ParamLocationPath, vpcId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v2/vpcs/%s/services", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -5039,6 +9571,9 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// GetConfiguratorsWithResponse request
+	GetConfiguratorsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetConfiguratorsResponse, error)
+
 	// GetRegistriesWithResponse request
 	GetRegistriesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetRegistriesResponse, error)
 
@@ -5063,6 +9598,39 @@ type ClientWithResponsesInterface interface {
 
 	// GetRegistryRepositoriesWithResponse request
 	GetRegistryRepositoriesWithResponse(ctx context.Context, registryId int, reqEditors ...RequestEditorFn) (*GetRegistryRepositoriesResponse, error)
+
+	// GetFloatingIpsWithResponse request
+	GetFloatingIpsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetFloatingIpsResponse, error)
+
+	// CreateFloatingIpWithBodyWithResponse request with any body
+	CreateFloatingIpWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateFloatingIpResponse, error)
+
+	CreateFloatingIpWithResponse(ctx context.Context, body CreateFloatingIpJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateFloatingIpResponse, error)
+
+	// DeleteFloatingIPWithResponse request
+	DeleteFloatingIPWithResponse(ctx context.Context, floatingIpId FloatingIpId, reqEditors ...RequestEditorFn) (*DeleteFloatingIPResponse, error)
+
+	// GetFloatingIpWithResponse request
+	GetFloatingIpWithResponse(ctx context.Context, floatingIpId FloatingIpId, reqEditors ...RequestEditorFn) (*GetFloatingIpResponse, error)
+
+	// UpdateFloatingIPWithBodyWithResponse request with any body
+	UpdateFloatingIPWithBodyWithResponse(ctx context.Context, floatingIpId FloatingIpId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateFloatingIPResponse, error)
+
+	UpdateFloatingIPWithResponse(ctx context.Context, floatingIpId FloatingIpId, body UpdateFloatingIPJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateFloatingIPResponse, error)
+
+	// BindFloatingIpWithBodyWithResponse request with any body
+	BindFloatingIpWithBodyWithResponse(ctx context.Context, floatingIpId FloatingIpId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BindFloatingIpResponse, error)
+
+	BindFloatingIpWithResponse(ctx context.Context, floatingIpId FloatingIpId, body BindFloatingIpJSONRequestBody, reqEditors ...RequestEditorFn) (*BindFloatingIpResponse, error)
+
+	// UnbindFloatingIpWithResponse request
+	UnbindFloatingIpWithResponse(ctx context.Context, floatingIpId FloatingIpId, reqEditors ...RequestEditorFn) (*UnbindFloatingIpResponse, error)
+
+	// GetOsListWithResponse request
+	GetOsListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetOsListResponse, error)
+
+	// GetServersPresetsWithResponse request
+	GetServersPresetsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetServersPresetsResponse, error)
 
 	// GetStoragesPresetsWithResponse request
 	GetStoragesPresetsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetStoragesPresetsResponse, error)
@@ -5160,6 +9728,133 @@ type ClientWithResponsesInterface interface {
 
 	TransferResourceToAnotherProjectWithResponse(ctx context.Context, projectId ProjectId, body TransferResourceToAnotherProjectJSONRequestBody, reqEditors ...RequestEditorFn) (*TransferResourceToAnotherProjectResponse, error)
 
+	// GetServersWithResponse request
+	GetServersWithResponse(ctx context.Context, params *GetServersParams, reqEditors ...RequestEditorFn) (*GetServersResponse, error)
+
+	// CreateServerWithBodyWithResponse request with any body
+	CreateServerWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateServerResponse, error)
+
+	CreateServerWithResponse(ctx context.Context, body CreateServerJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateServerResponse, error)
+
+	// DeleteServerWithResponse request
+	DeleteServerWithResponse(ctx context.Context, serverId ServerId, params *DeleteServerParams, reqEditors ...RequestEditorFn) (*DeleteServerResponse, error)
+
+	// GetServerWithResponse request
+	GetServerWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*GetServerResponse, error)
+
+	// UpdateServerWithBodyWithResponse request with any body
+	UpdateServerWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateServerResponse, error)
+
+	UpdateServerWithResponse(ctx context.Context, serverId ServerId, body UpdateServerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServerResponse, error)
+
+	// PerformActionOnServerWithBodyWithResponse request with any body
+	PerformActionOnServerWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PerformActionOnServerResponse, error)
+
+	PerformActionOnServerWithResponse(ctx context.Context, serverId ServerId, body PerformActionOnServerJSONRequestBody, reqEditors ...RequestEditorFn) (*PerformActionOnServerResponse, error)
+
+	// UpdateServerOSBootModeWithBodyWithResponse request with any body
+	UpdateServerOSBootModeWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateServerOSBootModeResponse, error)
+
+	UpdateServerOSBootModeWithResponse(ctx context.Context, serverId ServerId, body UpdateServerOSBootModeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServerOSBootModeResponse, error)
+
+	// CloneServerWithResponse request
+	CloneServerWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*CloneServerResponse, error)
+
+	// GetServerDisksWithResponse request
+	GetServerDisksWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*GetServerDisksResponse, error)
+
+	// CreateServerDiskWithBodyWithResponse request with any body
+	CreateServerDiskWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateServerDiskResponse, error)
+
+	CreateServerDiskWithResponse(ctx context.Context, serverId ServerId, body CreateServerDiskJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateServerDiskResponse, error)
+
+	// DeleteServerDiskWithResponse request
+	DeleteServerDiskWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*DeleteServerDiskResponse, error)
+
+	// GetServerDiskWithResponse request
+	GetServerDiskWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*GetServerDiskResponse, error)
+
+	// UpdateServerDiskWithBodyWithResponse request with any body
+	UpdateServerDiskWithBodyWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateServerDiskResponse, error)
+
+	UpdateServerDiskWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, body UpdateServerDiskJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServerDiskResponse, error)
+
+	// GetServerDiskAutoBackupSettingsWithResponse request
+	GetServerDiskAutoBackupSettingsWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*GetServerDiskAutoBackupSettingsResponse, error)
+
+	// UpdateServerDiskAutoBackupSettingsWithBodyWithResponse request with any body
+	UpdateServerDiskAutoBackupSettingsWithBodyWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateServerDiskAutoBackupSettingsResponse, error)
+
+	UpdateServerDiskAutoBackupSettingsWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, body UpdateServerDiskAutoBackupSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServerDiskAutoBackupSettingsResponse, error)
+
+	// GetServerDiskBackupsWithResponse request
+	GetServerDiskBackupsWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*GetServerDiskBackupsResponse, error)
+
+	// CreateServerDiskBackupWithBodyWithResponse request with any body
+	CreateServerDiskBackupWithBodyWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateServerDiskBackupResponse, error)
+
+	CreateServerDiskBackupWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, body CreateServerDiskBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateServerDiskBackupResponse, error)
+
+	// DeleteServerDiskBackupWithResponse request
+	DeleteServerDiskBackupWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, reqEditors ...RequestEditorFn) (*DeleteServerDiskBackupResponse, error)
+
+	// GetServerDiskBackupWithResponse request
+	GetServerDiskBackupWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, reqEditors ...RequestEditorFn) (*GetServerDiskBackupResponse, error)
+
+	// UpdateServerDiskBackupWithBodyWithResponse request with any body
+	UpdateServerDiskBackupWithBodyWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateServerDiskBackupResponse, error)
+
+	UpdateServerDiskBackupWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, body UpdateServerDiskBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServerDiskBackupResponse, error)
+
+	// PerformActionOnBackupWithBodyWithResponse request with any body
+	PerformActionOnBackupWithBodyWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PerformActionOnBackupResponse, error)
+
+	PerformActionOnBackupWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, body PerformActionOnBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*PerformActionOnBackupResponse, error)
+
+	// RebootServerHardWithResponse request
+	RebootServerHardWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*RebootServerHardResponse, error)
+
+	// HardShutdownServerWithResponse request
+	HardShutdownServerWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*HardShutdownServerResponse, error)
+
+	// ImageUnmountAndServerReloadWithResponse request
+	ImageUnmountAndServerReloadWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*ImageUnmountAndServerReloadResponse, error)
+
+	// DeleteServerIPWithBodyWithResponse request with any body
+	DeleteServerIPWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeleteServerIPResponse, error)
+
+	DeleteServerIPWithResponse(ctx context.Context, serverId ServerId, body DeleteServerIPJSONRequestBody, reqEditors ...RequestEditorFn) (*DeleteServerIPResponse, error)
+
+	// GetServerIPsWithResponse request
+	GetServerIPsWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*GetServerIPsResponse, error)
+
+	// UpdateServerIPWithBodyWithResponse request with any body
+	UpdateServerIPWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateServerIPResponse, error)
+
+	UpdateServerIPWithResponse(ctx context.Context, serverId ServerId, body UpdateServerIPJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServerIPResponse, error)
+
+	// AddServerIPWithBodyWithResponse request with any body
+	AddServerIPWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddServerIPResponse, error)
+
+	AddServerIPWithResponse(ctx context.Context, serverId ServerId, body AddServerIPJSONRequestBody, reqEditors ...RequestEditorFn) (*AddServerIPResponse, error)
+
+	// UpdateServerNATWithBodyWithResponse request with any body
+	UpdateServerNATWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateServerNATResponse, error)
+
+	UpdateServerNATWithResponse(ctx context.Context, serverId ServerId, body UpdateServerNATJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServerNATResponse, error)
+
+	// GetServerLogsWithResponse request
+	GetServerLogsWithResponse(ctx context.Context, serverId ServerId, params *GetServerLogsParams, reqEditors ...RequestEditorFn) (*GetServerLogsResponse, error)
+
+	// RebootServerWithResponse request
+	RebootServerWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*RebootServerResponse, error)
+
+	// ResetServerPasswordWithResponse request
+	ResetServerPasswordWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*ResetServerPasswordResponse, error)
+
+	// ShutdownServerWithResponse request
+	ShutdownServerWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*ShutdownServerResponse, error)
+
 	// AddKeyToServerWithBodyWithResponse request with any body
 	AddKeyToServerWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddKeyToServerResponse, error)
 
@@ -5167,6 +9862,18 @@ type ClientWithResponsesInterface interface {
 
 	// DeleteKeyFromServerWithResponse request
 	DeleteKeyFromServerWithResponse(ctx context.Context, serverId ServerId, sshKeyId SshKeyId, reqEditors ...RequestEditorFn) (*DeleteKeyFromServerResponse, error)
+
+	// StartServerWithResponse request
+	StartServerWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*StartServerResponse, error)
+
+	// GetServerStatisticsWithResponse request
+	GetServerStatisticsWithResponse(ctx context.Context, serverId ServerId, params *GetServerStatisticsParams, reqEditors ...RequestEditorFn) (*GetServerStatisticsResponse, error)
+
+	// GetServerStatisticsNewWithResponse request
+	GetServerStatisticsNewWithResponse(ctx context.Context, serverId ServerId, timeFrom string, period string, keys GetServerStatisticsNewParamsKeys, reqEditors ...RequestEditorFn) (*GetServerStatisticsNewResponse, error)
+
+	// GetSoftwareWithResponse request
+	GetSoftwareWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSoftwareResponse, error)
 
 	// GetKeysWithResponse request
 	GetKeysWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetKeysResponse, error)
@@ -5239,6 +9946,65 @@ type ClientWithResponsesInterface interface {
 	UpdateStorageUserWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateStorageUserResponse, error)
 
 	UpdateStorageUserWithResponse(ctx context.Context, userId UserId, body UpdateStorageUserJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateStorageUserResponse, error)
+
+	// DeleteVPCWithResponse request
+	DeleteVPCWithResponse(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*DeleteVPCResponse, error)
+
+	// GetVPCPortsWithResponse request
+	GetVPCPortsWithResponse(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*GetVPCPortsResponse, error)
+
+	// GetVPCsWithResponse request
+	GetVPCsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVPCsResponse, error)
+
+	// CreateVPCWithBodyWithResponse request with any body
+	CreateVPCWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateVPCResponse, error)
+
+	CreateVPCWithResponse(ctx context.Context, body CreateVPCJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateVPCResponse, error)
+
+	// GetVPCWithResponse request
+	GetVPCWithResponse(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*GetVPCResponse, error)
+
+	// UpdateVPCsWithBodyWithResponse request with any body
+	UpdateVPCsWithBodyWithResponse(ctx context.Context, vpcId VpcId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateVPCsResponse, error)
+
+	UpdateVPCsWithResponse(ctx context.Context, vpcId VpcId, body UpdateVPCsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateVPCsResponse, error)
+
+	// GetVPCServicesWithResponse request
+	GetVPCServicesWithResponse(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*GetVPCServicesResponse, error)
+}
+
+type GetConfiguratorsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности.
+		Meta Meta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId          ResponseId            `json:"response_id"`
+		ServerConfigurators []ServersConfigurator `json:"server_configurators"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetConfiguratorsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetConfiguratorsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetRegistriesResponse struct {
@@ -5495,6 +10261,291 @@ func (r GetRegistryRepositoriesResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetRegistryRepositoriesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetFloatingIpsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Ips []FloatingIp `json:"ips"`
+
+		// Meta Вспомогательная информация о возвращаемой сущности.
+		Meta Meta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetFloatingIpsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetFloatingIpsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateFloatingIpResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *struct {
+		Ip FloatingIp `json:"ip"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateFloatingIpResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateFloatingIpResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteFloatingIPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteFloatingIPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteFloatingIPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetFloatingIpResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Ip FloatingIp `json:"ip"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetFloatingIpResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetFloatingIpResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateFloatingIPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Ip FloatingIp `json:"ip"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateFloatingIPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateFloatingIPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type BindFloatingIpResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r BindFloatingIpResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BindFloatingIpResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UnbindFloatingIpResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UnbindFloatingIpResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnbindFloatingIpResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetOsListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности.
+		Meta Meta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId  `json:"response_id"`
+		ServersOs  []ServersOs `json:"servers_os"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetOsListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetOsListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetServersPresetsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности.
+		Meta Meta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId    ResponseId      `json:"response_id"`
+		ServerPresets []ServersPreset `json:"server_presets"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetServersPresetsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetServersPresetsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -6394,6 +11445,1052 @@ func (r TransferResourceToAnotherProjectResponse) StatusCode() int {
 	return 0
 }
 
+type GetServersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности.
+		Meta Meta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+		Servers    []Vds      `json:"servers"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetServersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetServersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// Server Сервер
+		Server Vds `json:"server"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId   ResponseId            `json:"response_id"`
+		ServerDelete DeleteServiceResponse `json:"server_delete"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// Server Сервер
+		Server Vds `json:"server"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// Server Сервер
+		Server Vds `json:"server"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PerformActionOnServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON409      *Conflict
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r PerformActionOnServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PerformActionOnServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateServerOSBootModeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON409      *Conflict
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateServerOSBootModeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateServerOSBootModeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CloneServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// Server Сервер
+		Server Vds `json:"server"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r CloneServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CloneServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetServerDisksResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности.
+		Meta Meta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId  ResponseId   `json:"response_id"`
+		ServerDisks []ServerDisk `json:"server_disks"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetServerDisksResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetServerDisksResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateServerDiskResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// ServerDisk Диск сервера
+		ServerDisk ServerDisk `json:"server_disk"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateServerDiskResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateServerDiskResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteServerDiskResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON409      *Conflict
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteServerDiskResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteServerDiskResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetServerDiskResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// ServerDisk Диск сервера
+		ServerDisk ServerDisk `json:"server_disk"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetServerDiskResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetServerDiskResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateServerDiskResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// ServerDisk Диск сервера
+		ServerDisk ServerDisk `json:"server_disk"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateServerDiskResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateServerDiskResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetServerDiskAutoBackupSettingsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		AutoBackupsSettings AutoBackup `json:"auto_backups_settings"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetServerDiskAutoBackupSettingsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetServerDiskAutoBackupSettingsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateServerDiskAutoBackupSettingsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		AutoBackupsSettings AutoBackup `json:"auto_backups_settings"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateServerDiskAutoBackupSettingsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateServerDiskAutoBackupSettingsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetServerDiskBackupsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Backups []ServerBackup `json:"backups"`
+
+		// Meta Вспомогательная информация о возвращаемой сущности.
+		Meta Meta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetServerDiskBackupsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetServerDiskBackupsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateServerDiskBackupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *struct {
+		Backup *ServerBackup `json:"backup,omitempty"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateServerDiskBackupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateServerDiskBackupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteServerDiskBackupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON409      *Conflict
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteServerDiskBackupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteServerDiskBackupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetServerDiskBackupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Backup ServerBackup `json:"backup"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetServerDiskBackupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetServerDiskBackupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateServerDiskBackupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Backup ServerBackup `json:"backup"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateServerDiskBackupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateServerDiskBackupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PerformActionOnBackupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON409      *Conflict
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r PerformActionOnBackupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PerformActionOnBackupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RebootServerHardResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON409      *Conflict
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r RebootServerHardResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RebootServerHardResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type HardShutdownServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON409      *Conflict
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r HardShutdownServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r HardShutdownServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ImageUnmountAndServerReloadResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON404      *N404
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r ImageUnmountAndServerReloadResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ImageUnmountAndServerReloadResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteServerIPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON409      *Conflict
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteServerIPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteServerIPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetServerIPsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности.
+		Meta Meta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+		ServerIps  []ServerIp `json:"server_ips"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetServerIPsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetServerIPsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateServerIPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// ServerIp IP-адрес сервера
+		ServerIp ServerIp `json:"server_ip"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateServerIPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateServerIPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AddServerIPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// ServerIp IP-адрес сервера
+		ServerIp ServerIp `json:"server_ip"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r AddServerIPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddServerIPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateServerNATResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON409      *Conflict
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateServerNATResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateServerNATResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetServerLogsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности.
+		Meta Meta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId  `json:"response_id"`
+		ServerLogs []ServerLog `json:"server_logs"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetServerLogsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetServerLogsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RebootServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON409      *Conflict
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r RebootServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RebootServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ResetServerPasswordResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON409      *Conflict
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r ResetServerPasswordResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ResetServerPasswordResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ShutdownServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON409      *Conflict
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r ShutdownServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ShutdownServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type AddKeyToServerResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -6442,6 +12539,178 @@ func (r DeleteKeyFromServerResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r DeleteKeyFromServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type StartServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON409      *Conflict
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r StartServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r StartServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetServerStatisticsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Cpu []struct {
+			// Load Нагрузка нагрузка на процессор. Возвращает значение от 0 до 1, где 1 это 100%
+			Load float32 `json:"load"`
+
+			// LoggedAt Дата события в формате ISO 8061
+			LoggedAt time.Time `json:"logged_at"`
+		} `json:"cpu"`
+
+		// Disk Статистика основного диска
+		Disk []struct {
+			// LoggedAt Дата события в формате ISO 8061
+			LoggedAt time.Time `json:"logged_at"`
+
+			// Read Нагрузка на чтение диска в Мб/с
+			Read float32 `json:"read"`
+
+			// Write Нагрузка на запись диска в Мб/с
+			Write float32 `json:"write"`
+		} `json:"disk"`
+		NetworkTraffic []struct {
+			// Incoming Входящий трафик сети в Мб/с
+			Incoming float32 `json:"incoming"`
+
+			// LoggedAt Дата события в формате ISO 8061
+			LoggedAt time.Time `json:"logged_at"`
+
+			// Outgoing Исходящий трафик сети в Мб/с
+			Outgoing float32 `json:"outgoing"`
+		} `json:"network_traffic"`
+		Ram []struct {
+			// Available Количество доступной оперативной памяти в Мб
+			Available float32 `json:"available"`
+
+			// LoggedAt Дата события в формате ISO 8061
+			LoggedAt time.Time `json:"logged_at"`
+
+			// Total Общее количество оперативной памяти в Мб
+			Total float32 `json:"total"`
+
+			// Used Количество потревляемой оперативной памяти в Мб
+			Used float32 `json:"used"`
+
+			// UsedCached Количество закешированной оперативной памяти в Мб
+			UsedCached float32 `json:"used_cached"`
+		} `json:"ram"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetServerStatisticsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetServerStatisticsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetServerStatisticsNewResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId           `json:"response_id"`
+		Statistics *[]ServersStatistics `json:"statistics,omitempty"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetServerStatisticsNewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetServerStatisticsNewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetSoftwareResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности.
+		Meta Meta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId      ResponseId        `json:"response_id"`
+		ServersSoftware []ServersSoftware `json:"servers_software"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetSoftwareResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetSoftwareResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -7045,6 +13314,243 @@ func (r UpdateStorageUserResponse) StatusCode() int {
 	return 0
 }
 
+type DeleteVPCResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteVPCResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteVPCResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetVPCPortsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности.
+		Meta Meta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+		VpcPorts   []VpcPort  `json:"vpc_ports"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetVPCPortsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetVPCPortsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetVPCsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности.
+		Meta Meta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+		Vpcs       []Vpc      `json:"vpcs"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetVPCsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetVPCsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateVPCResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+		Vpc        Vpc        `json:"vpc"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON409 *Conflict
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateVPCResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateVPCResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetVPCResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+		Vpc        Vpc        `json:"vpc"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetVPCResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetVPCResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateVPCsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+		Vpc        Vpc        `json:"vpc"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateVPCsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateVPCsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetVPCServicesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности.
+		Meta Meta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId   `json:"response_id"`
+		Services   []VpcService `json:"services"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetVPCServicesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetVPCServicesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// GetConfiguratorsWithResponse request returning *GetConfiguratorsResponse
+func (c *ClientWithResponses) GetConfiguratorsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetConfiguratorsResponse, error) {
+	rsp, err := c.GetConfigurators(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetConfiguratorsResponse(rsp)
+}
+
 // GetRegistriesWithResponse request returning *GetRegistriesResponse
 func (c *ClientWithResponses) GetRegistriesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetRegistriesResponse, error) {
 	rsp, err := c.GetRegistries(ctx, reqEditors...)
@@ -7122,6 +13628,111 @@ func (c *ClientWithResponses) GetRegistryRepositoriesWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseGetRegistryRepositoriesResponse(rsp)
+}
+
+// GetFloatingIpsWithResponse request returning *GetFloatingIpsResponse
+func (c *ClientWithResponses) GetFloatingIpsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetFloatingIpsResponse, error) {
+	rsp, err := c.GetFloatingIps(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetFloatingIpsResponse(rsp)
+}
+
+// CreateFloatingIpWithBodyWithResponse request with arbitrary body returning *CreateFloatingIpResponse
+func (c *ClientWithResponses) CreateFloatingIpWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateFloatingIpResponse, error) {
+	rsp, err := c.CreateFloatingIpWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateFloatingIpResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateFloatingIpWithResponse(ctx context.Context, body CreateFloatingIpJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateFloatingIpResponse, error) {
+	rsp, err := c.CreateFloatingIp(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateFloatingIpResponse(rsp)
+}
+
+// DeleteFloatingIPWithResponse request returning *DeleteFloatingIPResponse
+func (c *ClientWithResponses) DeleteFloatingIPWithResponse(ctx context.Context, floatingIpId FloatingIpId, reqEditors ...RequestEditorFn) (*DeleteFloatingIPResponse, error) {
+	rsp, err := c.DeleteFloatingIP(ctx, floatingIpId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteFloatingIPResponse(rsp)
+}
+
+// GetFloatingIpWithResponse request returning *GetFloatingIpResponse
+func (c *ClientWithResponses) GetFloatingIpWithResponse(ctx context.Context, floatingIpId FloatingIpId, reqEditors ...RequestEditorFn) (*GetFloatingIpResponse, error) {
+	rsp, err := c.GetFloatingIp(ctx, floatingIpId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetFloatingIpResponse(rsp)
+}
+
+// UpdateFloatingIPWithBodyWithResponse request with arbitrary body returning *UpdateFloatingIPResponse
+func (c *ClientWithResponses) UpdateFloatingIPWithBodyWithResponse(ctx context.Context, floatingIpId FloatingIpId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateFloatingIPResponse, error) {
+	rsp, err := c.UpdateFloatingIPWithBody(ctx, floatingIpId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateFloatingIPResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateFloatingIPWithResponse(ctx context.Context, floatingIpId FloatingIpId, body UpdateFloatingIPJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateFloatingIPResponse, error) {
+	rsp, err := c.UpdateFloatingIP(ctx, floatingIpId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateFloatingIPResponse(rsp)
+}
+
+// BindFloatingIpWithBodyWithResponse request with arbitrary body returning *BindFloatingIpResponse
+func (c *ClientWithResponses) BindFloatingIpWithBodyWithResponse(ctx context.Context, floatingIpId FloatingIpId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BindFloatingIpResponse, error) {
+	rsp, err := c.BindFloatingIpWithBody(ctx, floatingIpId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBindFloatingIpResponse(rsp)
+}
+
+func (c *ClientWithResponses) BindFloatingIpWithResponse(ctx context.Context, floatingIpId FloatingIpId, body BindFloatingIpJSONRequestBody, reqEditors ...RequestEditorFn) (*BindFloatingIpResponse, error) {
+	rsp, err := c.BindFloatingIp(ctx, floatingIpId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBindFloatingIpResponse(rsp)
+}
+
+// UnbindFloatingIpWithResponse request returning *UnbindFloatingIpResponse
+func (c *ClientWithResponses) UnbindFloatingIpWithResponse(ctx context.Context, floatingIpId FloatingIpId, reqEditors ...RequestEditorFn) (*UnbindFloatingIpResponse, error) {
+	rsp, err := c.UnbindFloatingIp(ctx, floatingIpId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnbindFloatingIpResponse(rsp)
+}
+
+// GetOsListWithResponse request returning *GetOsListResponse
+func (c *ClientWithResponses) GetOsListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetOsListResponse, error) {
+	rsp, err := c.GetOsList(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetOsListResponse(rsp)
+}
+
+// GetServersPresetsWithResponse request returning *GetServersPresetsResponse
+func (c *ClientWithResponses) GetServersPresetsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetServersPresetsResponse, error) {
+	rsp, err := c.GetServersPresets(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetServersPresetsResponse(rsp)
 }
 
 // GetStoragesPresetsWithResponse request returning *GetStoragesPresetsResponse
@@ -7430,6 +14041,415 @@ func (c *ClientWithResponses) TransferResourceToAnotherProjectWithResponse(ctx c
 	return ParseTransferResourceToAnotherProjectResponse(rsp)
 }
 
+// GetServersWithResponse request returning *GetServersResponse
+func (c *ClientWithResponses) GetServersWithResponse(ctx context.Context, params *GetServersParams, reqEditors ...RequestEditorFn) (*GetServersResponse, error) {
+	rsp, err := c.GetServers(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetServersResponse(rsp)
+}
+
+// CreateServerWithBodyWithResponse request with arbitrary body returning *CreateServerResponse
+func (c *ClientWithResponses) CreateServerWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateServerResponse, error) {
+	rsp, err := c.CreateServerWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateServerResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateServerWithResponse(ctx context.Context, body CreateServerJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateServerResponse, error) {
+	rsp, err := c.CreateServer(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateServerResponse(rsp)
+}
+
+// DeleteServerWithResponse request returning *DeleteServerResponse
+func (c *ClientWithResponses) DeleteServerWithResponse(ctx context.Context, serverId ServerId, params *DeleteServerParams, reqEditors ...RequestEditorFn) (*DeleteServerResponse, error) {
+	rsp, err := c.DeleteServer(ctx, serverId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteServerResponse(rsp)
+}
+
+// GetServerWithResponse request returning *GetServerResponse
+func (c *ClientWithResponses) GetServerWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*GetServerResponse, error) {
+	rsp, err := c.GetServer(ctx, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetServerResponse(rsp)
+}
+
+// UpdateServerWithBodyWithResponse request with arbitrary body returning *UpdateServerResponse
+func (c *ClientWithResponses) UpdateServerWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateServerResponse, error) {
+	rsp, err := c.UpdateServerWithBody(ctx, serverId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateServerResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateServerWithResponse(ctx context.Context, serverId ServerId, body UpdateServerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServerResponse, error) {
+	rsp, err := c.UpdateServer(ctx, serverId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateServerResponse(rsp)
+}
+
+// PerformActionOnServerWithBodyWithResponse request with arbitrary body returning *PerformActionOnServerResponse
+func (c *ClientWithResponses) PerformActionOnServerWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PerformActionOnServerResponse, error) {
+	rsp, err := c.PerformActionOnServerWithBody(ctx, serverId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePerformActionOnServerResponse(rsp)
+}
+
+func (c *ClientWithResponses) PerformActionOnServerWithResponse(ctx context.Context, serverId ServerId, body PerformActionOnServerJSONRequestBody, reqEditors ...RequestEditorFn) (*PerformActionOnServerResponse, error) {
+	rsp, err := c.PerformActionOnServer(ctx, serverId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePerformActionOnServerResponse(rsp)
+}
+
+// UpdateServerOSBootModeWithBodyWithResponse request with arbitrary body returning *UpdateServerOSBootModeResponse
+func (c *ClientWithResponses) UpdateServerOSBootModeWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateServerOSBootModeResponse, error) {
+	rsp, err := c.UpdateServerOSBootModeWithBody(ctx, serverId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateServerOSBootModeResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateServerOSBootModeWithResponse(ctx context.Context, serverId ServerId, body UpdateServerOSBootModeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServerOSBootModeResponse, error) {
+	rsp, err := c.UpdateServerOSBootMode(ctx, serverId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateServerOSBootModeResponse(rsp)
+}
+
+// CloneServerWithResponse request returning *CloneServerResponse
+func (c *ClientWithResponses) CloneServerWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*CloneServerResponse, error) {
+	rsp, err := c.CloneServer(ctx, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCloneServerResponse(rsp)
+}
+
+// GetServerDisksWithResponse request returning *GetServerDisksResponse
+func (c *ClientWithResponses) GetServerDisksWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*GetServerDisksResponse, error) {
+	rsp, err := c.GetServerDisks(ctx, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetServerDisksResponse(rsp)
+}
+
+// CreateServerDiskWithBodyWithResponse request with arbitrary body returning *CreateServerDiskResponse
+func (c *ClientWithResponses) CreateServerDiskWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateServerDiskResponse, error) {
+	rsp, err := c.CreateServerDiskWithBody(ctx, serverId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateServerDiskResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateServerDiskWithResponse(ctx context.Context, serverId ServerId, body CreateServerDiskJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateServerDiskResponse, error) {
+	rsp, err := c.CreateServerDisk(ctx, serverId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateServerDiskResponse(rsp)
+}
+
+// DeleteServerDiskWithResponse request returning *DeleteServerDiskResponse
+func (c *ClientWithResponses) DeleteServerDiskWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*DeleteServerDiskResponse, error) {
+	rsp, err := c.DeleteServerDisk(ctx, serverId, diskId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteServerDiskResponse(rsp)
+}
+
+// GetServerDiskWithResponse request returning *GetServerDiskResponse
+func (c *ClientWithResponses) GetServerDiskWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*GetServerDiskResponse, error) {
+	rsp, err := c.GetServerDisk(ctx, serverId, diskId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetServerDiskResponse(rsp)
+}
+
+// UpdateServerDiskWithBodyWithResponse request with arbitrary body returning *UpdateServerDiskResponse
+func (c *ClientWithResponses) UpdateServerDiskWithBodyWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateServerDiskResponse, error) {
+	rsp, err := c.UpdateServerDiskWithBody(ctx, serverId, diskId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateServerDiskResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateServerDiskWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, body UpdateServerDiskJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServerDiskResponse, error) {
+	rsp, err := c.UpdateServerDisk(ctx, serverId, diskId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateServerDiskResponse(rsp)
+}
+
+// GetServerDiskAutoBackupSettingsWithResponse request returning *GetServerDiskAutoBackupSettingsResponse
+func (c *ClientWithResponses) GetServerDiskAutoBackupSettingsWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*GetServerDiskAutoBackupSettingsResponse, error) {
+	rsp, err := c.GetServerDiskAutoBackupSettings(ctx, serverId, diskId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetServerDiskAutoBackupSettingsResponse(rsp)
+}
+
+// UpdateServerDiskAutoBackupSettingsWithBodyWithResponse request with arbitrary body returning *UpdateServerDiskAutoBackupSettingsResponse
+func (c *ClientWithResponses) UpdateServerDiskAutoBackupSettingsWithBodyWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateServerDiskAutoBackupSettingsResponse, error) {
+	rsp, err := c.UpdateServerDiskAutoBackupSettingsWithBody(ctx, serverId, diskId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateServerDiskAutoBackupSettingsResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateServerDiskAutoBackupSettingsWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, body UpdateServerDiskAutoBackupSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServerDiskAutoBackupSettingsResponse, error) {
+	rsp, err := c.UpdateServerDiskAutoBackupSettings(ctx, serverId, diskId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateServerDiskAutoBackupSettingsResponse(rsp)
+}
+
+// GetServerDiskBackupsWithResponse request returning *GetServerDiskBackupsResponse
+func (c *ClientWithResponses) GetServerDiskBackupsWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, reqEditors ...RequestEditorFn) (*GetServerDiskBackupsResponse, error) {
+	rsp, err := c.GetServerDiskBackups(ctx, serverId, diskId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetServerDiskBackupsResponse(rsp)
+}
+
+// CreateServerDiskBackupWithBodyWithResponse request with arbitrary body returning *CreateServerDiskBackupResponse
+func (c *ClientWithResponses) CreateServerDiskBackupWithBodyWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateServerDiskBackupResponse, error) {
+	rsp, err := c.CreateServerDiskBackupWithBody(ctx, serverId, diskId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateServerDiskBackupResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateServerDiskBackupWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, body CreateServerDiskBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateServerDiskBackupResponse, error) {
+	rsp, err := c.CreateServerDiskBackup(ctx, serverId, diskId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateServerDiskBackupResponse(rsp)
+}
+
+// DeleteServerDiskBackupWithResponse request returning *DeleteServerDiskBackupResponse
+func (c *ClientWithResponses) DeleteServerDiskBackupWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, reqEditors ...RequestEditorFn) (*DeleteServerDiskBackupResponse, error) {
+	rsp, err := c.DeleteServerDiskBackup(ctx, serverId, diskId, backupId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteServerDiskBackupResponse(rsp)
+}
+
+// GetServerDiskBackupWithResponse request returning *GetServerDiskBackupResponse
+func (c *ClientWithResponses) GetServerDiskBackupWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, reqEditors ...RequestEditorFn) (*GetServerDiskBackupResponse, error) {
+	rsp, err := c.GetServerDiskBackup(ctx, serverId, diskId, backupId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetServerDiskBackupResponse(rsp)
+}
+
+// UpdateServerDiskBackupWithBodyWithResponse request with arbitrary body returning *UpdateServerDiskBackupResponse
+func (c *ClientWithResponses) UpdateServerDiskBackupWithBodyWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateServerDiskBackupResponse, error) {
+	rsp, err := c.UpdateServerDiskBackupWithBody(ctx, serverId, diskId, backupId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateServerDiskBackupResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateServerDiskBackupWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, body UpdateServerDiskBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServerDiskBackupResponse, error) {
+	rsp, err := c.UpdateServerDiskBackup(ctx, serverId, diskId, backupId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateServerDiskBackupResponse(rsp)
+}
+
+// PerformActionOnBackupWithBodyWithResponse request with arbitrary body returning *PerformActionOnBackupResponse
+func (c *ClientWithResponses) PerformActionOnBackupWithBodyWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PerformActionOnBackupResponse, error) {
+	rsp, err := c.PerformActionOnBackupWithBody(ctx, serverId, diskId, backupId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePerformActionOnBackupResponse(rsp)
+}
+
+func (c *ClientWithResponses) PerformActionOnBackupWithResponse(ctx context.Context, serverId ServerId, diskId DiskId, backupId ServerBackupId, body PerformActionOnBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*PerformActionOnBackupResponse, error) {
+	rsp, err := c.PerformActionOnBackup(ctx, serverId, diskId, backupId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePerformActionOnBackupResponse(rsp)
+}
+
+// RebootServerHardWithResponse request returning *RebootServerHardResponse
+func (c *ClientWithResponses) RebootServerHardWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*RebootServerHardResponse, error) {
+	rsp, err := c.RebootServerHard(ctx, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRebootServerHardResponse(rsp)
+}
+
+// HardShutdownServerWithResponse request returning *HardShutdownServerResponse
+func (c *ClientWithResponses) HardShutdownServerWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*HardShutdownServerResponse, error) {
+	rsp, err := c.HardShutdownServer(ctx, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseHardShutdownServerResponse(rsp)
+}
+
+// ImageUnmountAndServerReloadWithResponse request returning *ImageUnmountAndServerReloadResponse
+func (c *ClientWithResponses) ImageUnmountAndServerReloadWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*ImageUnmountAndServerReloadResponse, error) {
+	rsp, err := c.ImageUnmountAndServerReload(ctx, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseImageUnmountAndServerReloadResponse(rsp)
+}
+
+// DeleteServerIPWithBodyWithResponse request with arbitrary body returning *DeleteServerIPResponse
+func (c *ClientWithResponses) DeleteServerIPWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeleteServerIPResponse, error) {
+	rsp, err := c.DeleteServerIPWithBody(ctx, serverId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteServerIPResponse(rsp)
+}
+
+func (c *ClientWithResponses) DeleteServerIPWithResponse(ctx context.Context, serverId ServerId, body DeleteServerIPJSONRequestBody, reqEditors ...RequestEditorFn) (*DeleteServerIPResponse, error) {
+	rsp, err := c.DeleteServerIP(ctx, serverId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteServerIPResponse(rsp)
+}
+
+// GetServerIPsWithResponse request returning *GetServerIPsResponse
+func (c *ClientWithResponses) GetServerIPsWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*GetServerIPsResponse, error) {
+	rsp, err := c.GetServerIPs(ctx, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetServerIPsResponse(rsp)
+}
+
+// UpdateServerIPWithBodyWithResponse request with arbitrary body returning *UpdateServerIPResponse
+func (c *ClientWithResponses) UpdateServerIPWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateServerIPResponse, error) {
+	rsp, err := c.UpdateServerIPWithBody(ctx, serverId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateServerIPResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateServerIPWithResponse(ctx context.Context, serverId ServerId, body UpdateServerIPJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServerIPResponse, error) {
+	rsp, err := c.UpdateServerIP(ctx, serverId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateServerIPResponse(rsp)
+}
+
+// AddServerIPWithBodyWithResponse request with arbitrary body returning *AddServerIPResponse
+func (c *ClientWithResponses) AddServerIPWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddServerIPResponse, error) {
+	rsp, err := c.AddServerIPWithBody(ctx, serverId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddServerIPResponse(rsp)
+}
+
+func (c *ClientWithResponses) AddServerIPWithResponse(ctx context.Context, serverId ServerId, body AddServerIPJSONRequestBody, reqEditors ...RequestEditorFn) (*AddServerIPResponse, error) {
+	rsp, err := c.AddServerIP(ctx, serverId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddServerIPResponse(rsp)
+}
+
+// UpdateServerNATWithBodyWithResponse request with arbitrary body returning *UpdateServerNATResponse
+func (c *ClientWithResponses) UpdateServerNATWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateServerNATResponse, error) {
+	rsp, err := c.UpdateServerNATWithBody(ctx, serverId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateServerNATResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateServerNATWithResponse(ctx context.Context, serverId ServerId, body UpdateServerNATJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServerNATResponse, error) {
+	rsp, err := c.UpdateServerNAT(ctx, serverId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateServerNATResponse(rsp)
+}
+
+// GetServerLogsWithResponse request returning *GetServerLogsResponse
+func (c *ClientWithResponses) GetServerLogsWithResponse(ctx context.Context, serverId ServerId, params *GetServerLogsParams, reqEditors ...RequestEditorFn) (*GetServerLogsResponse, error) {
+	rsp, err := c.GetServerLogs(ctx, serverId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetServerLogsResponse(rsp)
+}
+
+// RebootServerWithResponse request returning *RebootServerResponse
+func (c *ClientWithResponses) RebootServerWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*RebootServerResponse, error) {
+	rsp, err := c.RebootServer(ctx, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRebootServerResponse(rsp)
+}
+
+// ResetServerPasswordWithResponse request returning *ResetServerPasswordResponse
+func (c *ClientWithResponses) ResetServerPasswordWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*ResetServerPasswordResponse, error) {
+	rsp, err := c.ResetServerPassword(ctx, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseResetServerPasswordResponse(rsp)
+}
+
+// ShutdownServerWithResponse request returning *ShutdownServerResponse
+func (c *ClientWithResponses) ShutdownServerWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*ShutdownServerResponse, error) {
+	rsp, err := c.ShutdownServer(ctx, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseShutdownServerResponse(rsp)
+}
+
 // AddKeyToServerWithBodyWithResponse request with arbitrary body returning *AddKeyToServerResponse
 func (c *ClientWithResponses) AddKeyToServerWithBodyWithResponse(ctx context.Context, serverId ServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddKeyToServerResponse, error) {
 	rsp, err := c.AddKeyToServerWithBody(ctx, serverId, contentType, body, reqEditors...)
@@ -7454,6 +14474,42 @@ func (c *ClientWithResponses) DeleteKeyFromServerWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseDeleteKeyFromServerResponse(rsp)
+}
+
+// StartServerWithResponse request returning *StartServerResponse
+func (c *ClientWithResponses) StartServerWithResponse(ctx context.Context, serverId ServerId, reqEditors ...RequestEditorFn) (*StartServerResponse, error) {
+	rsp, err := c.StartServer(ctx, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseStartServerResponse(rsp)
+}
+
+// GetServerStatisticsWithResponse request returning *GetServerStatisticsResponse
+func (c *ClientWithResponses) GetServerStatisticsWithResponse(ctx context.Context, serverId ServerId, params *GetServerStatisticsParams, reqEditors ...RequestEditorFn) (*GetServerStatisticsResponse, error) {
+	rsp, err := c.GetServerStatistics(ctx, serverId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetServerStatisticsResponse(rsp)
+}
+
+// GetServerStatisticsNewWithResponse request returning *GetServerStatisticsNewResponse
+func (c *ClientWithResponses) GetServerStatisticsNewWithResponse(ctx context.Context, serverId ServerId, timeFrom string, period string, keys GetServerStatisticsNewParamsKeys, reqEditors ...RequestEditorFn) (*GetServerStatisticsNewResponse, error) {
+	rsp, err := c.GetServerStatisticsNew(ctx, serverId, timeFrom, period, keys, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetServerStatisticsNewResponse(rsp)
+}
+
+// GetSoftwareWithResponse request returning *GetSoftwareResponse
+func (c *ClientWithResponses) GetSoftwareWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSoftwareResponse, error) {
+	rsp, err := c.GetSoftware(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetSoftwareResponse(rsp)
 }
 
 // GetKeysWithResponse request returning *GetKeysResponse
@@ -7688,6 +14744,153 @@ func (c *ClientWithResponses) UpdateStorageUserWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseUpdateStorageUserResponse(rsp)
+}
+
+// DeleteVPCWithResponse request returning *DeleteVPCResponse
+func (c *ClientWithResponses) DeleteVPCWithResponse(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*DeleteVPCResponse, error) {
+	rsp, err := c.DeleteVPC(ctx, vpcId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteVPCResponse(rsp)
+}
+
+// GetVPCPortsWithResponse request returning *GetVPCPortsResponse
+func (c *ClientWithResponses) GetVPCPortsWithResponse(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*GetVPCPortsResponse, error) {
+	rsp, err := c.GetVPCPorts(ctx, vpcId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetVPCPortsResponse(rsp)
+}
+
+// GetVPCsWithResponse request returning *GetVPCsResponse
+func (c *ClientWithResponses) GetVPCsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVPCsResponse, error) {
+	rsp, err := c.GetVPCs(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetVPCsResponse(rsp)
+}
+
+// CreateVPCWithBodyWithResponse request with arbitrary body returning *CreateVPCResponse
+func (c *ClientWithResponses) CreateVPCWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateVPCResponse, error) {
+	rsp, err := c.CreateVPCWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateVPCResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateVPCWithResponse(ctx context.Context, body CreateVPCJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateVPCResponse, error) {
+	rsp, err := c.CreateVPC(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateVPCResponse(rsp)
+}
+
+// GetVPCWithResponse request returning *GetVPCResponse
+func (c *ClientWithResponses) GetVPCWithResponse(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*GetVPCResponse, error) {
+	rsp, err := c.GetVPC(ctx, vpcId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetVPCResponse(rsp)
+}
+
+// UpdateVPCsWithBodyWithResponse request with arbitrary body returning *UpdateVPCsResponse
+func (c *ClientWithResponses) UpdateVPCsWithBodyWithResponse(ctx context.Context, vpcId VpcId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateVPCsResponse, error) {
+	rsp, err := c.UpdateVPCsWithBody(ctx, vpcId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateVPCsResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateVPCsWithResponse(ctx context.Context, vpcId VpcId, body UpdateVPCsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateVPCsResponse, error) {
+	rsp, err := c.UpdateVPCs(ctx, vpcId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateVPCsResponse(rsp)
+}
+
+// GetVPCServicesWithResponse request returning *GetVPCServicesResponse
+func (c *ClientWithResponses) GetVPCServicesWithResponse(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*GetVPCServicesResponse, error) {
+	rsp, err := c.GetVPCServices(ctx, vpcId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetVPCServicesResponse(rsp)
+}
+
+// ParseGetConfiguratorsResponse parses an HTTP response from a GetConfiguratorsWithResponse call
+func ParseGetConfiguratorsResponse(rsp *http.Response) (*GetConfiguratorsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetConfiguratorsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности.
+			Meta Meta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId          ResponseId            `json:"response_id"`
+			ServerConfigurators []ServersConfigurator `json:"server_configurators"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetRegistriesResponse parses an HTTP response from a GetRegistriesWithResponse call
@@ -8156,6 +15359,627 @@ func ParseGetRegistryRepositoriesResponse(rsp *http.Response) (*GetRegistryRepos
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetFloatingIpsResponse parses an HTTP response from a GetFloatingIpsWithResponse call
+func ParseGetFloatingIpsResponse(rsp *http.Response) (*GetFloatingIpsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetFloatingIpsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Ips []FloatingIp `json:"ips"`
+
+			// Meta Вспомогательная информация о возвращаемой сущности.
+			Meta Meta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateFloatingIpResponse parses an HTTP response from a CreateFloatingIpWithResponse call
+func ParseCreateFloatingIpResponse(rsp *http.Response) (*CreateFloatingIpResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateFloatingIpResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest struct {
+			Ip FloatingIp `json:"ip"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteFloatingIPResponse parses an HTTP response from a DeleteFloatingIPWithResponse call
+func ParseDeleteFloatingIPResponse(rsp *http.Response) (*DeleteFloatingIPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteFloatingIPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetFloatingIpResponse parses an HTTP response from a GetFloatingIpWithResponse call
+func ParseGetFloatingIpResponse(rsp *http.Response) (*GetFloatingIpResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetFloatingIpResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Ip FloatingIp `json:"ip"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateFloatingIPResponse parses an HTTP response from a UpdateFloatingIPWithResponse call
+func ParseUpdateFloatingIPResponse(rsp *http.Response) (*UpdateFloatingIPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateFloatingIPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Ip FloatingIp `json:"ip"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBindFloatingIpResponse parses an HTTP response from a BindFloatingIpWithResponse call
+func ParseBindFloatingIpResponse(rsp *http.Response) (*BindFloatingIpResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BindFloatingIpResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUnbindFloatingIpResponse parses an HTTP response from a UnbindFloatingIpWithResponse call
+func ParseUnbindFloatingIpResponse(rsp *http.Response) (*UnbindFloatingIpResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnbindFloatingIpResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetOsListResponse parses an HTTP response from a GetOsListWithResponse call
+func ParseGetOsListResponse(rsp *http.Response) (*GetOsListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetOsListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности.
+			Meta Meta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId  `json:"response_id"`
+			ServersOs  []ServersOs `json:"servers_os"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetServersPresetsResponse parses an HTTP response from a GetServersPresetsWithResponse call
+func ParseGetServersPresetsResponse(rsp *http.Response) (*GetServersPresetsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetServersPresetsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности.
+			Meta Meta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId    ResponseId      `json:"response_id"`
+			ServerPresets []ServersPreset `json:"server_presets"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
 		var dest N429
@@ -10013,6 +17837,2390 @@ func ParseTransferResourceToAnotherProjectResponse(rsp *http.Response) (*Transfe
 	return response, nil
 }
 
+// ParseGetServersResponse parses an HTTP response from a GetServersWithResponse call
+func ParseGetServersResponse(rsp *http.Response) (*GetServersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetServersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности.
+			Meta Meta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+			Servers    []Vds      `json:"servers"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateServerResponse parses an HTTP response from a CreateServerWithResponse call
+func ParseCreateServerResponse(rsp *http.Response) (*CreateServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// Server Сервер
+			Server Vds `json:"server"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteServerResponse parses an HTTP response from a DeleteServerWithResponse call
+func ParseDeleteServerResponse(rsp *http.Response) (*DeleteServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId   ResponseId            `json:"response_id"`
+			ServerDelete DeleteServiceResponse `json:"server_delete"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetServerResponse parses an HTTP response from a GetServerWithResponse call
+func ParseGetServerResponse(rsp *http.Response) (*GetServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// Server Сервер
+			Server Vds `json:"server"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateServerResponse parses an HTTP response from a UpdateServerWithResponse call
+func ParseUpdateServerResponse(rsp *http.Response) (*UpdateServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// Server Сервер
+			Server Vds `json:"server"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePerformActionOnServerResponse parses an HTTP response from a PerformActionOnServerWithResponse call
+func ParsePerformActionOnServerResponse(rsp *http.Response) (*PerformActionOnServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PerformActionOnServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateServerOSBootModeResponse parses an HTTP response from a UpdateServerOSBootModeWithResponse call
+func ParseUpdateServerOSBootModeResponse(rsp *http.Response) (*UpdateServerOSBootModeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateServerOSBootModeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCloneServerResponse parses an HTTP response from a CloneServerWithResponse call
+func ParseCloneServerResponse(rsp *http.Response) (*CloneServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CloneServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// Server Сервер
+			Server Vds `json:"server"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetServerDisksResponse parses an HTTP response from a GetServerDisksWithResponse call
+func ParseGetServerDisksResponse(rsp *http.Response) (*GetServerDisksResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetServerDisksResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности.
+			Meta Meta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId  ResponseId   `json:"response_id"`
+			ServerDisks []ServerDisk `json:"server_disks"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateServerDiskResponse parses an HTTP response from a CreateServerDiskWithResponse call
+func ParseCreateServerDiskResponse(rsp *http.Response) (*CreateServerDiskResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateServerDiskResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// ServerDisk Диск сервера
+			ServerDisk ServerDisk `json:"server_disk"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteServerDiskResponse parses an HTTP response from a DeleteServerDiskWithResponse call
+func ParseDeleteServerDiskResponse(rsp *http.Response) (*DeleteServerDiskResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteServerDiskResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetServerDiskResponse parses an HTTP response from a GetServerDiskWithResponse call
+func ParseGetServerDiskResponse(rsp *http.Response) (*GetServerDiskResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetServerDiskResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// ServerDisk Диск сервера
+			ServerDisk ServerDisk `json:"server_disk"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateServerDiskResponse parses an HTTP response from a UpdateServerDiskWithResponse call
+func ParseUpdateServerDiskResponse(rsp *http.Response) (*UpdateServerDiskResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateServerDiskResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// ServerDisk Диск сервера
+			ServerDisk ServerDisk `json:"server_disk"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetServerDiskAutoBackupSettingsResponse parses an HTTP response from a GetServerDiskAutoBackupSettingsWithResponse call
+func ParseGetServerDiskAutoBackupSettingsResponse(rsp *http.Response) (*GetServerDiskAutoBackupSettingsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetServerDiskAutoBackupSettingsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			AutoBackupsSettings AutoBackup `json:"auto_backups_settings"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateServerDiskAutoBackupSettingsResponse parses an HTTP response from a UpdateServerDiskAutoBackupSettingsWithResponse call
+func ParseUpdateServerDiskAutoBackupSettingsResponse(rsp *http.Response) (*UpdateServerDiskAutoBackupSettingsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateServerDiskAutoBackupSettingsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			AutoBackupsSettings AutoBackup `json:"auto_backups_settings"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetServerDiskBackupsResponse parses an HTTP response from a GetServerDiskBackupsWithResponse call
+func ParseGetServerDiskBackupsResponse(rsp *http.Response) (*GetServerDiskBackupsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetServerDiskBackupsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Backups []ServerBackup `json:"backups"`
+
+			// Meta Вспомогательная информация о возвращаемой сущности.
+			Meta Meta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateServerDiskBackupResponse parses an HTTP response from a CreateServerDiskBackupWithResponse call
+func ParseCreateServerDiskBackupResponse(rsp *http.Response) (*CreateServerDiskBackupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateServerDiskBackupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest struct {
+			Backup *ServerBackup `json:"backup,omitempty"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteServerDiskBackupResponse parses an HTTP response from a DeleteServerDiskBackupWithResponse call
+func ParseDeleteServerDiskBackupResponse(rsp *http.Response) (*DeleteServerDiskBackupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteServerDiskBackupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetServerDiskBackupResponse parses an HTTP response from a GetServerDiskBackupWithResponse call
+func ParseGetServerDiskBackupResponse(rsp *http.Response) (*GetServerDiskBackupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetServerDiskBackupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Backup ServerBackup `json:"backup"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateServerDiskBackupResponse parses an HTTP response from a UpdateServerDiskBackupWithResponse call
+func ParseUpdateServerDiskBackupResponse(rsp *http.Response) (*UpdateServerDiskBackupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateServerDiskBackupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Backup ServerBackup `json:"backup"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePerformActionOnBackupResponse parses an HTTP response from a PerformActionOnBackupWithResponse call
+func ParsePerformActionOnBackupResponse(rsp *http.Response) (*PerformActionOnBackupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PerformActionOnBackupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRebootServerHardResponse parses an HTTP response from a RebootServerHardWithResponse call
+func ParseRebootServerHardResponse(rsp *http.Response) (*RebootServerHardResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RebootServerHardResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseHardShutdownServerResponse parses an HTTP response from a HardShutdownServerWithResponse call
+func ParseHardShutdownServerResponse(rsp *http.Response) (*HardShutdownServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &HardShutdownServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseImageUnmountAndServerReloadResponse parses an HTTP response from a ImageUnmountAndServerReloadWithResponse call
+func ParseImageUnmountAndServerReloadResponse(rsp *http.Response) (*ImageUnmountAndServerReloadResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ImageUnmountAndServerReloadResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteServerIPResponse parses an HTTP response from a DeleteServerIPWithResponse call
+func ParseDeleteServerIPResponse(rsp *http.Response) (*DeleteServerIPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteServerIPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetServerIPsResponse parses an HTTP response from a GetServerIPsWithResponse call
+func ParseGetServerIPsResponse(rsp *http.Response) (*GetServerIPsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetServerIPsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности.
+			Meta Meta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+			ServerIps  []ServerIp `json:"server_ips"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateServerIPResponse parses an HTTP response from a UpdateServerIPWithResponse call
+func ParseUpdateServerIPResponse(rsp *http.Response) (*UpdateServerIPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateServerIPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// ServerIp IP-адрес сервера
+			ServerIp ServerIp `json:"server_ip"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAddServerIPResponse parses an HTTP response from a AddServerIPWithResponse call
+func ParseAddServerIPResponse(rsp *http.Response) (*AddServerIPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddServerIPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// ServerIp IP-адрес сервера
+			ServerIp ServerIp `json:"server_ip"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateServerNATResponse parses an HTTP response from a UpdateServerNATWithResponse call
+func ParseUpdateServerNATResponse(rsp *http.Response) (*UpdateServerNATResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateServerNATResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetServerLogsResponse parses an HTTP response from a GetServerLogsWithResponse call
+func ParseGetServerLogsResponse(rsp *http.Response) (*GetServerLogsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetServerLogsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности.
+			Meta Meta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId  `json:"response_id"`
+			ServerLogs []ServerLog `json:"server_logs"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRebootServerResponse parses an HTTP response from a RebootServerWithResponse call
+func ParseRebootServerResponse(rsp *http.Response) (*RebootServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RebootServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseResetServerPasswordResponse parses an HTTP response from a ResetServerPasswordWithResponse call
+func ParseResetServerPasswordResponse(rsp *http.Response) (*ResetServerPasswordResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ResetServerPasswordResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseShutdownServerResponse parses an HTTP response from a ShutdownServerWithResponse call
+func ParseShutdownServerResponse(rsp *http.Response) (*ShutdownServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ShutdownServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseAddKeyToServerResponse parses an HTTP response from a AddKeyToServerWithResponse call
 func ParseAddKeyToServerResponse(rsp *http.Response) (*AddKeyToServerResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -10088,6 +20296,338 @@ func ParseDeleteKeyFromServerResponse(rsp *http.Response) (*DeleteKeyFromServerR
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseStartServerResponse parses an HTTP response from a StartServerWithResponse call
+func ParseStartServerResponse(rsp *http.Response) (*StartServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &StartServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetServerStatisticsResponse parses an HTTP response from a GetServerStatisticsWithResponse call
+func ParseGetServerStatisticsResponse(rsp *http.Response) (*GetServerStatisticsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetServerStatisticsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Cpu []struct {
+				// Load Нагрузка нагрузка на процессор. Возвращает значение от 0 до 1, где 1 это 100%
+				Load float32 `json:"load"`
+
+				// LoggedAt Дата события в формате ISO 8061
+				LoggedAt time.Time `json:"logged_at"`
+			} `json:"cpu"`
+
+			// Disk Статистика основного диска
+			Disk []struct {
+				// LoggedAt Дата события в формате ISO 8061
+				LoggedAt time.Time `json:"logged_at"`
+
+				// Read Нагрузка на чтение диска в Мб/с
+				Read float32 `json:"read"`
+
+				// Write Нагрузка на запись диска в Мб/с
+				Write float32 `json:"write"`
+			} `json:"disk"`
+			NetworkTraffic []struct {
+				// Incoming Входящий трафик сети в Мб/с
+				Incoming float32 `json:"incoming"`
+
+				// LoggedAt Дата события в формате ISO 8061
+				LoggedAt time.Time `json:"logged_at"`
+
+				// Outgoing Исходящий трафик сети в Мб/с
+				Outgoing float32 `json:"outgoing"`
+			} `json:"network_traffic"`
+			Ram []struct {
+				// Available Количество доступной оперативной памяти в Мб
+				Available float32 `json:"available"`
+
+				// LoggedAt Дата события в формате ISO 8061
+				LoggedAt time.Time `json:"logged_at"`
+
+				// Total Общее количество оперативной памяти в Мб
+				Total float32 `json:"total"`
+
+				// Used Количество потревляемой оперативной памяти в Мб
+				Used float32 `json:"used"`
+
+				// UsedCached Количество закешированной оперативной памяти в Мб
+				UsedCached float32 `json:"used_cached"`
+			} `json:"ram"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetServerStatisticsNewResponse parses an HTTP response from a GetServerStatisticsNewWithResponse call
+func ParseGetServerStatisticsNewResponse(rsp *http.Response) (*GetServerStatisticsNewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetServerStatisticsNewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId           `json:"response_id"`
+			Statistics *[]ServersStatistics `json:"statistics,omitempty"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetSoftwareResponse parses an HTTP response from a GetSoftwareWithResponse call
+func ParseGetSoftwareResponse(rsp *http.Response) (*GetSoftwareResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetSoftwareResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности.
+			Meta Meta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId      ResponseId        `json:"response_id"`
+			ServersSoftware []ServersSoftware `json:"servers_software"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest N400
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -11381,6 +21921,508 @@ func ParseUpdateStorageUserResponse(rsp *http.Response) (*UpdateStorageUserRespo
 
 			// User Пользователь хранилища
 			User BucketUser `json:"user"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteVPCResponse parses an HTTP response from a DeleteVPCWithResponse call
+func ParseDeleteVPCResponse(rsp *http.Response) (*DeleteVPCResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteVPCResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetVPCPortsResponse parses an HTTP response from a GetVPCPortsWithResponse call
+func ParseGetVPCPortsResponse(rsp *http.Response) (*GetVPCPortsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetVPCPortsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности.
+			Meta Meta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+			VpcPorts   []VpcPort  `json:"vpc_ports"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetVPCsResponse parses an HTTP response from a GetVPCsWithResponse call
+func ParseGetVPCsResponse(rsp *http.Response) (*GetVPCsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetVPCsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности.
+			Meta Meta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+			Vpcs       []Vpc      `json:"vpcs"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateVPCResponse parses an HTTP response from a CreateVPCWithResponse call
+func ParseCreateVPCResponse(rsp *http.Response) (*CreateVPCResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateVPCResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+			Vpc        Vpc        `json:"vpc"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetVPCResponse parses an HTTP response from a GetVPCWithResponse call
+func ParseGetVPCResponse(rsp *http.Response) (*GetVPCResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetVPCResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+			Vpc        Vpc        `json:"vpc"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateVPCsResponse parses an HTTP response from a UpdateVPCsWithResponse call
+func ParseUpdateVPCsResponse(rsp *http.Response) (*UpdateVPCsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateVPCsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+			Vpc        Vpc        `json:"vpc"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetVPCServicesResponse parses an HTTP response from a GetVPCServicesWithResponse call
+func ParseGetVPCServicesResponse(rsp *http.Response) (*GetVPCServicesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetVPCServicesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности.
+			Meta Meta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId   `json:"response_id"`
+			Services   []VpcService `json:"services"`
 		}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
