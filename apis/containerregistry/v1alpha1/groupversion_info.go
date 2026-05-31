@@ -47,17 +47,11 @@ var (
 	ContainerRegistryRepositoryKind = "ContainerRegistryRepository"
 	// ContainerRegistryRepositoryGroupVersionKind is the GVK.
 	ContainerRegistryRepositoryGroupVersionKind = GroupVersion.WithKind(ContainerRegistryRepositoryKind)
-
-	// ContainerRegistryPresetKind is the Kind for ContainerRegistryPreset.
-	ContainerRegistryPresetKind = "ContainerRegistryPreset"
-	// ContainerRegistryPresetGroupVersionKind is the GVK.
-	ContainerRegistryPresetGroupVersionKind = GroupVersion.WithKind(ContainerRegistryPresetKind)
 )
 
 func init() {
 	SchemeBuilder.Register(
 		&ContainerRegistry{}, &ContainerRegistryList{},
 		&ContainerRegistryRepository{}, &ContainerRegistryRepositoryList{},
-		&ContainerRegistryPreset{}, &ContainerRegistryPresetList{},
 	)
 }

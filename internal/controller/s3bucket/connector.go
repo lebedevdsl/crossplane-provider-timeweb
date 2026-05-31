@@ -19,20 +19,18 @@ package s3bucket
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	objectstoragev1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/objectstorage/v1alpha1"
-	apisv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
+	twgen "github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb/generated"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared/resolver"
 )
 
 type connector struct {
@@ -52,18 +50,9 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, fmt.Errorf("s3bucket: track ProviderConfigUsage: %w", err)
 	}
 
-	pcRef := cr.GetProviderConfigReference()
-	if pcRef == nil {
-		return nil, fmt.Errorf("s3bucket: spec.providerConfigRef is required")
-	}
-	pc := &apisv1alpha1.ProviderConfig{}
-	if err := c.kube.Get(ctx, types.NamespacedName{Name: pcRef.Name}, pc); err != nil {
-		return nil, fmt.Errorf("s3bucket: get ProviderConfig %q: %w", pcRef.Name, err)
-	}
-
-	token, err := resolveToken(ctx, c.kube, pc)
+	token, _, err := shared.ResolveToken(ctx, c.kube, cr.GetNamespace(), cr.GetProviderConfigReference())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("s3bucket: %w", err)
 	}
 
 	tw, err := timeweb.New(timeweb.Config{
@@ -73,28 +62,16 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	if err != nil {
 		return nil, fmt.Errorf("s3bucket: build Timeweb client: %w", err)
 	}
-	return &external{tw: tw.ClientInterface, recorder: c.recorder}, nil
-}
-
-func resolveToken(ctx context.Context, kube client.Client, pc *apisv1alpha1.ProviderConfig) (string, error) {
-	if pc.Spec.Credentials.Source != xpv2.CredentialsSourceSecret {
-		return "", fmt.Errorf("s3bucket: ProviderConfig %q has unsupported credentials.source %q",
-			pc.Name, pc.Spec.Credentials.Source)
-	}
-	sel := pc.Spec.Credentials.SecretRef
-	if sel == nil || sel.Name == "" || sel.Namespace == "" || sel.Key == "" {
-		return "", fmt.Errorf("s3bucket: ProviderConfig %q is missing credentials.secretRef fields", pc.Name)
-	}
-	secret := &corev1.Secret{}
-	if err := kube.Get(ctx, types.NamespacedName{Name: sel.Name, Namespace: sel.Namespace}, secret); err != nil {
-		return "", fmt.Errorf("s3bucket: get credential Secret %s/%s: %w", sel.Namespace, sel.Name, err)
-	}
-	raw, ok := secret.Data[sel.Key]
-	if !ok || strings.TrimSpace(string(raw)) == "" {
-		return "", fmt.Errorf("s3bucket: credential Secret %s/%s key %q is empty",
-			sel.Namespace, sel.Name, sel.Key)
-	}
-	return strings.TrimSpace(string(raw)), nil
+	return &external{
+		tw:       tw.ClientInterface,
+		recorder: c.recorder,
+		resolver: resolver.New(&twgen.ClientWithResponses{ClientInterface: tw.ClientInterface}, resolver.Options{}),
+		pcRef: resolver.PCRef{
+			Kind:      cr.GetProviderConfigReference().Kind,
+			Name:      cr.GetProviderConfigReference().Name,
+			Namespace: cr.GetNamespace(),
+		},
+	}, nil
 }
 
 type clientLogger struct{ l logging.Logger }

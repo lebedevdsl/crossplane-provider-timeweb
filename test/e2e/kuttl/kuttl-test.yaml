@@ -1,0 +1,40 @@
+# kuttl TestSuite for the crossplane-provider-timeweb e2e bundle.
+#
+# Invoke via the project's Makefile:
+#
+#   make e2e.test         # runs this suite (default)
+#   make e2e              # full pipeline: up → deploy → test
+#
+# Reads from environment (set by the wrapper script):
+#   E2E_KUBECONTEXT       — Kubernetes context (k3d-provider-timeweb-e2e)
+#   E2E_NAMESPACE         — namespace the suite shares for all tests
+#   TIMEWEB_CLOUD_TOKEN   — required; bearer token for live Timeweb calls
+#
+# Optional (per-test env-gating; tests skip themselves when unset):
+#   TIMEWEB_S3_BUCKET_NAME, TIMEWEB_S3_PRESET_NAME
+#   TIMEWEB_CR_PRESET_NAME
+#
+# Why parallel: 1
+#   Every test hits the live Timeweb API with a shared bearer token.
+#   Concurrent reconciles + the upstream's IP-based rate limiter make
+#   parallel runs flaky in ways that have nothing to do with the
+#   controller under test. The whole bundle finishes in well under 10
+#   minutes — serial wins on signal-to-noise.
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+testDirs:
+- test/e2e/kuttl/tests
+# All tests share the e2e namespace (created by the wrapper script with
+# the credential Secret). kuttl will NOT delete this namespace at suite
+# teardown when it didn't create it — managementPolicies on each MR
+# controls upstream cleanup.
+namespace: timeweb-e2e
+# Run tests sequentially — see "Why parallel: 1" above.
+parallel: 1
+# Each test step's apply + assert can take up to this long. The slowest
+# real step is the catalog-cache cold-fill on first preset resolution
+# (~3 s) followed by the upstream Create round-trip; 240 s is generous.
+timeout: 240
+# Suppress event spam in failure dumps — controller logs are more useful.
+suppress:
+- events

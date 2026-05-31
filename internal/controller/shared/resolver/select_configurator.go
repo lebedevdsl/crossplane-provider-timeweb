@@ -1,0 +1,171 @@
+/*
+Copyright 2026 Dmitry Lebedev.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package resolver
+
+import (
+	"fmt"
+	"sort"
+)
+
+// ConfiguratorEntry is the shape a dimension's configurator fetcher
+// normalizes its upstream payload into. Each field corresponds to a
+// configurator capability the selection algorithm filters against.
+type ConfiguratorEntry struct {
+	UpstreamID int64
+	// Filters are exact-match attributes (location, diskType, …).
+	Filters map[string]any
+	// Bounds describe per-axis capability requirements for the operator's
+	// Sizing input. Each axis name maps to a {Min, Step, Max} tuple
+	// matching the upstream `requirements.{min,step,max}` shape.
+	Bounds map[string]CapacityBound
+}
+
+// CapacityBound mirrors the upstream `requirements.{min,step,max}` shape.
+// Min and Max are inclusive; Step controls the granularity of valid
+// values (Step <= 0 means any value within [Min,Max] is acceptable).
+type CapacityBound struct {
+	Min  int64
+	Step int64
+	Max  int64
+}
+
+// SelectConfigurator implements the deterministic configurator selection
+// algorithm specified by FR-007 and the resolver-internal contract:
+//
+//  1. Hard-filter entries by `Filters` (exact-equality on every key).
+//  2. Capability-filter by `Sizing` against each entry's `Bounds`
+//     (Min <= value <= Max; if Step > 0, (value - Min) % Step == 0).
+//  3. Tightest fit: sort survivors ascending on (max_cpu, max_ramMB,
+//     max_diskGB) where those bounds exist; missing axes sort last.
+//  4. Tiebreaker: lowest UpstreamID.
+//
+// On zero survivors, returns NoConfiguratorAvailableError naming the
+// closest-rejected entry and which bound rejected it.
+func SelectConfigurator(input ConfiguratorInput, entries []ConfiguratorEntry, dimensionID string) (ConfiguratorOutput, error) {
+	if len(entries) == 0 {
+		return ConfiguratorOutput{}, &NoConfiguratorAvailableError{
+			Filters:         input.Filters,
+			Sizing:          input.Sizing,
+			ClosestRejected: ConfiguratorRejection{Reason: "no configurator entries returned by upstream"},
+			DimensionID:     dimensionID,
+		}
+	}
+
+	// Step 1: hard filter.
+	var afterFilter []ConfiguratorEntry
+	var closestRejectedByFilter ConfiguratorEntry
+	closestFilterReason := ""
+	for _, e := range entries {
+		if reason, ok := matchFilters(e.Filters, input.Filters); ok {
+			afterFilter = append(afterFilter, e)
+		} else if closestFilterReason == "" {
+			closestRejectedByFilter = e
+			closestFilterReason = reason
+		}
+	}
+	if len(afterFilter) == 0 {
+		return ConfiguratorOutput{}, &NoConfiguratorAvailableError{
+			Filters: input.Filters, Sizing: input.Sizing,
+			ClosestRejected: ConfiguratorRejection{UpstreamID: closestRejectedByFilter.UpstreamID, Reason: closestFilterReason},
+			DimensionID:     dimensionID,
+		}
+	}
+
+	// Step 2: capability filter.
+	var survivors []ConfiguratorEntry
+	var closestRejectedByBound ConfiguratorEntry
+	closestBoundReason := ""
+	for _, e := range afterFilter {
+		if reason, ok := matchSizing(e.Bounds, input.Sizing); ok {
+			survivors = append(survivors, e)
+		} else if closestBoundReason == "" {
+			closestRejectedByBound = e
+			closestBoundReason = reason
+		}
+	}
+	if len(survivors) == 0 {
+		return ConfiguratorOutput{}, &NoConfiguratorAvailableError{
+			Filters: input.Filters, Sizing: input.Sizing,
+			ClosestRejected: ConfiguratorRejection{UpstreamID: closestRejectedByBound.UpstreamID, Reason: closestBoundReason},
+			DimensionID:     dimensionID,
+		}
+	}
+
+	// Step 3 + 4: sort tightest-fit then by upstream ID.
+	sort.SliceStable(survivors, func(i, j int) bool {
+		a, b := survivors[i], survivors[j]
+		for _, axis := range []string{"cpu", "ramMB", "diskGB"} {
+			ai := maxBound(a.Bounds, axis)
+			bi := maxBound(b.Bounds, axis)
+			if ai != bi {
+				return ai < bi
+			}
+		}
+		return a.UpstreamID < b.UpstreamID
+	})
+
+	chosen := survivors[0]
+	locked := make(map[string]int64, len(input.Sizing))
+	for k, v := range input.Sizing {
+		locked[k] = v
+	}
+	return ConfiguratorOutput{UpstreamID: chosen.UpstreamID, LockedSizing: locked}, nil
+}
+
+// matchFilters returns ("", true) when every key in want is present in have
+// with the same value. Returns a reason string + false otherwise.
+func matchFilters(have, want map[string]any) (string, bool) {
+	for k, wv := range want {
+		hv, ok := have[k]
+		if !ok {
+			return fmt.Sprintf("missing filter %q", k), false
+		}
+		if hv != wv {
+			return fmt.Sprintf("filter %q = %v, want %v", k, hv, wv), false
+		}
+	}
+	return "", true
+}
+
+// matchSizing returns ("", true) when every input sizing axis falls within
+// the bound for that axis (Min <= value <= Max, and if Step > 0,
+// (value - Min) is a multiple of Step).
+func matchSizing(bounds map[string]CapacityBound, sizing map[string]int64) (string, bool) {
+	for axis, v := range sizing {
+		b, ok := bounds[axis]
+		if !ok {
+			return fmt.Sprintf("axis %q not supported by this configurator", axis), false
+		}
+		if v < b.Min || v > b.Max {
+			return fmt.Sprintf("axis %q = %d outside [%d,%d]", axis, v, b.Min, b.Max), false
+		}
+		if b.Step > 0 && (v-b.Min)%b.Step != 0 {
+			return fmt.Sprintf("axis %q = %d not aligned on step %d (min %d)", axis, v, b.Step, b.Min), false
+		}
+	}
+	return "", true
+}
+
+// maxBound returns the Max value for axis, or math.MaxInt64 if absent
+// (so missing axes sort last per the algorithm spec).
+func maxBound(bounds map[string]CapacityBound, axis string) int64 {
+	if b, ok := bounds[axis]; ok {
+		return b.Max
+	}
+	const noBound int64 = 1<<63 - 1
+	return noBound
+}

@@ -21,7 +21,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
-// Group / Version metadata for ProviderConfig and ProviderConfigUsage.
+// Group / Version metadata for the ProviderConfig pair (namespaced +
+// cluster-scoped) and matching usage kinds.
 const (
 	Group   = "timeweb.crossplane.io"
 	Version = "v1alpha1"
@@ -39,25 +40,31 @@ var (
 	AddToScheme = SchemeBuilder.AddToScheme
 )
 
-// GroupVersionKind helpers required by crossplane-runtime's providerconfig reconciler.
+// GroupVersionKind helpers required by crossplane-runtime's providerconfig
+// reconciler. Each PC kind and each Usage kind get their own GVK.
 var (
-	// ProviderConfigKind is the constant name "ProviderConfig".
-	ProviderConfigKind = "ProviderConfig"
-	// ProviderConfigGroupVersionKind is the GVK for ProviderConfig.
+	ProviderConfigKind             = "ProviderConfig"
 	ProviderConfigGroupVersionKind = GroupVersion.WithKind(ProviderConfigKind)
 
-	// ProviderConfigUsageKind is the constant name "ProviderConfigUsage".
-	ProviderConfigUsageKind = "ProviderConfigUsage"
-	// ProviderConfigUsageGroupVersionKind is the GVK for ProviderConfigUsage.
+	ClusterProviderConfigKind             = "ClusterProviderConfig"
+	ClusterProviderConfigGroupVersionKind = GroupVersion.WithKind(ClusterProviderConfigKind)
+
+	ProviderConfigUsageKind             = "ProviderConfigUsage"
 	ProviderConfigUsageGroupVersionKind = GroupVersion.WithKind(ProviderConfigUsageKind)
 
-	// ProviderConfigUsageListKind is the constant name "ProviderConfigUsageList".
-	ProviderConfigUsageListKind = "ProviderConfigUsageList"
-	// ProviderConfigUsageListGroupVersionKind is the GVK for ProviderConfigUsageList.
+	ProviderConfigUsageListKind             = "ProviderConfigUsageList"
 	ProviderConfigUsageListGroupVersionKind = GroupVersion.WithKind(ProviderConfigUsageListKind)
+
+	ClusterProviderConfigUsageKind             = "ClusterProviderConfigUsage"
+	ClusterProviderConfigUsageGroupVersionKind = GroupVersion.WithKind(ClusterProviderConfigUsageKind)
+
+	ClusterProviderConfigUsageListKind             = "ClusterProviderConfigUsageList"
+	ClusterProviderConfigUsageListGroupVersionKind = GroupVersion.WithKind(ClusterProviderConfigUsageListKind)
 )
 
 func init() {
 	SchemeBuilder.Register(&ProviderConfig{}, &ProviderConfigList{})
+	SchemeBuilder.Register(&ClusterProviderConfig{}, &ClusterProviderConfigList{})
 	SchemeBuilder.Register(&ProviderConfigUsage{}, &ProviderConfigUsageList{})
+	SchemeBuilder.Register(&ClusterProviderConfigUsage{}, &ClusterProviderConfigUsageList{})
 }

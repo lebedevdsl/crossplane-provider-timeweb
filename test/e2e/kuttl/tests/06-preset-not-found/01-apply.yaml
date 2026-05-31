@@ -1,0 +1,18 @@
+# PresetNotFound surfacing - feature-002 FR-016. The CRD CEL enum on
+# `initialSizeGB` rejects most invalid values at admission; this test
+# picks a value INSIDE the enum but pairs it with an impossible
+# `location`, so the rejection happens at resolve-time (the resolver
+# can't find any preset matching that location).
+apiVersion: containerregistry.m.timeweb.crossplane.io/v1alpha1
+kind: ContainerRegistry
+metadata:
+  name: e2e-preset-not-found
+  namespace: timeweb-e2e
+spec:
+  forProvider:
+    name: e2e-preset-not-found
+    initialSizeGB: 5
+    location: "zz-nonexistent-99"
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e

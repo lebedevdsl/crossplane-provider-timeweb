@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: providerconfigs.timeweb.crossplane.io
 spec:
   group: timeweb.crossplane.io
@@ -16,7 +16,7 @@ spec:
     listKind: ProviderConfigList
     plural: providerconfigs
     singular: providerconfig
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp
@@ -30,9 +30,11 @@ spec:
     schema:
       openAPIV3Schema:
         description: |-
-          ProviderConfig is the cluster-scoped configuration for the Timeweb
-          Crossplane provider. Managed resources reference one of these by name via
-          `spec.providerConfigRef.name`.
+          ProviderConfig is the namespaced configuration for the Timeweb Crossplane
+          provider. Managed resources in the same namespace reference one of these
+          via `spec.providerConfigRef: { kind: ProviderConfig, name: <pc> }`. For
+          a cluster-scoped alternative (used when an MR has no same-namespace PC),
+          see `ClusterProviderConfig`.
         properties:
           apiVersion:
             description: |-
@@ -54,57 +56,29 @@ spec:
           spec:
             description: |-
               ProviderConfigSpec configures the Timeweb Cloud connection used by every
-              managed resource that references this ProviderConfig.
+              managed resource in the same namespace that references this ProviderConfig.
+              See `contracts/providerconfig-namespaced-v1alpha1.md`.
             properties:
               credentials:
                 description: |-
-                  Credentials names the source the provider uses to obtain the Timeweb
-                  API token. Only the `Secret` source is supported in v0.1 (FR-003).
+                  Credentials selects the source of the Timeweb API token. Only the
+                  `Secret` source is supported in v0.1 (FR-003).
                 properties:
-                  env:
-                    description: |-
-                      Env is a reference to an environment variable that contains credentials
-                      that must be used to connect to the provider.
-                    properties:
-                      name:
-                        description: Name is the name of an environment variable.
-                        type: string
-                    required:
-                    - name
-                    type: object
-                  fs:
-                    description: |-
-                      Fs is a reference to a filesystem location that contains credentials that
-                      must be used to connect to the provider.
-                    properties:
-                      path:
-                        description: Path is a filesystem path.
-                        type: string
-                    required:
-                    - path
-                    type: object
                   secretRef:
-                    description: |-
-                      A SecretRef is a reference to a secret key that contains the credentials
-                      that must be used to connect to the provider.
+                    description: SecretRef points at a Secret in the PC's own namespace.
                     properties:
                       key:
-                        description: The key to select.
                         type: string
                       name:
                         description: Name of the secret.
                         type: string
-                      namespace:
-                        description: Namespace of the secret.
-                        type: string
                     required:
                     - key
                     - name
-                    - namespace
                     type: object
                   source:
                     description: Source of the Timeweb API token. Only `Secret` is
-                      supported.
+                      supported in v0.1.
                     enum:
                     - Secret
                     type: string

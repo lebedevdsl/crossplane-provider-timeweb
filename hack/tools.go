@@ -16,6 +16,7 @@ package tools
 
 import (
 	_ "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
+	_ "github.com/kudobuilder/kuttl/cmd/kubectl-kuttl"
 	_ "github.com/maxbrunsfeld/counterfeiter/v6"
 	_ "github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen"
 	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"

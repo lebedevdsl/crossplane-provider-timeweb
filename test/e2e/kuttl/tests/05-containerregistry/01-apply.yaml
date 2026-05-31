@@ -1,0 +1,17 @@
+# ContainerRegistry - full lifecycle via `initialSizeGB`. 5 GB is the
+# cheapest fixed tier (~40 ₽/мес from the dashboard).
+apiVersion: containerregistry.m.timeweb.crossplane.io/v1alpha1
+kind: ContainerRegistry
+metadata:
+  name: e2e-cr
+  namespace: timeweb-e2e
+spec:
+  forProvider:
+    name: "${TWE_CR_NAME}"
+    description: "kuttl e2e - initialSizeGB variant"
+    initialSizeGB: 5
+  writeConnectionSecretToRef:
+    name: e2e-cr-conn
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e

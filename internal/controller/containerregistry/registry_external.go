@@ -34,14 +34,24 @@ import (
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb/generated"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared/resolver"
 )
 
 // registryExternal implements managed.ExternalClient for ContainerRegistry.
+// Sizing is preset-only — the controller resolves `forProvider.initialSizeGB`
+// via the catalog resolver to the upstream `preset_id` and records the
+// resolved value in `status.atProvider.lockedPresetID`.
 type registryExternal struct {
-	tw              generated.ClientInterface
-	kube            client.Reader
-	recorder        record.EventRecorder
-	presetNamespace string
+	tw       generated.ClientInterface
+	kube     client.Reader
+	recorder record.EventRecorder
+	resolver resolver.Resolver
+	pcRef    resolver.PCRef
+	// apiToken is the operator's Timeweb token, captured at Connect
+	// time. Used as the docker login password — see deriveRegistryCredentials.
+	// TODO(timeweb-creds): remove when Timeweb ships a per-registry
+	// credential endpoint.
+	apiToken string
 }
 
 // Observe fetches the upstream registry, populates status + connection.
@@ -84,19 +94,20 @@ func (e *registryExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	cr.Status.SetConditions(xpv2.Available())
 
 	conn, err := e.connectionDetails(ctx, reg)
-	if err != nil {
-		// Credentials not yet available — registry is functionally usable
-		// (Synced=True) but operators can't pull until creds come online.
-		if errors.Is(err, errCredentialsUnavailable) {
-			cr.Status.SetConditions(shared.ReadyFalse(
-				"CredentialsPending",
-				"registry credentials not available yet — see docs/resources/containerregistry.md"))
-			return managed.ExternalObservation{
-				ResourceExists:   true,
-				ResourceUpToDate: isRegistryUpToDate(cr.Spec.ForProvider, reg),
-			}, nil
-		}
+	if err != nil && !errors.Is(err, errCredentialsUnavailable) {
 		return managed.ExternalObservation{}, err
+	}
+	// errCredentialsUnavailable is NOT a Ready=False signal — the upstream
+	// registry itself is healthy and reachable (we just observed it). The
+	// docker-login credentials are sourced from a separate, not-yet-
+	// wired endpoint; until that's plumbed, the connection Secret will
+	// contain just the endpoint URL and operators supply docker creds
+	// out-of-band. The registry is Ready in the Crossplane sense
+	// (upstream resource exists and is observed in a usable state).
+	if conn == nil {
+		conn = managed.ConnectionDetails{
+			connKeyEndpoint: []byte(registryEndpoint(reg.Name)),
+		}
 	}
 
 	return managed.ExternalObservation{
@@ -106,15 +117,21 @@ func (e *registryExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	}, nil
 }
 
-// Create POSTs a new registry; resolves presetRef → preset_id first.
+// Create POSTs a new registry via the resolver-driven presetName path.
 func (e *registryExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*cregv1alpha1.ContainerRegistry)
 	if !ok {
 		return managed.ExternalCreation{}, errNotContainerRegistry
 	}
 
+	presetID, err := e.resolvePresetID(ctx, cr)
+	if err != nil {
+		return managed.ExternalCreation{}, err
+	}
+
 	body := generated.CreateRegistryJSONRequestBody{
-		Name: cr.Spec.ForProvider.Name,
+		Name:     cr.Spec.ForProvider.Name,
+		PresetId: &presetID,
 	}
 	if cr.Spec.ForProvider.Description != nil {
 		body.Description = cr.Spec.ForProvider.Description
@@ -122,21 +139,6 @@ func (e *registryExternal) Create(ctx context.Context, mg resource.Managed) (man
 	if cr.Spec.ForProvider.ProjectID != nil {
 		v := *cr.Spec.ForProvider.ProjectID
 		body.ProjectId = &v
-	}
-	if ref := cr.Spec.ForProvider.PresetRef; ref != nil {
-		presetID, err := resolvePresetID(ctx, e.kube, e.presetNamespace, ref.Name)
-		if err != nil {
-			cr.Status.SetConditions(shared.SyncedFalse(
-				shared.ReasonPresetReferenceNotFound, err.Error()))
-			return managed.ExternalCreation{}, err
-		}
-		body.PresetId = &presetID
-	}
-	if c := cr.Spec.ForProvider.Configuration; c != nil {
-		body.Configuration = &struct {
-			Disk int `json:"disk"`
-			Id   int `json:"id"` //nolint:revive // anonymous struct must match generated.RegistryIn.Configuration
-		}{Disk: c.DiskGB, Id: c.ID}
 	}
 
 	resp, err := e.tw.CreateRegistry(ctx, body)
@@ -154,6 +156,11 @@ func (e *registryExternal) Create(ctx context.Context, mg resource.Managed) (man
 	}
 	meta.SetExternalName(cr, shared.EncodeID(reg.Id))
 	populateRegistryStatus(cr, reg)
+	pid := int64(presetID)
+	if reg.PresetId != 0 {
+		pid = int64(reg.PresetId)
+	}
+	cr.Status.AtProvider.LockedPresetID = &pid
 	cr.Status.SetConditions(xpv2.Creating())
 
 	conn, err := e.connectionDetails(ctx, reg)
@@ -163,7 +170,7 @@ func (e *registryExternal) Create(ctx context.Context, mg resource.Managed) (man
 	return managed.ExternalCreation{ConnectionDetails: conn}, nil
 }
 
-// Update PATCHes mutable fields; rejects axis switches as immutable.
+// Update PATCHes mutable fields.
 func (e *registryExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	cr, ok := mg.(*cregv1alpha1.ContainerRegistry)
 	if !ok {
@@ -174,7 +181,6 @@ func (e *registryExternal) Update(ctx context.Context, mg resource.Managed) (man
 		return managed.ExternalUpdate{}, fmt.Errorf("containerregistry: decode external-name: %w", err)
 	}
 
-	// Re-observe to detect immutable-axis drift + name drift.
 	getResp, err := e.tw.GetRegistry(ctx, id)
 	if err != nil {
 		return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
@@ -194,28 +200,17 @@ func (e *registryExternal) Update(ctx context.Context, mg resource.Managed) (man
 	}); ok {
 		return managed.ExternalUpdate{}, shared.RejectImmutableChange(cr, e.recorder, changed)
 	}
-	if axis := axisChanged(cr.Spec.ForProvider, reg); axis != "" {
-		return managed.ExternalUpdate{}, shared.RejectImmutableChange(cr, e.recorder, axis)
+
+	presetID, err := e.resolvePresetID(ctx, cr)
+	if err != nil {
+		return managed.ExternalUpdate{}, err
 	}
 
-	body := generated.UpdateRegistryJSONRequestBody{}
+	body := generated.UpdateRegistryJSONRequestBody{
+		PresetId: &presetID,
+	}
 	if cr.Spec.ForProvider.Description != nil {
 		body.Description = cr.Spec.ForProvider.Description
-	}
-	if ref := cr.Spec.ForProvider.PresetRef; ref != nil {
-		presetID, err := resolvePresetID(ctx, e.kube, e.presetNamespace, ref.Name)
-		if err != nil {
-			cr.Status.SetConditions(shared.SyncedFalse(
-				shared.ReasonPresetReferenceNotFound, err.Error()))
-			return managed.ExternalUpdate{}, err
-		}
-		body.PresetId = &presetID
-	}
-	if c := cr.Spec.ForProvider.Configuration; c != nil {
-		body.Configuration = &struct {
-			Disk int `json:"disk"`
-			Id   int `json:"id"` //nolint:revive // anonymous struct must match generated.RegistryEdit.Configuration
-		}{Disk: c.DiskGB, Id: c.ID}
 	}
 
 	resp, err := e.tw.UpdateRegistry(ctx, id, body)
@@ -226,6 +221,9 @@ func (e *registryExternal) Update(ctx context.Context, mg resource.Managed) (man
 	if err := timeweb.Classify(resp); err != nil {
 		return managed.ExternalUpdate{}, err
 	}
+
+	pid := int64(presetID)
+	cr.Status.AtProvider.LockedPresetID = &pid
 
 	conn, err := e.connectionDetails(ctx, reg)
 	if err != nil && !errors.Is(err, errCredentialsUnavailable) {
@@ -262,11 +260,55 @@ func (e *registryExternal) Delete(ctx context.Context, mg resource.Managed) (man
 // Disconnect is a no-op.
 func (*registryExternal) Disconnect(_ context.Context) error { return nil }
 
-// connectionDetails populates the dockerconfigjson Secret payload using the
-// R-1 storage-users lookup. Returns errCredentialsUnavailable when no users
-// exist yet — the registry itself is still considered Synced.
-func (e *registryExternal) connectionDetails(ctx context.Context, reg generated.RegistryOut) (managed.ConnectionDetails, error) {
-	username, password, err := fetchRegistryCredentials(ctx, e.tw)
+// resolvePresetID consults the resolver for the upstream `preset_id`
+// matching `(initialSizeGB, location?)`. Maps resolver-typed sentinel
+// errors to MR conditions per `contracts/containerregistry-refactor-v1alpha1.md`.
+func (e *registryExternal) resolvePresetID(ctx context.Context, cr *cregv1alpha1.ContainerRegistry) (int, error) {
+	loc := ""
+	if cr.Spec.ForProvider.Location != nil {
+		loc = *cr.Spec.ForProvider.Location
+	}
+	out, err := e.resolver.Resolve(ctx, e.pcRef,
+		resolver.Dimension{Name: resolver.DimContainerRegistryPreset, Kind: resolver.DimensionPreset},
+		resolver.PresetBySizeInput{
+			DiskGB:   cr.Spec.ForProvider.InitialSizeGB,
+			Location: loc,
+		},
+	)
+	if err != nil {
+		mapResolverErrorToCondition(cr, err)
+		return 0, err
+	}
+	po, ok := out.(resolver.PresetOutput)
+	if !ok {
+		return 0, fmt.Errorf("containerregistry: resolver returned unexpected output type %T", out)
+	}
+	return int(po.UpstreamID), nil
+}
+
+// mapResolverErrorToCondition translates resolver-typed sentinel errors
+// to the operator-facing conditions documented in the MR contract.
+func mapResolverErrorToCondition(cr *cregv1alpha1.ContainerRegistry, err error) {
+	switch {
+	case errors.Is(err, resolver.ErrPresetNotFound):
+		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonPresetNotFound, err.Error()))
+	case errors.Is(err, resolver.ErrPresetAmbiguous):
+		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonPresetAmbiguous, err.Error()))
+	case errors.Is(err, resolver.ErrCatalogUnauthorized):
+		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonCatalogUnauthorized, err.Error()))
+	case errors.Is(err, resolver.ErrCatalogTransient):
+		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonCatalogTransient, err.Error()))
+	}
+}
+
+// connectionDetails populates the dockerconfigjson Secret payload using
+// the registry's docker credentials. Today (May 2026) Timeweb derives
+// the credentials directly from the registry name + the operator's API
+// token — no upstream lookup needed. See deriveRegistryCredentials for
+// the source of truth and the TODO marking the future per-registry
+// credential endpoint.
+func (e *registryExternal) connectionDetails(_ context.Context, reg generated.RegistryOut) (managed.ConnectionDetails, error) {
+	username, password, err := deriveRegistryCredentials(reg.Name, e.apiToken)
 	if err != nil {
 		return nil, err
 	}
@@ -285,30 +327,30 @@ func decodeRegistry(body []byte) (generated.RegistryOut, error) {
 	return envelope.ContainerRegistry, nil
 }
 
-// populateRegistryStatus mirrors the upstream into atProvider.
+// populateRegistryStatus mirrors the upstream into atProvider. LockedPresetID
+// is set on Create and seeded on import.
 func populateRegistryStatus(cr *cregv1alpha1.ContainerRegistry, r generated.RegistryOut) {
 	id := r.Id
-	presetID := r.PresetId
-	configuratorID := r.ConfiguratorId
 	projectID := r.ProjectId
 	createdAt := r.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
 	updatedAt := r.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")
-	cr.Status.AtProvider = cregv1alpha1.ContainerRegistryObservation{
-		ID:             &id,
-		PresetID:       &presetID,
-		ConfiguratorID: &configuratorID,
-		ProjectID:      &projectID,
-		DiskStats: &cregv1alpha1.ContainerRegistryDiskStats{
-			SizeGB: &r.DiskStats.Size,
-			UsedGB: &r.DiskStats.Used,
-		},
-		CreatedAt: &createdAt,
-		UpdatedAt: &updatedAt,
+	cr.Status.AtProvider.ID = &id
+	cr.Status.AtProvider.ProjectID = &projectID
+	cr.Status.AtProvider.DiskStats = &cregv1alpha1.ContainerRegistryDiskStats{
+		SizeGB: &r.DiskStats.Size,
+		UsedGB: &r.DiskStats.Used,
+	}
+	cr.Status.AtProvider.CreatedAt = &createdAt
+	cr.Status.AtProvider.UpdatedAt = &updatedAt
+	if cr.Status.AtProvider.LockedPresetID == nil && r.PresetId != 0 {
+		pid := int64(r.PresetId)
+		cr.Status.AtProvider.LockedPresetID = &pid
 	}
 }
 
-// isRegistryUpToDate compares mutable fields. Name and axis-switch are
-// handled inside Update via the immutable-rejection path.
+// isRegistryUpToDate compares mutable fields. Name is handled inside Update
+// via the immutable-rejection path. Preset switches are detected by the
+// next Update call comparing spec presetName against the resolved upstream.
 func isRegistryUpToDate(spec cregv1alpha1.ContainerRegistryParameters, r generated.RegistryOut) bool {
 	if !ptrEqString(spec.Description, r.Description) {
 		return false
@@ -317,22 +359,6 @@ func isRegistryUpToDate(spec cregv1alpha1.ContainerRegistryParameters, r generat
 		return false
 	}
 	return true
-}
-
-// axisChanged returns the offending field name when the spec switched between
-// presetRef and configuration after creation.
-func axisChanged(spec cregv1alpha1.ContainerRegistryParameters, r generated.RegistryOut) string {
-	specHasPreset := spec.PresetRef != nil
-	specHasCfg := spec.Configuration != nil
-	upstreamHasPreset := r.PresetId != 0
-	upstreamHasCfg := r.ConfiguratorId != 0
-	switch {
-	case specHasPreset && upstreamHasCfg && !upstreamHasPreset:
-		return "configuration"
-	case specHasCfg && upstreamHasPreset && !upstreamHasCfg:
-		return "presetRef"
-	}
-	return ""
 }
 
 func ptrEqString(p *string, s string) bool {

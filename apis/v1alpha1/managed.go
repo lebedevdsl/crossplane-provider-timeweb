@@ -21,45 +21,42 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 )
 
-// Accessor methods required by crossplane-runtime's `resource.ProviderConfig`
-// and `resource.ProviderConfigUsage` interfaces. Embedded structs alone don't
-// expose these on the outer type, so each is forwarded explicitly.
+// Forwarders required by crossplane-runtime's `resource.ProviderConfig`
+// (Conditioned + UserCounter) and `resource.TypedProviderConfigUsage`
+// (Object + RequiredTypedResourceReferencer with typed PC ref)
+// interfaces. The embedded structs don't promote pointer-receiver
+// methods to the outer type, so every PC and PCU kind needs its own
+// copy.
 
-// GetCondition returns the matching condition on the ProviderConfig status.
+// --- ProviderConfig (namespaced) -------------------------------------------
+
 func (pc *ProviderConfig) GetCondition(ct xpv2.ConditionType) xpv2.Condition {
 	return pc.Status.GetCondition(ct)
 }
-
-// SetConditions applies one or more conditions to the ProviderConfig status.
 func (pc *ProviderConfig) SetConditions(c ...xpv2.Condition) { pc.Status.SetConditions(c...) }
+func (pc *ProviderConfig) GetUsers() int64                   { return pc.Status.Users }
+func (pc *ProviderConfig) SetUsers(n int64)                  { pc.Status.Users = n }
 
-// GetUsers returns the number of managed resources currently bound to this
-// ProviderConfig.
-func (pc *ProviderConfig) GetUsers() int64 { return pc.Status.Users }
+// --- ClusterProviderConfig (cluster-scoped) -------------------------------
 
-// SetUsers stores the number of managed resources currently bound to this
-// ProviderConfig.
-func (pc *ProviderConfig) SetUsers(n int64) { pc.Status.Users = n }
+func (pc *ClusterProviderConfig) GetCondition(ct xpv2.ConditionType) xpv2.Condition {
+	return pc.Status.GetCondition(ct)
+}
+func (pc *ClusterProviderConfig) SetConditions(c ...xpv2.Condition) { pc.Status.SetConditions(c...) }
+func (pc *ClusterProviderConfig) GetUsers() int64                   { return pc.Status.Users }
+func (pc *ClusterProviderConfig) SetUsers(n int64)                  { pc.Status.Users = n }
 
-// GetProviderConfigReference returns the typed ProviderConfig reference of
-// this usage record (required by crossplane-runtime v2's
-// TypedProviderConfigUsage interface).
+// --- ProviderConfigUsage (namespaced) --------------------------------------
+
 func (pcu *ProviderConfigUsage) GetProviderConfigReference() xpv2.ProviderConfigReference {
 	return pcu.ProviderConfigReference
 }
-
-// SetProviderConfigReference stores the typed ProviderConfig reference.
 func (pcu *ProviderConfigUsage) SetProviderConfigReference(r xpv2.ProviderConfigReference) {
 	pcu.ProviderConfigReference = r
 }
-
-// GetResourceReference returns the typed reference to the managed resource
-// that bound to the ProviderConfig.
 func (pcu *ProviderConfigUsage) GetResourceReference() xpv2.TypedReference {
 	return pcu.ResourceReference
 }
-
-// SetResourceReference stores the typed reference to the managed resource.
 func (pcu *ProviderConfigUsage) SetResourceReference(r xpv2.TypedReference) {
 	pcu.ResourceReference = r
 }
@@ -72,4 +69,107 @@ func (l *ProviderConfigUsageList) GetItems() []resource.ProviderConfigUsage {
 		items[i] = &l.Items[i]
 	}
 	return items
+}
+
+// --- ClusterProviderConfigUsage (cluster-scoped) ---------------------------
+
+func (pcu *ClusterProviderConfigUsage) GetProviderConfigReference() xpv2.ProviderConfigReference {
+	return pcu.ProviderConfigReference
+}
+func (pcu *ClusterProviderConfigUsage) SetProviderConfigReference(r xpv2.ProviderConfigReference) {
+	pcu.ProviderConfigReference = r
+}
+func (pcu *ClusterProviderConfigUsage) GetResourceReference() xpv2.TypedReference {
+	return pcu.ResourceReference
+}
+func (pcu *ClusterProviderConfigUsage) SetResourceReference(r xpv2.TypedReference) {
+	pcu.ResourceReference = r
+}
+
+func (l *ClusterProviderConfigUsageList) GetItems() []resource.ProviderConfigUsage {
+	items := make([]resource.ProviderConfigUsage, len(l.Items))
+	for i := range l.Items {
+		items[i] = &l.Items[i]
+	}
+	return items
+}
+
+// --- Credentials abstraction -----------------------------------------------
+//
+// The namespaced ProviderConfig and the cluster-scoped ClusterProviderConfig
+// have different SecretRef schemas (LocalSecretKeySelector vs
+// SecretKeySelector), so we expose a small flat interface that hides the
+// shape and lets the connector use a uniform call sequence.
+
+// PCKind names a ProviderConfig kind. Used as the value of
+// `spec.providerConfigRef.kind` on managed resources and as a
+// discriminator in connector dual-lookup helpers.
+const (
+	PCKindNamespaced = "ProviderConfig"
+	PCKindCluster    = "ClusterProviderConfig"
+)
+
+// CredentialedProviderConfig is the read-only surface a connector needs
+// to fetch the API token. Both ProviderConfig and ClusterProviderConfig
+// satisfy it via their separate concrete credential types.
+// +kubebuilder:object:generate=false
+type CredentialedProviderConfig interface {
+	// GetCredentialsSource returns the credential source enum
+	// (only "Secret" supported in v0.1).
+	GetCredentialsSource() xpv2.CredentialsSource
+	// GetCredentialsSecretName returns the Secret name. Empty if the
+	// operator did not set spec.credentials.secretRef.
+	GetCredentialsSecretName() string
+	// GetCredentialsSecretKey returns the key within the Secret that
+	// holds the API token. Empty if not set.
+	GetCredentialsSecretKey() string
+	// GetCredentialsSecretNamespace returns the Secret namespace:
+	//   - For ProviderConfig (namespaced), this is the PC's own namespace
+	//     (CEL forbids setting it on the namespaced kind's secretRef).
+	//   - For ClusterProviderConfig, this is the explicit
+	//     spec.credentials.secretRef.namespace.
+	GetCredentialsSecretNamespace() string
+}
+
+// --- ProviderConfig (namespaced) accessors --------------------------------
+
+func (pc *ProviderConfig) GetCredentialsSource() xpv2.CredentialsSource {
+	return pc.Spec.Credentials.Source
+}
+func (pc *ProviderConfig) GetCredentialsSecretName() string {
+	if pc.Spec.Credentials.SecretRef == nil {
+		return ""
+	}
+	return pc.Spec.Credentials.SecretRef.Name
+}
+func (pc *ProviderConfig) GetCredentialsSecretKey() string {
+	if pc.Spec.Credentials.SecretRef == nil {
+		return ""
+	}
+	return pc.Spec.Credentials.SecretRef.Key
+}
+func (pc *ProviderConfig) GetCredentialsSecretNamespace() string { return pc.GetNamespace() }
+
+// --- ClusterProviderConfig accessors --------------------------------------
+
+func (pc *ClusterProviderConfig) GetCredentialsSource() xpv2.CredentialsSource {
+	return pc.Spec.Credentials.Source
+}
+func (pc *ClusterProviderConfig) GetCredentialsSecretName() string {
+	if pc.Spec.Credentials.SecretRef == nil {
+		return ""
+	}
+	return pc.Spec.Credentials.SecretRef.Name
+}
+func (pc *ClusterProviderConfig) GetCredentialsSecretKey() string {
+	if pc.Spec.Credentials.SecretRef == nil {
+		return ""
+	}
+	return pc.Spec.Credentials.SecretRef.Key
+}
+func (pc *ClusterProviderConfig) GetCredentialsSecretNamespace() string {
+	if pc.Spec.Credentials.SecretRef == nil {
+		return ""
+	}
+	return pc.Spec.Credentials.SecretRef.Namespace
 }

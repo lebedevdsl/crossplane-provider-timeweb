@@ -60,8 +60,6 @@ func main() {
 		probeAddr           string
 		syncPeriod          time.Duration
 		pollInterval        time.Duration
-		presetSyncInterval  time.Duration
-		presetTargetNS      string
 		printVersionAndExit bool
 	)
 
@@ -71,8 +69,6 @@ func main() {
 	flag.StringVar(&probeAddr, "health-probe-addr", ":8081", "Bind address for the /healthz and /readyz endpoints.")
 	flag.DurationVar(&syncPeriod, "sync-period", time.Hour, "Manager-level cache resync period.")
 	flag.DurationVar(&pollInterval, "poll-interval", time.Minute, "Default reconcile poll interval for managed resources.")
-	flag.DurationVar(&presetSyncInterval, "preset-sync-interval", 30*time.Minute, "Interval for polling Timeweb catalog endpoints (e.g. ContainerRegistryPreset).")
-	flag.StringVar(&presetTargetNS, "preset-target-namespace", "crossplane-system", "Namespace where observe-only catalog CRDs are written.")
 	flag.BoolVar(&printVersionAndExit, "version", false, "Print the provider version and exit.")
 	flag.Parse()
 
@@ -134,10 +130,7 @@ func main() {
 		os.Exit(1)
 	}
 	if err := containerregistryctrl.SetupAll(mgr, log, containerregistryctrl.SetupOptions{
-		PollInterval:       pollInterval,
-		PresetSyncInterval: presetSyncInterval,
-		PresetNamespace:    presetTargetNS,
-		PresetPCName:       "default",
+		PollInterval: pollInterval,
 	}); err != nil {
 		log.Info("unable to register ContainerRegistry controllers", "error", err.Error())
 		os.Exit(1)

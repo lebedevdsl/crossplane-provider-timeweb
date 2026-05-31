@@ -21,17 +21,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// S3BucketConfiguration is the alternative to a preset_id — a custom sizing.
-// Setting either `presetID` or `configuration` is required at creation; the
-// axis is immutable but the values within the chosen axis are mutable.
-type S3BucketConfiguration struct {
-	// ID is the Timeweb configurator ID.
-	ID int `json:"id"`
-	// DiskMB is the bucket's disk size in megabytes.
-	DiskMB int `json:"diskMB"`
-}
-
-// S3BucketParameters are the operator-settable fields.
+// S3BucketParameters are the operator-settable fields. Sizing is
+// preset-only: the Timeweb S3 surface exposes its volume tiers as
+// discrete presets (1 GB / 10 GB / 100 GB / 250 GB) in the dashboard,
+// and the upstream `/api/v1/storages/buckets` Create endpoint only
+// accepts a `preset_id` (the alternate `configuration{id,disk}` block
+// requires a service-internal configurator id that is not discoverable
+// via any public catalog endpoint — see spec.md §Clarifications
+// 2026-05-31 catalog-endpoint reality check).
 type S3BucketParameters struct {
 	// Name is the globally-unique bucket name. Immutable.
 	// +kubebuilder:validation:MinLength=3
@@ -43,16 +40,25 @@ type S3BucketParameters struct {
 	// +kubebuilder:validation:Enum=private;public
 	Type string `json:"type"`
 
-	// PresetID is the Timeweb tariff plan. Mutually exclusive with
-	// `configuration`. Within the same axis the value is mutable; switching
-	// axes (preset → configuration or vice versa) is rejected as immutable.
-	// +optional
-	PresetID *int `json:"presetID,omitempty"`
+	// StorageClass picks the upstream storage tier. `hot` is the
+	// frequently-accessed default; `cold` is optimized for archives.
+	// +kubebuilder:validation:Enum=hot;cold
+	StorageClass string `json:"storageClass"`
 
-	// Configuration is the custom sizing alternative to `presetID`.
-	// Mutually exclusive with `presetID`.
+	// InitialSizeGB picks the bucket's tariff tier by disk size. The
+	// controller maps `(initialSizeGB, location?, storageClass)` to one
+	// upstream `preset_id` at reconcile time. Valid values match
+	// Timeweb's published S3 storage tiers — bump this enum when the
+	// upstream catalog grows.
+	// +kubebuilder:validation:Enum=1;10;100;250
+	InitialSizeGB int64 `json:"initialSizeGB"`
+
+	// Location optionally narrows preset selection to one upstream
+	// region (e.g. "ru-1"). Leave empty when the account has a single
+	// region; set explicitly only if the cheapest-tier preset is
+	// ambiguous across regions for your account.
 	// +optional
-	Configuration *S3BucketConfiguration `json:"configuration,omitempty"`
+	Location *string `json:"location,omitempty"`
 
 	// Description is a free-form comment. Mutable.
 	// +optional
@@ -84,12 +90,17 @@ type S3BucketObservation struct {
 	// Location is the geographic region.
 	// +optional
 	Location *string `json:"location,omitempty"`
-	// StorageClass is `cold` or `hot`.
+	// StorageClass is the upstream-reported tier (hot / cold).
 	// +optional
 	StorageClass *string `json:"storageClass,omitempty"`
 	// Status is the upstream status string.
 	// +optional
 	Status *string `json:"status,omitempty"`
+	// LockedPresetID is the upstream preset ID locked at first Create —
+	// snapshot of what the resolver chose for `presetName`. Survives
+	// later resolver-cache rotations and dimension-registry edits.
+	// +optional
+	LockedPresetID *int64 `json:"lockedPresetID,omitempty"`
 	// DiskStats is the disk-usage stats.
 	// +optional
 	DiskStats *S3BucketDiskStats `json:"diskStats,omitempty"`
@@ -105,13 +116,13 @@ type S3BucketObservation struct {
 // S3BucketSpec is the desired state.
 type S3BucketSpec struct {
 	xpv2.ManagedResourceSpec `json:",inline"`
-	ForProvider       S3BucketParameters `json:"forProvider"`
+	ForProvider              S3BucketParameters `json:"forProvider"`
 }
 
 // S3BucketStatus is the observed state.
 type S3BucketStatus struct {
 	xpv2.ManagedResourceStatus `json:",inline"`
-	AtProvider          S3BucketObservation `json:"atProvider,omitempty"`
+	AtProvider                 S3BucketObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -119,12 +130,15 @@ type S3BucketStatus struct {
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,timeweb}
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
+// +kubebuilder:printcolumn:name="SIZE-GB",type="integer",JSONPath=".spec.forProvider.initialSizeGB"
+// +kubebuilder:printcolumn:name="CLASS",type="string",JSONPath=".spec.forProvider.storageClass"
 // +kubebuilder:printcolumn:name="EXTERNAL-NAME",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
-// S3Bucket is a Timeweb Cloud S3-compatible object-storage bucket. `name` and
-// the sizing axis (preset vs. configuration) are immutable upstream; type,
-// description, and project assignment are freely mutable.
+// S3Bucket is a Timeweb Cloud S3-compatible object-storage bucket.
+// `name` is immutable; `type`, `description`, project assignment, and
+// `presetName` are mutable. Sizing is preset-only — see
+// `contracts/s3bucket-refactor-v1alpha1.md`.
 type S3Bucket struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

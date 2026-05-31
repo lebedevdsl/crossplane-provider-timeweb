@@ -32,10 +32,8 @@ import (
 
 // SetupOptions configures the Container Registry controllers.
 type SetupOptions struct {
-	PollInterval       time.Duration
-	PresetSyncInterval time.Duration
-	PresetNamespace    string
-	PresetPCName       string
+	// PollInterval is the per-MR reconcile poll cadence (FR-014).
+	PollInterval time.Duration
 }
 
 // SetupRegistry registers the ContainerRegistry controller.
@@ -49,9 +47,8 @@ func SetupRegistry(mgr manager.Manager, l logging.Logger, opts SetupOptions) err
 			kube: mgr.GetClient(),
 			usage: resource.NewProviderConfigUsageTracker(mgr.GetClient(),
 				&apisv1alpha1.ProviderConfigUsage{}),
-			logger:          l.WithValues("controller", name),
-			recorder:        recorder,
-			presetNamespace: opts.PresetNamespace,
+			logger:   l.WithValues("controller", name),
+			recorder: recorder,
 		}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(recorder)),
@@ -91,14 +88,13 @@ func SetupRepository(mgr manager.Manager, l logging.Logger, opts SetupOptions) e
 		Complete(r)
 }
 
-// SetupAll registers the three Container Registry controllers + the preset
-// catalog poller in one call.
+// SetupAll registers the Container Registry MR controllers. The MVP's
+// ContainerRegistryPreset CRD + timer-driven catalog poller are gone —
+// catalog data is fetched on demand by the in-controller resolver
+// (internal/controller/shared/resolver).
 func SetupAll(mgr manager.Manager, l logging.Logger, opts SetupOptions) error {
 	if err := SetupRegistry(mgr, l, opts); err != nil {
 		return err
 	}
-	if err := SetupRepository(mgr, l, opts); err != nil {
-		return err
-	}
-	return SetupPresetReconciler(mgr, l, opts.PresetSyncInterval, opts.PresetNamespace, opts.PresetPCName)
+	return SetupRepository(mgr, l, opts)
 }

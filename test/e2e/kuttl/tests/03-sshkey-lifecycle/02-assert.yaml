@@ -1,0 +1,14 @@
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: e2e-sshkey
+  namespace: timeweb-e2e
+spec:
+  forProvider:
+    isDefault: true
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"

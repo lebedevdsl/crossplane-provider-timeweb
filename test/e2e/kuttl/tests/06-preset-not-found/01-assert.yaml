@@ -1,0 +1,32 @@
+apiVersion: containerregistry.m.timeweb.crossplane.io/v1alpha1
+kind: ContainerRegistry
+metadata:
+  name: e2e-preset-not-found
+  namespace: timeweb-e2e
+status:
+  # kuttl matches arrays positionally; the actual slice for a CR stuck
+  # in the failed-Create loop is [Ready (Creating), Synced (ReconcileError)],
+  # so both must appear in that order in the assert.
+  #
+  # Notes on the reasons:
+  #
+  #   * Ready=False reason=Creating: the controller's first reconcile
+  #     enters the Create path; Crossplane's reconciler emits
+  #     xpv2.Creating() and Create returns the resolver error before
+  #     ever setting xpv2.Available() — so Ready stays at "Creating".
+  #
+  #   * Synced=False reason=ReconcileError: our controller calls
+  #     mapResolverErrorToCondition (sets reason=PresetNotFound) BEFORE
+  #     returning the error, but Crossplane v2's managed reconciler
+  #     overrides any Synced condition we set when Create returns a
+  #     non-nil error (Synced's Type is unique, last writer wins).
+  #     The operator-actionable detail (`preset not found`, list of
+  #     valid sizes) is preserved in .message — see registry_external_test.go
+  #     for the unit-level proof of mapResolverErrorToCondition.
+  conditions:
+  - type: Ready
+    status: "False"
+    reason: Creating
+  - type: Synced
+    status: "False"
+    reason: ReconcileError

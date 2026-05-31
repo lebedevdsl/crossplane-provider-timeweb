@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: s3buckets.objectstorage.m.timeweb.crossplane.io
 spec:
   group: objectstorage.m.timeweb.crossplane.io
@@ -25,6 +25,12 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
+    - jsonPath: .spec.forProvider.initialSizeGB
+      name: SIZE-GB
+      type: integer
+    - jsonPath: .spec.forProvider.storageClass
+      name: CLASS
+      type: string
     - jsonPath: .metadata.annotations.crossplane\.io/external-name
       name: EXTERNAL-NAME
       type: string
@@ -35,9 +41,10 @@ spec:
     schema:
       openAPIV3Schema:
         description: |-
-          S3Bucket is a Timeweb Cloud S3-compatible object-storage bucket. `name` and
-          the sizing axis (preset vs. configuration) are immutable upstream; type,
-          description, and project assignment are freely mutable.
+          S3Bucket is a Timeweb Cloud S3-compatible object-storage bucket.
+          `name` is immutable; `type`, `description`, project assignment, and
+          `presetName` are mutable. Sizing is preset-only — see
+          `contracts/s3bucket-refactor-v1alpha1.md`.
         properties:
           apiVersion:
             description: |-
@@ -60,25 +67,39 @@ spec:
             description: S3BucketSpec is the desired state.
             properties:
               forProvider:
-                description: S3BucketParameters are the operator-settable fields.
+                description: |-
+                  S3BucketParameters are the operator-settable fields. Sizing is
+                  preset-only: the Timeweb S3 surface exposes its volume tiers as
+                  discrete presets (1 GB / 10 GB / 100 GB / 250 GB) in the dashboard,
+                  and the upstream `/api/v1/storages/buckets` Create endpoint only
+                  accepts a `preset_id` (the alternate `configuration{id,disk}` block
+                  requires a service-internal configurator id that is not discoverable
+                  via any public catalog endpoint — see spec.md §Clarifications
+                  2026-05-31 catalog-endpoint reality check).
                 properties:
-                  configuration:
-                    description: |-
-                      Configuration is the custom sizing alternative to `presetID`.
-                      Mutually exclusive with `presetID`.
-                    properties:
-                      diskMB:
-                        description: DiskMB is the bucket's disk size in megabytes.
-                        type: integer
-                      id:
-                        description: ID is the Timeweb configurator ID.
-                        type: integer
-                    required:
-                    - diskMB
-                    - id
-                    type: object
                   description:
                     description: Description is a free-form comment. Mutable.
+                    type: string
+                  initialSizeGB:
+                    description: |-
+                      InitialSizeGB picks the bucket's tariff tier by disk size. The
+                      controller maps `(initialSizeGB, location?, storageClass)` to one
+                      upstream `preset_id` at reconcile time. Valid values match
+                      Timeweb's published S3 storage tiers — bump this enum when the
+                      upstream catalog grows.
+                    enum:
+                    - 1
+                    - 10
+                    - 100
+                    - 250
+                    format: int64
+                    type: integer
+                  location:
+                    description: |-
+                      Location optionally narrows preset selection to one upstream
+                      region (e.g. "ru-1"). Leave empty when the account has a single
+                      region; set explicitly only if the cheapest-tier preset is
+                      ambiguous across regions for your account.
                     type: string
                   name:
                     description: Name is the globally-unique bucket name. Immutable.
@@ -86,16 +107,18 @@ spec:
                     minLength: 3
                     pattern: ^[a-z0-9][a-z0-9.\-]{1,61}[a-z0-9]$
                     type: string
-                  presetID:
-                    description: |-
-                      PresetID is the Timeweb tariff plan. Mutually exclusive with
-                      `configuration`. Within the same axis the value is mutable; switching
-                      axes (preset → configuration or vice versa) is rejected as immutable.
-                    type: integer
                   projectID:
                     description: ProjectID assigns the bucket to a Timeweb project.
                       Mutable.
                     type: integer
+                  storageClass:
+                    description: |-
+                      StorageClass picks the upstream storage tier. `hot` is the
+                      frequently-accessed default; `cold` is optimized for archives.
+                    enum:
+                    - hot
+                    - cold
+                    type: string
                   type:
                     description: Type is the bucket's access policy. Mutable post-create.
                     enum:
@@ -103,7 +126,9 @@ spec:
                     - public
                     type: string
                 required:
+                - initialSizeGB
                 - name
+                - storageClass
                 - type
                 type: object
               managementPolicies:
@@ -193,6 +218,13 @@ spec:
                   location:
                     description: Location is the geographic region.
                     type: string
+                  lockedPresetID:
+                    description: |-
+                      LockedPresetID is the upstream preset ID locked at first Create —
+                      snapshot of what the resolver chose for `presetName`. Survives
+                      later resolver-cache rotations and dimension-registry edits.
+                    format: int64
+                    type: integer
                   movedInQuarantineAt:
                     description: |-
                       MovedInQuarantineAt is the RFC3339 timestamp the bucket entered
@@ -205,7 +237,8 @@ spec:
                     description: Status is the upstream status string.
                     type: string
                   storageClass:
-                    description: StorageClass is `cold` or `hot`.
+                    description: StorageClass is the upstream-reported tier (hot /
+                      cold).
                     type: string
                 type: object
               conditions:

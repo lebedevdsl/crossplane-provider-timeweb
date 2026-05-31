@@ -1,0 +1,18 @@
+apiVersion: containerregistry.m.timeweb.crossplane.io/v1alpha1
+kind: ContainerRegistry
+metadata:
+  name: e2e-cr
+  namespace: timeweb-e2e
+# kuttl matches arrays positionally. The CR ends up with Ready first
+# in the conditions slice (Observe calls SetConditions(Available)
+# before the runtime appends Synced=True for ReconcileSuccess), so
+# the assert order here is [Ready, Synced]. Project's slice ends up in
+# the opposite order ([Synced, Ready]) because its conditions get
+# updated-in-place across reconciles; each MR's assert lists conditions
+# in the order the controller actually emits them.
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"

@@ -14,34 +14,33 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package containerregistry implements the three Crossplane managed-resource
-// controllers for Timeweb's Container Registry surface: ContainerRegistry,
-// ContainerRegistryRepository (observe-only — the upstream API has no per-
-// repository CRUD), and ContainerRegistryPreset (observe-only catalog,
-// driven by a timer-based reconciler).
+// Package containerregistry implements the Crossplane managed-resource
+// controllers for Timeweb's Container Registry surface: ContainerRegistry
+// and ContainerRegistryRepository (observe-only — the upstream API has no
+// per-repository CRUD). The MVP-era ContainerRegistryPreset CRD and its
+// timer-driven reconciler are scheduled for deletion in feature-002 US1
+// (T023-T026); both kinds still exist here until that work lands.
 package containerregistry
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
-	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cregv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/containerregistry/v1alpha1"
-	apisv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
+	twgen "github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb/generated"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared/resolver"
 )
 
-// Errors common to all three controllers.
+// Errors common to both controllers.
 var (
 	errNotContainerRegistry           = errors.New("managed resource is not a ContainerRegistry")
 	errNotContainerRegistryRepository = errors.New("managed resource is not a ContainerRegistryRepository")
@@ -53,8 +52,6 @@ type registryConnector struct {
 	usage    resource.ModernTracker
 	logger   logging.Logger
 	recorder record.EventRecorder
-	// presetNamespace is the namespace where ContainerRegistryPreset CRs live.
-	presetNamespace string
 }
 
 // repositoryConnector builds an `repositoryExternal` per reconcile.
@@ -74,7 +71,7 @@ func (c *registryConnector) Connect(ctx context.Context, mg resource.Managed) (m
 	if err := c.usage.Track(ctx, cr); err != nil {
 		return nil, fmt.Errorf("containerregistry: track ProviderConfigUsage: %w", err)
 	}
-	token, err := loadToken(ctx, c.kube, cr.GetProviderConfigReference())
+	token, _, err := shared.ResolveToken(ctx, c.kube, cr.GetNamespace(), cr.GetProviderConfigReference())
 	if err != nil {
 		return nil, fmt.Errorf("containerregistry: %w", err)
 	}
@@ -83,11 +80,45 @@ func (c *registryConnector) Connect(ctx context.Context, mg resource.Managed) (m
 		return nil, fmt.Errorf("containerregistry: build Timeweb client: %w", err)
 	}
 	return &registryExternal{
-		tw:              tw.ClientInterface,
-		kube:            c.kube,
-		recorder:        c.recorder,
-		presetNamespace: c.presetNamespace,
+		tw:       tw.ClientInterface,
+		kube:     c.kube,
+		recorder: c.recorder,
+		resolver: c.resolverFor(tw),
+		pcRef:    c.pcRefFor(cr),
+		// Timeweb's container-registry docker login uses the registry name
+		// as the username and the operator's API token as the password —
+		// there's no separate credential API today. The external client
+		// synthesizes connection-Secret contents from these two values.
+		// TODO(timeweb-creds): drop apiToken when Timeweb ships a real
+		// per-registry credential endpoint.
+		apiToken: token,
 	}, nil
+}
+
+// resolverFor builds a per-reconcile resolver bound to the freshly-built
+// Timeweb client. The resolver's CatalogClient surface requires the
+// `*WithResponse` variants which only exist on the generated
+// ClientWithResponses wrapper, not the bare ClientInterface that
+// timeweb.Client embeds — so we lift the wrapper here.
+//
+// The cache lives inside the resolver, so it dies with it. v0.1 keeps
+// resolver lifetime per-reconcile; the cache benefit is still real
+// for Create→Observe sequences within one reconcile and for concurrent
+// reconciles serialized through singleflight on the same key.
+// A future optimization is to hold a long-lived resolver per (PCRef) on
+// the connector struct so the cache survives across reconciles.
+func (c *registryConnector) resolverFor(tw *timeweb.Client) resolver.Resolver {
+	return resolver.New(&twgen.ClientWithResponses{ClientInterface: tw.ClientInterface}, resolver.Options{})
+}
+
+// pcRefFor builds the resolver-side PCRef for the MR's
+// spec.providerConfigRef. Used so the resolver caches per PC.
+func (c *registryConnector) pcRefFor(cr *cregv1alpha1.ContainerRegistry) resolver.PCRef {
+	ref := cr.GetProviderConfigReference()
+	if ref == nil {
+		return resolver.PCRef{}
+	}
+	return resolver.PCRef{Kind: ref.Kind, Name: ref.Name, Namespace: cr.GetNamespace()}
 }
 
 // Connect implements managed.ExternalConnecter for ContainerRegistryRepository.
@@ -99,7 +130,7 @@ func (c *repositoryConnector) Connect(ctx context.Context, mg resource.Managed) 
 	if err := c.usage.Track(ctx, cr); err != nil {
 		return nil, fmt.Errorf("containerregistryrepository: track ProviderConfigUsage: %w", err)
 	}
-	token, err := loadToken(ctx, c.kube, cr.GetProviderConfigReference())
+	token, _, err := shared.ResolveToken(ctx, c.kube, cr.GetNamespace(), cr.GetProviderConfigReference())
 	if err != nil {
 		return nil, fmt.Errorf("containerregistryrepository: %w", err)
 	}
@@ -112,35 +143,6 @@ func (c *repositoryConnector) Connect(ctx context.Context, mg resource.Managed) 
 		kube:     c.kube,
 		recorder: c.recorder,
 	}, nil
-}
-
-// loadToken resolves a ProviderConfig + Secret reference into a bearer token.
-func loadToken(ctx context.Context, kube client.Client, pcRef *xpv2.ProviderConfigReference) (string, error) {
-	if pcRef == nil {
-		return "", fmt.Errorf("spec.providerConfigRef is required")
-	}
-	pc := &apisv1alpha1.ProviderConfig{}
-	if err := kube.Get(ctx, types.NamespacedName{Name: pcRef.Name}, pc); err != nil {
-		return "", fmt.Errorf("get ProviderConfig %q: %w", pcRef.Name, err)
-	}
-	if pc.Spec.Credentials.Source != xpv2.CredentialsSourceSecret {
-		return "", fmt.Errorf("ProviderConfig %q has unsupported credentials.source %q",
-			pc.Name, pc.Spec.Credentials.Source)
-	}
-	sel := pc.Spec.Credentials.SecretRef
-	if sel == nil || sel.Name == "" || sel.Namespace == "" || sel.Key == "" {
-		return "", fmt.Errorf("ProviderConfig %q is missing credentials.secretRef fields", pc.Name)
-	}
-	secret := &corev1.Secret{}
-	if err := kube.Get(ctx, types.NamespacedName{Name: sel.Name, Namespace: sel.Namespace}, secret); err != nil {
-		return "", fmt.Errorf("get credential Secret %s/%s: %w", sel.Namespace, sel.Name, err)
-	}
-	raw, ok := secret.Data[sel.Key]
-	if !ok || strings.TrimSpace(string(raw)) == "" {
-		return "", fmt.Errorf("credential Secret %s/%s key %q is empty",
-			sel.Namespace, sel.Name, sel.Key)
-	}
-	return strings.TrimSpace(string(raw)), nil
 }
 
 type clientLogger struct{ l logging.Logger }

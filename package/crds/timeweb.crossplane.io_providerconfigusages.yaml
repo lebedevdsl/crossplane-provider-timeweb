@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: providerconfigusages.timeweb.crossplane.io
 spec:
   group: timeweb.crossplane.io
@@ -16,12 +16,15 @@ spec:
     listKind: ProviderConfigUsageList
     plural: providerconfigusages
     singular: providerconfigusage
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
+    - jsonPath: .providerConfigRef.kind
+      name: CONFIG-KIND
+      type: string
     - jsonPath: .providerConfigRef.name
       name: CONFIG-NAME
       type: string
@@ -35,10 +38,12 @@ spec:
     schema:
       openAPIV3Schema:
         description: |-
-          ProviderConfigUsage records that a managed resource has bound to a
-          ProviderConfig. crossplane-runtime maintains these automatically; the
-          presence of usages blocks ProviderConfig deletion until referencing
-          managed resources are themselves deleted or re-targeted.
+          ProviderConfigUsage records that a managed resource in the same namespace
+          has bound to either a same-namespace `ProviderConfig` OR a cluster-scoped
+          `ClusterProviderConfig` (the `providerConfigRef.kind` discriminator names
+          which). crossplane-runtime maintains these automatically; their presence
+          blocks PC deletion until referencing managed resources are themselves
+          deleted or re-targeted.
         properties:
           apiVersion:
             description: |-
@@ -97,5 +102,4 @@ spec:
         type: object
     served: true
     storage: true
-    subresources:
-      status: {}
+    subresources: {}

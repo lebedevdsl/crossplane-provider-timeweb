@@ -1,0 +1,16 @@
+# Step 2 - Re-apply with isDefault flipped to true. kubectl apply merges
+# the new value over the existing spec; the upstream PATCH /ssh-keys/{id}
+# call proves the Update path works end-to-end.
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: e2e-sshkey
+  namespace: timeweb-e2e
+spec:
+  forProvider:
+    name: "${TWE_SSH_NAME}"
+    body: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE2E000000000000000000000000000000000000000000 ${TWE_SSH_NAME}"
+    isDefault: true
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e

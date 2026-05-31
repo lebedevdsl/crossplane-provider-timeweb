@@ -22,17 +22,19 @@ import (
 )
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster,categories={crossplane,provider,timeweb}
-// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Namespaced,categories={crossplane,provider,timeweb}
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="CONFIG-KIND",type="string",JSONPath=".providerConfigRef.kind"
 // +kubebuilder:printcolumn:name="CONFIG-NAME",type="string",JSONPath=".providerConfigRef.name"
 // +kubebuilder:printcolumn:name="RESOURCE-KIND",type="string",JSONPath=".resourceRef.kind"
 // +kubebuilder:printcolumn:name="RESOURCE-NAME",type="string",JSONPath=".resourceRef.name"
 
-// ProviderConfigUsage records that a managed resource has bound to a
-// ProviderConfig. crossplane-runtime maintains these automatically; the
-// presence of usages blocks ProviderConfig deletion until referencing
-// managed resources are themselves deleted or re-targeted.
+// ProviderConfigUsage records that a managed resource in the same namespace
+// has bound to either a same-namespace `ProviderConfig` OR a cluster-scoped
+// `ClusterProviderConfig` (the `providerConfigRef.kind` discriminator names
+// which). crossplane-runtime maintains these automatically; their presence
+// blocks PC deletion until referencing managed resources are themselves
+// deleted or re-targeted.
 type ProviderConfigUsage struct {
 	metav1.TypeMeta               `json:",inline"`
 	metav1.ObjectMeta             `json:"metadata,omitempty"`

@@ -1,0 +1,13 @@
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: e2e-sshkey
+  namespace: timeweb-e2e
+status:
+  # Full-lifecycle MRs end up with Ready first, Synced second — see
+  # 04-s3bucket/01-assert.yaml for the rationale.
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"

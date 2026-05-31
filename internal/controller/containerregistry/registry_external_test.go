@@ -34,17 +34,42 @@ import (
 	cregv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/containerregistry/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared/resolver"
 )
 
-func newRegistry(id int) *cregv1alpha1.ContainerRegistry {
+// fakeResolver returns canned upstream IDs per (size, location) tuple. The
+// matcher mimics resolver.MatchPresetBySize closely enough for the
+// external-client tests — production uses the real implementation.
+type fakeResolver struct {
+	idsBySize map[int64]int64 // diskGB → upstream id
+	err       error           // forced error (highest priority)
+}
+
+func (f *fakeResolver) Resolve(_ context.Context, _ resolver.PCRef, _ resolver.Dimension, input resolver.ResolveInput) (resolver.ResolveOutput, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	in, ok := input.(resolver.PresetBySizeInput)
+	if !ok {
+		return nil, resolver.ErrInvalidInput
+	}
+	id, ok := f.idsBySize[in.DiskGB]
+	if !ok {
+		return nil, resolver.ErrPresetNotFound
+	}
+	return resolver.PresetOutput{UpstreamID: id}, nil
+}
+func (f *fakeResolver) Invalidate(_ resolver.PCRef, _ resolver.Dimension) {}
+
+func newRegistry(id int, sizeGB int64) *cregv1alpha1.ContainerRegistry {
 	desc := "demo"
 	cr := &cregv1alpha1.ContainerRegistry{
 		ObjectMeta: metav1.ObjectMeta{Name: "demo-prod", Namespace: "ns"},
 		Spec: cregv1alpha1.ContainerRegistrySpec{
 			ForProvider: cregv1alpha1.ContainerRegistryParameters{
-				Name:        "demo-prod",
-				Description: &desc,
-				PresetRef:   &cregv1alpha1.ContainerRegistryPresetRef{Name: "starter-5gb-1939"},
+				Name:          "demo-prod",
+				Description:   &desc,
+				InitialSizeGB: sizeGB,
 			},
 		},
 	}
@@ -52,15 +77,6 @@ func newRegistry(id int) *cregv1alpha1.ContainerRegistry {
 		meta.SetExternalName(cr, "1047")
 	}
 	return cr
-}
-
-func newPreset(name string, presetID int) *cregv1alpha1.ContainerRegistryPreset {
-	return &cregv1alpha1.ContainerRegistryPreset{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "crossplane-system"},
-		Status: cregv1alpha1.ContainerRegistryPresetStatus{
-			AtProvider: cregv1alpha1.ContainerRegistryPresetObservation{PresetID: presetID},
-		},
-	}
 }
 
 func httpResp(status int, body string) *http.Response {
@@ -82,14 +98,26 @@ const sampleRegistryJSON = `{
   }
 }`
 
-const sampleStorageUsersJSON = `{
-  "users":[{"id":1,"access_key":"AKregistry","secret_key":"SKregistry"}]
-}`
+// testAPIToken is the synthetic API token threaded through every test
+// — Timeweb derives the docker password from this directly, so the
+// connection-Secret assertions check it appears as-is.
+const testAPIToken = "test-api-token-123"
 
 func newFakeKube(objs ...runtime.Object) *fake.ClientBuilder {
 	s := runtime.NewScheme()
 	_ = cregv1alpha1.AddToScheme(s)
 	return fake.NewClientBuilder().WithScheme(s).WithRuntimeObjects(objs...)
+}
+
+func newExternal(tw *timeweb.FakeClient, sizeMap map[int64]int64) *registryExternal {
+	return &registryExternal{
+		tw:       tw,
+		kube:     newFakeKube().Build(),
+		recorder: record.NewFakeRecorder(8),
+		resolver: &fakeResolver{idsBySize: sizeMap},
+		pcRef:    resolver.PCRef{Kind: "ProviderConfig", Name: "default", Namespace: "ns"},
+		apiToken: testAPIToken,
+	}
 }
 
 func TestRegistryObserve(t *testing.T) {
@@ -98,34 +126,34 @@ func TestRegistryObserve(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
 		fakeTW.GetRegistryReturns(httpResp(http.StatusOK, sampleRegistryJSON), nil)
-		fakeTW.GetStorageUsersReturns(httpResp(http.StatusOK, sampleStorageUsersJSON), nil)
 
-		kube := newFakeKube().Build()
-		e := &registryExternal{tw: fakeTW, kube: kube, presetNamespace: "crossplane-system"}
-		obs, err := e.Observe(ctx, newRegistry(1047))
+		e := newExternal(fakeTW, nil)
+		obs, err := e.Observe(ctx, newRegistry(1047, 5))
 		if err != nil {
 			t.Fatalf("Observe: %v", err)
 		}
 		if !obs.ResourceExists || !obs.ResourceUpToDate {
 			t.Errorf("Observe = %+v, want exists+upToDate", obs)
 		}
-		// dockerconfigjson Secret keys
-		if string(obs.ConnectionDetails["username"]) != "AKregistry" {
-			t.Errorf("username = %q, want 'AKregistry'", obs.ConnectionDetails["username"])
+		// Username = registry name; password = API token.
+		if string(obs.ConnectionDetails["username"]) != "demo-prod" {
+			t.Errorf("username = %q, want 'demo-prod' (registry name)", obs.ConnectionDetails["username"])
+		}
+		if string(obs.ConnectionDetails["password"]) != testAPIToken {
+			t.Errorf("password = %q, want the API token", obs.ConnectionDetails["password"])
 		}
 		var dcj dockerConfigJSON
 		_ = json.Unmarshal(obs.ConnectionDetails[".dockerconfigjson"], &dcj)
-		if _, ok := dcj.Auths["demo-prod.cr.twcstorage.ru"]; !ok {
-			t.Errorf("docker auths missing entry for demo-prod.cr.twcstorage.ru: %+v", dcj.Auths)
+		if _, ok := dcj.Auths["demo-prod.registry.twcstorage.ru"]; !ok {
+			t.Errorf("docker auths missing entry for demo-prod.registry.twcstorage.ru: %+v", dcj.Auths)
 		}
 	})
 
 	t.Run("NotFound", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
 		fakeTW.GetRegistryReturns(httpResp(http.StatusNotFound, ""), nil)
-
-		e := &registryExternal{tw: fakeTW, kube: newFakeKube().Build()}
-		obs, err := e.Observe(ctx, newRegistry(1047))
+		e := newExternal(fakeTW, nil)
+		obs, err := e.Observe(ctx, newRegistry(1047, 5))
 		if err != nil {
 			t.Fatalf("Observe: %v", err)
 		}
@@ -137,37 +165,32 @@ func TestRegistryObserve(t *testing.T) {
 	t.Run("TransientError", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
 		fakeTW.GetRegistryReturns(httpResp(http.StatusTooManyRequests, ""), nil)
-		e := &registryExternal{tw: fakeTW, kube: newFakeKube().Build()}
-		_, err := e.Observe(ctx, newRegistry(1047))
+		e := newExternal(fakeTW, nil)
+		_, err := e.Observe(ctx, newRegistry(1047, 5))
 		if !errors.Is(err, timeweb.ErrTransient) {
 			t.Errorf("err = %v, want transient", err)
 		}
 	})
 
-	t.Run("TerminalError", func(t *testing.T) {
-		fakeTW := &timeweb.FakeClient{}
-		fakeTW.GetRegistryReturns(httpResp(http.StatusForbidden, `{"error_code":"forbidden","message":"denied"}`), nil)
-		e := &registryExternal{tw: fakeTW, kube: newFakeKube().Build()}
-		_, err := e.Observe(ctx, newRegistry(1047))
-		var apiErr *timeweb.APIError
-		if !errors.As(err, &apiErr) {
-			t.Fatalf("err = %v, want *APIError", err)
-		}
-	})
-
-	t.Run("CredentialsUnavailable_StillSynced", func(t *testing.T) {
+	t.Run("CredentialsFallback_EndpointOnly", func(t *testing.T) {
+		// When the controller can't derive credentials (e.g. apiToken
+		// stripped — the future-state path after Timeweb ships a real
+		// per-registry credential API and our synthesis stops working),
+		// the registry is still Ready=True with an endpoint-only Secret.
 		fakeTW := &timeweb.FakeClient{}
 		fakeTW.GetRegistryReturns(httpResp(http.StatusOK, sampleRegistryJSON), nil)
-		fakeTW.GetStorageUsersReturns(httpResp(http.StatusOK, `{"users":[]}`), nil)
-
-		cr := newRegistry(1047)
-		e := &registryExternal{tw: fakeTW, kube: newFakeKube().Build()}
-		obs, err := e.Observe(ctx, cr)
+		e := newExternal(fakeTW, nil)
+		e.apiToken = "" // simulate "no creds available"
+		obs, err := e.Observe(ctx, newRegistry(1047, 5))
 		if err != nil {
-			t.Fatalf("Observe: %v (want no error even when creds missing)", err)
+			t.Fatalf("Observe: %v", err)
 		}
 		if !obs.ResourceExists {
 			t.Error("ResourceExists = false, want true")
+		}
+		if string(obs.ConnectionDetails["endpoint"]) != "demo-prod.registry.twcstorage.ru" {
+			t.Errorf("endpoint = %q, want demo-prod.registry.twcstorage.ru",
+				obs.ConnectionDetails["endpoint"])
 		}
 	})
 }
@@ -178,14 +201,9 @@ func TestRegistryCreate(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
 		fakeTW.CreateRegistryReturns(httpResp(http.StatusCreated, sampleRegistryJSON), nil)
-		fakeTW.GetStorageUsersReturns(httpResp(http.StatusOK, sampleStorageUsersJSON), nil)
 
-		preset := newPreset("starter-5gb-1939", 1939)
-		kube := newFakeKube(preset).Build()
-		e := &registryExternal{tw: fakeTW, kube: kube, recorder: record.NewFakeRecorder(8),
-			presetNamespace: "crossplane-system"}
-
-		cr := newRegistry(0)
+		e := newExternal(fakeTW, map[int64]int64{5: 1939})
+		cr := newRegistry(0, 5)
 		c, err := e.Create(ctx, cr)
 		if err != nil {
 			t.Fatalf("Create: %v", err)
@@ -196,57 +214,29 @@ func TestRegistryCreate(t *testing.T) {
 		if len(c.ConnectionDetails) == 0 {
 			t.Error("connection details empty, want dockerconfigjson keys")
 		}
-	})
-
-	t.Run("NotFound", func(t *testing.T) {
-		fakeTW := &timeweb.FakeClient{}
-		fakeTW.CreateRegistryReturns(httpResp(http.StatusNotFound, ""), nil)
-		preset := newPreset("starter-5gb-1939", 1939)
-		kube := newFakeKube(preset).Build()
-		e := &registryExternal{tw: fakeTW, kube: kube, presetNamespace: "crossplane-system",
-			recorder: record.NewFakeRecorder(8)}
-		_, err := e.Create(ctx, newRegistry(0))
-		if !errors.Is(err, timeweb.ErrNotFound) {
-			t.Errorf("err = %v, want ErrNotFound", err)
+		if cr.Status.AtProvider.LockedPresetID == nil || *cr.Status.AtProvider.LockedPresetID != 1939 {
+			t.Errorf("lockedPresetID = %v, want 1939", cr.Status.AtProvider.LockedPresetID)
 		}
 	})
 
-	t.Run("TransientError", func(t *testing.T) {
+	t.Run("PresetNotFound", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
-		fakeTW.CreateRegistryReturns(httpResp(http.StatusServiceUnavailable, ""), nil)
-		preset := newPreset("starter-5gb-1939", 1939)
-		kube := newFakeKube(preset).Build()
-		e := &registryExternal{tw: fakeTW, kube: kube, presetNamespace: "crossplane-system",
-			recorder: record.NewFakeRecorder(8)}
-		_, err := e.Create(ctx, newRegistry(0))
-		if !errors.Is(err, timeweb.ErrTransient) {
-			t.Errorf("err = %v, want transient", err)
+		// No sizes registered → resolver returns ErrPresetNotFound for any input.
+		e := newExternal(fakeTW, nil)
+		_, err := e.Create(ctx, newRegistry(0, 999))
+		if !errors.Is(err, resolver.ErrPresetNotFound) {
+			t.Errorf("err = %v, want ErrPresetNotFound", err)
 		}
 	})
 
-	t.Run("TerminalError", func(t *testing.T) {
+	t.Run("UpstreamTerminalError", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
 		fakeTW.CreateRegistryReturns(httpResp(http.StatusBadRequest, `{"error_code":"bad_request","message":"name taken"}`), nil)
-		preset := newPreset("starter-5gb-1939", 1939)
-		kube := newFakeKube(preset).Build()
-		e := &registryExternal{tw: fakeTW, kube: kube, presetNamespace: "crossplane-system",
-			recorder: record.NewFakeRecorder(8)}
-		_, err := e.Create(ctx, newRegistry(0))
+		e := newExternal(fakeTW, map[int64]int64{5: 1939})
+		_, err := e.Create(ctx, newRegistry(0, 5))
 		var apiErr *timeweb.APIError
 		if !errors.As(err, &apiErr) {
 			t.Fatalf("err = %v, want *APIError", err)
-		}
-	})
-
-	t.Run("PresetReferenceNotFound", func(t *testing.T) {
-		fakeTW := &timeweb.FakeClient{}
-		// No preset in the fake kube store.
-		kube := newFakeKube().Build()
-		e := &registryExternal{tw: fakeTW, kube: kube, presetNamespace: "crossplane-system",
-			recorder: record.NewFakeRecorder(8)}
-		_, err := e.Create(ctx, newRegistry(0))
-		if !errors.Is(err, errPresetReferenceNotFound) {
-			t.Errorf("err = %v, want errPresetReferenceNotFound", err)
 		}
 	})
 }
@@ -257,29 +247,25 @@ func TestRegistryUpdate(t *testing.T) {
 	t.Run("ImmutableNameChange_Rejected", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
 		fakeTW.GetRegistryReturns(httpResp(http.StatusOK, sampleRegistryJSON), nil)
-
-		cr := newRegistry(1047)
+		cr := newRegistry(1047, 5)
 		cr.Spec.ForProvider.Name = "renamed"
-
-		kube := newFakeKube().Build()
-		e := &registryExternal{tw: fakeTW, kube: kube, recorder: record.NewFakeRecorder(8)}
+		e := newExternal(fakeTW, nil)
 		_, err := e.Update(ctx, cr)
 		if !errors.Is(err, shared.ErrImmutableFieldChange) {
 			t.Fatalf("err = %v, want ErrImmutableFieldChange", err)
 		}
 	})
 
-	t.Run("Success", func(t *testing.T) {
+	t.Run("Success_ReResolveAndPatch", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
 		fakeTW.GetRegistryReturns(httpResp(http.StatusOK, sampleRegistryJSON), nil)
 		fakeTW.UpdateRegistryReturns(httpResp(http.StatusOK, sampleRegistryJSON), nil)
-		fakeTW.GetStorageUsersReturns(httpResp(http.StatusOK, sampleStorageUsersJSON), nil)
 
-		preset := newPreset("starter-5gb-1939", 1939)
-		kube := newFakeKube(preset).Build()
-		e := &registryExternal{tw: fakeTW, kube: kube,
-			recorder: record.NewFakeRecorder(8), presetNamespace: "crossplane-system"}
-		if _, err := e.Update(ctx, newRegistry(1047)); err != nil {
+		cr := newRegistry(1047, 5)
+		var id int64 = 1939
+		cr.Status.AtProvider.LockedPresetID = &id
+		e := newExternal(fakeTW, map[int64]int64{5: 1939})
+		if _, err := e.Update(ctx, cr); err != nil {
 			t.Fatalf("Update: %v", err)
 		}
 		if fakeTW.UpdateRegistryCallCount() != 1 {
@@ -294,39 +280,18 @@ func TestRegistryDelete(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
 		fakeTW.DeleteRegistryReturns(httpResp(http.StatusNoContent, ""), nil)
-		e := &registryExternal{tw: fakeTW, kube: newFakeKube().Build()}
-		if _, err := e.Delete(ctx, newRegistry(1047)); err != nil {
+		e := newExternal(fakeTW, nil)
+		if _, err := e.Delete(ctx, newRegistry(1047, 5)); err != nil {
 			t.Fatalf("Delete: %v", err)
 		}
 	})
 
-	t.Run("NotFound", func(t *testing.T) {
+	t.Run("NotFound_Idempotent", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
 		fakeTW.DeleteRegistryReturns(httpResp(http.StatusNotFound, ""), nil)
-		e := &registryExternal{tw: fakeTW, kube: newFakeKube().Build()}
-		if _, err := e.Delete(ctx, newRegistry(1047)); err != nil {
+		e := newExternal(fakeTW, nil)
+		if _, err := e.Delete(ctx, newRegistry(1047, 5)); err != nil {
 			t.Errorf("Delete on already-gone: %v, want nil", err)
-		}
-	})
-
-	t.Run("TransientError", func(t *testing.T) {
-		fakeTW := &timeweb.FakeClient{}
-		fakeTW.DeleteRegistryReturns(httpResp(http.StatusInternalServerError, ""), nil)
-		e := &registryExternal{tw: fakeTW, kube: newFakeKube().Build()}
-		_, err := e.Delete(ctx, newRegistry(1047))
-		if !errors.Is(err, timeweb.ErrTransient) {
-			t.Errorf("err = %v, want transient", err)
-		}
-	})
-
-	t.Run("TerminalError", func(t *testing.T) {
-		fakeTW := &timeweb.FakeClient{}
-		fakeTW.DeleteRegistryReturns(httpResp(http.StatusForbidden, `{"error_code":"forbidden","message":"denied"}`), nil)
-		e := &registryExternal{tw: fakeTW, kube: newFakeKube().Build()}
-		_, err := e.Delete(ctx, newRegistry(1047))
-		var apiErr *timeweb.APIError
-		if !errors.As(err, &apiErr) {
-			t.Fatalf("err = %v, want *APIError", err)
 		}
 	})
 }

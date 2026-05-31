@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: containerregistries.containerregistry.m.timeweb.crossplane.io
 spec:
   group: containerregistry.m.timeweb.crossplane.io
@@ -25,6 +25,9 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
+    - jsonPath: .spec.forProvider.initialSizeGB
+      name: SIZE-GB
+      type: integer
     - jsonPath: .metadata.annotations.crossplane\.io/external-name
       name: EXTERNAL-NAME
       type: string
@@ -36,8 +39,8 @@ spec:
       openAPIV3Schema:
         description: |-
           ContainerRegistry is a Timeweb-hosted Docker registry. The controller
-          publishes a `kubernetes.io/dockerconfigjson` Secret operators can drop into
-          workloads as `imagePullSecrets`.
+          publishes a `kubernetes.io/dockerconfigjson` Secret operators can drop
+          into workloads as `imagePullSecrets`.
         properties:
           apiVersion:
             description: |-
@@ -60,51 +63,56 @@ spec:
             description: ContainerRegistrySpec is the desired state.
             properties:
               forProvider:
-                description: ContainerRegistryParameters are the operator-settable
-                  fields.
+                description: |-
+                  ContainerRegistryParameters are the operator-settable fields. Sizing
+                  is preset-only: Container Registry is platform-managed, with discrete
+                  tariff tiers exposed as presets. The upstream `configuration{id,disk}`
+                  block requires a service-internal configurator id that isn't
+                  discoverable via any public catalog endpoint — operators select from
+                  presets only. See spec.md §Clarifications 2026-05-31 catalog-endpoint
+                  reality check.
                 properties:
-                  configuration:
-                    description: Configuration is the custom-sizing alternative to
-                      `presetRef`.
-                    properties:
-                      diskGB:
-                        description: DiskGB is the disk capacity in gigabytes.
-                        type: integer
-                      id:
-                        description: ID is the Timeweb configurator ID.
-                        type: integer
-                    required:
-                    - diskGB
-                    - id
-                    type: object
                   description:
                     description: Description is a free-form comment. Mutable.
                     type: string
+                  initialSizeGB:
+                    description: |-
+                      InitialSizeGB picks the registry's tariff tier by disk size. The
+                      controller maps `(initialSizeGB, location?)` to one upstream
+                      `preset_id` at reconcile time. Valid values match Timeweb's
+                      published Container Registry FIXED tiers; the dashboard's
+                      "Произвольная" (Custom) ≥100GB path is not yet supported (it
+                      requires a service-internal configurator id that isn't
+                      discoverable via any public catalog endpoint).
+                    enum:
+                    - 5
+                    - 10
+                    - 25
+                    - 50
+                    - 75
+                    - 100
+                    format: int64
+                    type: integer
+                  location:
+                    description: |-
+                      Location optionally narrows preset selection to one upstream
+                      region (e.g. "ru-1"). Leave empty when the account has a single
+                      region.
+                    type: string
                   name:
                     description: |-
-                      Name is the registry's name. 3–48 chars, lowercase alphanumeric + hyphen,
-                      starts/ends with a letter or digit. Immutable upstream.
+                      Name is the registry's name. 3–48 chars, lowercase alphanumeric +
+                      hyphen, starts/ends with a letter or digit. Immutable upstream.
                     maxLength: 48
                     minLength: 3
                     pattern: ^[a-z0-9][a-z0-9-]{1,46}[a-z0-9]$
                     type: string
-                  presetRef:
-                    description: |-
-                      PresetRef references a ContainerRegistryPreset by Kubernetes name.
-                      Mutually exclusive with `configuration`. Within-axis values are mutable
-                      (different preset); switching axis is rejected as immutable.
-                    properties:
-                      name:
-                        description: Name of the ContainerRegistryPreset to reference.
-                        type: string
-                    required:
-                    - name
-                    type: object
                   projectID:
                     description: ProjectID assigns the registry to a Timeweb project.
                       Mutable.
                     type: integer
                 required:
+                - initialSizeGB
                 - name
                 type: object
               managementPolicies:
@@ -170,13 +178,9 @@ spec:
             properties:
               atProvider:
                 description: |-
-                  ContainerRegistryObservation is the controller-managed view of the upstream
-                  registry.
+                  ContainerRegistryObservation is the controller-managed view of the
+                  upstream registry.
                 properties:
-                  configuratorID:
-                    description: ConfiguratorID is the resolved numeric configurator
-                      ID.
-                    type: integer
                   createdAt:
                     description: CreatedAt is the upstream creation timestamp.
                     type: string
@@ -191,10 +195,12 @@ spec:
                   id:
                     description: ID is the Timeweb registry ID (also encoded as external-name).
                     type: integer
-                  presetID:
+                  lockedPresetID:
                     description: |-
-                      PresetID is the resolved numeric tariff ID (snapshot of what was sent on
-                      Create — survives later renames of the referenced Preset CR).
+                      LockedPresetID is the upstream preset ID locked at first Create —
+                      snapshot of what the resolver chose for `presetName`. Survives
+                      later resolver-cache rotations and dimension-registry edits.
+                    format: int64
                     type: integer
                   projectID:
                     description: ProjectID is the upstream project assignment.

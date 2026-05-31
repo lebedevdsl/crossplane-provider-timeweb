@@ -1,0 +1,23 @@
+# S3Bucket - full lifecycle via `initialSizeGB`. The controller maps
+# (initialSizeGB, storageClass, location?) to one upstream preset_id at
+# reconcile time. No preset slugs leak into the operator-facing spec.
+#
+# 1 GB is the cheapest tier (~1 ₽/мес from the dashboard) - minimal cost
+# for a real-API e2e run.
+apiVersion: objectstorage.m.timeweb.crossplane.io/v1alpha1
+kind: S3Bucket
+metadata:
+  name: e2e-s3
+  namespace: timeweb-e2e
+spec:
+  forProvider:
+    name: "${TWE_S3_NAME}"
+    type: private
+    storageClass: hot
+    initialSizeGB: 1
+    description: "kuttl e2e - initialSizeGB variant"
+  writeConnectionSecretToRef:
+    name: e2e-s3-conn
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e

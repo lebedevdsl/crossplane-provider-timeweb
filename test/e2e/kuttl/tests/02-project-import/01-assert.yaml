@@ -1,0 +1,20 @@
+apiVersion: project.m.timeweb.crossplane.io/v1alpha1
+kind: Project
+metadata:
+  name: e2e-project
+  namespace: timeweb-e2e
+  annotations:
+    crossplane.io/external-name: "${TWE_PROJECT_ID}"
+# kuttl matches arrays positionally — list Synced before Ready to
+# match the controller's emit order. Both conditions matter: Synced
+# means the reconcile loop completed without error; Ready means the
+# upstream resource itself is observed in a usable state. We want both
+# to be True for a green test.
+status:
+  conditions:
+  - type: Synced
+    status: "True"
+  - type: Ready
+    status: "True"
+  atProvider:
+    id: ${TWE_PROJECT_ID}

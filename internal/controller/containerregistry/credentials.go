@@ -17,24 +17,20 @@ limitations under the License.
 package containerregistry
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
-
-	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
-	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb/generated"
 )
 
-// Connection-Secret keys produced by the ContainerRegistry controller. Both
-// the raw `endpoint`/`username`/`password` keys AND the
-// `.dockerconfigjson` blob are populated so the resulting `kubernetes.io/
-// dockerconfigjson` Secret can be dropped directly into a workload's
-// `imagePullSecrets` AND consumed by tooling that wants raw values.
+// Connection-Secret keys produced by the ContainerRegistry controller.
+// Both raw `endpoint`/`username`/`password` keys AND the
+// `.dockerconfigjson` blob are populated so the resulting
+// `kubernetes.io/dockerconfigjson` Secret can be dropped directly into a
+// workload's `imagePullSecrets` AND consumed by tooling that wants raw
+// values.
 const (
 	connKeyEndpoint        = "endpoint"
 	connKeyUsername        = "username"
@@ -53,84 +49,66 @@ type dockerConfigAuth struct {
 	Auth     string `json:"auth"`
 }
 
-// buildDockerConfigJSON assembles the `.dockerconfigjson` blob for the given
-// registry endpoint and credentials.
+// buildDockerConfigJSON assembles the `.dockerconfigjson` blob for the
+// given registry endpoint and credentials.
 func buildDockerConfigJSON(endpoint, username, password string) ([]byte, error) {
 	auth := base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
 	cfg := dockerConfigJSON{
 		Auths: map[string]dockerConfigAuth{
-			endpoint: {
-				Username: username,
-				Password: password,
-				Auth:     auth,
-			},
+			endpoint: {Username: username, Password: password, Auth: auth},
 		},
 	}
 	return json.Marshal(cfg)
 }
 
-// errCredentialsUnavailable is returned when the controller's credential
-// lookup can't yield a usable username/password pair. Callers surface this
-// as `Ready=False, reason=CredentialsPending`.
+// errCredentialsUnavailable is kept for future use — when Timeweb ships
+// per-registry credentials, the lookup path can fail in ways that
+// shouldn't block the upstream Create. Today (May 2026) it never fires
+// because Timeweb has no separate credential endpoint and we synthesize
+// the docker creds from the registry name + the operator's account
+// token. See deriveRegistryCredentials.
 var errCredentialsUnavailable = errors.New("registry credentials not available")
 
-// fetchRegistryCredentials returns the docker username/password used to push
-// and pull from the operator's Timeweb container registry.
+// deriveRegistryCredentials returns the docker username/password used to
+// push and pull from the operator's Timeweb container registry.
 //
-// **R-1 open question**: Timeweb's OpenAPI does not document a registry-
-// specific auth endpoint. The default best-effort lookup uses the storage-
-// users endpoint (`/api/v1/storages/users`) — Timeweb's shared credential
-// pool for storage-class services. If a deployment's token doesn't grant
-// access to that endpoint, or returns no users, the function returns
-// `errCredentialsUnavailable` and the controller marks the registry
-// `Ready=False, reason=CredentialsPending` while keeping `Synced=True`.
-// Operators can supply credentials out-of-band and the next reconcile picks
-// them up.
-func fetchRegistryCredentials(ctx context.Context, tw generated.ClientInterface) (username, password string, err error) {
-	resp, err := tw.GetStorageUsers(ctx)
-	if err != nil {
-		return "", "", timeweb.ClassifyNetworkError(err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if err := timeweb.Classify(resp); err != nil {
-		return "", "", err
-	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return "", "", fmt.Errorf("read storage-users body: %w", err)
-	}
-	// The upstream envelope is `{"users": [{...}], "response_id": "…"}`.
-	var envelope struct {
-		Users []struct {
-			AccessKey string `json:"access_key"`
-			SecretKey string `json:"secret_key"`
-		} `json:"users"`
-	}
-	if err := json.Unmarshal(body, &envelope); err != nil {
-		return "", "", fmt.Errorf("decode storage-users body: %w", err)
-	}
-	if len(envelope.Users) == 0 {
+// **Current Timeweb behavior (May 2026)**: there's no separate
+// credential API for container registries — the dashboard explicitly
+// shows that the docker login uses the registry name as the username
+// and the operator's API token as the password. Both are immediate-
+// values, no upstream lookup needed.
+//
+// TODO(timeweb-creds): when Timeweb ships a separate credential API
+// (`/api/v1/container-registry/{id}/credentials` or similar), replace
+// this synthesis with a real fetch. The existing
+// `errCredentialsUnavailable` sentinel is already wired into the
+// Observe path to handle the case where the fetch returns nothing yet
+// (Ready=True still set, connection-Secret has endpoint only).
+//
+// Reference: confirmed via Timeweb dashboard, registry detail page:
+//   - Domain:   <registry-name>.registry.twcstorage.ru
+//   - Username: <registry-name>
+//   - Password: <Timeweb API token>
+func deriveRegistryCredentials(registryName, apiToken string) (username, password string, err error) {
+	if registryName == "" || apiToken == "" {
 		return "", "", errCredentialsUnavailable
 	}
-	// Use the first user as the default credential. Operators with multiple
-	// users can override at the Secret level if needed.
-	return envelope.Users[0].AccessKey, envelope.Users[0].SecretKey, nil
+	return registryName, apiToken, nil
 }
 
 // registryEndpoint derives the docker-registry hostname from a Timeweb
-// container-registry name. Convention (best-effort, verify in live testing):
+// container-registry name. Pattern confirmed via the Timeweb dashboard:
 //
-//	<name>.cr.twcstorage.ru
+//	<name>.registry.twcstorage.ru
 //
-// If a Container Registry is observed to use a different pattern in
-// production, update this helper. The endpoint is used both as the
-// dockerconfigjson map key AND as the `endpoint` Secret key.
+// (NOT `.cr.twcstorage.ru` — the earlier guess that lived here while
+// we were building blind.)
 func registryEndpoint(registryName string) string {
-	return registryName + ".cr.twcstorage.ru"
+	return registryName + ".registry.twcstorage.ru"
 }
 
-// buildConnection assembles the connection-Secret contents for a registry.
-// Caller is responsible for setting the Secret's type to
+// buildConnection assembles the connection-Secret contents for a
+// registry. Caller is responsible for setting the Secret's type to
 // `kubernetes.io/dockerconfigjson` at the resource level.
 func buildConnection(endpoint, username, password string) (managed.ConnectionDetails, error) {
 	dcj, err := buildDockerConfigJSON(endpoint, username, password)

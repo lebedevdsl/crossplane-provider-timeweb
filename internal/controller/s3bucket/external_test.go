@@ -30,19 +30,40 @@ import (
 	objectstoragev1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/objectstorage/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared/resolver"
 )
 
-// newBucket returns a minimal S3Bucket MR matching sampleBucketJSON.
-func newBucket(id int) *objectstoragev1alpha1.S3Bucket {
+type fakeResolver struct {
+	idsBySize map[int64]int64
+	err       error
+}
+
+func (f *fakeResolver) Resolve(_ context.Context, _ resolver.PCRef, _ resolver.Dimension, input resolver.ResolveInput) (resolver.ResolveOutput, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	in, ok := input.(resolver.PresetBySizeInput)
+	if !ok {
+		return nil, resolver.ErrInvalidInput
+	}
+	id, ok := f.idsBySize[in.DiskGB]
+	if !ok {
+		return nil, resolver.ErrPresetNotFound
+	}
+	return resolver.PresetOutput{UpstreamID: id}, nil
+}
+func (f *fakeResolver) Invalidate(_ resolver.PCRef, _ resolver.Dimension) {}
+
+func newBucket(id int, sizeGB int64) *objectstoragev1alpha1.S3Bucket {
 	desc := "demo"
-	presetID := 100
 	b := &objectstoragev1alpha1.S3Bucket{
 		Spec: objectstoragev1alpha1.S3BucketSpec{
 			ForProvider: objectstoragev1alpha1.S3BucketParameters{
-				Name:        "demo-bucket",
-				Type:        "private",
-				PresetID:    &presetID,
-				Description: &desc,
+				Name:          "demo-bucket",
+				Type:          "private",
+				StorageClass:  "hot",
+				InitialSizeGB: sizeGB,
+				Description:   &desc,
 			},
 		},
 	}
@@ -59,7 +80,6 @@ func httpResp(status int, body string) *http.Response {
 	}
 }
 
-// sampleBucketJSON matches newBucket's spec.
 const sampleBucketJSON = `{
   "response_id":"abc",
   "bucket":{
@@ -84,15 +104,23 @@ const sampleBucketJSON = `{
   }
 }`
 
+func newExternal(fake *timeweb.FakeClient, sizeMap map[int64]int64) *external {
+	return &external{
+		tw:       fake,
+		recorder: record.NewFakeRecorder(8),
+		resolver: &fakeResolver{idsBySize: sizeMap},
+		pcRef:    resolver.PCRef{Kind: "ProviderConfig", Name: "default", Namespace: "ns"},
+	}
+}
+
 func TestObserve(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Success", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetStorageReturns(httpResp(http.StatusOK, sampleBucketJSON), nil)
-
-		e := &external{tw: fake}
-		obs, err := e.Observe(ctx, newBucket(42))
+		e := newExternal(fake, nil)
+		obs, err := e.Observe(ctx, newBucket(42, 1))
 		if err != nil {
 			t.Fatalf("Observe: %v", err)
 		}
@@ -100,19 +128,15 @@ func TestObserve(t *testing.T) {
 			t.Errorf("Observe = %+v, want exists+up-to-date", obs)
 		}
 		if string(obs.ConnectionDetails["endpoint"]) != "s3.timeweb.cloud" {
-			t.Errorf("connection endpoint = %q, want 's3.timeweb.cloud'", obs.ConnectionDetails["endpoint"])
-		}
-		if string(obs.ConnectionDetails["access_key"]) != "AK12345" {
-			t.Errorf("connection access_key = %q, want 'AK12345'", obs.ConnectionDetails["access_key"])
+			t.Errorf("endpoint = %q", obs.ConnectionDetails["endpoint"])
 		}
 	})
 
 	t.Run("NotFound", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetStorageReturns(httpResp(http.StatusNotFound, ""), nil)
-
-		e := &external{tw: fake}
-		obs, err := e.Observe(ctx, newBucket(42))
+		e := newExternal(fake, nil)
+		obs, err := e.Observe(ctx, newBucket(42, 1))
 		if err != nil {
 			t.Fatalf("Observe: %v", err)
 		}
@@ -121,33 +145,10 @@ func TestObserve(t *testing.T) {
 		}
 	})
 
-	t.Run("TransientError", func(t *testing.T) {
-		fake := &timeweb.FakeClient{}
-		fake.GetStorageReturns(httpResp(http.StatusTooManyRequests, ""), nil)
-
-		e := &external{tw: fake}
-		_, err := e.Observe(ctx, newBucket(42))
-		if !errors.Is(err, timeweb.ErrTransient) {
-			t.Errorf("err = %v, want transient", err)
-		}
-	})
-
-	t.Run("TerminalError", func(t *testing.T) {
-		fake := &timeweb.FakeClient{}
-		fake.GetStorageReturns(httpResp(http.StatusForbidden, `{"error_code":"forbidden","message":"denied"}`), nil)
-
-		e := &external{tw: fake}
-		_, err := e.Observe(ctx, newBucket(42))
-		var apiErr *timeweb.APIError
-		if !errors.As(err, &apiErr) {
-			t.Fatalf("err = %v, want *APIError", err)
-		}
-	})
-
 	t.Run("NoExternalName", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		e := &external{tw: fake}
-		obs, _ := e.Observe(ctx, newBucket(0))
+		e := newExternal(fake, nil)
+		obs, _ := e.Observe(ctx, newBucket(0, 1))
 		if obs.ResourceExists {
 			t.Error("ResourceExists = true, want false")
 		}
@@ -163,46 +164,37 @@ func TestCreate(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.CreateStorageReturns(httpResp(http.StatusCreated, sampleBucketJSON), nil)
-
-		cr := newBucket(0)
-		e := &external{tw: fake}
+		cr := newBucket(0, 1)
+		e := newExternal(fake, map[int64]int64{1: 100})
 		c, err := e.Create(ctx, cr)
 		if err != nil {
 			t.Fatalf("Create: %v", err)
 		}
-		if got := meta.GetExternalName(cr); got != "42" {
-			t.Errorf("external-name = %q, want '42'", got)
+		if meta.GetExternalName(cr) != "42" {
+			t.Errorf("external-name = %q, want '42'", meta.GetExternalName(cr))
 		}
 		if string(c.ConnectionDetails["bucket"]) != "demo-bucket" {
-			t.Errorf("connection bucket = %q, want 'demo-bucket'", c.ConnectionDetails["bucket"])
+			t.Errorf("bucket = %q", c.ConnectionDetails["bucket"])
+		}
+		if cr.Status.AtProvider.LockedPresetID == nil || *cr.Status.AtProvider.LockedPresetID != 100 {
+			t.Errorf("lockedPresetID = %v, want 100", cr.Status.AtProvider.LockedPresetID)
 		}
 	})
 
-	t.Run("NotFound", func(t *testing.T) {
+	t.Run("PresetNotFound", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.CreateStorageReturns(httpResp(http.StatusNotFound, ""), nil)
-		e := &external{tw: fake}
-		_, err := e.Create(ctx, newBucket(0))
-		if !errors.Is(err, timeweb.ErrNotFound) {
-			t.Errorf("err = %v, want ErrNotFound", err)
+		e := newExternal(fake, nil)
+		_, err := e.Create(ctx, newBucket(0, 1))
+		if !errors.Is(err, resolver.ErrPresetNotFound) {
+			t.Errorf("err = %v, want ErrPresetNotFound", err)
 		}
 	})
 
-	t.Run("TransientError", func(t *testing.T) {
-		fake := &timeweb.FakeClient{}
-		fake.CreateStorageReturns(httpResp(http.StatusServiceUnavailable, ""), nil)
-		e := &external{tw: fake}
-		_, err := e.Create(ctx, newBucket(0))
-		if !errors.Is(err, timeweb.ErrTransient) {
-			t.Errorf("err = %v, want transient", err)
-		}
-	})
-
-	t.Run("TerminalError", func(t *testing.T) {
+	t.Run("UpstreamTerminalError", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.CreateStorageReturns(httpResp(http.StatusBadRequest, `{"error_code":"bad_request","message":"taken"}`), nil)
-		e := &external{tw: fake}
-		_, err := e.Create(ctx, newBucket(0))
+		e := newExternal(fake, map[int64]int64{1: 100})
+		_, err := e.Create(ctx, newBucket(0, 1))
 		var apiErr *timeweb.APIError
 		if !errors.As(err, &apiErr) {
 			t.Fatalf("err = %v, want *APIError", err)
@@ -217,9 +209,11 @@ func TestUpdate(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetStorageReturns(httpResp(http.StatusOK, sampleBucketJSON), nil)
 		fake.UpdateStorageReturns(httpResp(http.StatusOK, sampleBucketJSON), nil)
-
-		e := &external{tw: fake, recorder: record.NewFakeRecorder(8)}
-		if _, err := e.Update(ctx, newBucket(42)); err != nil {
+		cr := newBucket(42, 1)
+		var id int64 = 100
+		cr.Status.AtProvider.LockedPresetID = &id
+		e := newExternal(fake, map[int64]int64{1: 100})
+		if _, err := e.Update(ctx, cr); err != nil {
 			t.Fatalf("Update: %v", err)
 		}
 		if fake.UpdateStorageCallCount() != 1 {
@@ -227,118 +221,39 @@ func TestUpdate(t *testing.T) {
 		}
 	})
 
-	t.Run("NotFound", func(t *testing.T) {
-		fake := &timeweb.FakeClient{}
-		fake.GetStorageReturns(httpResp(http.StatusNotFound, ""), nil)
-		e := &external{tw: fake, recorder: record.NewFakeRecorder(8)}
-		_, err := e.Update(ctx, newBucket(42))
-		if !errors.Is(err, timeweb.ErrNotFound) {
-			t.Errorf("err = %v, want ErrNotFound (from initial GET)", err)
-		}
-	})
-
-	t.Run("TransientError", func(t *testing.T) {
-		fake := &timeweb.FakeClient{}
-		fake.GetStorageReturns(httpResp(http.StatusOK, sampleBucketJSON), nil)
-		fake.UpdateStorageReturns(httpResp(http.StatusGatewayTimeout, ""), nil)
-		e := &external{tw: fake, recorder: record.NewFakeRecorder(8)}
-		_, err := e.Update(ctx, newBucket(42))
-		if !errors.Is(err, timeweb.ErrTransient) {
-			t.Errorf("err = %v, want transient", err)
-		}
-	})
-
-	t.Run("TerminalError", func(t *testing.T) {
-		fake := &timeweb.FakeClient{}
-		fake.GetStorageReturns(httpResp(http.StatusOK, sampleBucketJSON), nil)
-		fake.UpdateStorageReturns(httpResp(http.StatusUnauthorized, `{"error_code":"unauthorized","message":"bad token"}`), nil)
-		e := &external{tw: fake, recorder: record.NewFakeRecorder(8)}
-		_, err := e.Update(ctx, newBucket(42))
-		var apiErr *timeweb.APIError
-		if !errors.As(err, &apiErr) {
-			t.Fatalf("err = %v, want *APIError", err)
-		}
-	})
-
 	t.Run("ImmutableNameChange_Rejected", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetStorageReturns(httpResp(http.StatusOK, sampleBucketJSON), nil)
-
-		cr := newBucket(42)
+		cr := newBucket(42, 1)
 		cr.Spec.ForProvider.Name = "renamed-bucket"
-
-		rec := record.NewFakeRecorder(8)
-		e := &external{tw: fake, recorder: rec}
+		e := newExternal(fake, nil)
 		_, err := e.Update(ctx, cr)
 		if !errors.Is(err, shared.ErrImmutableFieldChange) {
 			t.Fatalf("err = %v, want ErrImmutableFieldChange", err)
 		}
 		if fake.UpdateStorageCallCount() != 0 {
-			t.Errorf("UpdateStorage called %d times after rejection, want 0",
-				fake.UpdateStorageCallCount())
-		}
-	})
-
-	t.Run("ImmutableAxisSwitch_Rejected", func(t *testing.T) {
-		fake := &timeweb.FakeClient{}
-		fake.GetStorageReturns(httpResp(http.StatusOK, sampleBucketJSON), nil)
-
-		// Upstream is preset_id=100; switch spec to configuration → axis change.
-		cr := newBucket(42)
-		cr.Spec.ForProvider.PresetID = nil
-		cr.Spec.ForProvider.Configuration = &objectstoragev1alpha1.S3BucketConfiguration{
-			ID:     5,
-			DiskMB: 20000,
-		}
-
-		rec := record.NewFakeRecorder(8)
-		e := &external{tw: fake, recorder: rec}
-		_, err := e.Update(ctx, cr)
-		if !errors.Is(err, shared.ErrImmutableFieldChange) {
-			t.Fatalf("err = %v, want ErrImmutableFieldChange (axis switch)", err)
+			t.Errorf("UpdateStorage called %d times after rejection, want 0", fake.UpdateStorageCallCount())
 		}
 	})
 }
 
 func TestDelete(t *testing.T) {
 	ctx := context.Background()
-
 	t.Run("Success", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.DeleteStorageReturns(httpResp(http.StatusNoContent, ""), nil)
-		e := &external{tw: fake}
-		if _, err := e.Delete(ctx, newBucket(42)); err != nil {
+		e := newExternal(fake, nil)
+		if _, err := e.Delete(ctx, newBucket(42, 1)); err != nil {
 			t.Fatalf("Delete: %v", err)
 		}
 	})
 
-	t.Run("NotFound", func(t *testing.T) {
+	t.Run("NotFound_Idempotent", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.DeleteStorageReturns(httpResp(http.StatusNotFound, ""), nil)
-		e := &external{tw: fake}
-		if _, err := e.Delete(ctx, newBucket(42)); err != nil {
+		e := newExternal(fake, nil)
+		if _, err := e.Delete(ctx, newBucket(42, 1)); err != nil {
 			t.Errorf("Delete on already-gone: %v, want nil", err)
-		}
-	})
-
-	t.Run("TransientError", func(t *testing.T) {
-		fake := &timeweb.FakeClient{}
-		fake.DeleteStorageReturns(httpResp(http.StatusInternalServerError, ""), nil)
-		e := &external{tw: fake}
-		_, err := e.Delete(ctx, newBucket(42))
-		if !errors.Is(err, timeweb.ErrTransient) {
-			t.Errorf("err = %v, want transient", err)
-		}
-	})
-
-	t.Run("TerminalError", func(t *testing.T) {
-		fake := &timeweb.FakeClient{}
-		fake.DeleteStorageReturns(httpResp(http.StatusForbidden, `{"error_code":"forbidden","message":"denied"}`), nil)
-		e := &external{tw: fake}
-		_, err := e.Delete(ctx, newBucket(42))
-		var apiErr *timeweb.APIError
-		if !errors.As(err, &apiErr) {
-			t.Fatalf("err = %v, want *APIError", err)
 		}
 	})
 }

@@ -22,22 +22,26 @@ import (
 )
 
 // ProviderConfigSpec configures the Timeweb Cloud connection used by every
-// managed resource that references this ProviderConfig.
+// managed resource in the same namespace that references this ProviderConfig.
+// See `contracts/providerconfig-namespaced-v1alpha1.md`.
 type ProviderConfigSpec struct {
-	// Credentials names the source the provider uses to obtain the Timeweb
-	// API token. Only the `Secret` source is supported in v0.1 (FR-003).
+	// Credentials selects the source of the Timeweb API token. Only the
+	// `Secret` source is supported in v0.1 (FR-003).
 	Credentials ProviderCredentials `json:"credentials"`
 }
 
-// ProviderCredentials selects a credential source.
+// ProviderCredentials selects a credential source for the **namespaced**
+// ProviderConfig. Uses `LocalSecretKeySelector` — the referenced Secret
+// MUST live in the same namespace as the PC. The cluster-scoped
+// `ClusterProviderConfig` uses a parallel `ClusterProviderCredentials`
+// type with an explicit cross-namespace `SecretKeySelector`.
 type ProviderCredentials struct {
-	// Source of the Timeweb API token. Only `Secret` is supported.
+	// Source of the Timeweb API token. Only `Secret` is supported in v0.1.
 	// +kubebuilder:validation:Enum=Secret
 	Source xpv2.CredentialsSource `json:"source"`
 
-	// CommonCredentialSelectors carries the Secret reference, the canonical
-	// crossplane-runtime selector shape (name, namespace, key).
-	xpv2.CommonCredentialSelectors `json:",inline"`
+	// SecretRef points at a Secret in the PC's own namespace.
+	SecretRef *xpv2.LocalSecretKeySelector `json:"secretRef,omitempty"`
 }
 
 // ProviderConfigStatus exposes the ProviderConfig's observed state.
@@ -46,14 +50,16 @@ type ProviderConfigStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster,categories={crossplane,provider,timeweb}
+// +kubebuilder:resource:scope=Namespaced,categories={crossplane,provider,timeweb}
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="SECRET-NAME",type="string",JSONPath=".spec.credentials.secretRef.name",priority=1
 
-// ProviderConfig is the cluster-scoped configuration for the Timeweb
-// Crossplane provider. Managed resources reference one of these by name via
-// `spec.providerConfigRef.name`.
+// ProviderConfig is the namespaced configuration for the Timeweb Crossplane
+// provider. Managed resources in the same namespace reference one of these
+// via `spec.providerConfigRef: { kind: ProviderConfig, name: <pc> }`. For
+// a cluster-scoped alternative (used when an MR has no same-namespace PC),
+// see `ClusterProviderConfig`.
 type ProviderConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -27,14 +27,14 @@ spec:
 |------------------------------------|---------|----------|--------------------------------------------------------------------------------------|
 | `credentials.source`               | string  | yes      | Enum: `Secret` (only). Future enum additions are non-breaking. CEL-enforced.         |
 | `credentials.secretRef.name`       | string  | yes      | Must exist in the same namespace as the `ProviderConfig`.                            |
-| `credentials.secretRef.namespace`  | string  | no       | If set, MUST equal the PC's own namespace. CEL enforces equality when present.       |
+| `credentials.secretRef.namespace`  | string  | no       | MUST be empty or unset. CEL forbids non-empty values (the controller resolves the Secret in the PC's own namespace). |
 | `credentials.secretRef.key`        | string  | yes      | The Secret key holding the raw Timeweb API token.                                    |
 
 ## Validation
 
 - CEL `x-kubernetes-validations` on `spec.credentials`:
   - `self.source == "Secret"` (today's only supported source).
-  - `!has(self.secretRef.namespace) || self.secretRef.namespace == ""` (rejected as a future-safety rule — namespaced PC implies same-namespace Secret).
+  - `!has(self.spec.credentials.secretRef.namespace) || self.spec.credentials.secretRef.namespace == ""` — forbids setting `secretRef.namespace` on a namespaced PC. The controller resolves the Secret in the PC's own namespace; allowing the operator to specify a different namespace here would be misleading. *(Note: the earlier draft of this rule compared against `self.metadata.namespace`, but CEL on a CRD has no implicit knowledge of the metadata subschema — that comparison fails to compile at CRD install time with `undefined field 'namespace'`. The tightened form is equivalent for any case the controller can actually serve.)*
 
 ## Status
 

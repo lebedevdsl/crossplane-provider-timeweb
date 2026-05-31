@@ -15,9 +15,12 @@ limitations under the License.
 */
 
 // Package s3bucket implements the Crossplane managed-resource controller for
-// Timeweb Cloud S3-compatible buckets. `name` and the sizing axis (preset vs.
-// configuration) are immutable. The controller publishes an Opaque connection
-// Secret containing endpoint/bucket/region/access_key/secret_key.
+// Timeweb Cloud S3-compatible buckets. Sizing is preset-only:
+// `forProvider.presetName` is required, the controller resolves it via the
+// catalog resolver to the upstream `preset_id`, and that ID is recorded in
+// `status.atProvider.lockedPresetID` for change detection on subsequent
+// reconciles. `name` is immutable; everything else (`type`, `description`,
+// `presetName`, `projectID`) is mutable.
 package s3bucket
 
 import (
@@ -37,6 +40,7 @@ import (
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb/generated"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared/resolver"
 )
 
 var errNotS3Bucket = errors.New("managed resource is not a S3Bucket")
@@ -54,6 +58,8 @@ const (
 type external struct {
 	tw       generated.ClientInterface
 	recorder record.EventRecorder
+	resolver resolver.Resolver
+	pcRef    resolver.PCRef
 }
 
 // Observe fetches the upstream bucket; populates status + connection details.
@@ -103,30 +109,23 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}, nil
 }
 
-// Create POSTs a new bucket.
+// Create POSTs a new bucket via the resolver-driven presetName path.
 func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*objectstoragev1alpha1.S3Bucket)
 	if !ok {
 		return managed.ExternalCreation{}, errNotS3Bucket
 	}
 
+	presetID, err := e.resolvePresetID(ctx, cr)
+	if err != nil {
+		return managed.ExternalCreation{}, err
+	}
+	presetF := float32(presetID)
+
 	body := generated.CreateStorageJSONRequestBody{
-		Name: cr.Spec.ForProvider.Name,
-		Type: generated.CreateStorageJSONBodyType(cr.Spec.ForProvider.Type),
-	}
-	if cr.Spec.ForProvider.PresetID != nil {
-		v := float32(*cr.Spec.ForProvider.PresetID)
-		body.PresetId = &v
-	}
-	if c := cr.Spec.ForProvider.Configuration; c != nil {
-		body.Configurator = &struct {
-			Disk *float32 `json:"disk,omitempty"`
-			Id   *float32 `json:"id,omitempty"` //nolint:revive // anonymous-struct field must match generated.CreateStorageJSONBody.Configurator
-		}{}
-		id := float32(c.ID)
-		disk := float32(c.DiskMB)
-		body.Configurator.Id = &id
-		body.Configurator.Disk = &disk
+		Name:     cr.Spec.ForProvider.Name,
+		Type:     generated.CreateStorageJSONBodyType(cr.Spec.ForProvider.Type),
+		PresetId: &presetF,
 	}
 	if cr.Spec.ForProvider.Description != nil {
 		body.Description = cr.Spec.ForProvider.Description
@@ -153,11 +152,17 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	meta.SetExternalName(cr, shared.EncodeID(int(bucket.Id)))
 	populateStatus(cr, bucket)
+	// Lock the resolved preset_id — survives later resolver-cache rotations.
+	pid := int64(presetID)
+	if bucket.PresetId != nil && *bucket.PresetId != 0 {
+		pid = int64(*bucket.PresetId)
+	}
+	cr.Status.AtProvider.LockedPresetID = &pid
 	cr.Status.SetConditions(xpv2.Creating())
 	return managed.ExternalCreation{ConnectionDetails: buildConnection(cr, bucket)}, nil
 }
 
-// Update PATCHes mutable fields; rejects edits to immutable ones (FR-017).
+// Update PATCHes mutable fields; rejects edits to immutable `name`.
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	cr, ok := mg.(*objectstoragev1alpha1.S3Bucket)
 	if !ok {
@@ -169,7 +174,6 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, fmt.Errorf("s3bucket: decode external-name: %w", err)
 	}
 
-	// Re-observe to detect immutable-axis drift.
 	getResp, err := e.tw.GetStorage(ctx, id)
 	if err != nil {
 		return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
@@ -184,36 +188,26 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, err
 	}
 
-	// Immutable: name + sizing axis (preset vs configurator).
 	if changed, ok := shared.FirstImmutableDiff([]shared.ImmutableField{
 		{Name: "name", Desired: cr.Spec.ForProvider.Name, Observed: bucket.Name},
 	}); ok {
 		return managed.ExternalUpdate{}, shared.RejectImmutableChange(cr, e.recorder, changed)
 	}
-	if axisChanged := immutableAxisChanged(cr.Spec.ForProvider, bucket); axisChanged != "" {
-		return managed.ExternalUpdate{}, shared.RejectImmutableChange(cr, e.recorder, axisChanged)
-	}
 
-	body := generated.UpdateStorageJSONRequestBody{}
+	presetID, err := e.resolvePresetID(ctx, cr)
+	if err != nil {
+		return managed.ExternalUpdate{}, err
+	}
+	presetF := float32(presetID)
+
+	body := generated.UpdateStorageJSONRequestBody{
+		PresetId: &presetF,
+	}
 	if cr.Spec.ForProvider.Description != nil {
 		body.Description = cr.Spec.ForProvider.Description
 	}
 	bucketType := generated.UpdateStorageJSONBodyBucketType(cr.Spec.ForProvider.Type)
 	body.BucketType = &bucketType
-	if cr.Spec.ForProvider.PresetID != nil {
-		v := float32(*cr.Spec.ForProvider.PresetID)
-		body.PresetId = &v
-	}
-	if c := cr.Spec.ForProvider.Configuration; c != nil {
-		body.Configurator = &struct {
-			Disk *float32 `json:"disk,omitempty"`
-			Id   *float32 `json:"id,omitempty"` //nolint:revive // anonymous-struct field must match generated.CreateStorageJSONBody.Configurator
-		}{}
-		idv := float32(c.ID)
-		disk := float32(c.DiskMB)
-		body.Configurator.Id = &idv
-		body.Configurator.Disk = &disk
-	}
 
 	resp, err := e.tw.UpdateStorage(ctx, id, body)
 	if err != nil {
@@ -223,6 +217,12 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if err := timeweb.Classify(resp); err != nil {
 		return managed.ExternalUpdate{}, err
 	}
+
+	// Re-lock to the freshly-resolved preset (within-preset moves are
+	// the only mutable sizing change S3 supports today).
+	pid := int64(presetID)
+	cr.Status.AtProvider.LockedPresetID = &pid
+
 	return managed.ExternalUpdate{ConnectionDetails: buildConnection(cr, bucket)}, nil
 }
 
@@ -255,6 +255,48 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) (managed.Ext
 // Disconnect is a no-op.
 func (*external) Disconnect(_ context.Context) error { return nil }
 
+// resolvePresetID consults the resolver for the upstream S3 preset_id
+// matching `(initialSizeGB, storageClass, location?)`. Maps resolver-
+// typed sentinels to MR conditions per the contract.
+func (e *external) resolvePresetID(ctx context.Context, cr *objectstoragev1alpha1.S3Bucket) (int, error) {
+	loc := ""
+	if cr.Spec.ForProvider.Location != nil {
+		loc = *cr.Spec.ForProvider.Location
+	}
+	out, err := e.resolver.Resolve(ctx, e.pcRef,
+		resolver.Dimension{Name: resolver.DimS3BucketPreset, Kind: resolver.DimensionPreset},
+		resolver.PresetBySizeInput{
+			DiskGB:       cr.Spec.ForProvider.InitialSizeGB,
+			Location:     loc,
+			StorageClass: cr.Spec.ForProvider.StorageClass,
+		},
+	)
+	if err != nil {
+		mapResolverErrorToCondition(cr, err)
+		return 0, err
+	}
+	po, ok := out.(resolver.PresetOutput)
+	if !ok {
+		return 0, fmt.Errorf("s3bucket: resolver returned unexpected output type %T", out)
+	}
+	return int(po.UpstreamID), nil
+}
+
+// mapResolverErrorToCondition translates resolver-typed sentinels to the
+// operator-facing conditions on the S3Bucket MR.
+func mapResolverErrorToCondition(cr *objectstoragev1alpha1.S3Bucket, err error) {
+	switch {
+	case errors.Is(err, resolver.ErrPresetNotFound):
+		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonPresetNotFound, err.Error()))
+	case errors.Is(err, resolver.ErrPresetAmbiguous):
+		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonPresetAmbiguous, err.Error()))
+	case errors.Is(err, resolver.ErrCatalogUnauthorized):
+		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonCatalogUnauthorized, err.Error()))
+	case errors.Is(err, resolver.ErrCatalogTransient):
+		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonCatalogTransient, err.Error()))
+	}
+}
+
 // decodeBucket unmarshals the `{"bucket": ...}` envelope.
 func decodeBucket(body []byte) (generated.Bucket, error) {
 	var envelope struct {
@@ -266,7 +308,8 @@ func decodeBucket(body []byte) (generated.Bucket, error) {
 	return envelope.Bucket, nil
 }
 
-// populateStatus mirrors the upstream Bucket into atProvider.
+// populateStatus mirrors the upstream Bucket into atProvider. LockedPresetID
+// is set on Create and refreshed on import.
 func populateStatus(cr *objectstoragev1alpha1.S3Bucket, b generated.Bucket) {
 	id := int(b.Id)
 	objects := int(b.ObjectAmount)
@@ -275,29 +318,28 @@ func populateStatus(cr *objectstoragev1alpha1.S3Bucket, b generated.Bucket) {
 	unlimited := b.DiskStats.IsUnlimited
 	status := string(b.Status)
 	storageClass := string(b.StorageClass)
-	cr.Status.AtProvider = objectstoragev1alpha1.S3BucketObservation{
-		ID:           &id,
-		Hostname:     &b.Hostname,
-		Location:     &b.Location,
-		StorageClass: &storageClass,
-		Status:       &status,
-		DiskStats: &objectstoragev1alpha1.S3BucketDiskStats{
-			SizeKB:      &sizeKB,
-			UsedKB:      &usedKB,
-			IsUnlimited: &unlimited,
-		},
-		ObjectAmount: &objects,
+	cr.Status.AtProvider.ID = &id
+	cr.Status.AtProvider.Hostname = &b.Hostname
+	cr.Status.AtProvider.Location = &b.Location
+	cr.Status.AtProvider.StorageClass = &storageClass
+	cr.Status.AtProvider.Status = &status
+	cr.Status.AtProvider.DiskStats = &objectstoragev1alpha1.S3BucketDiskStats{
+		SizeKB: &sizeKB, UsedKB: &usedKB, IsUnlimited: &unlimited,
 	}
+	cr.Status.AtProvider.ObjectAmount = &objects
 	if b.MovedInQuarantineAt != nil {
 		s := b.MovedInQuarantineAt.Format("2006-01-02T15:04:05Z07:00")
 		cr.Status.AtProvider.MovedInQuarantineAt = &s
 	}
+	if cr.Status.AtProvider.LockedPresetID == nil && b.PresetId != nil && *b.PresetId != 0 {
+		pid := int64(*b.PresetId)
+		cr.Status.AtProvider.LockedPresetID = &pid
+	}
 }
 
 // isUpToDate compares mutable fields against the upstream observation.
-//
-// `name` (immutable) and the sizing axis are NOT consulted here — they are
-// detected inside Update via FirstImmutableDiff so we can surface FR-017.
+// `name` (immutable) is consulted inside Update via the immutable-rejection
+// path. Sizing differences trigger a within-preset PATCH.
 func isUpToDate(spec objectstoragev1alpha1.S3BucketParameters, b generated.Bucket) bool {
 	if spec.Type != string(b.Type) {
 		return false
@@ -308,29 +350,7 @@ func isUpToDate(spec objectstoragev1alpha1.S3BucketParameters, b generated.Bucke
 	if spec.ProjectID != nil && *spec.ProjectID != int(b.ProjectId) {
 		return false
 	}
-	if spec.PresetID != nil && b.PresetId != nil && *spec.PresetID != int(*b.PresetId) {
-		return false
-	}
-	if c := spec.Configuration; c != nil && b.ConfiguratorId != nil && c.ID != int(*b.ConfiguratorId) {
-		return false
-	}
 	return true
-}
-
-// immutableAxisChanged returns the offending field name if the operator
-// switched between presetID and configuration after creation.
-func immutableAxisChanged(spec objectstoragev1alpha1.S3BucketParameters, b generated.Bucket) string {
-	specHasPreset := spec.PresetID != nil
-	specHasCfg := spec.Configuration != nil
-	upstreamHasPreset := b.PresetId != nil
-	upstreamHasCfg := b.ConfiguratorId != nil
-	if specHasPreset && upstreamHasCfg && !upstreamHasPreset {
-		return "configuration"
-	}
-	if specHasCfg && upstreamHasPreset && !upstreamHasCfg {
-		return "presetID"
-	}
-	return ""
 }
 
 // buildConnection assembles the Opaque connection-Secret keys.

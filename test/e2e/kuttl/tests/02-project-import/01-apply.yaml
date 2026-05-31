@@ -1,0 +1,23 @@
+# Import an existing Timeweb project in OBSERVE-ONLY mode.
+#
+# Imports the first project the account has (lowest id), discovered by
+# the wrapper script and substituted as ${TWE_PROJECT_ID}.
+# managementPolicies: [Observe] keeps the controller from issuing any
+# upstream PATCH - when the CR is deleted, the upstream project is
+# preserved.
+apiVersion: project.m.timeweb.crossplane.io/v1alpha1
+kind: Project
+metadata:
+  name: e2e-project
+  namespace: timeweb-e2e
+  annotations:
+    crossplane.io/external-name: "${TWE_PROJECT_ID}"
+spec:
+  forProvider:
+    name: "(observed by e2e - not modified)"
+    description: "Read-only import from the provider-timeweb e2e bundle."
+  managementPolicies:
+    - Observe
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e

@@ -1,0 +1,18 @@
+# Step 1 - Create the SSHKey upstream. Default managementPolicies = ["*"]
+# means full lifecycle (Create + Observe + Update + Delete). The body is
+# a synthetic test key - no real private half exists, so it can never
+# authenticate a session. Unique name (${TWE_SSH_NAME}) lets the suite
+# rerun safely against the same Timeweb account.
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: e2e-sshkey
+  namespace: timeweb-e2e
+spec:
+  forProvider:
+    name: "${TWE_SSH_NAME}"
+    body: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE2E000000000000000000000000000000000000000000 ${TWE_SSH_NAME}"
+    isDefault: false
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
