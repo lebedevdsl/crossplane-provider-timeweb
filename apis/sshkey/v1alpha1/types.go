@@ -70,13 +70,13 @@ type SSHKeyObservation struct {
 // SSHKeySpec is the desired state.
 type SSHKeySpec struct {
 	xpv2.ManagedResourceSpec `json:",inline"`
-	ForProvider       SSHKeyParameters `json:"forProvider"`
+	ForProvider              SSHKeyParameters `json:"forProvider"`
 }
 
 // SSHKeyStatus is the observed state.
 type SSHKeyStatus struct {
 	xpv2.ManagedResourceStatus `json:",inline"`
-	AtProvider          SSHKeyObservation `json:"atProvider,omitempty"`
+	AtProvider                 SSHKeyObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

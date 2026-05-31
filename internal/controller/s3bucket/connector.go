@@ -40,7 +40,7 @@ type connector struct {
 	recorder record.EventRecorder
 }
 
-// Connect implements managed.ExternalConnecter.
+// Connect implements managed.ExternalConnector.
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	cr, ok := mg.(*objectstoragev1alpha1.S3Bucket)
 	if !ok {

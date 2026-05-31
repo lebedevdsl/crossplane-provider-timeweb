@@ -32,14 +32,14 @@ import (
 
 // connector builds an `external` per reconcile. The dual-PC lookup +
 // credential resolution lives in internal/controller/shared so every MR
-// kind gets the same FR-001 behavior. Implements managed.ExternalConnecter.
+// kind gets the same FR-001 behavior. Implements managed.ExternalConnector.
 type connector struct {
 	kube   client.Client
 	usage  resource.ModernTracker
 	logger logging.Logger
 }
 
-// Connect implements managed.ExternalConnecter.
+// Connect implements managed.ExternalConnector.
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	cr, ok := mg.(*projectv1alpha1.Project)
 	if !ok {

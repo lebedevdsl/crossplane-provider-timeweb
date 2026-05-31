@@ -14,6 +14,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// K8s-readiness field → dimension mapping (SC-007, T062).
+//
+// Walks the create-bodies of `POST /api/v1/k8s/clusters` (createCluster)
+// and `POST /api/v1/k8s/clusters/{cluster_id}/groups` (createClusterNodeGroup)
+// as published in `docs/openapi-timeweb.json` and pins every operator-
+// resolvable field to the dimension that will validate it when the
+// KubernetesCluster / KubernetesNodeGroup MRs are implemented. Fields
+// that are free-form scalars (name, description, counts, IDs) or
+// recursive objects (cluster_network_cidr, maintenance_slot,
+// oidc_provider, worker_groups[i] — itself a NodeGroup body) are out of
+// the resolver's scope and validated at the CRD layer instead.
+//
+//	POST /api/v1/k8s/clusters (createCluster):
+//	  k8s_version       → DimKubernetesVersion         (enum)
+//	  availability_zone → DimAvailabilityZone          (enum; derived from preset list)
+//	  network_driver    → DimKubernetesNetworkDriver   (enum)
+//	  preset_id         → DimKubernetesMasterPreset    (preset; XOR with `configuration`)
+//	  configuration     → DimServerConfigurator        (configurator; XOR with `preset_id`)
+//
+//	POST /api/v1/k8s/clusters/{cluster_id}/groups (createClusterNodeGroup):
+//	  preset_id         → DimKubernetesWorkerPreset    (preset; XOR with `configuration`)
+//	  configuration     → DimServerConfigurator        (configurator; XOR with `preset_id`)
+//
+// The six dimensions above are registered (with stub fetchers returning
+// ErrDimensionFetcherUnwired) in defaultRegistry below so the table
+// can't drift before the K8s feature work lands. Per data-model.md §2.2,
+// each dimension's full Resolve coverage ships alongside the MR that
+// consumes it.
+
 package resolver
 
 import (
@@ -33,12 +62,24 @@ type CatalogClient interface {
 	GetStoragesPresetsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetStoragesPresetsResponse, error)
 }
 
-// Initial dimension names. Server / Kubernetes registrations land in the
-// dedicated feature (Phase 6 / T056); keeping their names out of v0.1
-// prevents accidental cross-dependencies.
+// Dimension names. The first two are live (consumed by S3Bucket /
+// ContainerRegistry today). The remaining six are forward-compat stubs
+// for the KubernetesCluster / KubernetesNodeGroup feature; they are
+// registered so the table commitment in data-model.md §2.2 holds, but
+// their fetchers return ErrDimensionFetcherUnwired until the K8s feature
+// opts their upstream tags into the oapi-codegen allowlist.
 const (
+	// Live dimensions.
 	DimContainerRegistryPreset = "ContainerRegistryPreset"
 	DimS3BucketPreset          = "S3BucketPreset"
+
+	// Forward-compat (K8s + Server) dimensions — see header comment.
+	DimServerConfigurator      = "ServerConfigurator"
+	DimKubernetesMasterPreset  = "KubernetesMasterPreset"
+	DimKubernetesWorkerPreset  = "KubernetesWorkerPreset"
+	DimKubernetesVersion       = "KubernetesVersion"
+	DimKubernetesNetworkDriver = "KubernetesNetworkDriver"
+	DimAvailabilityZone        = "AvailabilityZone"
 )
 
 // dimensionDef is the per-dimension entry in the registry.
@@ -47,22 +88,24 @@ type dimensionDef struct {
 	fetch func(ctx context.Context, c CatalogClient) (any, error)
 }
 
-// defaultRegistry returns the initial dimensions wired to the generated
-// Timeweb client. v0.1 ships preset-only registrations for Container
-// Registry and S3 Storage — neither has a configurator endpoint upstream
-// per spec.md §Clarifications 2026-05-31 catalog-endpoint reality check.
-// Server / KubernetesCluster / KubernetesNodeGroup registrations land
-// alongside their feature work.
+// defaultRegistry returns the dimension table. The two live dimensions
+// are wired to the generated Timeweb client. The six forward-compat
+// registrations share a single stub fetcher (fetchUnwired) so that the
+// registry shape is locked in by this feature even though only the K8s
+// feature will exercise them end-to-end.
 func defaultRegistry() map[string]dimensionDef {
 	return map[string]dimensionDef{
-		DimContainerRegistryPreset: {
-			kind:  DimensionPreset,
-			fetch: fetchContainerRegistryPresets,
-		},
-		DimS3BucketPreset: {
-			kind:  DimensionPreset,
-			fetch: fetchS3BucketPresets,
-		},
+		// Live.
+		DimContainerRegistryPreset: {kind: DimensionPreset, fetch: fetchContainerRegistryPresets},
+		DimS3BucketPreset:          {kind: DimensionPreset, fetch: fetchS3BucketPresets},
+
+		// Forward-compat — see header comment + data-model.md §2.2.
+		DimServerConfigurator:      {kind: DimensionConfigurator, fetch: fetchUnwired},
+		DimKubernetesMasterPreset:  {kind: DimensionPreset, fetch: fetchUnwired},
+		DimKubernetesWorkerPreset:  {kind: DimensionPreset, fetch: fetchUnwired},
+		DimKubernetesVersion:       {kind: DimensionEnum, fetch: fetchUnwired},
+		DimKubernetesNetworkDriver: {kind: DimensionEnum, fetch: fetchUnwired},
+		DimAvailabilityZone:        {kind: DimensionEnum, fetch: fetchUnwired},
 	}
 }
 
@@ -114,6 +157,14 @@ func fetchS3BucketPresets(ctx context.Context, c CatalogClient) (any, error) {
 		})
 	}
 	return out, nil
+}
+
+// fetchUnwired is the placeholder fetcher for forward-compat K8s/Server
+// dimensions. It always fails with ErrDimensionFetcherUnwired so a caller
+// who accidentally tries to Resolve against one before the K8s feature
+// lands gets a clear, typed error instead of a misleading empty result.
+func fetchUnwired(_ context.Context, _ CatalogClient) (any, error) {
+	return nil, ErrDimensionFetcherUnwired
 }
 
 // classifyUpstream collapses transport + HTTP-status outcomes into the

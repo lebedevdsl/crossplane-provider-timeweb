@@ -3,6 +3,14 @@
 #
 # Single required env input: TIMEWEB_CLOUD_TOKEN.
 #
+# Optional env: TIMEWEB_E2E_TOKEN — a *second* Timeweb account token. When
+# set, the wrapper provisions an extra namespace + Secret + dual-PC pair
+# bound to it, enabling the multi-PC isolation bundle (test 07-*). When
+# unset, that bundle is skipped via a kuttl test-suite filter so the
+# single-token e2e path remains the default. The two tokens MUST refer to
+# different Timeweb accounts (or at least non-overlapping resource scopes);
+# isolation cannot be observed against one account.
+#
 # Design:
 #   The kuttl test bundle itself is fully DECLARATIVE — every test is an
 #   `apply.yaml` + `assert.yaml` pair, no shell. The wrapper handles all
@@ -16,11 +24,14 @@
 #          - the cheapest S3 storage preset slug
 #          - the first available project ID (for the Project import test)
 #        and export each as TWE_* env vars.
-#     4. Generate unique names for every MR (timestamp-suffixed) so the
+#     4. If TIMEWEB_E2E_TOKEN is set: create the secondary namespace +
+#        Secret + namespaced ProviderConfig + ClusterProviderConfig.
+#     5. Generate unique names for every MR (timestamp-suffixed) so the
 #        suite is safe to re-run within the same Timeweb account.
-#     5. Copy the test bundle to a tmpdir and envsubst the TWE_* values
+#     6. Copy the test bundle to a tmpdir and envsubst the TWE_* values
 #        into every YAML file. The git-tracked bundle stays clean.
-#     6. Invoke `kubectl-kuttl test` against the substituted tmpdir.
+#     7. Invoke `kubectl-kuttl test` against the substituted tmpdir. The
+#        multi-PC bundle (07-*) is skipped when TIMEWEB_E2E_TOKEN is unset.
 #
 # Reads env from test/e2e/Makefile.test:
 #   E2E_KUBECONTEXT, E2E_NAMESPACE
@@ -81,6 +92,54 @@ spec:
       name: timeweb-credentials
       key: token
 EOF
+
+# --- 1b. Optional secondary PCs for the multi-PC isolation bundle ----------
+#
+# Provisioned only when TIMEWEB_E2E_TOKEN is set. Creates:
+#   - namespace            e2e-team-b
+#   - secret               timeweb-credentials in e2e-team-b
+#   - ProviderConfig       e2e-secondary (namespaced in e2e-team-b)
+#   - ClusterProviderConfig e2e-shared (cluster-scoped, bound to the
+#                          secondary token's secret in e2e-team-b)
+# The kuttl bundle decides what to do with each.
+
+E2E_SECONDARY_NS="e2e-team-b"
+if [ -n "${TIMEWEB_E2E_TOKEN:-}" ]; then
+  echo "[e2e] TIMEWEB_E2E_TOKEN set → provisioning secondary namespace + dual-PC pair (multi-PC bundle ENABLED)"
+  $KCTL create namespace "$E2E_SECONDARY_NS" --dry-run=client -o yaml | $KCTL apply -f -
+  $KCTL -n "$E2E_SECONDARY_NS" create secret generic timeweb-credentials \
+    --from-literal=token="$TIMEWEB_E2E_TOKEN" \
+    --dry-run=client -o yaml | $KCTL apply -f -
+  cat <<EOF | $KCTL apply -f -
+apiVersion: timeweb.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: e2e-secondary
+  namespace: $E2E_SECONDARY_NS
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      name: timeweb-credentials
+      key: token
+---
+apiVersion: timeweb.crossplane.io/v1alpha1
+kind: ClusterProviderConfig
+metadata:
+  name: e2e-shared
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      name: timeweb-credentials
+      namespace: $E2E_SECONDARY_NS
+      key: token
+EOF
+  export TWE_MULTI_PC_ENABLED=1
+else
+  echo "[e2e] TIMEWEB_E2E_TOKEN unset → multi-PC bundle SKIPPED (set the env var to enable)"
+  export TWE_MULTI_PC_ENABLED=0
+fi
 
 # --- 2. Discover the operator's first project id ----------------------------
 #
@@ -182,9 +241,17 @@ export KUBECONFIG="$TMP_KUBECONFIG"
 
 # --- 7. Run kuttl -----------------------------------------------------------
 
+KUTTL_ARGS=()
+if [ "$TWE_MULTI_PC_ENABLED" = "0" ]; then
+  # kuttl's --skip-delete + --test (regex filter) wouldn't suppress the
+  # bundle from being LOADED; the simplest reliable skip is to physically
+  # remove the bundle dir from the tmpdir copy before kuttl runs.
+  rm -rf "$TMP_BUNDLE/tests/07-multi-pc-isolation" "$TMP_BUNDLE/tests/07b-invalid-pc-kind"
+fi
+
 echo "[e2e] running kuttl test bundle from $TMP_BUNDLE"
 set +e
-$KUTTL test --config "$TMP_BUNDLE/kuttl-test.yaml"
+$KUTTL test --config "$TMP_BUNDLE/kuttl-test.yaml" "${KUTTL_ARGS[@]}"
 KUTTL_RC=$?
 set -e
 report_orphans

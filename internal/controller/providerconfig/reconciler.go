@@ -54,7 +54,7 @@ func setupNamespaced(mgr manager.Manager, l logging.Logger) error {
 
 	r := providerconfig.NewReconciler(mgr, of,
 		providerconfig.WithLogger(l.WithValues("controller", name)),
-		providerconfig.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
+		providerconfig.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name) /*nolint:staticcheck*/)),
 	)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -75,7 +75,7 @@ func setupCluster(mgr manager.Manager, l logging.Logger) error {
 
 	r := providerconfig.NewReconciler(mgr, of,
 		providerconfig.WithLogger(l.WithValues("controller", name)),
-		providerconfig.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
+		providerconfig.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name) /*nolint:staticcheck*/)),
 	)
 
 	return ctrl.NewControllerManagedBy(mgr).

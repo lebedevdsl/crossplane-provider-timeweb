@@ -36,7 +36,8 @@ var (
 	GroupVersion = schema.GroupVersion{Group: Group, Version: Version}
 
 	// SchemeBuilder collects type registration funcs for this group.
-	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
+	// SA1019: see apis/containerregistry/v1alpha1/groupversion_info.go.
+	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion} //nolint:staticcheck // SA1019 — see CR groupversion_info
 
 	// AddToScheme registers every kind in this package with the supplied
 	// runtime.Scheme.

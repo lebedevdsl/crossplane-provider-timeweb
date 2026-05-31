@@ -172,6 +172,17 @@ func TestRegistryObserve(t *testing.T) {
 		}
 	})
 
+	t.Run("TerminalError", func(t *testing.T) {
+		fakeTW := &timeweb.FakeClient{}
+		fakeTW.GetRegistryReturns(httpResp(http.StatusForbidden, `{"error_code":"forbidden","message":"denied"}`), nil)
+		e := newExternal(fakeTW, nil)
+		_, err := e.Observe(ctx, newRegistry(1047, 5))
+		var apiErr *timeweb.APIError
+		if !errors.As(err, &apiErr) {
+			t.Fatalf("err = %v, want *APIError", err)
+		}
+	})
+
 	t.Run("CredentialsFallback_EndpointOnly", func(t *testing.T) {
 		// When the controller can't derive credentials (e.g. apiToken
 		// stripped — the future-state path after Timeweb ships a real
@@ -239,6 +250,16 @@ func TestRegistryCreate(t *testing.T) {
 			t.Fatalf("err = %v, want *APIError", err)
 		}
 	})
+
+	t.Run("TransientError", func(t *testing.T) {
+		fakeTW := &timeweb.FakeClient{}
+		fakeTW.CreateRegistryReturns(httpResp(http.StatusServiceUnavailable, ""), nil)
+		e := newExternal(fakeTW, map[int64]int64{5: 1939})
+		_, err := e.Create(ctx, newRegistry(0, 5))
+		if !errors.Is(err, timeweb.ErrTransient) {
+			t.Errorf("err = %v, want transient", err)
+		}
+	})
 }
 
 func TestRegistryUpdate(t *testing.T) {
@@ -253,6 +274,39 @@ func TestRegistryUpdate(t *testing.T) {
 		_, err := e.Update(ctx, cr)
 		if !errors.Is(err, shared.ErrImmutableFieldChange) {
 			t.Fatalf("err = %v, want ErrImmutableFieldChange", err)
+		}
+	})
+
+	t.Run("NotFound_OnInitialGET", func(t *testing.T) {
+		fakeTW := &timeweb.FakeClient{}
+		fakeTW.GetRegistryReturns(httpResp(http.StatusNotFound, ""), nil)
+		e := newExternal(fakeTW, nil)
+		_, err := e.Update(ctx, newRegistry(1047, 5))
+		if !errors.Is(err, timeweb.ErrNotFound) {
+			t.Errorf("err = %v, want ErrNotFound (from initial GET)", err)
+		}
+	})
+
+	t.Run("TransientError", func(t *testing.T) {
+		fakeTW := &timeweb.FakeClient{}
+		fakeTW.GetRegistryReturns(httpResp(http.StatusOK, sampleRegistryJSON), nil)
+		fakeTW.UpdateRegistryReturns(httpResp(http.StatusGatewayTimeout, ""), nil)
+		e := newExternal(fakeTW, map[int64]int64{5: 1939})
+		_, err := e.Update(ctx, newRegistry(1047, 5))
+		if !errors.Is(err, timeweb.ErrTransient) {
+			t.Errorf("err = %v, want transient", err)
+		}
+	})
+
+	t.Run("TerminalError", func(t *testing.T) {
+		fakeTW := &timeweb.FakeClient{}
+		fakeTW.GetRegistryReturns(httpResp(http.StatusOK, sampleRegistryJSON), nil)
+		fakeTW.UpdateRegistryReturns(httpResp(http.StatusUnauthorized, `{"error_code":"unauthorized","message":"bad token"}`), nil)
+		e := newExternal(fakeTW, map[int64]int64{5: 1939})
+		_, err := e.Update(ctx, newRegistry(1047, 5))
+		var apiErr *timeweb.APIError
+		if !errors.As(err, &apiErr) {
+			t.Fatalf("err = %v, want *APIError", err)
 		}
 	})
 
@@ -292,6 +346,27 @@ func TestRegistryDelete(t *testing.T) {
 		e := newExternal(fakeTW, nil)
 		if _, err := e.Delete(ctx, newRegistry(1047, 5)); err != nil {
 			t.Errorf("Delete on already-gone: %v, want nil", err)
+		}
+	})
+
+	t.Run("TransientError", func(t *testing.T) {
+		fakeTW := &timeweb.FakeClient{}
+		fakeTW.DeleteRegistryReturns(httpResp(http.StatusInternalServerError, ""), nil)
+		e := newExternal(fakeTW, nil)
+		_, err := e.Delete(ctx, newRegistry(1047, 5))
+		if !errors.Is(err, timeweb.ErrTransient) {
+			t.Errorf("err = %v, want transient", err)
+		}
+	})
+
+	t.Run("TerminalError", func(t *testing.T) {
+		fakeTW := &timeweb.FakeClient{}
+		fakeTW.DeleteRegistryReturns(httpResp(http.StatusForbidden, `{"error_code":"forbidden","message":"denied"}`), nil)
+		e := newExternal(fakeTW, nil)
+		_, err := e.Delete(ctx, newRegistry(1047, 5))
+		var apiErr *timeweb.APIError
+		if !errors.As(err, &apiErr) {
+			t.Fatalf("err = %v, want *APIError", err)
 		}
 	})
 }

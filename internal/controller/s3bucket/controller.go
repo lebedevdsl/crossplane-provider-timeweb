@@ -33,11 +33,11 @@ import (
 // Setup registers the S3Bucket controller with mgr.
 func Setup(mgr manager.Manager, l logging.Logger, pollInterval time.Duration) error {
 	name := managed.ControllerName(objectstoragev1alpha1.S3BucketGroupVersionKind.String())
-	recorder := mgr.GetEventRecorderFor(name)
+	recorder := mgr.GetEventRecorderFor(name) /*nolint:staticcheck*/
 
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(objectstoragev1alpha1.S3BucketGroupVersionKind),
-		managed.WithExternalConnecter(&connector{
+		managed.WithExternalConnector(&connector{
 			kube: mgr.GetClient(),
 			usage: resource.NewProviderConfigUsageTracker(mgr.GetClient(),
 				&apisv1alpha1.ProviderConfigUsage{}),

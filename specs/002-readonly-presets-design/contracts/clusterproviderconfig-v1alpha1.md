@@ -52,9 +52,8 @@ Standard `xpv1.ProviderConfigStatus`:
 
 ## Relationships
 
-- Referenced by:
-  - Namespaced MRs (via the dual-reference fallback: when no same-namespace `ProviderConfig` matches the MR's `spec.providerConfigRef.name`, the runtime looks up a `ClusterProviderConfig` by the same name).
-  - Cluster-scoped MRs (none in this feature; future-facing).
+- Referenced by any MR (namespaced or cluster-scoped) whose `spec.providerConfigRef.kind` is `ClusterProviderConfig` (also the crossplane-runtime v2 default when `kind` is omitted, so MVP MR manifests that don't set `kind` resolve here automatically). Per the 2026-05-31 upstream-alignment clarification (spec.md §Clarifications), there is NO silent fallback from `kind: ProviderConfig` to `kind: ClusterProviderConfig` — operator selects via `kind` explicitly.
+- Shares the single `ProviderConfigSpec` shape with the namespaced `ProviderConfig` sibling; `spec.credentials.secretRef.namespace` is required on this kind (no PC-namespace default since the PC is cluster-scoped).
 
 ## Migration from MVP
 
@@ -65,7 +64,7 @@ The MVP shipped a cluster-scoped kind also named `ProviderConfig`. This feature:
 
 Per the spec's Assumptions, the MVP has no external consumers; operators reapply existing `ProviderConfig` manifests in the new shape (changing `kind: ProviderConfig` → `kind: ClusterProviderConfig`). No conversion webhook is shipped.
 
-Existing `Project` and `SshKey` MRs in clusters running the MVP keep their `spec.providerConfigRef.name` unchanged; the runtime dual-reference logic resolves the name against the renamed `ClusterProviderConfig`.
+Existing `Project` and `SshKey` MRs in clusters running the MVP keep their `spec.providerConfigRef.name` unchanged; since they omit `kind`, the crossplane-runtime v2 default (`ClusterProviderConfig`) resolves the name against the renamed kind automatically. MRs that wish to point at a namespaced PC must explicitly set `kind: ProviderConfig` on their `providerConfigRef`.
 
 ## Conditions emitted
 

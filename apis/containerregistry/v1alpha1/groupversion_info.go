@@ -31,7 +31,12 @@ var (
 	// GroupVersion is the GroupVersion exposed by this API.
 	GroupVersion = schema.GroupVersion{Group: Group, Version: Version}
 	// SchemeBuilder collects type registration funcs for this group.
-	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
+	// SA1019 — controller-runtime's scheme.Builder is "deprecated" with
+	// the suggestion to use the apimachinery SchemeBuilder directly. That
+	// migration is consistent across all api packages and pending a
+	// project-wide PR; for now this is the established pattern across
+	// every Crossplane v2 provider.
+	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion} //nolint:staticcheck // SA1019 — see comment above
 	// AddToScheme registers every kind in this package.
 	AddToScheme = SchemeBuilder.AddToScheme
 )

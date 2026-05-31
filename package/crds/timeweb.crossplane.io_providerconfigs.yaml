@@ -31,10 +31,11 @@ spec:
       openAPIV3Schema:
         description: |-
           ProviderConfig is the namespaced configuration for the Timeweb Crossplane
-          provider. Managed resources in the same namespace reference one of these
-          via `spec.providerConfigRef: { kind: ProviderConfig, name: <pc> }`. For
-          a cluster-scoped alternative (used when an MR has no same-namespace PC),
-          see `ClusterProviderConfig`.
+          provider. Managed resources in the same namespace reference one via
+          `spec.providerConfigRef: { kind: ProviderConfig, name: <pc> }`. For the
+          cluster-scoped alternative see `ClusterProviderConfig`. There is no
+          silent fallback between the two — `spec.providerConfigRef.kind` is the
+          sole switch (per 2026-05-31 upstream-alignment clarification).
         properties:
           apiVersion:
             description: |-
@@ -56,7 +57,12 @@ spec:
           spec:
             description: |-
               ProviderConfigSpec configures the Timeweb Cloud connection used by every
-              managed resource in the same namespace that references this ProviderConfig.
+              managed resource that references this ProviderConfig. The exact same
+              `ProviderConfigSpec` type backs both the namespaced `ProviderConfig` and
+              the cluster-scoped `ClusterProviderConfig` per the 2026-05-31
+              upstream-alignment clarification — matches the single-Spec shape used by
+              `crossplane-contrib/provider-kubernetes` /
+              `crossplane-contrib/provider-helm` / `crossplane-contrib/provider-upjet-azure`.
               See `contracts/providerconfig-namespaced-v1alpha1.md`.
             properties:
               credentials:
@@ -65,12 +71,21 @@ spec:
                   `Secret` source is supported in v0.1 (FR-003).
                 properties:
                   secretRef:
-                    description: SecretRef points at a Secret in the PC's own namespace.
+                    description: SecretRef points at a Secret holding the Timeweb
+                      API token.
                     properties:
                       key:
+                        description: Key within the Secret that holds the Timeweb
+                          API token.
                         type: string
                       name:
-                        description: Name of the secret.
+                        description: Name of the Secret holding the Timeweb API token.
+                        type: string
+                      namespace:
+                        description: |-
+                          Namespace of the Secret. Optional on `ProviderConfig` (defaults to
+                          the PC's own namespace at controller-resolve time). Required on
+                          `ClusterProviderConfig`.
                         type: string
                     required:
                     - key

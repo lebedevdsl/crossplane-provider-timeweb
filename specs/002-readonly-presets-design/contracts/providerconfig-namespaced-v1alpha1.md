@@ -51,8 +51,8 @@ Standard `xpv1.ProviderConfigStatus`:
 
 ## Relationships
 
-- Same-namespace MRs (Project, SshKey, ContainerRegistry, S3Bucket, future Server / KubernetesCluster / KubernetesNodeGroup) reference this kind via `spec.providerConfigRef: { name: <pc> }`.
-- Cluster-scoped fallback: if a same-namespace `ProviderConfig` does not exist, the runtime falls back to a `ClusterProviderConfig` matching the same `spec.providerConfigRef.name`.
+- Same-namespace MRs (Project, SshKey, ContainerRegistry, S3Bucket, future Server / KubernetesCluster / KubernetesNodeGroup) reference this kind via `spec.providerConfigRef: { kind: ProviderConfig, name: <pc> }`. Setting `kind` is required to select this kind; if `kind` is omitted, the runtime defaults to `ClusterProviderConfig` (per FR-001 post-upstream-alignment clarification — no silent fallback in either direction).
+- This kind shares the single `ProviderConfigSpec` shape with `ClusterProviderConfig` (`xpv1.CommonCredentialSelectors` with full `SecretRef{name, namespace, key}`). When `spec.credentials.secretRef.namespace` is omitted on this kind, the controller defaults it to the PC's own namespace at lookup time. Cross-namespace Secret references are NOT supported on this kind — set `kind: ClusterProviderConfig` if you need them.
 
 ## Conditions emitted
 

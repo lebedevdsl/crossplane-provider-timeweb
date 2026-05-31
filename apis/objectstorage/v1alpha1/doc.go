@@ -14,7 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1alpha1 contains the S3Bucket managed-resource API.
+// Package v1alpha1 contains the S3Bucket managed-resource API for
+// Timeweb's S3-compatible object storage. Sizing is preset-only via
+// the `initialSizeGB` enum (CEL-constrained to 1 / 10 / 100 / 250);
+// `storageClass` is a free MR-level field (`hot` | `cold`). See
+// `docs/presets.md` for the full operator surface.
 //
 // +kubebuilder:object:generate=true
 // +groupName=objectstorage.m.timeweb.crossplane.io

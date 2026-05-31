@@ -62,13 +62,13 @@ type ContainerRegistryRepositoryObservation struct {
 // ContainerRegistryRepositorySpec is the desired state.
 type ContainerRegistryRepositorySpec struct {
 	xpv2.ManagedResourceSpec `json:",inline"`
-	ForProvider       ContainerRegistryRepositoryParameters `json:"forProvider"`
+	ForProvider              ContainerRegistryRepositoryParameters `json:"forProvider"`
 }
 
 // ContainerRegistryRepositoryStatus is the observed state.
 type ContainerRegistryRepositoryStatus struct {
 	xpv2.ManagedResourceStatus `json:",inline"`
-	AtProvider          ContainerRegistryRepositoryObservation `json:"atProvider,omitempty"`
+	AtProvider                 ContainerRegistryRepositoryObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

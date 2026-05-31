@@ -39,11 +39,11 @@ type SetupOptions struct {
 // SetupRegistry registers the ContainerRegistry controller.
 func SetupRegistry(mgr manager.Manager, l logging.Logger, opts SetupOptions) error {
 	name := managed.ControllerName(cregv1alpha1.ContainerRegistryGroupVersionKind.String())
-	recorder := mgr.GetEventRecorderFor(name)
+	recorder := mgr.GetEventRecorderFor(name) /*nolint:staticcheck*/
 
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(cregv1alpha1.ContainerRegistryGroupVersionKind),
-		managed.WithExternalConnecter(&registryConnector{
+		managed.WithExternalConnector(&registryConnector{
 			kube: mgr.GetClient(),
 			usage: resource.NewProviderConfigUsageTracker(mgr.GetClient(),
 				&apisv1alpha1.ProviderConfigUsage{}),
@@ -65,11 +65,11 @@ func SetupRegistry(mgr manager.Manager, l logging.Logger, opts SetupOptions) err
 // SetupRepository registers the ContainerRegistryRepository controller.
 func SetupRepository(mgr manager.Manager, l logging.Logger, opts SetupOptions) error {
 	name := managed.ControllerName(cregv1alpha1.ContainerRegistryRepositoryGroupVersionKind.String())
-	recorder := mgr.GetEventRecorderFor(name)
+	recorder := mgr.GetEventRecorderFor(name) /*nolint:staticcheck*/
 
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(cregv1alpha1.ContainerRegistryRepositoryGroupVersionKind),
-		managed.WithExternalConnecter(&repositoryConnector{
+		managed.WithExternalConnector(&repositoryConnector{
 			kube: mgr.GetClient(),
 			usage: resource.NewProviderConfigUsageTracker(mgr.GetClient(),
 				&apisv1alpha1.ProviderConfigUsage{}),

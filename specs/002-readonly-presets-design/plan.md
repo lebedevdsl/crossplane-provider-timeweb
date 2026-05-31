@@ -1,94 +1,66 @@
 # Implementation Plan: Internal Catalog Resolution & ProviderConfig Scoping
 
-**Branch**: `002-readonly-presets-design` | **Date**: 2026-05-31 (respec) | **Spec**: [spec.md](./spec.md)
+**Branch**: `002-readonly-presets-design` | **Date**: 2026-05-31 | **Spec**: [./spec.md](./spec.md)
 
-**Input**: Feature specification from `specs/002-readonly-presets-design/spec.md`
+**Input**: Feature specification from `/specs/002-readonly-presets-design/spec.md`
 
 ## Summary
 
-This feature does three coordinated things on top of the MVP scaffolding (`001-mvp-scaffolding`):
+Three intertwined refactors to the Timeweb Crossplane provider, bundled because every MR touched by one is touched by the others:
 
-1. **Refactors `ContainerRegistry` and `S3Bucket` MRs** to expose a stable, human-meaningful `forProvider` shape: every sizing block is `presetName: <string-slug>` XOR `resources: { location, diskGB, … kind-specific stable fields }`, enforced by a CEL `oneOf` rule. Neither `preset_id` nor `configurator_id` ever appears in operator YAML; both are derived by the controller and recorded only in `status.atProvider`.
-2. **Removes the catalog-as-CRDs surface entirely.** The MVP-era `ContainerRegistryPreset` CRD and its `manager.Runnable` poller (`internal/controller/containerregistry/preset_reconciler.go`) are deleted. Catalog data becomes an internal concern: a process-local TTL cache keyed by `(providerConfigRef, dimension)` plus a single resolver primitive used by every consuming MR. The resolver handles three dimension kinds — **preset**, **configurator**, **enum** — so the future `KubernetesCluster` + `KubernetesNodeGroup` MRs need zero new resolver plumbing (just new dimension declarations).
-3. **Splits `ProviderConfig` into a namespaced/cluster-scoped pair** (`ProviderConfig` namespaced, `ClusterProviderConfig` cluster-scoped). Existing controllers (`Project`, `SshKey`) and the refactored MRs accept either via the Crossplane v2 dual-reference convention on `spec.providerConfigRef`.
+1. **Drop catalog-as-CRDs.** Remove the MVP's `ContainerRegistryPreset` kind + its `manager.Runnable` timer loop. Move catalog reads into the MR controllers' reconcile path, behind a shared in-process TTL cache keyed by `(ProviderConfigRef, dimension)` with singleflight coalescing. Three dimension kinds: `preset` (slug → upstream ID), `configurator` (sizing → upstream ID via filter+rank), `enum` (membership check on a finite upstream set).
+2. **Refactor MR sizing.** `ContainerRegistry` and `S3Bucket` drop raw `preset_id` / `configuration` fields. Operators size via a single integer enum `initialSizeGB` constrained to the published tariff tiers (CR: `5,10,25,50,75,100`; S3: `1,10,100,250`) plus optional `location` and (S3) `storageClass`. Controller resolves to an upstream `preset_id` and records `status.atProvider.lockedPresetID`. The original respec specified `presetName XOR resources`; subsequent clarifications ([spec.md → Clarifications → upstream-alignment simplifications](./spec.md#clarifications) + the dashboard-tier conversation captured in the 2026-05-31 enum-only pivot) collapsed it to enum-only because S3/CR have no configurator endpoint and named slugs add no operator value over typing the size.
+3. **Split ProviderConfig by scope.** Publish a namespaced `ProviderConfig` AND a cluster-scoped `ClusterProviderConfig` (renamed from the MVP's single PC). Per the 2026-05-31 upstream-alignment clarifications, both kinds share **one** `ProviderConfigSpec` shape; the namespaced PC defaults the secret's namespace to its own at lookup time. No silent dual-reference fallback — `spec.providerConfigRef.kind` is the sole switch.
 
-The MVP code on `main` has no external consumers (per the spec's Assumptions), so the refactor reapplies-manifests-in-new-shape rather than ships conversion shims. Downstream artifacts in this directory previously described a catalog-as-CRDs design that was respec'd away on 2026-05-31; this plan and its companion files supersede them.
+The K8s feature (next milestone) is forward-compat-only here: the resolver primitive's dimension registry exposes the `KubernetesMaster|WorkerPreset`, `KubernetesVersion`, `KubernetesNetworkDriver`, `AvailabilityZone`, `ServerConfigurator` slots with stub fetchers so the registry can't drift before the K8s feature lands.
 
 ## Technical Context
 
-**Language/Version**: Latest stable Go (currently 1.26). Same policy as `001-mvp-scaffolding/plan.md`: `go.mod` tracks stable; CI uses `actions/setup-go` with `go-version: 'stable'`.
+**Language/Version**: Go (latest stable tracked by `go.mod`); regenerated client + DeepCopy via `make generate`.
 
-**Primary Dependencies** — *the v1→v2 runtime swap is part of this feature's Phase 1 (T002) per the 2026-05-31 spike result in research.md §R-2; the MVP's v1 module imports do not survive*:
-- `github.com/crossplane/crossplane-runtime/v2` (v2.3.1) — v2 module path. Provides the v2 Managed interface split (`ModernManaged` for namespaced MRs, `LegacyManaged` for cluster-scoped), the dual-PC `resource.ProviderConfigKinds` struct, and the `providerconfig.NewReconciler` taking that struct.
-- `github.com/crossplane/crossplane/apis/v2` (pseudo-version pinned by the v2 runtime) — supplies the `xpv2` type set (`xpv2.ManagedResourceSpec`, `xpv2.ConditionedStatus`, `xpv2.ProviderConfigReference{Kind}`, etc.). Replaces the now-deleted `apis/common/v1` package the MVP imported as `xpv1`.
-- `sigs.k8s.io/controller-runtime` v0.23.x (bumped from MVP v0.19.0; v2 runtime requires v0.23.1).
-- `k8s.io/api`, `k8s.io/apimachinery`, `k8s.io/client-go` — bumped from v0.31.0 → v0.35.x (v2 runtime requires v0.35.1).
-- `sigs.k8s.io/controller-tools` (`controller-gen`) — bumped from v0.16.0 → v0.20.0 alongside the K8s API bump. Build-time only.
-- `github.com/oapi-codegen/oapi-codegen/v2` — vendored Timeweb HTTP client generator (unchanged from MVP).
-- `sigs.k8s.io/controller-tools` (`controller-gen`) — DeepCopy + CRD YAML emission from kubebuilder annotations.
-- `golang.org/x/time/rate` — token-bucket rate limiter shared across the HTTP client (unchanged from MVP; used by the resolver to avoid hammering Timeweb on cache misses).
-- `golang.org/x/sync/singleflight` — coalesces concurrent catalog fetches for the same `(providerConfigRef, dimension)` key (FR-011). New runtime dependency in this feature; standard library-adjacent and already part of the Go ecosystem.
+**Primary Dependencies**:
+- `github.com/crossplane/crossplane-runtime/v2` v2.3.1 — modern namespaced MR runtime, `xpv2.ManagedResourceSpec`, `resource.ModernTracker`.
+- `github.com/crossplane/crossplane/apis/v2/core/v2` v2.0.0-20260424160951-8f231230ebb6 — `xpv2` type set.
+- `k8s.io/{api,apimachinery,client-go}` v0.35.x; `sigs.k8s.io/controller-runtime` v0.23.x; `controller-tools` v0.20.x.
+- `github.com/oapi-codegen/oapi-codegen/v2` — Timeweb client generation from `docs/openapi-timeweb.json`.
+- `golang.org/x/sync` (singleflight) — already indirect via runtime; flips direct once the resolver imports it.
+- `golangci-lint v2.x` — invoked through `go run` from `hack/tools.go` (no host install per `project_go_tooling_policy` memory).
+- `kubectl-kuttl` — pinned via `hack/tools.go`, invoked via `go run` for e2e.
 
-**Build/CI tooling**: `golangci-lint` (via `go run` from `hack/tools.go` per the project memo), `controller-gen`, `oapi-codegen`, `counterfeiter` for fakes, `kuttl` for end-to-end tests, `cosign` for image signing. All unchanged from MVP.
-
-**Storage**: None of the feature's own. The resolver cache is process-local; nothing persists outside Kubernetes objects.
+**Storage**: None at the provider layer. Catalog cache is in-process per controller instance. Operator-facing state lives in Kubernetes (CRDs) and Timeweb (upstream resources).
 
 **Testing**:
-- Unit tests via `go test` per constitution §III's four-case rule for every `external` client method touched (refactored `ContainerRegistry`, refactored `S3Bucket`) and for the resolver itself (resolve-hit, resolve-miss-then-fetch, unauthorized, stale-cache-invalidation, coalesce).
-- A fake Timeweb API client (generated by `counterfeiter` over the OpenAPI-derived interface) backs every unit test. No live HTTP.
-- e2e tests via `kuttl` for: namespaced-ProviderConfig flow, MR with `resources` flow, MR with `presetName` flow, sizing-switch-rejection flow, multi-PC isolation flow. e2e tests live under `test/e2e/`; they exercise a real cluster + the vendored fake against the Timeweb API stub.
+- Unit: `go test` against fake Timeweb client (`internal/clients/timeweb/fake.go` generated by `counterfeiter` style hand-roll). Constitution §III requires Success / NotFound / Transient / Terminal per external method.
+- E2E: `kuttl` test bundle running on a k3d cluster with a local image registry. Single env var input: `TIMEWEB_CLOUD_TOKEN`. Optional `TIMEWEB_E2E_TOKEN` enables the multi-PC isolation bundle (US3).
 
-**Target Platform**: Linux containers, run inside Kubernetes 1.27+ (the minimum supported by `crossplane-runtime` at the tracked version). Same as MVP.
+**Target Platform**: Linux containers (provider runtime); Kubernetes 1.27+ control planes (CRD CEL features required).
 
-**Project Type**: Kubernetes controller / Crossplane v2 provider.
+**Project Type**: Crossplane v2 provider — single Go module.
 
 **Performance Goals**:
-- At most one upstream catalog GET per `(providerConfigRef, dimension)` per TTL window (SC-004). Coalesced concurrent reconciles MUST share an in-flight fetch.
-- TTL default 5 minutes; resolver cache lookups are O(1) hash by `(providerConfigRef, dimension)` then linear scan over the entry list (which is small — typically 5–50 entries per dimension).
-- Resolver overhead on a warm cache hit MUST be < 1ms per reconcile (well below typical Kubernetes reconcile budgets); on a cold miss the budget is dominated by the upstream Timeweb RTT.
+- SC-004 — at most one upstream catalog GET per `(PCRef, dimension)` per TTL window under 50 concurrent reconciles against one PC.
+- Default reconcile poll interval: 60s (controller flag, kept at default).
 
 **Constraints**:
-- No persistent state outside Kubernetes objects (constitution §II Idempotent Reconciliation — cache is rebuilt on restart from upstream).
-- No new fields on `Project` or `SshKey` MRs — they only gain dual-reference support on `providerConfigRef`.
-- The xpkg package can only contain CRDs, MRDs, and webhook configurations (per the `xpkg lint allow-list` memo); the `oneOf` enforcement is a CEL rule on the CRD, not a `ValidatingAdmissionPolicy` and not an external webhook in `package/`.
-- The Timeweb error classification, immutable-field inventory, and external-name conventions from `001-mvp-scaffolding/research.md` (R-2, R-3, R-4) carry forward unchanged.
+- Constitution §I — CRDs evolve additively post-v1beta1. Currently `v1alpha1`, so freely revisable.
+- Constitution §II — `Observe` is read-only, all writes idempotent, errors classified transient/terminal.
+- Constitution §III — every `external` method ships with the four-case test pattern.
+- xpkg lint allow-list — `package/` holds CRDs/MRDs/webhook configs only (per `project_xpkg_allowed_kinds` memory). Operator-facing extras (ValidatingAdmissionPolicy, RBAC, Helm) live under `deploy/`.
 
-**Scale/Scope**: Designed for small-to-medium platform teams: O(1)–O(10) `ProviderConfig`s per cluster, O(10)–O(100) MRs per `ProviderConfig`. SC-004's "50 MRs reconciling within one minute" is the tested-load benchmark, not a hard ceiling.
+**Scale/Scope**: Small provider (~5 MR kinds), single-process deployment, one upstream API.
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-The constitution (v1.0.0) has three core principles. Each evaluated against this feature:
+| Principle | Verdict | Notes |
+|-----------|---------|-------|
+| I. CRD Contract Stability | ✓ PASS | All CRDs are `v1alpha1`; the schema rewrites (`initialSizeGB`, single `ProviderConfigSpec`, dropped `lockedConfiguratorID`) are pre-stable evolutions. Constitution §I activates at `v1beta1`. |
+| II. Idempotent Reconciliation | ✓ PASS | The resolver runs inside `Observe`/`Create`/`Update` — a stateless function of inputs + the cached catalog snapshot. PC kind switch (post-upstream-alignment) errors clearly via `InvalidProviderConfigRef`, no orphan-creating fallbacks. `Observe` stays read-only; the cache is the only side effect and is process-local. |
+| III. Controller Test Discipline | ✓ PASS | Four-case audit complete for `s3bucket` + `containerregistry` (T060). Resolver primitive and `ResolveToken` helper get the same treatment as part of US3 work. |
+| Complexity tracking | ✓ EMPTY | All bundled changes are justified by the spec's user stories. The dual-PC pair, dual `*Usage` pair, and forward-compat K8s dimensions are all upstream-idiomatic (provider-kubernetes/helm/azure precedent; documented in research.md). |
 
-### I. CRD Contract Stability (NON-NEGOTIABLE)
-
-**Status**: PASS with documented break.
-
-The feature removes the MVP `ContainerRegistryPreset` CRD and restructures `ContainerRegistry` and `S3Bucket` `forProvider` shapes. Both kinds are at `v1alpha1`; the principle's stability rule kicks in at `v1beta1`. The `v1alpha1` API is explicitly mutable, so removal/restructure is permitted. The spec records that "the MVP code shipped on `main` has no external consumers — removing the `ContainerRegistryPreset` CRD and the `preset_reconciler.go` `Runnable`, and replacing the MVP MR shape, do not require backwards-compatibility shims."
-
-What this plan still owes the principle:
-- `apis/`-side type changes MUST regenerate `zz_generated_deepcopy.go`, `managed.go` helpers, and CRD YAML manifests under `package/` in the same PR.
-- A subsequent release that flips the refactored MRs from `v1alpha1` to `v1beta1` MUST follow the principle's deprecation cycle from that point forward.
-
-### II. Idempotent, Side-Effect-Aware Reconciliation
-
-**Status**: PASS.
-
-- The resolver is read-only on Timeweb (`GET`s only) and stateful only via the process-local cache; no side effects.
-- The MR `Observe` paths continue to be read-only; lock fields in `status.atProvider` are derived and updated, not authoritative for upstream state.
-- `Create` paths use the locked ID once derived; re-invocations on transient failure consult the locked ID and do not re-derive (preventing accidental drift across two GETs that observed catalog churn between them).
-- Errors from Timeweb are classified per `001-mvp-scaffolding/research.md` R-3 (transient → requeue; terminal → `Synced=False` with reason). Resolver-specific reasons (`PresetNotFound`, `PresetAmbiguous`, `NoConfiguratorAvailable`, `CatalogUnauthorized`, `<Dimension>NotFound`, `SizingSwitchRequiresRecreate`) extend that vocabulary without changing the classification semantics.
-
-### III. Controller Test Discipline
-
-**Status**: PASS, with explicit coverage commitments in `tasks.md` (Phase 2, generated by `/speckit-tasks`).
-
-- Every refactored `external` client method (`ContainerRegistry.Create/Update/Delete/Observe`, `S3Bucket.Create/Update/Delete/Observe`) gets unit tests covering: success, resource-not-found, transient error, terminal error. (Existing MVP test files are augmented, not replaced.)
-- The new `internal/controller/shared/resolver` package ships unit tests covering: cache hit, cache miss → fetch → store, concurrent miss coalesced into one fetch, upstream 401/403, upstream 5xx with retry, stale-cache invalidation after upstream 4xx on a previously-cached entry, enum dimension lookup hit, enum dimension unknown-value.
-- A fake Timeweb client (regenerated by `counterfeiter` over the existing OpenAPI-derived interface) backs every test; no live HTTP.
-
-**No complexity-budget violations.** Nothing to record in Complexity Tracking.
+**Re-check after Phase 1**: still PASS. The upstream-alignment simplifications (single shared `ProviderConfigSpec`, no dual-reference fallback) actively reduce complexity rather than add it.
 
 ## Project Structure
 
@@ -96,148 +68,83 @@ What this plan still owes the principle:
 
 ```text
 specs/002-readonly-presets-design/
-├── plan.md              # This file (/speckit-plan output)
-├── spec.md              # Feature specification (updated by /speckit-specify + /speckit-clarify)
-├── research.md          # Phase 0 output (/speckit-plan)
-├── data-model.md        # Phase 1 output (/speckit-plan)
-├── quickstart.md        # Phase 1 output (/speckit-plan)
-├── contracts/           # Phase 1 output (/speckit-plan)
-│   ├── providerconfig-namespaced-v1alpha1.md
-│   ├── clusterproviderconfig-v1alpha1.md
-│   ├── containerregistry-refactor-v1alpha1.md
-│   ├── s3bucket-refactor-v1alpha1.md
-│   └── resolver-internal.md
-├── checklists/          # /speckit-specify output (already exists)
-└── tasks.md             # Phase 2 output (/speckit-tasks — NOT created here)
+├── plan.md                                          # This file
+├── spec.md                                          # Feature spec (updated 2026-05-31)
+├── research.md                                      # Phase 0 — decisions + alternatives
+├── data-model.md                                    # Phase 1 — entities + lifecycle
+├── quickstart.md                                    # Phase 1 — operator-facing upgrade walkthrough
+├── contracts/
+│   ├── providerconfig-namespaced-v1alpha1.md        # Namespaced PC kind
+│   ├── clusterproviderconfig-v1alpha1.md            # Cluster PC kind
+│   ├── containerregistry-refactor-v1alpha1.md       # CR with initialSizeGB
+│   ├── s3bucket-refactor-v1alpha1.md                # S3 with initialSizeGB
+│   └── resolver-internal.md                         # Internal resolver primitive
+├── tasks.md                                         # Generated by /speckit-tasks
+└── checklists/
+    └── requirements.md                              # Spec quality checklist
 ```
 
 ### Source Code (repository root)
 
 ```text
-apis/
-├── v1alpha1/
-│   ├── providerconfig_types.go            # MODIFIED: split into ProviderConfig (namespaced)
-│   ├── clusterproviderconfig_types.go     # NEW: cluster-scoped, renamed from MVP ProviderConfig
-│   ├── providerconfigusage_types.go       # MODIFIED: dual-scope ProviderConfigUsage variants
-│   ├── managed.go                         # MODIFIED: register both kinds
-│   ├── groupversion_info.go               # unchanged structure; adds new kinds to scheme
-│   ├── zz_generated.deepcopy.go           # REGENERATED
-│   └── doc.go                             # unchanged
-├── containerregistry/v1alpha1/
-│   ├── registry_types.go                  # MODIFIED: forProvider = presetName XOR resources block
-│   ├── repository_types.go                # unchanged
-│   ├── preset_types.go                    # DELETED (ContainerRegistryPreset CRD removed)
-│   ├── managed.go                         # MODIFIED: drop ContainerRegistryPreset bindings
-│   ├── groupversion_info.go               # MODIFIED: deregister preset kind from scheme
-│   ├── zz_generated.deepcopy.go           # REGENERATED
-│   └── doc.go                             # unchanged
-└── objectstorage/v1alpha1/
-    ├── types.go                           # MODIFIED: S3Bucket forProvider = presetName XOR resources block
-    ├── managed.go                         # unchanged
-    ├── groupversion_info.go               # unchanged
-    ├── zz_generated.deepcopy.go           # REGENERATED
-    └── doc.go                             # unchanged
+apis/                                                # Kubernetes API surface (one Go pkg per group)
+├── v1alpha1/                                        # PC + ClusterPC + PCU + ClusterPCU
+│   ├── providerconfig_types.go                      # Single shared ProviderConfigSpec (post-upstream-alignment)
+│   ├── clusterproviderconfig_types.go               # Embeds the same Spec
+│   ├── providerconfigusage_types.go
+│   ├── clusterproviderconfigusage_types.go
+│   └── managed.go                                   # PC accessors (xpv2.TypedProviderConfigReferencer)
+├── containerregistry/v1alpha1/                      # CR + CR Repository (observe-only)
+├── objectstorage/v1alpha1/                          # S3Bucket
+├── project/v1alpha1/                                # Project (carry-forward)
+└── sshkey/v1alpha1/                                 # SshKey (carry-forward)
 
 internal/
-├── clients/
-│   └── timeweb/
-│       └── generated/                     # REGENERATED if openapi-timeweb.json changes; otherwise unchanged
-└── controller/
-    ├── shared/
-    │   ├── …                              # existing shared helpers (unchanged)
-    │   └── resolver/                      # NEW package
-    │       ├── resolver.go                # public Resolve(ctx, pcRef, dim, key) entrypoint
-    │       ├── cache.go                   # (providerConfigRef, dimension)-keyed cache w/ TTL
-    │       ├── dimensions.go              # dimension registry (preset|configurator|enum) + endpoint table
-    │       ├── singleflight.go            # in-flight coalescing wrapper (uses golang.org/x/sync/singleflight)
-    │       ├── slug.go                    # slug rule <short>-<location>, collision suffix <-id>
-    │       ├── select_configurator.go     # deterministic selection algorithm (FR-007)
-    │       ├── errors.go                  # typed errors mapped to MR conditions
-    │       └── *_test.go                  # constitution §III test set (eight cases per kind)
-    ├── containerregistry/
-    │   ├── connector.go                   # MODIFIED: dual-PC reference resolution
-    │   ├── controller.go                  # MODIFIED: deregister ContainerRegistryPreset controller
-    │   ├── credentials.go                 # unchanged
-    │   ├── preset_reconciler.go           # DELETED (manager.Runnable poller)
-    │   ├── preset_resolver.go             # DELETED (migrated into shared/resolver)
-    │   ├── registry_external.go           # MODIFIED: call shared resolver; record locked IDs in status
-    │   ├── registry_external_test.go      # MODIFIED: covers new resolver-backed paths
-    │   ├── repository_external.go         # unchanged
-    │   └── repository_external_test.go    # unchanged
-    ├── s3bucket/
-    │   ├── …                              # MODIFIED parallel to containerregistry/
-    │   └── s3bucket_external.go (et al.)  # MODIFIED: call shared resolver; record locked IDs
-    ├── providerconfig/
-    │   └── …                              # MODIFIED: register namespaced + cluster-scoped reconcilers
-    ├── project/
-    │   └── …                              # MODIFIED: accept either PC kind via dual-ref
-    └── sshkey/
-        └── …                              # MODIFIED: accept either PC kind via dual-ref
+├── clients/timeweb/                                 # API client wrapper + fake
+│   └── generated/                                   # oapi-codegen output
+├── controller/
+│   ├── containerregistry/                           # CR controller + repo subcontroller
+│   ├── s3bucket/                                    # S3 controller
+│   ├── project/                                     # Carry-forward
+│   ├── sshkey/                                      # Carry-forward
+│   └── shared/                                      # Cross-controller code
+│       ├── pcref.go                                 # ResolveToken — single-switch on PC kind (no fallback)
+│       └── resolver/                                # Catalog resolver primitive
+│           ├── resolver.go
+│           ├── cache.go
+│           ├── dimensions.go                        # Live + forward-compat registrations
+│           ├── slug.go                              # Slug normalization + MatchPresetSlug
+│           ├── match_size.go                        # MatchPresetBySize for initialSizeGB
+│           └── errors.go
 
-package/
-├── crds/                                  # REGENERATED: drop ContainerRegistryPreset CRD;
-│                                          #              add ClusterProviderConfig CRD;
-│                                          #              update ProviderConfig CRD to namespaced;
-│                                          #              update ContainerRegistry + S3Bucket CRDs to new shape;
-│                                          #              CEL oneOf rule on forProvider
-└── crossplane.yaml                        # unchanged structure
+package/                                             # xpkg input — CRDs/MRDs/webhook configs only
+├── crds/
+└── crossplane.yaml
 
-deploy/                                    # No VAP needed (CEL on CRD suffices); existing deploy/ unchanged
+deploy/                                              # Operator-facing extras (out of xpkg)
+├── rbac.yaml
+└── validating-admission-policy.yaml                 # If/when needed
+
+test/e2e/                                            # k3d-based e2e harness
+├── kuttl/tests/
+│   ├── 02-project-import/
+│   ├── 03-sshkey-lifecycle/
+│   ├── 04-s3bucket/
+│   ├── 05-containerregistry/
+│   ├── 06-preset-not-found/
+│   └── 07-multi-pc-isolation/                       # New — uses TIMEWEB_E2E_TOKEN if set
+├── scripts/
+│   ├── kuttl.sh                                     # Single TIMEWEB_CLOUD_TOKEN entrypoint; optional 2nd token
+│   └── cleanup.sh                                   # Standalone make e2e.cleanup (never auto-deletes)
+└── README.md
 
 docs/
-└── presets.md                             # NEW: slug rule, where to find Timeweb's catalog,
-                                           #      presetName vs resources XOR explanation,
-                                           #      locked-sizing behavior (FR-014)
-
-test/
-└── e2e/
-    └── …                                  # NEW + MODIFIED kuttl suites covering acceptance
-                                           # scenarios from spec.md US1/US2/US3
+├── openapi-timeweb.json                             # Vendored upstream schema
+└── presets.md                                       # Operator-facing tier reference
 ```
 
-**Structure Decision**: Existing Go module layout is preserved (no new top-level directories beyond `internal/controller/shared/resolver/`). All work happens in `apis/` (CRD types), `internal/controller/` (reconcilers + new shared resolver), `package/` (regenerated CRD manifests), `docs/` (operator-facing reference), and `test/e2e/` (kuttl suites). The single net-new package is `internal/controller/shared/resolver/`; everything else is modification or deletion of existing files.
-
-## Phase 0 Output: research.md
-
-Companion file: [research.md](./research.md)
-
-Phase 0 resolves the technical-context unknowns and consolidates patterns lifted from the prior catalog-CRDs respec session that survive the simplification:
-
-- R-1 — Resolver primitive design (cache key, TTL, coalescing, dimension kinds)
-- R-2 — Dual-reference handling for `ProviderConfig` / `ClusterProviderConfig` against `crossplane-runtime` v1.20.x
-- R-3 — Removal path for `ContainerRegistryPreset` (CRD deletion, GC of stale CRs, controller deregistration)
-- R-4 — CEL `oneOf` enforcement on `forProvider` (CRD-side validation rule shape, no external admission webhook)
-- R-5 — K8s readiness checklist (the four readonly dimensions K8s Cluster will need, mapped to the resolver kinds in this feature)
-- R-6 — Test strategy (constitution §III four-case rule × refactored MRs × new resolver package)
-
-## Phase 1 Outputs
-
-### data-model.md
-
-Companion file: [data-model.md](./data-model.md)
-
-Captures: the dual-scope ProviderConfig pair, the refactored MR shapes (`ContainerRegistry`, `S3Bucket`), the resolver's internal dimension catalog (preset/configurator/enum kinds, current dimension registrations, forward-compat registrations for K8s).
-
-### contracts/
-
-Per-kind contracts (operator-facing manifest shape, validation, conditions, lifecycle):
-
-- [`providerconfig-namespaced-v1alpha1.md`](./contracts/providerconfig-namespaced-v1alpha1.md) — the new namespaced `ProviderConfig`
-- [`clusterproviderconfig-v1alpha1.md`](./contracts/clusterproviderconfig-v1alpha1.md) — the renamed cluster-scoped `ClusterProviderConfig`
-- [`containerregistry-refactor-v1alpha1.md`](./contracts/containerregistry-refactor-v1alpha1.md) — the refactored `ContainerRegistry` MR
-- [`s3bucket-refactor-v1alpha1.md`](./contracts/s3bucket-refactor-v1alpha1.md) — the refactored `S3Bucket` MR
-- [`resolver-internal.md`](./contracts/resolver-internal.md) — the internal resolver primitive: API, dimension kinds, error mapping
-
-### quickstart.md
-
-Companion file: [quickstart.md](./quickstart.md)
-
-Operator walkthrough: install the new provider release, migrate existing MVP `ProviderConfig` to `ClusterProviderConfig` (or create a new namespaced `ProviderConfig`), reapply `ContainerRegistry` / `S3Bucket` manifests in the new shape, optionally use `presetName` to lock to a named tariff.
-
-### Agent context update
-
-The `CLAUDE.md` pointer between `<!-- SPECKIT START -->` and `<!-- SPECKIT END -->` markers points at `specs/002-readonly-presets-design/plan.md` (this file). No edit needed if it already does; otherwise it's updated in this phase.
+**Structure Decision**: Single Go module, single Crossplane provider. APIs grouped by service (`.m.timeweb.crossplane.io` per `project_crossplane_v2_conventions` memory). PC + Usage kinds in the shared `apis/v1alpha1/` package (per [spec.md Clarifications → upstream-alignment simplifications Q3](./spec.md#clarifications): the upstream `apis/cluster/` + `apis/namespaced/` split is **deferred** as low-confidence cosmetic alignment; reconsider when adding a 3rd PC scope or alongside the K8s feature).
 
 ## Complexity Tracking
 
-No constitution violations to justify. Plan introduces **one** new internal package (`internal/controller/shared/resolver`) and **one** new runtime dependency (`golang.org/x/sync/singleflight`, a standard concurrency primitive). Both are direct, single-purpose additions in service of the spec's stated requirements (FR-006, FR-007, FR-011). Every other change is either a refactor of existing code (with strictly less code afterwards in the `containerregistry` controller — two files deleted) or a regeneration of generated artifacts.
+> Empty — Constitution Check passed without violations. All bundled scope (dual-PC pair, dual *Usage pair, forward-compat K8s dimension registrations) is justified by the user stories in spec.md and by precedent in provider-kubernetes / provider-helm / provider-upjet-azure (cited in research.md).

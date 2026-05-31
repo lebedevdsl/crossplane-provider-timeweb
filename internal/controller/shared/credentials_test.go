@@ -18,6 +18,7 @@ package shared
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 
@@ -30,6 +31,9 @@ import (
 
 	apisv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/v1alpha1"
 )
+
+// Ensure connector test files still compile against the client interface.
+var _ client.Client = (client.Client)(nil)
 
 func newScheme(t *testing.T) *runtime.Scheme {
 	t.Helper()
@@ -50,52 +54,53 @@ func secret(ns, name, key, value string) *corev1.Secret {
 	}
 }
 
-func newPC(ns, name, secretName, secretKey string) *apisv1alpha1.ProviderConfig {
+// newPC builds a namespaced ProviderConfig. secretNS may be empty (operator
+// omitted secretRef.namespace) — the controller defaults it to pcNS.
+func newPC(pcNS, name, secretNS, secretName, secretKey string) *apisv1alpha1.ProviderConfig {
 	return &apisv1alpha1.ProviderConfig{
-		ObjectMeta: metav1.ObjectMeta{Namespace: ns, Name: name},
+		ObjectMeta: metav1.ObjectMeta{Namespace: pcNS, Name: name},
 		Spec: apisv1alpha1.ProviderConfigSpec{
 			Credentials: apisv1alpha1.ProviderCredentials{
-				Source: xpv2.CredentialsSourceSecret,
-				SecretRef: &xpv2.LocalSecretKeySelector{
-					LocalSecretReference: xpv2.LocalSecretReference{Name: secretName},
-					Key:                  secretKey,
-				},
+				Source:    xpv2.CredentialsSourceSecret,
+				SecretRef: &apisv1alpha1.SecretRef{Name: secretName, Namespace: secretNS, Key: secretKey},
 			},
 		},
 	}
 }
 
+// newCPC builds a cluster-scoped ProviderConfig. secretNS is required by
+// the contract; pass "" to exercise the rejection case.
 func newCPC(name, secretNS, secretName, secretKey string) *apisv1alpha1.ClusterProviderConfig {
 	return &apisv1alpha1.ClusterProviderConfig{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec: apisv1alpha1.ClusterProviderConfigSpec{
-			Credentials: apisv1alpha1.ClusterProviderCredentials{
-				Source: xpv2.CredentialsSourceSecret,
-				SecretRef: &xpv2.SecretKeySelector{
-					SecretReference: xpv2.SecretReference{Name: secretName, Namespace: secretNS},
-					Key:             secretKey,
-				},
+		Spec: apisv1alpha1.ProviderConfigSpec{
+			Credentials: apisv1alpha1.ProviderCredentials{
+				Source:    xpv2.CredentialsSourceSecret,
+				SecretRef: &apisv1alpha1.SecretRef{Name: secretName, Namespace: secretNS, Key: secretKey},
 			},
 		},
 	}
 }
 
 func TestResolveToken(t *testing.T) {
-	t.Run("nil pcRef rejected", func(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("nil pcRef rejected as InvalidProviderConfigRef", func(t *testing.T) {
 		k := fake.NewClientBuilder().WithScheme(newScheme(t)).Build()
-		_, _, err := ResolveToken(context.Background(), k, "team-a", nil)
-		if err == nil || !strings.Contains(err.Error(), "spec.providerConfigRef.name is required") {
-			t.Fatalf("err = %v", err)
+		_, _, err := ResolveToken(ctx, k, "team-a", nil)
+		if !errors.Is(err, ErrInvalidProviderConfigRef) {
+			t.Fatalf("err = %v, want ErrInvalidProviderConfigRef", err)
 		}
 	})
 
-	t.Run("namespaced PC resolved by same-namespace lookup", func(t *testing.T) {
+	// (a) kind: ProviderConfig with secret namespace omitted → defaulted
+	t.Run("namespaced PC: omitted secret namespace defaults to PC namespace", func(t *testing.T) {
 		k := fake.NewClientBuilder().WithScheme(newScheme(t)).WithObjects(
-			newPC("team-a", "default", "tw-token", "token"),
+			newPC("team-a", "default", "", "tw-token", "token"),
 			secret("team-a", "tw-token", "token", "abc123"),
 		).Build()
 		ref := &xpv2.ProviderConfigReference{Kind: apisv1alpha1.PCKindNamespaced, Name: "default"}
-		tok, pc, err := ResolveToken(context.Background(), k, "team-a", ref)
+		tok, pc, err := ResolveToken(ctx, k, "team-a", ref)
 		if err != nil {
 			t.Fatalf("err = %v", err)
 		}
@@ -107,13 +112,46 @@ func TestResolveToken(t *testing.T) {
 		}
 	})
 
-	t.Run("empty kind falls back to cluster-scoped when no same-namespace PC", func(t *testing.T) {
+	// (b) kind: ProviderConfig with explicit secret namespace == PC namespace
+	t.Run("namespaced PC: explicit secret namespace equals PC namespace", func(t *testing.T) {
 		k := fake.NewClientBuilder().WithScheme(newScheme(t)).WithObjects(
-			newCPC("default", "crossplane-system", "tw-token", "token"),
+			newPC("team-a", "default", "team-a", "tw-token", "token"),
+			secret("team-a", "tw-token", "token", "abc123"),
+		).Build()
+		ref := &xpv2.ProviderConfigReference{Kind: apisv1alpha1.PCKindNamespaced, Name: "default"}
+		tok, _, err := ResolveToken(ctx, k, "team-a", ref)
+		if err != nil {
+			t.Fatalf("err = %v", err)
+		}
+		if tok != "abc123" {
+			t.Errorf("token = %q, want abc123", tok)
+		}
+	})
+
+	// (c) kind: ProviderConfig with cross-namespace secret → rejected
+	t.Run("namespaced PC: cross-namespace secret rejected", func(t *testing.T) {
+		k := fake.NewClientBuilder().WithScheme(newScheme(t)).WithObjects(
+			newPC("team-a", "default", "kube-system", "tw-token", "token"),
+			secret("kube-system", "tw-token", "token", "abc123"),
+		).Build()
+		ref := &xpv2.ProviderConfigReference{Kind: apisv1alpha1.PCKindNamespaced, Name: "default"}
+		_, _, err := ResolveToken(ctx, k, "team-a", ref)
+		if !errors.Is(err, ErrInvalidProviderConfigRef) {
+			t.Fatalf("err = %v, want ErrInvalidProviderConfigRef", err)
+		}
+		if !strings.Contains(err.Error(), "cross-namespace") {
+			t.Errorf("err message %q should mention cross-namespace", err.Error())
+		}
+	})
+
+	// (d) kind: ClusterProviderConfig with namespace required + present
+	t.Run("cluster PC: explicit namespace + present", func(t *testing.T) {
+		k := fake.NewClientBuilder().WithScheme(newScheme(t)).WithObjects(
+			newCPC("shared", "crossplane-system", "tw-token", "token"),
 			secret("crossplane-system", "tw-token", "token", "cluster-tok"),
 		).Build()
-		ref := &xpv2.ProviderConfigReference{Name: "default"}
-		tok, pc, err := ResolveToken(context.Background(), k, "team-a", ref)
+		ref := &xpv2.ProviderConfigReference{Kind: apisv1alpha1.PCKindCluster, Name: "shared"}
+		tok, pc, err := ResolveToken(ctx, k, "team-a", ref)
 		if err != nil {
 			t.Fatalf("err = %v", err)
 		}
@@ -125,62 +163,104 @@ func TestResolveToken(t *testing.T) {
 		}
 	})
 
-	t.Run("explicit ClusterProviderConfig kind", func(t *testing.T) {
+	// (e) kind: ClusterProviderConfig with namespace empty → rejected
+	t.Run("cluster PC: empty secret namespace rejected", func(t *testing.T) {
 		k := fake.NewClientBuilder().WithScheme(newScheme(t)).WithObjects(
-			newCPC("shared", "kube-system", "tw-token", "token"),
-			secret("kube-system", "tw-token", "token", "shared-tok"),
+			newCPC("shared", "", "tw-token", "token"),
+			secret("kube-system", "tw-token", "token", "ignored"),
 		).Build()
 		ref := &xpv2.ProviderConfigReference{Kind: apisv1alpha1.PCKindCluster, Name: "shared"}
-		tok, _, err := ResolveToken(context.Background(), k, "team-a", ref)
-		if err != nil {
-			t.Fatalf("err = %v", err)
+		_, _, err := ResolveToken(ctx, k, "team-a", ref)
+		if !errors.Is(err, ErrInvalidProviderConfigRef) {
+			t.Fatalf("err = %v, want ErrInvalidProviderConfigRef", err)
 		}
-		if tok != "shared-tok" {
-			t.Errorf("token = %q, want shared-tok", tok)
+		if !strings.Contains(err.Error(), "namespace") {
+			t.Errorf("err message %q should mention namespace", err.Error())
 		}
 	})
 
-	t.Run("namespaced PC takes precedence over cluster-scoped with same name", func(t *testing.T) {
+	// (f) kind omitted → resolves as ClusterProviderConfig per runtime default
+	t.Run("empty kind resolves as ClusterProviderConfig (runtime default)", func(t *testing.T) {
 		k := fake.NewClientBuilder().WithScheme(newScheme(t)).WithObjects(
-			newPC("team-a", "default", "tw-token", "token"),
-			secret("team-a", "tw-token", "token", "team-tok"),
 			newCPC("default", "crossplane-system", "tw-token", "token"),
 			secret("crossplane-system", "tw-token", "token", "cluster-tok"),
 		).Build()
 		ref := &xpv2.ProviderConfigReference{Name: "default"}
-		tok, _, err := ResolveToken(context.Background(), k, "team-a", ref)
+		tok, pc, err := ResolveToken(ctx, k, "team-a", ref)
 		if err != nil {
 			t.Fatalf("err = %v", err)
 		}
-		if tok != "team-tok" {
-			t.Errorf("token = %q, want team-tok (namespaced PC must win)", tok)
+		if tok != "cluster-tok" {
+			t.Errorf("token = %q, want cluster-tok", tok)
+		}
+		if _, ok := pc.(*apisv1alpha1.ClusterProviderConfig); !ok {
+			t.Errorf("pc kind = %T, want *ClusterProviderConfig", pc)
 		}
 	})
 
-	t.Run("not found when neither PC exists", func(t *testing.T) {
-		k := fake.NewClientBuilder().WithScheme(newScheme(t)).Build()
-		ref := &xpv2.ProviderConfigReference{Name: "default"}
-		_, _, err := ResolveToken(context.Background(), k, "team-a", ref)
-		if err == nil || !strings.Contains(err.Error(), "no ProviderConfig") {
-			t.Fatalf("err = %v", err)
-		}
-	})
-
-	t.Run("unknown kind rejected", func(t *testing.T) {
+	// (g) garbage kind → InvalidProviderConfigRef
+	t.Run("garbage kind rejected", func(t *testing.T) {
 		k := fake.NewClientBuilder().WithScheme(newScheme(t)).Build()
 		ref := &xpv2.ProviderConfigReference{Kind: "BogusKind", Name: "default"}
-		_, _, err := ResolveToken(context.Background(), k, "team-a", ref)
-		if err == nil || !strings.Contains(err.Error(), "unsupported providerConfigRef.kind") {
-			t.Fatalf("err = %v", err)
+		_, _, err := ResolveToken(ctx, k, "team-a", ref)
+		if !errors.Is(err, ErrInvalidProviderConfigRef) {
+			t.Fatalf("err = %v, want ErrInvalidProviderConfigRef", err)
 		}
 	})
 
-	t.Run("missing secret surfaces error", func(t *testing.T) {
+	// (h) PC of declared kind not found → InvalidProviderConfigRef WITHOUT
+	// silent fallback to the other kind (even if same-named PC exists there).
+	t.Run("namespaced PC missing does NOT fall back to ClusterProviderConfig with same name", func(t *testing.T) {
 		k := fake.NewClientBuilder().WithScheme(newScheme(t)).WithObjects(
-			newPC("team-a", "default", "tw-token", "token"),
+			// Only a cluster PC exists, no namespaced PC.
+			newCPC("default", "crossplane-system", "tw-token", "token"),
+			secret("crossplane-system", "tw-token", "token", "cluster-tok"),
 		).Build()
 		ref := &xpv2.ProviderConfigReference{Kind: apisv1alpha1.PCKindNamespaced, Name: "default"}
-		_, _, err := ResolveToken(context.Background(), k, "team-a", ref)
+		_, _, err := ResolveToken(ctx, k, "team-a", ref)
+		if !errors.Is(err, ErrInvalidProviderConfigRef) {
+			t.Fatalf("err = %v, want ErrInvalidProviderConfigRef", err)
+		}
+		if !strings.Contains(err.Error(), "no silent fallback") {
+			t.Errorf("err message %q should mention 'no silent fallback'", err.Error())
+		}
+	})
+
+	t.Run("cluster PC missing does NOT fall back to namespaced ProviderConfig with same name", func(t *testing.T) {
+		k := fake.NewClientBuilder().WithScheme(newScheme(t)).WithObjects(
+			// Only a namespaced PC exists, no cluster PC.
+			newPC("team-a", "default", "team-a", "tw-token", "token"),
+			secret("team-a", "tw-token", "token", "team-tok"),
+		).Build()
+		ref := &xpv2.ProviderConfigReference{Kind: apisv1alpha1.PCKindCluster, Name: "default"}
+		_, _, err := ResolveToken(ctx, k, "team-a", ref)
+		if !errors.Is(err, ErrInvalidProviderConfigRef) {
+			t.Fatalf("err = %v, want ErrInvalidProviderConfigRef", err)
+		}
+	})
+
+	// Defence-in-depth: unsupported credentials.source surfaces as
+	// InvalidProviderConfigRef rather than a raw error string.
+	t.Run("unsupported credentials.source rejected", func(t *testing.T) {
+		pc := newPC("team-a", "default", "team-a", "tw-token", "token")
+		pc.Spec.Credentials.Source = "Filesystem"
+		k := fake.NewClientBuilder().WithScheme(newScheme(t)).WithObjects(
+			pc,
+			secret("team-a", "tw-token", "token", "abc"),
+		).Build()
+		ref := &xpv2.ProviderConfigReference{Kind: apisv1alpha1.PCKindNamespaced, Name: "default"}
+		_, _, err := ResolveToken(ctx, k, "team-a", ref)
+		if !errors.Is(err, ErrInvalidProviderConfigRef) {
+			t.Fatalf("err = %v, want ErrInvalidProviderConfigRef", err)
+		}
+	})
+
+	t.Run("missing secret surfaces error (NOT typed as InvalidProviderConfigRef — it's an infra error)", func(t *testing.T) {
+		k := fake.NewClientBuilder().WithScheme(newScheme(t)).WithObjects(
+			newPC("team-a", "default", "", "tw-token", "token"),
+		).Build()
+		ref := &xpv2.ProviderConfigReference{Kind: apisv1alpha1.PCKindNamespaced, Name: "default"}
+		_, _, err := ResolveToken(ctx, k, "team-a", ref)
 		if err == nil || !strings.Contains(err.Error(), "get credential Secret") {
 			t.Fatalf("err = %v", err)
 		}
@@ -188,16 +268,13 @@ func TestResolveToken(t *testing.T) {
 
 	t.Run("empty secret key surfaces error", func(t *testing.T) {
 		k := fake.NewClientBuilder().WithScheme(newScheme(t)).WithObjects(
-			newPC("team-a", "default", "tw-token", "token"),
+			newPC("team-a", "default", "", "tw-token", "token"),
 			secret("team-a", "tw-token", "token", "   "),
 		).Build()
 		ref := &xpv2.ProviderConfigReference{Kind: apisv1alpha1.PCKindNamespaced, Name: "default"}
-		_, _, err := ResolveToken(context.Background(), k, "team-a", ref)
+		_, _, err := ResolveToken(ctx, k, "team-a", ref)
 		if err == nil || !strings.Contains(err.Error(), "is empty") {
 			t.Fatalf("err = %v", err)
 		}
 	})
 }
-
-// _ ensures connector imports compile.
-var _ client.Client = (client.Client)(nil)

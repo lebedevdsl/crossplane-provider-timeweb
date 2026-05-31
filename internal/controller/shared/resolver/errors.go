@@ -58,6 +58,13 @@ var (
 
 	// ErrUnknownDimension — the dimension name is not registered. Programming error.
 	ErrUnknownDimension = errors.New("resolver: unknown dimension")
+
+	// ErrDimensionFetcherUnwired — the dimension is registered (so the
+	// registry table doesn't drift) but its upstream fetcher hasn't been
+	// implemented yet. Returned by the forward-compat K8s / Server
+	// registrations until the KubernetesCluster / KubernetesNodeGroup
+	// feature lands the generator-tag opt-in and the real fetcher bodies.
+	ErrDimensionFetcherUnwired = errors.New("resolver: dimension registered but fetcher not wired (forward-compat stub)")
 )
 
 // PresetNotFoundError wraps ErrPresetNotFound with the operator's slug

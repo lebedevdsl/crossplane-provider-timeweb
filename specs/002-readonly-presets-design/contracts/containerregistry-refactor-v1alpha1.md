@@ -104,7 +104,7 @@ Standard `Ready` / `Synced` plus:
 
 ## Relationships
 
-- `spec.providerConfigRef` — dual-reference to either a same-namespace `ProviderConfig` or a `ClusterProviderConfig`.
+- `spec.providerConfigRef.{kind,name}` — `kind` is `ProviderConfig` or `ClusterProviderConfig` (runtime default `ClusterProviderConfig`); controller hard-switches on `kind` with no silent fallback (FR-001, post upstream-alignment clarification).
 - `forProvider.projectRef` — references a `Project` MR (unchanged from MVP).
 
 ## Printer columns

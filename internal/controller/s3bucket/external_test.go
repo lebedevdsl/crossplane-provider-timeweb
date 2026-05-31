@@ -156,6 +156,27 @@ func TestObserve(t *testing.T) {
 			t.Errorf("GetStorage called %d times, want 0", fake.GetStorageCallCount())
 		}
 	})
+
+	t.Run("TransientError", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetStorageReturns(httpResp(http.StatusTooManyRequests, ""), nil)
+		e := newExternal(fake, nil)
+		_, err := e.Observe(ctx, newBucket(42, 1))
+		if !errors.Is(err, timeweb.ErrTransient) {
+			t.Errorf("err = %v, want transient", err)
+		}
+	})
+
+	t.Run("TerminalError", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetStorageReturns(httpResp(http.StatusForbidden, `{"error_code":"forbidden","message":"denied"}`), nil)
+		e := newExternal(fake, nil)
+		_, err := e.Observe(ctx, newBucket(42, 1))
+		var apiErr *timeweb.APIError
+		if !errors.As(err, &apiErr) {
+			t.Fatalf("err = %v, want *APIError", err)
+		}
+	})
 }
 
 func TestCreate(t *testing.T) {
@@ -200,6 +221,16 @@ func TestCreate(t *testing.T) {
 			t.Fatalf("err = %v, want *APIError", err)
 		}
 	})
+
+	t.Run("TransientError", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.CreateStorageReturns(httpResp(http.StatusServiceUnavailable, ""), nil)
+		e := newExternal(fake, map[int64]int64{1: 100})
+		_, err := e.Create(ctx, newBucket(0, 1))
+		if !errors.Is(err, timeweb.ErrTransient) {
+			t.Errorf("err = %v, want transient", err)
+		}
+	})
 }
 
 func TestUpdate(t *testing.T) {
@@ -218,6 +249,39 @@ func TestUpdate(t *testing.T) {
 		}
 		if fake.UpdateStorageCallCount() != 1 {
 			t.Errorf("UpdateStorage called %d times, want 1", fake.UpdateStorageCallCount())
+		}
+	})
+
+	t.Run("NotFound_OnInitialGET", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetStorageReturns(httpResp(http.StatusNotFound, ""), nil)
+		e := newExternal(fake, nil)
+		_, err := e.Update(ctx, newBucket(42, 1))
+		if !errors.Is(err, timeweb.ErrNotFound) {
+			t.Errorf("err = %v, want ErrNotFound (from initial GET)", err)
+		}
+	})
+
+	t.Run("TransientError", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetStorageReturns(httpResp(http.StatusOK, sampleBucketJSON), nil)
+		fake.UpdateStorageReturns(httpResp(http.StatusGatewayTimeout, ""), nil)
+		e := newExternal(fake, map[int64]int64{1: 100})
+		_, err := e.Update(ctx, newBucket(42, 1))
+		if !errors.Is(err, timeweb.ErrTransient) {
+			t.Errorf("err = %v, want transient", err)
+		}
+	})
+
+	t.Run("TerminalError", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetStorageReturns(httpResp(http.StatusOK, sampleBucketJSON), nil)
+		fake.UpdateStorageReturns(httpResp(http.StatusUnauthorized, `{"error_code":"unauthorized","message":"bad token"}`), nil)
+		e := newExternal(fake, map[int64]int64{1: 100})
+		_, err := e.Update(ctx, newBucket(42, 1))
+		var apiErr *timeweb.APIError
+		if !errors.As(err, &apiErr) {
+			t.Fatalf("err = %v, want *APIError", err)
 		}
 	})
 
@@ -254,6 +318,27 @@ func TestDelete(t *testing.T) {
 		e := newExternal(fake, nil)
 		if _, err := e.Delete(ctx, newBucket(42, 1)); err != nil {
 			t.Errorf("Delete on already-gone: %v, want nil", err)
+		}
+	})
+
+	t.Run("TransientError", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.DeleteStorageReturns(httpResp(http.StatusInternalServerError, ""), nil)
+		e := newExternal(fake, nil)
+		_, err := e.Delete(ctx, newBucket(42, 1))
+		if !errors.Is(err, timeweb.ErrTransient) {
+			t.Errorf("err = %v, want transient", err)
+		}
+	})
+
+	t.Run("TerminalError", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.DeleteStorageReturns(httpResp(http.StatusForbidden, `{"error_code":"forbidden","message":"denied"}`), nil)
+		e := newExternal(fake, nil)
+		_, err := e.Delete(ctx, newBucket(42, 1))
+		var apiErr *timeweb.APIError
+		if !errors.As(err, &apiErr) {
+			t.Fatalf("err = %v, want *APIError", err)
 		}
 	})
 }

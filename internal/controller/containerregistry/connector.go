@@ -62,7 +62,7 @@ type repositoryConnector struct {
 	recorder record.EventRecorder
 }
 
-// Connect implements managed.ExternalConnecter for ContainerRegistry.
+// Connect implements managed.ExternalConnector for ContainerRegistry.
 func (c *registryConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	cr, ok := mg.(*cregv1alpha1.ContainerRegistry)
 	if !ok {
@@ -121,7 +121,7 @@ func (c *registryConnector) pcRefFor(cr *cregv1alpha1.ContainerRegistry) resolve
 	return resolver.PCRef{Kind: ref.Kind, Name: ref.Name, Namespace: cr.GetNamespace()}
 }
 
-// Connect implements managed.ExternalConnecter for ContainerRegistryRepository.
+// Connect implements managed.ExternalConnector for ContainerRegistryRepository.
 func (c *repositoryConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	cr, ok := mg.(*cregv1alpha1.ContainerRegistryRepository)
 	if !ok {

@@ -154,6 +154,75 @@ func TestCacheTransientNotCached(t *testing.T) {
 	}
 }
 
+// TestCacheKey_PerPCRefIsolation locks the structural-isolation contract
+// referenced by spec.md US3: two PCs of distinct Kind / Name / Namespace
+// produce distinct cacheKey values, so a fetch under PC-A's identity can
+// never leak its data to PC-B (and vice versa) — even when the dimension
+// is identical. Closes the open spec task T053 (the isolation is already
+// structural via the map key, this test pins the contract).
+func TestCacheKey_PerPCRefIsolation(t *testing.T) {
+	c := newCache(Options{TTL: 5 * time.Minute, Now: time.Now})
+
+	dim := Dimension{Name: "X"}
+
+	// Six PCRefs that should ALL produce distinct cache keys.
+	refs := []PCRef{
+		{Kind: "ProviderConfig", Name: "default", Namespace: "team-a"},
+		{Kind: "ProviderConfig", Name: "default", Namespace: "team-b"}, // different namespace
+		{Kind: "ProviderConfig", Name: "other", Namespace: "team-a"},   // different name
+		{Kind: "ClusterProviderConfig", Name: "default"},               // different kind (and no ns)
+		{Kind: "ClusterProviderConfig", Name: "shared"},                // different cluster PC
+		{Kind: "", Name: "default"},                                    // runtime-default kind (empty)
+	}
+
+	type result struct {
+		ref PCRef
+		val string
+	}
+
+	// Pre-populate each key with a value derived from the ref so we can
+	// assert "PC-X read PC-X's data".
+	for i, ref := range refs {
+		ref := ref
+		want := result{ref: ref, val: ref.Kind + "/" + ref.Name + "/" + ref.Namespace}
+		key := cacheKey{pc: ref, dim: dim}
+		fetcher := func(_ context.Context) (any, error) { return want, nil }
+		got, err := c.getOrFetch(context.Background(), key, fetcher)
+		if err != nil {
+			t.Fatalf("seed[%d]: %v", i, err)
+		}
+		if got.(result) != want {
+			t.Fatalf("seed[%d]: got %v want %v", i, got, want)
+		}
+	}
+
+	// Re-read each key; MUST come back as the matching ref's value. A leak
+	// (shared cell across PCRefs) would surface as a value seeded by a
+	// different ref since this fetcher always errors.
+	leakyFetcher := func(_ context.Context) (any, error) {
+		return nil, errors.New("fetcher MUST NOT be invoked — value should already be cached")
+	}
+	for i, ref := range refs {
+		want := result{ref: ref, val: ref.Kind + "/" + ref.Name + "/" + ref.Namespace}
+		key := cacheKey{pc: ref, dim: dim}
+		got, err := c.getOrFetch(context.Background(), key, leakyFetcher)
+		if err != nil {
+			t.Fatalf("readback[%d]: cache miss for %+v: %v", i, ref, err)
+		}
+		if got.(result) != want {
+			t.Errorf("readback[%d]: %+v leaked %v (wanted %v)", i, ref, got, want)
+		}
+	}
+
+	// Defence-in-depth: the cache MUST hold exactly len(refs) entries.
+	c.mu.Lock()
+	n := len(c.entries)
+	c.mu.Unlock()
+	if n != len(refs) {
+		t.Errorf("cache has %d entries, want %d (one per distinct PCRef)", n, len(refs))
+	}
+}
+
 func TestCacheInvalidate(t *testing.T) {
 	c := newCache(Options{TTL: 5 * time.Minute, Now: time.Now})
 	key := cacheKey{pc: PCRef{Name: "default"}, dim: Dimension{Name: "X"}}

@@ -1,0 +1,22 @@
+# Step 1 - InvalidProviderConfigRef: create an SSHKey with a bogus
+# providerConfigRef.kind. The controller's ResolveToken must reject with
+# ErrInvalidProviderConfigRef; crossplane-runtime surfaces this as
+# Synced=False with reason ReconcileError (the runtime overrides our
+# typed reason but preserves the message — same dynamic as PresetNotFound).
+#
+# The MR lives in e2e-team-b so this bundle is gated on TIMEWEB_E2E_TOKEN
+# the same way as 07-* (both bundles get rm'd by the wrapper when the
+# secondary token isn't set).
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: e2e-sshkey-bogus
+  namespace: e2e-team-b
+spec:
+  forProvider:
+    name: "${TWE_SSH_NAME}-bogus"
+    body: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE2E000000000000000000000000000000000000000000 ${TWE_SSH_NAME}-bogus"
+    isDefault: false
+  providerConfigRef:
+    kind: BogusKind
+    name: e2e-secondary

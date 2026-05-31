@@ -31,8 +31,6 @@ import (
 // fakeCatalog implements CatalogClient with hand-controllable payloads and
 // per-method call counters.
 type fakeCatalog struct {
-	mu sync.Mutex
-
 	regPresets      *twgen.GetRegistryPresetsResponse
 	regPresetsErr   error
 	regPresetsCalls int32
@@ -46,7 +44,7 @@ type fakeCatalog struct {
 	gate chan struct{}
 }
 
-func (f *fakeCatalog) GetRegistryPresetsWithResponse(ctx context.Context, _ ...twgen.RequestEditorFn) (*twgen.GetRegistryPresetsResponse, error) {
+func (f *fakeCatalog) GetRegistryPresetsWithResponse(_ context.Context, _ ...twgen.RequestEditorFn) (*twgen.GetRegistryPresetsResponse, error) {
 	atomic.AddInt32(&f.regPresetsCalls, 1)
 	if f.gate != nil {
 		<-f.gate
@@ -54,7 +52,7 @@ func (f *fakeCatalog) GetRegistryPresetsWithResponse(ctx context.Context, _ ...t
 	return f.regPresets, f.regPresetsErr
 }
 
-func (f *fakeCatalog) GetStoragesPresetsWithResponse(ctx context.Context, _ ...twgen.RequestEditorFn) (*twgen.GetStoragesPresetsResponse, error) {
+func (f *fakeCatalog) GetStoragesPresetsWithResponse(_ context.Context, _ ...twgen.RequestEditorFn) (*twgen.GetStoragesPresetsResponse, error) {
 	atomic.AddInt32(&f.storPresetsCalls, 1)
 	return f.storPresets, f.storPresetsErr
 }
@@ -66,11 +64,16 @@ func mkRegResp(entries []struct {
 	short string
 	loc   string
 }) *twgen.GetRegistryPresetsResponse {
+	// Field names mirror the oapi-codegen-generated JSON200 anonymous
+	// struct exactly — assignment compatibility requires `Id` and
+	// `ResponseId` (Go convention prefers `ID`/`ResponseID`, but the
+	// generated client doesn't follow it and our literal must match
+	// the generator's emit).
 	type inner struct {
 		Description      string  `json:"description"`
 		DescriptionShort string  `json:"description_short"`
 		Disk             int     `json:"disk"`
-		Id               int     `json:"id"`
+		Id               int     `json:"id"` //nolint:revive // mirrors oapi-codegen output
 		Location         *string `json:"location,omitempty"`
 		Price            float32 `json:"price"`
 	}
@@ -80,11 +83,11 @@ func mkRegResp(entries []struct {
 			Description      string  `json:"description"`
 			DescriptionShort string  `json:"description_short"`
 			Disk             int     `json:"disk"`
-			Id               int     `json:"id"`
+			Id               int     `json:"id"` //nolint:revive // mirrors oapi-codegen output
 			Location         *string `json:"location,omitempty"`
 			Price            float32 `json:"price"`
 		} `json:"container_registry_presets"`
-		ResponseId twgen.ResponseId `json:"response_id"`
+		ResponseId twgen.ResponseId `json:"response_id"` //nolint:revive // mirrors oapi-codegen output
 	}{}
 	for _, e := range entries {
 		loc := e.loc

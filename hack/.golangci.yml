@@ -82,6 +82,16 @@ linters:
         text: "dot-imports"
         linters:
           - revive
+      # Crossplane interface forwarders on every MR type are trivial
+      # accessors (GetCondition, SetConditions, GetProviderConfigReference,
+      # …) required by `crossplane-runtime`'s ModernManaged contract. The
+      # method signatures and the receiver type names already describe
+      # what they do; adding boilerplate godoc to each adds noise without
+      # adding meaning. Exempt these files from the "exported" rule.
+      - path: apis/.*/managed\.go
+        text: "exported"
+        linters:
+          - revive
 
 formatters:
   enable:

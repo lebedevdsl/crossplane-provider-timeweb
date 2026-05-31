@@ -8,12 +8,16 @@ metadata:
     meta.crossplane.io/license: "Apache-2.0"
     meta.crossplane.io/description: |
       Crossplane v2 provider for Timeweb Cloud — a native, hand-written
-      controller (no Upjet / no Terraform-provider lineage). MVP resources
-      shipped so far: ProviderConfig, Project. Additional MRs (SshKey,
-      S3Bucket, ContainerRegistry, ContainerRegistryRepository,
-      ContainerRegistryPreset) land in subsequent Phase 3 / Phase 4 tasks.
+      controller (no Upjet / no Terraform-provider lineage). Managed
+      resources: namespaced ProviderConfig + cluster-scoped
+      ClusterProviderConfig (with the dual-reference fallback documented
+      in the README), Project, SshKey, S3Bucket, ContainerRegistry,
+      ContainerRegistryRepository. Sizing on the two storage-class
+      MRs (S3Bucket, ContainerRegistry) is via `initialSizeGB` with a
+      CEL-enforced enum tied to Timeweb's published tariff tiers.
     meta.crossplane.io/readme: |
-      See `specs/001-mvp-scaffolding/quickstart.md` for an install walkthrough.
+      See the top-level README.md and docs/presets.md for the operator
+      walkthrough.
 spec:
   controller:
     image: ghcr.io/lebedevdsl/provider-timeweb:v0.1.0

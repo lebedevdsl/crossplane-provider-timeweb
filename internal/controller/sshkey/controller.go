@@ -33,11 +33,11 @@ import (
 // Setup registers the SSHKey controller with mgr.
 func Setup(mgr manager.Manager, l logging.Logger, pollInterval time.Duration) error {
 	name := managed.ControllerName(sshkeyv1alpha1.SSHKeyGroupVersionKind.String())
-	recorder := mgr.GetEventRecorderFor(name)
+	recorder := mgr.GetEventRecorderFor(name) /*nolint:staticcheck*/
 
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(sshkeyv1alpha1.SSHKeyGroupVersionKind),
-		managed.WithExternalConnecter(&connector{
+		managed.WithExternalConnector(&connector{
 			kube: mgr.GetClient(),
 			usage: resource.NewProviderConfigUsageTracker(mgr.GetClient(),
 				&apisv1alpha1.ProviderConfigUsage{}),

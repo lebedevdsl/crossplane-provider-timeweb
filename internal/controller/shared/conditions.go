@@ -28,25 +28,34 @@ import (
 // these constants across controllers keeps the operator-facing condition table
 // stable.
 const (
-	ReasonImmutableFieldChange       xpv2.ConditionReason = "ImmutableFieldChange"
-	ReasonProviderConfigInvalid      xpv2.ConditionReason = "ProviderConfigInvalid"
-	ReasonAPIError                   xpv2.ConditionReason = "APIError"
-	ReasonRateLimited                xpv2.ConditionReason = "RateLimited"
-	ReasonReconciling                xpv2.ConditionReason = "Reconciling"
-	ReasonSecretMissing              xpv2.ConditionReason = "SecretMissing"
-	ReasonSecretKeyEmpty             xpv2.ConditionReason = "SecretKeyEmpty"
-	ReasonRepositoryNotPushed        xpv2.ConditionReason = "RepositoryNotPushed"
-	ReasonBucketQuarantined          xpv2.ConditionReason = "BucketQuarantined"
+	ReasonImmutableFieldChange xpv2.ConditionReason = "ImmutableFieldChange"
+	// ReasonProviderConfigInvalid covers all post-resolution PC failures
+	// (unsupported credentials.source, missing Secret, empty key).
+	ReasonProviderConfigInvalid xpv2.ConditionReason = "ProviderConfigInvalid"
+	// ReasonInvalidProviderConfigRef surfaces operator-side mistakes in
+	// `spec.providerConfigRef`: unsupported kind, missing PC of the
+	// declared kind (no silent fallback per FR-001 post upstream-alignment
+	// clarification), namespaced PC pointing at a Secret in a different
+	// namespace, ClusterProviderConfig with empty secretRef.namespace.
+	// Mapped from `shared.ErrInvalidProviderConfigRef` in connectors.
+	ReasonInvalidProviderConfigRef xpv2.ConditionReason = "InvalidProviderConfigRef"
+	ReasonAPIError                 xpv2.ConditionReason = "APIError"
+	ReasonRateLimited              xpv2.ConditionReason = "RateLimited"
+	ReasonReconciling              xpv2.ConditionReason = "Reconciling"
+	ReasonSecretMissing            xpv2.ConditionReason = "SecretMissing"
+	ReasonSecretKeyEmpty           xpv2.ConditionReason = "SecretKeyEmpty"
+	ReasonRepositoryNotPushed      xpv2.ConditionReason = "RepositoryNotPushed"
+	ReasonBucketQuarantined        xpv2.ConditionReason = "BucketQuarantined"
 	// Feature-002 resolver / sizing-lock vocabulary (FR-006, FR-007, FR-010,
 	// FR-013, FR-017). Mapped from the typed sentinel errors in
 	// `internal/controller/shared/resolver`.
-	ReasonPresetNotFound             xpv2.ConditionReason = "PresetNotFound"
-	ReasonPresetAmbiguous            xpv2.ConditionReason = "PresetAmbiguous"
-	ReasonNoConfiguratorAvailable    xpv2.ConditionReason = "NoConfiguratorAvailable"
+	ReasonPresetNotFound               xpv2.ConditionReason = "PresetNotFound"
+	ReasonPresetAmbiguous              xpv2.ConditionReason = "PresetAmbiguous"
+	ReasonNoConfiguratorAvailable      xpv2.ConditionReason = "NoConfiguratorAvailable"
 	ReasonSizingSwitchRequiresRecreate xpv2.ConditionReason = "SizingSwitchRequiresRecreate"
-	ReasonCatalogUnauthorized        xpv2.ConditionReason = "CatalogUnauthorized"
-	ReasonCatalogTransient           xpv2.ConditionReason = "CatalogTransient"
-	ReasonDimensionValueNotFound     xpv2.ConditionReason = "DimensionValueNotFound"
+	ReasonCatalogUnauthorized          xpv2.ConditionReason = "CatalogUnauthorized"
+	ReasonCatalogTransient             xpv2.ConditionReason = "CatalogTransient"
+	ReasonDimensionValueNotFound       xpv2.ConditionReason = "DimensionValueNotFound"
 )
 
 // SyncedFalse returns a Synced=False condition with the supplied reason and

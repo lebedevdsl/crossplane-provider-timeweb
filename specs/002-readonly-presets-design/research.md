@@ -102,6 +102,17 @@ The v2 picture:
 
 **Risk closure**: the R-2 risk flagged in the original research draft has now materialized in full. The migration is a real piece of work, but no architectural surprises beyond the rename + interface-shape changes documented above.
 
+**Addendum — 2026-05-31 upstream-alignment audit** *(captured in spec.md §Clarifications → Session "upstream-alignment simplifications")*:
+
+A comparative read of three v2-modern providers — `crossplane-contrib/provider-kubernetes`, `provider-helm`, `provider-upjet-azure` — surfaced three findings that overrode pieces of the initial R-2 decision:
+
+1. **No `managed.WithProviderConfigKinds` / runtime dual-kind helper exists in `crossplane-runtime/v2`** (re-checked at v2.3.x). Every shipping v2 provider hand-rolls a `Kind` switch in its connector. Evidence: `crossplane-contrib/provider-kubernetes/internal/controller/namespaced/object/object.go:928` — `resolveProviderConfig` is a hard `switch obj.Spec.ProviderConfigReference.Kind` with a `default:` branch that errors. The `// TODO: these should better go into crossplane-runtime` comment a few lines below (around line 954) is the upstream maintainers acknowledging the gap. The initial R-2 paragraph in this document overstated runtime support; reality is that the "dual-reference" pattern is a convention enforced by each provider's connector, not by the runtime.
+2. **Both `ProviderConfig` kinds share a single `ProviderConfigSpec` upstream.** `crossplane-contrib/provider-kubernetes/pkg/kube/config/config.go:60-79` defines one `ProviderConfigSpec` embedding `xpv1.CommonCredentialSelectors` (full `SecretRef{name, namespace, key}`); both `apis/cluster/v1alpha1/types.go` and `apis/namespaced/v1alpha1/types.go` reference it. provider-helm and provider-upjet-azure follow the same pattern. The interim implementation in this repo split `ProviderCredentials` (LocalSecretKeySelector, no namespace field) vs `ClusterProviderCredentials` (SecretKeySelector with namespace) — a bespoke divergence from the ecosystem. **Decision (per spec clarification Q1=A):** collapse to one shared `ProviderConfigSpec` matching the upstream shape; controller defaults `secretRef.namespace` to the PC's namespace when omitted on the namespaced kind.
+3. **Drop the silent dual-reference fallback.** No upstream provider walks both kinds on miss — they require operators to set `kind:` explicitly. **Decision (per spec clarification Q2=A):** controller hard-switches on `spec.providerConfigRef.kind` with no fallback; missing/mistyped → `Synced=False, reason=InvalidProviderConfigRef`. The `crossplane-runtime` v2 default of `ClusterProviderConfig` when `kind:` is omitted is preserved (MVP MR manifests that don't set `kind` continue to resolve to `ClusterProviderConfig`).
+4. **Splitting `apis/v1alpha1/` into `apis/cluster/v1alpha1/` + `apis/namespaced/v1alpha1/` packages** (matching the upstream file layout where both packages declare a kind literally named `ProviderConfig`) is **deferred** per spec clarification Q3=C. Reconsider when a third PC scope appears or alongside the K8s feature.
+
+These addendum decisions overwrite (do not coexist with) the original R-2 paragraph's implicit claim that the dual-reference fallback is a runtime-provided affordance.
+
 **Alternatives considered**:
 
 - **Keep PC cluster-scoped only**, defer namespaced-PC. Rejected: the respec preserves the dual-scope decision because the v2 namespaced model is where the rest of Crossplane is heading; deferring delays the inevitable.

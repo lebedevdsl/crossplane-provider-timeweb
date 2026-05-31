@@ -48,9 +48,9 @@ type ProviderCredentials struct {
 
 **API**: `timeweb.crossplane.io/v1alpha1`, kind `ClusterProviderConfig`, **scope: Cluster**.
 
-**Purpose**: The cluster-scoped sibling. Acts as the default credential source for namespaced MRs that have no namespaced `ProviderConfig` in their namespace (Crossplane v2 dual-reference fallback). Also serves any cluster-scoped MRs (none today; future-facing).
+**Purpose**: The cluster-scoped sibling. Resolved when an MR's `spec.providerConfigRef.kind` is `ClusterProviderConfig` (also the crossplane-runtime v2 default when `kind` is omitted). Per the 2026-05-31 upstream-alignment clarifications (spec.md §Clarifications), there is **no silent fallback** from a missing namespaced `ProviderConfig` to a same-named `ClusterProviderConfig`; the operator chooses by setting `kind` explicitly.
 
-**Spec**: identical shape to `ProviderConfig` (namespaced) — see §1.1. The Secret reference MUST be fully qualified (`secretRef.namespace` is REQUIRED, since cluster-scoped CRs cannot infer a namespace).
+**Spec**: shares the single `ProviderConfigSpec` shape with the namespaced `ProviderConfig` (§1.1) — both embed `xpv1.CommonCredentialSelectors`. For this kind the secret's `namespace` field is required (a cluster-scoped CR cannot infer a namespace); the namespaced PC defaults it to its own namespace at controller-lookup time.
 
 **Status**: standard `xpv1.ProviderConfigStatus`.
 
@@ -134,7 +134,7 @@ Exactly one of `lockedPresetID` (when the operator used the `presetName` variant
 
 **Relationships**:
 
-- References `ProviderConfig` or `ClusterProviderConfig` via `spec.providerConfigRef` (dual-reference per FR-001).
+- References `ProviderConfig` or `ClusterProviderConfig` via `spec.providerConfigRef.{kind,name}`; the controller hard-switches on `kind` with no silent fallback per FR-001 (post upstream-alignment clarification).
 - May reference a `Project` (cross-MR reference, unchanged from MVP).
 
 **Lifecycle**: standard Crossplane managed-resource lifecycle. The locked sizing variant is set on first successful Create and is immutable afterwards (a `presetName`↔`resources` switch surfaces as `SizingSwitchRequiresRecreate`; the operator must delete and recreate).
@@ -285,7 +285,7 @@ ClusterProviderConfig (cluster-scoped)        ProviderConfig (namespaced)
 ClusterProviderConfigUsage              ProviderConfigUsage
         │                                            │
         │  ────────────────  referenced by  ─────────│
-        ▼                    (dual-reference)        ▼
+        ▼              (explicit kind, no fallback)  ▼
                 MR.spec.providerConfigRef
                 ┌──────────────────────────┐
                 │   ContainerRegistry      │  spec.forProvider: presetName XOR resources

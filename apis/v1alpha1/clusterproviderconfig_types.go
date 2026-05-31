@@ -17,30 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-// ClusterProviderConfigSpec is the cluster-scoped twin of ProviderConfigSpec.
-// Uses ClusterProviderCredentials with an explicit cross-namespace
-// `SecretKeySelector` (the cluster-scoped CR can't infer a Secret
-// namespace from itself). See `contracts/clusterproviderconfig-v1alpha1.md`.
-type ClusterProviderConfigSpec struct {
-	Credentials ClusterProviderCredentials `json:"credentials"`
-}
-
-// ClusterProviderCredentials selects a credential source for the
-// cluster-scoped ProviderConfig. SecretRef carries `(name, namespace, key)`
-// — namespace is required by the schema.
-type ClusterProviderCredentials struct {
-	// Source of the Timeweb API token. Only `Secret` is supported in v0.1.
-	// +kubebuilder:validation:Enum=Secret
-	Source xpv2.CredentialsSource `json:"source"`
-
-	// SecretRef points at a Secret anywhere in the cluster. Namespace is
-	// required — see schema-side `required: [name, namespace, key]`.
-	SecretRef *xpv2.SecretKeySelector `json:"secretRef,omitempty"`
-}
 
 // ClusterProviderConfigStatus exposes observed state — same shape as
 // ProviderConfigStatus.
@@ -52,19 +30,26 @@ type ClusterProviderConfigStatus struct {
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,provider,timeweb}
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:printcolumn:name="SECRET",type="string",JSONPath=".spec.credentials.secretRef.namespace"
+// +kubebuilder:printcolumn:name="SECRET-NS",type="string",JSONPath=".spec.credentials.secretRef.namespace"
 // +kubebuilder:printcolumn:name="SECRET-NAME",type="string",JSONPath=".spec.credentials.secretRef.name",priority=1
 
 // ClusterProviderConfig is the cluster-scoped configuration for the Timeweb
-// Crossplane provider. It is the fallback when a managed resource's
-// `spec.providerConfigRef.name` does not resolve to a same-namespace
-// `ProviderConfig` (FR-001 dual-reference). Typically one or a small
-// number per cluster.
+// Crossplane provider. Resolved when an MR's `spec.providerConfigRef.kind`
+// is `ClusterProviderConfig` (also the crossplane-runtime v2 default when
+// `kind` is omitted, so MVP MR manifests that don't set `kind` continue to
+// resolve here automatically). There is no silent fallback from a missing
+// namespaced `ProviderConfig` to a same-named `ClusterProviderConfig` —
+// `kind` is the sole switch (per 2026-05-31 upstream-alignment
+// clarification).
+//
+// The Spec field uses `ProviderConfigSpec` directly — the same Spec type as
+// the namespaced sibling — so adding new credential sources or fields lands
+// once instead of twice.
 type ClusterProviderConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterProviderConfigSpec   `json:"spec"`
+	Spec   ProviderConfigSpec          `json:"spec"`
 	Status ClusterProviderConfigStatus `json:"status,omitempty"`
 }
 

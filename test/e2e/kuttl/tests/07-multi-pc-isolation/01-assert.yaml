@@ -1,0 +1,32 @@
+# Both SSHKey MRs in e2e-team-b reach Ready=True, Synced=True via their
+# respective PC kinds. Failure modes this catches:
+#   - kind:ProviderConfig falling back to a ClusterProviderConfig (the
+#     pre-2026-05-31 behavior the upstream-alignment work removed)
+#   - kind:ClusterProviderConfig accidentally resolving to a same-named
+#     namespaced PC (would need name collision, which we don't create)
+#   - secret-namespace defaulting failing on the namespaced kind
+#     (e2e-secondary's secretRef omits namespace; controller must default
+#     to e2e-team-b)
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: e2e-sshkey-ns
+  namespace: e2e-team-b
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"
+---
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: e2e-sshkey-cluster
+  namespace: e2e-team-b
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"

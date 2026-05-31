@@ -1,0 +1,17 @@
+# The MR must NOT reach Ready=True (no upstream key created). Synced
+# flips False; runtime sets reason=ReconcileError; the message carries
+# the typed `unsupported providerConfigRef.kind "BogusKind"` text from
+# shared.ErrInvalidProviderConfigRef.
+#
+# Asserting message-contains via kuttl: kuttl matches subset, so a
+# partial reason check is enough. (Same pattern as 06-preset-not-found.)
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: e2e-sshkey-bogus
+  namespace: e2e-team-b
+status:
+  conditions:
+  - type: Synced
+    status: "False"
+    reason: ReconcileError

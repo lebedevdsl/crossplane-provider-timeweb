@@ -14,9 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1alpha1 contains the Container Registry trio of managed-resource
-// APIs: ContainerRegistry, ContainerRegistryRepository, and the observe-only
-// ContainerRegistryPreset catalog CRD.
+// Package v1alpha1 contains the Container Registry managed-resource
+// APIs: `ContainerRegistry` (full lifecycle; sized via `initialSizeGB`
+// enum that maps to one of Timeweb's published tariff tiers) and
+// `ContainerRegistryRepository` (observe-only — Timeweb has no per-
+// repository CRUD endpoint; repositories appear via `docker push`).
+//
+// Sizing is preset-only: the `initialSizeGB` field is CEL-constrained
+// to Timeweb's fixed tariff tiers. See `docs/presets.md` for the full
+// operator surface.
 //
 // +kubebuilder:object:generate=true
 // +groupName=containerregistry.m.timeweb.crossplane.io

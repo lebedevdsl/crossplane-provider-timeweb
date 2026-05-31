@@ -23,7 +23,7 @@ spec:
       name: AGE
       type: date
     - jsonPath: .spec.credentials.secretRef.namespace
-      name: SECRET
+      name: SECRET-NS
       type: string
     - jsonPath: .spec.credentials.secretRef.name
       name: SECRET-NAME
@@ -34,10 +34,17 @@ spec:
       openAPIV3Schema:
         description: |-
           ClusterProviderConfig is the cluster-scoped configuration for the Timeweb
-          Crossplane provider. It is the fallback when a managed resource's
-          `spec.providerConfigRef.name` does not resolve to a same-namespace
-          `ProviderConfig` (FR-001 dual-reference). Typically one or a small
-          number per cluster.
+          Crossplane provider. Resolved when an MR's `spec.providerConfigRef.kind`
+          is `ClusterProviderConfig` (also the crossplane-runtime v2 default when
+          `kind` is omitted, so MVP MR manifests that don't set `kind` continue to
+          resolve here automatically). There is no silent fallback from a missing
+          namespaced `ProviderConfig` to a same-named `ClusterProviderConfig` —
+          `kind` is the sole switch (per 2026-05-31 upstream-alignment
+          clarification).
+
+          The Spec field uses `ProviderConfigSpec` directly — the same Spec type as
+          the namespaced sibling — so adding new credential sources or fields lands
+          once instead of twice.
         properties:
           apiVersion:
             description: |-
@@ -58,35 +65,40 @@ spec:
             type: object
           spec:
             description: |-
-              ClusterProviderConfigSpec is the cluster-scoped twin of ProviderConfigSpec.
-              Uses ClusterProviderCredentials with an explicit cross-namespace
-              `SecretKeySelector` (the cluster-scoped CR can't infer a Secret
-              namespace from itself). See `contracts/clusterproviderconfig-v1alpha1.md`.
+              ProviderConfigSpec configures the Timeweb Cloud connection used by every
+              managed resource that references this ProviderConfig. The exact same
+              `ProviderConfigSpec` type backs both the namespaced `ProviderConfig` and
+              the cluster-scoped `ClusterProviderConfig` per the 2026-05-31
+              upstream-alignment clarification — matches the single-Spec shape used by
+              `crossplane-contrib/provider-kubernetes` /
+              `crossplane-contrib/provider-helm` / `crossplane-contrib/provider-upjet-azure`.
+              See `contracts/providerconfig-namespaced-v1alpha1.md`.
             properties:
               credentials:
                 description: |-
-                  ClusterProviderCredentials selects a credential source for the
-                  cluster-scoped ProviderConfig. SecretRef carries `(name, namespace, key)`
-                  — namespace is required by the schema.
+                  Credentials selects the source of the Timeweb API token. Only the
+                  `Secret` source is supported in v0.1 (FR-003).
                 properties:
                   secretRef:
-                    description: |-
-                      SecretRef points at a Secret anywhere in the cluster. Namespace is
-                      required — see schema-side `required: [name, namespace, key]`.
+                    description: SecretRef points at a Secret holding the Timeweb
+                      API token.
                     properties:
                       key:
-                        description: The key to select.
+                        description: Key within the Secret that holds the Timeweb
+                          API token.
                         type: string
                       name:
-                        description: Name of the secret.
+                        description: Name of the Secret holding the Timeweb API token.
                         type: string
                       namespace:
-                        description: Namespace of the secret.
+                        description: |-
+                          Namespace of the Secret. Optional on `ProviderConfig` (defaults to
+                          the PC's own namespace at controller-resolve time). Required on
+                          `ClusterProviderConfig`.
                         type: string
                     required:
                     - key
                     - name
-                    - namespace
                     type: object
                   source:
                     description: Source of the Timeweb API token. Only `Secret` is

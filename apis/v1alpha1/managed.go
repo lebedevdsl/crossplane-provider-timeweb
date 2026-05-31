@@ -17,8 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 )
 
 // Forwarders required by crossplane-runtime's `resource.ProviderConfig`
@@ -96,22 +96,24 @@ func (l *ClusterProviderConfigUsageList) GetItems() []resource.ProviderConfigUsa
 
 // --- Credentials abstraction -----------------------------------------------
 //
-// The namespaced ProviderConfig and the cluster-scoped ClusterProviderConfig
-// have different SecretRef schemas (LocalSecretKeySelector vs
-// SecretKeySelector), so we expose a small flat interface that hides the
-// shape and lets the connector use a uniform call sequence.
+// Both the namespaced ProviderConfig and the cluster-scoped
+// ClusterProviderConfig share the same `ProviderConfigSpec` shape (per the
+// 2026-05-31 upstream-alignment clarification), so accessors simply forward
+// to the shared Spec.Credentials.SecretRef. The namespace-defaulting and
+// cross-namespace rejection semantics that differ per kind live at the
+// controller layer (`internal/controller/shared/credentials.go`), not here.
 
 // PCKind names a ProviderConfig kind. Used as the value of
-// `spec.providerConfigRef.kind` on managed resources and as a
-// discriminator in connector dual-lookup helpers.
+// `spec.providerConfigRef.kind` on managed resources and as a discriminator
+// in the connector's PC resolution switch.
 const (
 	PCKindNamespaced = "ProviderConfig"
 	PCKindCluster    = "ClusterProviderConfig"
 )
 
-// CredentialedProviderConfig is the read-only surface a connector needs
-// to fetch the API token. Both ProviderConfig and ClusterProviderConfig
-// satisfy it via their separate concrete credential types.
+// CredentialedProviderConfig is the read-only surface a connector needs to
+// fetch the API token. Both ProviderConfig and ClusterProviderConfig satisfy
+// it via the same shared Spec.
 // +kubebuilder:object:generate=false
 type CredentialedProviderConfig interface {
 	// GetCredentialsSource returns the credential source enum
@@ -123,53 +125,61 @@ type CredentialedProviderConfig interface {
 	// GetCredentialsSecretKey returns the key within the Secret that
 	// holds the API token. Empty if not set.
 	GetCredentialsSecretKey() string
-	// GetCredentialsSecretNamespace returns the Secret namespace:
-	//   - For ProviderConfig (namespaced), this is the PC's own namespace
-	//     (CEL forbids setting it on the namespaced kind's secretRef).
-	//   - For ClusterProviderConfig, this is the explicit
-	//     spec.credentials.secretRef.namespace.
+	// GetCredentialsSecretNamespace returns the operator-set
+	// spec.credentials.secretRef.namespace verbatim — empty if the
+	// operator omitted it. Defaulting (for namespaced PCs) and
+	// cross-namespace validation happen at the controller layer.
 	GetCredentialsSecretNamespace() string
+}
+
+// Shared accessor helpers ----------------------------------------------------
+
+func credSource(c ProviderCredentials) xpv2.CredentialsSource { return c.Source }
+func credSecretName(c ProviderCredentials) string {
+	if c.SecretRef == nil {
+		return ""
+	}
+	return c.SecretRef.Name
+}
+func credSecretKey(c ProviderCredentials) string {
+	if c.SecretRef == nil {
+		return ""
+	}
+	return c.SecretRef.Key
+}
+func credSecretNamespace(c ProviderCredentials) string {
+	if c.SecretRef == nil {
+		return ""
+	}
+	return c.SecretRef.Namespace
 }
 
 // --- ProviderConfig (namespaced) accessors --------------------------------
 
 func (pc *ProviderConfig) GetCredentialsSource() xpv2.CredentialsSource {
-	return pc.Spec.Credentials.Source
+	return credSource(pc.Spec.Credentials)
 }
 func (pc *ProviderConfig) GetCredentialsSecretName() string {
-	if pc.Spec.Credentials.SecretRef == nil {
-		return ""
-	}
-	return pc.Spec.Credentials.SecretRef.Name
+	return credSecretName(pc.Spec.Credentials)
 }
 func (pc *ProviderConfig) GetCredentialsSecretKey() string {
-	if pc.Spec.Credentials.SecretRef == nil {
-		return ""
-	}
-	return pc.Spec.Credentials.SecretRef.Key
+	return credSecretKey(pc.Spec.Credentials)
 }
-func (pc *ProviderConfig) GetCredentialsSecretNamespace() string { return pc.GetNamespace() }
+func (pc *ProviderConfig) GetCredentialsSecretNamespace() string {
+	return credSecretNamespace(pc.Spec.Credentials)
+}
 
 // --- ClusterProviderConfig accessors --------------------------------------
 
 func (pc *ClusterProviderConfig) GetCredentialsSource() xpv2.CredentialsSource {
-	return pc.Spec.Credentials.Source
+	return credSource(pc.Spec.Credentials)
 }
 func (pc *ClusterProviderConfig) GetCredentialsSecretName() string {
-	if pc.Spec.Credentials.SecretRef == nil {
-		return ""
-	}
-	return pc.Spec.Credentials.SecretRef.Name
+	return credSecretName(pc.Spec.Credentials)
 }
 func (pc *ClusterProviderConfig) GetCredentialsSecretKey() string {
-	if pc.Spec.Credentials.SecretRef == nil {
-		return ""
-	}
-	return pc.Spec.Credentials.SecretRef.Key
+	return credSecretKey(pc.Spec.Credentials)
 }
 func (pc *ClusterProviderConfig) GetCredentialsSecretNamespace() string {
-	if pc.Spec.Credentials.SecretRef == nil {
-		return ""
-	}
-	return pc.Spec.Credentials.SecretRef.Namespace
+	return credSecretNamespace(pc.Spec.Credentials)
 }

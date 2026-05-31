@@ -1,0 +1,42 @@
+# Step 1 - Multi-PC isolation: create two SSHKey MRs in the SECONDARY
+# namespace (e2e-team-b), each pointing at a different PC kind/name. The
+# wrapper script has provisioned:
+#   - ProviderConfig         e2e-secondary    (namespaced in e2e-team-b)
+#   - ClusterProviderConfig  e2e-shared       (cluster-scoped, same token)
+# Both PCs are bound to the SAME secondary token, so this bundle proves
+# the kind-switch resolves correctly (not credential isolation across
+# accounts — that requires two genuinely-distinct tokens which not every
+# operator has provisioned). The next assert verifies both keys land
+# Ready=True via their respective PC kinds.
+#
+# Names suffixed with -ns and -cluster (NOT with the global timestamp)
+# so the assert can match exact resource names. They still embed the
+# timestamp via the SSH body comment so a stuck upstream key from a
+# prior run is distinguishable.
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: e2e-sshkey-ns
+  namespace: e2e-team-b
+spec:
+  forProvider:
+    name: "${TWE_SSH_NAME}-ns"
+    body: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE2E000000000000000000000000000000000000000000 ${TWE_SSH_NAME}-ns"
+    isDefault: false
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e-secondary
+---
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: e2e-sshkey-cluster
+  namespace: e2e-team-b
+spec:
+  forProvider:
+    name: "${TWE_SSH_NAME}-cluster"
+    body: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE2E000000000000000000000000000000000000000000 ${TWE_SSH_NAME}-cluster"
+    isDefault: false
+  providerConfigRef:
+    kind: ClusterProviderConfig
+    name: e2e-shared
