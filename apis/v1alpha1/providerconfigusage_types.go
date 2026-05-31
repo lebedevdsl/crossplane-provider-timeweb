@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -34,9 +34,9 @@ import (
 // presence of usages blocks ProviderConfig deletion until referencing
 // managed resources are themselves deleted or re-targeted.
 type ProviderConfigUsage struct {
-	metav1.TypeMeta          `json:",inline"`
-	metav1.ObjectMeta        `json:"metadata,omitempty"`
-	xpv1.ProviderConfigUsage `json:",inline"`
+	metav1.TypeMeta               `json:",inline"`
+	metav1.ObjectMeta             `json:"metadata,omitempty"`
+	xpv2.TypedProviderConfigUsage `json:",inline"`
 }
 
 // +kubebuilder:object:root=true

@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -33,16 +33,16 @@ type ProviderConfigSpec struct {
 type ProviderCredentials struct {
 	// Source of the Timeweb API token. Only `Secret` is supported.
 	// +kubebuilder:validation:Enum=Secret
-	Source xpv1.CredentialsSource `json:"source"`
+	Source xpv2.CredentialsSource `json:"source"`
 
 	// CommonCredentialSelectors carries the Secret reference, the canonical
 	// crossplane-runtime selector shape (name, namespace, key).
-	xpv1.CommonCredentialSelectors `json:",inline"`
+	xpv2.CommonCredentialSelectors `json:",inline"`
 }
 
 // ProviderConfigStatus exposes the ProviderConfig's observed state.
 type ProviderConfigStatus struct {
-	xpv1.ProviderConfigStatus `json:",inline"`
+	xpv2.ProviderConfigStatus `json:",inline"`
 }
 
 // +kubebuilder:object:root=true

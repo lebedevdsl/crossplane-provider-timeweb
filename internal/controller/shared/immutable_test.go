@@ -20,7 +20,7 @@ import (
 	"errors"
 	"testing"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,27 +31,19 @@ import (
 // stubManaged is the minimum managed.Managed surface RejectImmutableChange needs.
 type stubManaged struct {
 	metav1.ObjectMeta
-	conds []xpv1.Condition
+	conds []xpv2.Condition
 }
+
+// stubManaged satisfies the v2 resource.Managed interface (Object +
+// Manageable + Conditioned). RejectImmutableChange only consumes that
+// surface; the extra ModernManaged / LegacyManaged methods are not needed.
 
 func (s *stubManaged) GetObjectKind() schema.ObjectKind               { return schema.EmptyObjectKind }
 func (s *stubManaged) DeepCopyObject() runtime.Object                 { c := *s; return &c }
-func (s *stubManaged) SetConditions(c ...xpv1.Condition)              { s.conds = append(s.conds, c...) }
-func (s *stubManaged) GetCondition(xpv1.ConditionType) xpv1.Condition { return xpv1.Condition{} }
-func (s *stubManaged) GetProviderConfigReference() *xpv1.Reference    { return nil }
-func (s *stubManaged) SetProviderConfigReference(*xpv1.Reference)     {}
-func (s *stubManaged) GetWriteConnectionSecretToReference() *xpv1.SecretReference {
-	return nil
-}
-func (s *stubManaged) SetWriteConnectionSecretToReference(*xpv1.SecretReference) {}
-func (s *stubManaged) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
-	return nil
-}
-func (s *stubManaged) SetPublishConnectionDetailsTo(*xpv1.PublishConnectionDetailsTo) {}
-func (s *stubManaged) GetManagementPolicies() xpv1.ManagementPolicies                 { return nil }
-func (s *stubManaged) SetManagementPolicies(xpv1.ManagementPolicies)                  {}
-func (s *stubManaged) GetDeletionPolicy() xpv1.DeletionPolicy                         { return "" }
-func (s *stubManaged) SetDeletionPolicy(xpv1.DeletionPolicy)                          {}
+func (s *stubManaged) SetConditions(c ...xpv2.Condition)              { s.conds = append(s.conds, c...) }
+func (s *stubManaged) GetCondition(xpv2.ConditionType) xpv2.Condition { return xpv2.Condition{} }
+func (s *stubManaged) GetManagementPolicies() xpv2.ManagementPolicies { return nil }
+func (s *stubManaged) SetManagementPolicies(xpv2.ManagementPolicies)  {}
 
 func TestRejectImmutableChange(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {

@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb/generated"

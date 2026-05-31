@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -59,13 +59,13 @@ type ProjectObservation struct {
 
 // ProjectSpec is the desired state.
 type ProjectSpec struct {
-	xpv1.ResourceSpec `json:",inline"`
+	xpv2.ManagedResourceSpec `json:",inline"`
 	ForProvider       ProjectParameters `json:"forProvider"`
 }
 
 // ProjectStatus is the observed state.
 type ProjectStatus struct {
-	xpv1.ResourceStatus `json:",inline"`
+	xpv2.ManagedResourceStatus `json:",inline"`
 	AtProvider          ProjectObservation `json:"atProvider,omitempty"`
 }
 

@@ -27,10 +27,10 @@ import (
 	"fmt"
 	"io"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/meta"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"k8s.io/client-go/tools/record"
 
 	objectstoragev1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/objectstorage/v1alpha1"
@@ -94,7 +94,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	populateStatus(cr, bucket)
-	cr.Status.SetConditions(xpv1.Available())
+	cr.Status.SetConditions(xpv2.Available())
 
 	return managed.ExternalObservation{
 		ResourceExists:    true,
@@ -153,7 +153,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	meta.SetExternalName(cr, shared.EncodeID(int(bucket.Id)))
 	populateStatus(cr, bucket)
-	cr.Status.SetConditions(xpv1.Creating())
+	cr.Status.SetConditions(xpv2.Creating())
 	return managed.ExternalCreation{ConnectionDetails: buildConnection(cr, bucket)}, nil
 }
 
@@ -248,7 +248,7 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) (managed.Ext
 		}
 		return managed.ExternalDelete{}, err
 	}
-	cr.Status.SetConditions(xpv1.Deleting())
+	cr.Status.SetConditions(xpv2.Deleting())
 	return managed.ExternalDelete{}, nil
 }
 

@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"strings"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,7 +38,7 @@ import (
 // and resolving its credential Secret. Implements managed.ExternalConnecter.
 type connector struct {
 	kube   client.Client
-	usage  resource.Tracker
+	usage  resource.ModernTracker
 	logger logging.Logger
 }
 
@@ -81,7 +81,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 // ProviderConfig. Surfaces explicit error messages for the two failure modes
 // documented in contracts/providerconfig-v1alpha1.md.
 func resolveToken(ctx context.Context, kube client.Client, pc *apisv1alpha1.ProviderConfig) (string, error) {
-	if pc.Spec.Credentials.Source != xpv1.CredentialsSourceSecret {
+	if pc.Spec.Credentials.Source != xpv2.CredentialsSourceSecret {
 		return "", fmt.Errorf("project: ProviderConfig %q has unsupported credentials.source %q (only Secret is supported)",
 			pc.Name, pc.Spec.Credentials.Source)
 	}

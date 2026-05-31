@@ -23,10 +23,10 @@ import (
 	"fmt"
 	"io"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/meta"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -138,7 +138,7 @@ func (e *repositoryExternal) Observe(ctx context.Context, mg resource.Managed) (
 	}
 
 	if found {
-		cr.Status.SetConditions(xpv1.Available())
+		cr.Status.SetConditions(xpv2.Available())
 		return managed.ExternalObservation{
 			ResourceExists:   true,
 			ResourceUpToDate: true,

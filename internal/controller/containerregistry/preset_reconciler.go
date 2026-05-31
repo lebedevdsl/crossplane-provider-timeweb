@@ -25,8 +25,8 @@ import (
 	"strings"
 	"time"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/logging"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -88,7 +88,7 @@ func (r *PresetReconciler) Start(ctx context.Context) error {
 // reconcileOnce performs a single catalog poll cycle.
 func (r *PresetReconciler) reconcileOnce(ctx context.Context) error {
 	// Resolve the credential via the canonical ProviderConfig.
-	pcRef := &xpv1.Reference{Name: r.PCName}
+	pcRef := &xpv2.ProviderConfigReference{Name: r.PCName, Kind: "ProviderConfig"}
 	token, err := loadToken(ctx, r.Kube, pcRef)
 	if err != nil {
 		return fmt.Errorf("preset reconciler: %w", err)
@@ -200,7 +200,7 @@ func (r *PresetReconciler) buildPreset(slug string, p struct {
 				Prices:           prices,
 				LastObservedAt:   &now,
 			},
-			Conditions: []xpv1.Condition{shared.SyncedFalse("CatalogObserved", "")},
+			Conditions: []xpv2.Condition{shared.SyncedFalse("CatalogObserved", "")},
 		},
 	}
 }
@@ -217,13 +217,13 @@ func (r *PresetReconciler) upsert(ctx context.Context, desired *cregv1alpha1.Con
 			return fmt.Errorf("create: %w", err)
 		}
 		toCreate.Status = desired.Status
-		toCreate.Status.Conditions = []xpv1.Condition{makeSyncedTrue()}
+		toCreate.Status.Conditions = []xpv2.Condition{makeSyncedTrue()}
 		return r.Kube.Status().Update(ctx, toCreate)
 	case err != nil:
 		return fmt.Errorf("get: %w", err)
 	default:
 		current.Status = desired.Status
-		current.Status.Conditions = []xpv1.Condition{makeSyncedTrue()}
+		current.Status.Conditions = []xpv2.Condition{makeSyncedTrue()}
 		return r.Kube.Status().Update(ctx, current)
 	}
 }
@@ -248,9 +248,9 @@ func slugify(short, desc string, id int) string {
 	return fmt.Sprintf("%s-%d", base, id)
 }
 
-func makeSyncedTrue() xpv1.Condition {
-	return xpv1.Condition{
-		Type:               xpv1.TypeSynced,
+func makeSyncedTrue() xpv2.Condition {
+	return xpv2.Condition{
+		Type:               xpv2.TypeSynced,
 		Status:             corev1.ConditionTrue,
 		LastTransitionTime: metav1.Now(),
 		Reason:             "CatalogObserved",

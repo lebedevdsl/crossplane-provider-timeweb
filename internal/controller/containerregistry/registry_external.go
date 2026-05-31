@@ -23,10 +23,10 @@ import (
 	"fmt"
 	"io"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/meta"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -81,7 +81,7 @@ func (e *registryExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	}
 
 	populateRegistryStatus(cr, reg)
-	cr.Status.SetConditions(xpv1.Available())
+	cr.Status.SetConditions(xpv2.Available())
 
 	conn, err := e.connectionDetails(ctx, reg)
 	if err != nil {
@@ -154,7 +154,7 @@ func (e *registryExternal) Create(ctx context.Context, mg resource.Managed) (man
 	}
 	meta.SetExternalName(cr, shared.EncodeID(reg.Id))
 	populateRegistryStatus(cr, reg)
-	cr.Status.SetConditions(xpv1.Creating())
+	cr.Status.SetConditions(xpv2.Creating())
 
 	conn, err := e.connectionDetails(ctx, reg)
 	if err != nil && !errors.Is(err, errCredentialsUnavailable) {
@@ -255,7 +255,7 @@ func (e *registryExternal) Delete(ctx context.Context, mg resource.Managed) (man
 		}
 		return managed.ExternalDelete{}, err
 	}
-	cr.Status.SetConditions(xpv1.Deleting())
+	cr.Status.SetConditions(xpv2.Deleting())
 	return managed.ExternalDelete{}, nil
 }
 

@@ -27,10 +27,10 @@ import (
 	"fmt"
 	"strings"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -50,7 +50,7 @@ var (
 // registryConnector builds an `registryExternal` per reconcile.
 type registryConnector struct {
 	kube     client.Client
-	usage    resource.Tracker
+	usage    resource.ModernTracker
 	logger   logging.Logger
 	recorder record.EventRecorder
 	// presetNamespace is the namespace where ContainerRegistryPreset CRs live.
@@ -60,7 +60,7 @@ type registryConnector struct {
 // repositoryConnector builds an `repositoryExternal` per reconcile.
 type repositoryConnector struct {
 	kube     client.Client
-	usage    resource.Tracker
+	usage    resource.ModernTracker
 	logger   logging.Logger
 	recorder record.EventRecorder
 }
@@ -115,7 +115,7 @@ func (c *repositoryConnector) Connect(ctx context.Context, mg resource.Managed) 
 }
 
 // loadToken resolves a ProviderConfig + Secret reference into a bearer token.
-func loadToken(ctx context.Context, kube client.Client, pcRef *xpv1.Reference) (string, error) {
+func loadToken(ctx context.Context, kube client.Client, pcRef *xpv2.ProviderConfigReference) (string, error) {
 	if pcRef == nil {
 		return "", fmt.Errorf("spec.providerConfigRef is required")
 	}
@@ -123,7 +123,7 @@ func loadToken(ctx context.Context, kube client.Client, pcRef *xpv1.Reference) (
 	if err := kube.Get(ctx, types.NamespacedName{Name: pcRef.Name}, pc); err != nil {
 		return "", fmt.Errorf("get ProviderConfig %q: %w", pcRef.Name, err)
 	}
-	if pc.Spec.Credentials.Source != xpv1.CredentialsSourceSecret {
+	if pc.Spec.Credentials.Source != xpv2.CredentialsSourceSecret {
 		return "", fmt.Errorf("ProviderConfig %q has unsupported credentials.source %q",
 			pc.Name, pc.Spec.Credentials.Source)
 	}

@@ -16,126 +16,70 @@ limitations under the License.
 
 package v1alpha1
 
-import xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+import xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 
 // --- ContainerRegistry --------------------------------------------------------
 
-// GetCondition returns the matching condition.
-func (mg *ContainerRegistry) GetCondition(ct xpv1.ConditionType) xpv1.Condition {
+func (mg *ContainerRegistry) GetCondition(ct xpv2.ConditionType) xpv2.Condition {
 	return mg.Status.GetCondition(ct)
 }
 
-// GetDeletionPolicy returns the DeletionPolicy.
-func (mg *ContainerRegistry) GetDeletionPolicy() xpv1.DeletionPolicy {
-	return mg.Spec.DeletionPolicy
-}
+func (mg *ContainerRegistry) SetConditions(c ...xpv2.Condition) { mg.Status.SetConditions(c...) }
 
-// GetProviderConfigReference returns the ProviderConfig reference.
-func (mg *ContainerRegistry) GetProviderConfigReference() *xpv1.Reference {
+func (mg *ContainerRegistry) GetProviderConfigReference() *xpv2.ProviderConfigReference {
 	return mg.Spec.ProviderConfigReference
 }
 
-// GetPublishConnectionDetailsTo returns the connection-details destination.
-func (mg *ContainerRegistry) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
-	return mg.Spec.PublishConnectionDetailsTo
-}
-
-// GetManagementPolicies returns the management policies.
-func (mg *ContainerRegistry) GetManagementPolicies() xpv1.ManagementPolicies {
-	return mg.Spec.ManagementPolicies
-}
-
-// GetWriteConnectionSecretToReference returns the connection-Secret target.
-func (mg *ContainerRegistry) GetWriteConnectionSecretToReference() *xpv1.SecretReference {
-	return mg.Spec.WriteConnectionSecretToReference
-}
-
-// SetConditions sets one or more conditions on status.
-func (mg *ContainerRegistry) SetConditions(c ...xpv1.Condition) { mg.Status.SetConditions(c...) }
-
-// SetDeletionPolicy sets the DeletionPolicy.
-func (mg *ContainerRegistry) SetDeletionPolicy(r xpv1.DeletionPolicy) {
-	mg.Spec.DeletionPolicy = r
-}
-
-// SetProviderConfigReference sets the ProviderConfig reference.
-func (mg *ContainerRegistry) SetProviderConfigReference(r *xpv1.Reference) {
+func (mg *ContainerRegistry) SetProviderConfigReference(r *xpv2.ProviderConfigReference) {
 	mg.Spec.ProviderConfigReference = r
 }
 
-// SetPublishConnectionDetailsTo sets the connection-details destination.
-func (mg *ContainerRegistry) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
-	mg.Spec.PublishConnectionDetailsTo = r
+func (mg *ContainerRegistry) GetManagementPolicies() xpv2.ManagementPolicies {
+	return mg.Spec.ManagementPolicies
 }
 
-// SetManagementPolicies sets the management policies.
-func (mg *ContainerRegistry) SetManagementPolicies(r xpv1.ManagementPolicies) {
+func (mg *ContainerRegistry) SetManagementPolicies(r xpv2.ManagementPolicies) {
 	mg.Spec.ManagementPolicies = r
 }
 
-// SetWriteConnectionSecretToReference sets the connection-Secret target.
-func (mg *ContainerRegistry) SetWriteConnectionSecretToReference(r *xpv1.SecretReference) {
+func (mg *ContainerRegistry) GetWriteConnectionSecretToReference() *xpv2.LocalSecretReference {
+	return mg.Spec.WriteConnectionSecretToReference
+}
+
+func (mg *ContainerRegistry) SetWriteConnectionSecretToReference(r *xpv2.LocalSecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }
 
 // --- ContainerRegistryRepository ---------------------------------------------
 
-// GetCondition returns the matching condition.
-func (mg *ContainerRegistryRepository) GetCondition(ct xpv1.ConditionType) xpv1.Condition {
+func (mg *ContainerRegistryRepository) GetCondition(ct xpv2.ConditionType) xpv2.Condition {
 	return mg.Status.GetCondition(ct)
 }
 
-// GetDeletionPolicy returns the DeletionPolicy.
-func (mg *ContainerRegistryRepository) GetDeletionPolicy() xpv1.DeletionPolicy {
-	return mg.Spec.DeletionPolicy
-}
-
-// GetProviderConfigReference returns the ProviderConfig reference.
-func (mg *ContainerRegistryRepository) GetProviderConfigReference() *xpv1.Reference {
-	return mg.Spec.ProviderConfigReference
-}
-
-// GetPublishConnectionDetailsTo returns the connection-details destination.
-func (mg *ContainerRegistryRepository) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
-	return mg.Spec.PublishConnectionDetailsTo
-}
-
-// GetManagementPolicies returns the management policies.
-func (mg *ContainerRegistryRepository) GetManagementPolicies() xpv1.ManagementPolicies {
-	return mg.Spec.ManagementPolicies
-}
-
-// GetWriteConnectionSecretToReference returns the connection-Secret target.
-func (mg *ContainerRegistryRepository) GetWriteConnectionSecretToReference() *xpv1.SecretReference {
-	return mg.Spec.WriteConnectionSecretToReference
-}
-
-// SetConditions sets one or more conditions.
-func (mg *ContainerRegistryRepository) SetConditions(c ...xpv1.Condition) {
+func (mg *ContainerRegistryRepository) SetConditions(c ...xpv2.Condition) {
 	mg.Status.SetConditions(c...)
 }
 
-// SetDeletionPolicy sets the DeletionPolicy.
-func (mg *ContainerRegistryRepository) SetDeletionPolicy(r xpv1.DeletionPolicy) {
-	mg.Spec.DeletionPolicy = r
+func (mg *ContainerRegistryRepository) GetProviderConfigReference() *xpv2.ProviderConfigReference {
+	return mg.Spec.ProviderConfigReference
 }
 
-// SetProviderConfigReference sets the ProviderConfig reference.
-func (mg *ContainerRegistryRepository) SetProviderConfigReference(r *xpv1.Reference) {
+func (mg *ContainerRegistryRepository) SetProviderConfigReference(r *xpv2.ProviderConfigReference) {
 	mg.Spec.ProviderConfigReference = r
 }
 
-// SetPublishConnectionDetailsTo sets the connection-details destination.
-func (mg *ContainerRegistryRepository) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
-	mg.Spec.PublishConnectionDetailsTo = r
+func (mg *ContainerRegistryRepository) GetManagementPolicies() xpv2.ManagementPolicies {
+	return mg.Spec.ManagementPolicies
 }
 
-// SetManagementPolicies sets the management policies.
-func (mg *ContainerRegistryRepository) SetManagementPolicies(r xpv1.ManagementPolicies) {
+func (mg *ContainerRegistryRepository) SetManagementPolicies(r xpv2.ManagementPolicies) {
 	mg.Spec.ManagementPolicies = r
 }
 
-// SetWriteConnectionSecretToReference sets the connection-Secret target.
-func (mg *ContainerRegistryRepository) SetWriteConnectionSecretToReference(r *xpv1.SecretReference) {
+func (mg *ContainerRegistryRepository) GetWriteConnectionSecretToReference() *xpv2.LocalSecretReference {
+	return mg.Spec.WriteConnectionSecretToReference
+}
+
+func (mg *ContainerRegistryRepository) SetWriteConnectionSecretToReference(r *xpv2.LocalSecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }

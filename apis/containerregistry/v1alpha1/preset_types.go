@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -67,7 +67,7 @@ type ContainerRegistryPresetStatus struct {
 	// Conditions are the standard Crossplane reconciliation conditions —
 	// reused for consistency even though Preset is not a managed resource.
 	// +optional
-	Conditions []xpv1.Condition `json:"conditions,omitempty"`
+	Conditions []xpv2.Condition `json:"conditions,omitempty"`
 	// AtProvider holds the catalog data.
 	AtProvider ContainerRegistryPresetObservation `json:"atProvider,omitempty"`
 }

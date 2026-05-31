@@ -20,14 +20,14 @@ import (
 	"strings"
 	"testing"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	corev1 "k8s.io/api/core/v1"
 )
 
 func TestSyncedFalse(t *testing.T) {
 	c := SyncedFalse(ReasonImmutableFieldChange, "body is immutable")
-	if c.Type != xpv1.TypeSynced {
-		t.Errorf("Type = %q, want %q", c.Type, xpv1.TypeSynced)
+	if c.Type != xpv2.TypeSynced {
+		t.Errorf("Type = %q, want %q", c.Type, xpv2.TypeSynced)
 	}
 	if c.Status != corev1.ConditionFalse {
 		t.Errorf("Status = %q, want %q", c.Status, corev1.ConditionFalse)
@@ -42,8 +42,8 @@ func TestSyncedFalse(t *testing.T) {
 
 func TestReadyFalse(t *testing.T) {
 	c := ReadyFalse(ReasonRepositoryNotPushed, "repository not yet pushed")
-	if c.Type != xpv1.TypeReady {
-		t.Errorf("Type = %q, want %q", c.Type, xpv1.TypeReady)
+	if c.Type != xpv2.TypeReady {
+		t.Errorf("Type = %q, want %q", c.Type, xpv2.TypeReady)
 	}
 	if c.Status != corev1.ConditionFalse {
 		t.Errorf("Status = %q, want %q", c.Status, corev1.ConditionFalse)

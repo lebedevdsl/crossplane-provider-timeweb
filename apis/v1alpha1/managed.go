@@ -17,8 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 )
 
 // Accessor methods required by crossplane-runtime's `resource.ProviderConfig`
@@ -26,12 +26,12 @@ import (
 // expose these on the outer type, so each is forwarded explicitly.
 
 // GetCondition returns the matching condition on the ProviderConfig status.
-func (pc *ProviderConfig) GetCondition(ct xpv1.ConditionType) xpv1.Condition {
+func (pc *ProviderConfig) GetCondition(ct xpv2.ConditionType) xpv2.Condition {
 	return pc.Status.GetCondition(ct)
 }
 
 // SetConditions applies one or more conditions to the ProviderConfig status.
-func (pc *ProviderConfig) SetConditions(c ...xpv1.Condition) { pc.Status.SetConditions(c...) }
+func (pc *ProviderConfig) SetConditions(c ...xpv2.Condition) { pc.Status.SetConditions(c...) }
 
 // GetUsers returns the number of managed resources currently bound to this
 // ProviderConfig.
@@ -41,25 +41,26 @@ func (pc *ProviderConfig) GetUsers() int64 { return pc.Status.Users }
 // ProviderConfig.
 func (pc *ProviderConfig) SetUsers(n int64) { pc.Status.Users = n }
 
-// GetProviderConfigReference returns the ProviderConfig reference of this
-// usage record (required by crossplane-runtime's ProviderConfigUsage iface).
-func (pcu *ProviderConfigUsage) GetProviderConfigReference() xpv1.Reference {
+// GetProviderConfigReference returns the typed ProviderConfig reference of
+// this usage record (required by crossplane-runtime v2's
+// TypedProviderConfigUsage interface).
+func (pcu *ProviderConfigUsage) GetProviderConfigReference() xpv2.ProviderConfigReference {
 	return pcu.ProviderConfigReference
 }
 
-// SetProviderConfigReference stores the ProviderConfig reference.
-func (pcu *ProviderConfigUsage) SetProviderConfigReference(r xpv1.Reference) {
+// SetProviderConfigReference stores the typed ProviderConfig reference.
+func (pcu *ProviderConfigUsage) SetProviderConfigReference(r xpv2.ProviderConfigReference) {
 	pcu.ProviderConfigReference = r
 }
 
 // GetResourceReference returns the typed reference to the managed resource
 // that bound to the ProviderConfig.
-func (pcu *ProviderConfigUsage) GetResourceReference() xpv1.TypedReference {
+func (pcu *ProviderConfigUsage) GetResourceReference() xpv2.TypedReference {
 	return pcu.ResourceReference
 }
 
 // SetResourceReference stores the typed reference to the managed resource.
-func (pcu *ProviderConfigUsage) SetResourceReference(r xpv1.TypedReference) {
+func (pcu *ProviderConfigUsage) SetResourceReference(r xpv2.TypedReference) {
 	pcu.ResourceReference = r
 }
 

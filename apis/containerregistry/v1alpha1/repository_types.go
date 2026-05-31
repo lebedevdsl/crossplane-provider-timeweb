@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -61,13 +61,13 @@ type ContainerRegistryRepositoryObservation struct {
 
 // ContainerRegistryRepositorySpec is the desired state.
 type ContainerRegistryRepositorySpec struct {
-	xpv1.ResourceSpec `json:",inline"`
+	xpv2.ManagedResourceSpec `json:",inline"`
 	ForProvider       ContainerRegistryRepositoryParameters `json:"forProvider"`
 }
 
 // ContainerRegistryRepositoryStatus is the observed state.
 type ContainerRegistryRepositoryStatus struct {
-	xpv1.ResourceStatus `json:",inline"`
+	xpv2.ManagedResourceStatus `json:",inline"`
 	AtProvider          ContainerRegistryRepositoryObservation `json:"atProvider,omitempty"`
 }
 
