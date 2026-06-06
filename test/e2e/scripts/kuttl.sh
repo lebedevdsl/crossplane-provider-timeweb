@@ -208,14 +208,45 @@ TWE_SSH_NAME="e2e-ssh-$TS"
 TWE_S3_NAME="e2e-s3-$TS"
 TWE_CR_NAME="e2e-cr-$TS"
 TWE_SERVER_NAME="e2e-srv-$TS"
+TWE_NETWORK_NAME="e2e-net-$TS"
 
-export TWE_PROJECT_ID TWE_SSH_NAME TWE_S3_NAME TWE_CR_NAME TWE_SERVER_NAME TWE_SERVER_PRESET
+export TWE_PROJECT_ID TWE_SSH_NAME TWE_S3_NAME TWE_CR_NAME TWE_SERVER_NAME TWE_SERVER_PRESET TWE_NETWORK_NAME
 
 echo "[e2e] generated names:"
 echo "[e2e]   SSHKey:        $TWE_SSH_NAME"
 echo "[e2e]   S3Bucket:      $TWE_S3_NAME"
 echo "[e2e]   ContainerReg:  $TWE_CR_NAME"
 echo "[e2e]   Server:        $TWE_SERVER_NAME"
+echo "[e2e]   Network:       $TWE_NETWORK_NAME"
+
+# --- 3b. Pre-create an out-of-band VPC for the networkID import test --------
+#
+# US3 (feature 003) lets an operator attach a Server to an existing VPC by
+# `forProvider.networkID` WITHOUT modeling it as a Crossplane Network MR.
+# The 10b bundle exercises that path, so the VPC must already exist upstream
+# and NOT be Crossplane-managed. We create it here via curl (v2 path) and
+# pass its id as $TWE_IMPORT_VPC_ID. The Server references it by ID; deleting
+# the Server leaves the VPC untouched (that's the whole point), so the
+# wrapper deletes the VPC itself at exit (v1 delete path per R-6).
+#
+# Gate with TIMEWEB_E2E_SKIP_IMPORT=1 to skip the whole bundle (e.g. on
+# accounts where VPC quota is tight).
+TWE_IMPORT_VPC_ENABLED=1
+if [ "${TIMEWEB_E2E_SKIP_IMPORT:-0}" = "1" ]; then
+  echo "[e2e] TIMEWEB_E2E_SKIP_IMPORT=1 → networkID-import bundle (10b) SKIPPED"
+  TWE_IMPORT_VPC_ENABLED=0
+else
+  echo "[e2e] pre-creating out-of-band VPC for the networkID-import bundle (10b)"
+  TWE_IMPORT_VPC_ID=$(curl -fsS \
+    -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+    -H "Content-Type: application/json" \
+    -X POST "${TW_API}/api/v2/vpcs" \
+    -d "{\"name\":\"e2e-import-$TS\",\"subnet_v4\":\"10.32.0.0/24\",\"location\":\"ru-1\"}" \
+    | jq -er '.vpc.id')
+  echo "[e2e]   → $TWE_IMPORT_VPC_ID (wrapper will delete it at exit)"
+  export TWE_IMPORT_VPC_ID
+fi
+export TWE_IMPORT_VPC_ENABLED
 
 # --- 3a. Inspect leftover CRs (DO NOT auto-delete) --------------------------
 #
@@ -265,14 +296,17 @@ report_orphans() {
 
 TMP_BUNDLE=$(mktemp -d "${TMPDIR:-/tmp}/provider-timeweb-e2e.XXXXXX")
 TMP_KUBECONFIG=$(mktemp)
-trap 'rm -rf "$TMP_BUNDLE" "$TMP_KUBECONFIG"' EXIT
+# The trap also deallocates the out-of-band import VPC (section 3b). It is
+# NOT Crossplane-managed, so kuttl teardown won't touch it; we delete it via
+# the v1 path (R-6) after kuttl has already torn down the referencing Server.
+trap 'rm -rf "$TMP_BUNDLE" "$TMP_KUBECONFIG"; [ -n "${TWE_IMPORT_VPC_ID:-}" ] && curl -fsS -X DELETE -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" "${TW_API}/api/v1/vpcs/${TWE_IMPORT_VPC_ID}" >/dev/null 2>&1; true' EXIT
 
 cp -R test/e2e/kuttl/. "$TMP_BUNDLE/"
 
 # Restrict envsubst to the TWE_* allow-list so unrelated `$` literals
 # elsewhere in YAML (e.g. JSONPath expressions in assertions) are not
 # clobbered.
-TWE_VARS='${TWE_PROJECT_ID} ${TWE_SSH_NAME} ${TWE_S3_NAME} ${TWE_CR_NAME} ${TWE_SERVER_NAME} ${TWE_SERVER_PRESET}'
+TWE_VARS='${TWE_PROJECT_ID} ${TWE_SSH_NAME} ${TWE_S3_NAME} ${TWE_CR_NAME} ${TWE_SERVER_NAME} ${TWE_SERVER_PRESET} ${TWE_NETWORK_NAME} ${TWE_IMPORT_VPC_ID}'
 
 find "$TMP_BUNDLE" -type f \( -name '*.yaml' -o -name '*.yml' \) -print0 \
   | while IFS= read -r -d '' f; do
@@ -331,6 +365,11 @@ if [ "$TWE_MULTI_PC_ENABLED" = "0" ]; then
   # bundle from being LOADED; the simplest reliable skip is to physically
   # remove the bundle dir from the tmpdir copy before kuttl runs.
   rm -rf "$TMP_BUNDLE/tests/07-multi-pc-isolation" "$TMP_BUNDLE/tests/07b-invalid-pc-kind"
+fi
+if [ "$TWE_IMPORT_VPC_ENABLED" = "0" ]; then
+  # No pre-created VPC → the networkID-import bundle can't run. Remove it
+  # from the tmpdir copy so kuttl doesn't load it.
+  rm -rf "$TMP_BUNDLE/tests/10b-server-with-network-id"
 fi
 
 echo "[e2e] running kuttl test bundle from $TMP_BUNDLE"

@@ -29,9 +29,9 @@ metadata:
   namespace: timeweb-e2e
 status:
   conditions:
-  - type: Synced
-    status: "True"
   - type: Ready
+    status: "True"
+  - type: Synced
     status: "True"
 ---
 apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
@@ -40,6 +40,10 @@ metadata:
   name: e2e-server
   namespace: timeweb-e2e
 status:
+  # A Server with gating refs (here sshKeyRefs) lands conditions in
+  # [Synced, Ready] order: its first reconcile fails Connect (ref not yet
+  # Ready) → Synced set first; Ready is added once Create runs. Resources
+  # without gating refs (Network, SSHKey, FloatingIP) are [Ready, Synced].
   conditions:
   - type: Synced
     status: "True"

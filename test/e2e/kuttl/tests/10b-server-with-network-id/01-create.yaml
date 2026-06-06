@@ -1,0 +1,32 @@
+# Step 1 - Server attached to an externally-managed VPC by ID (feature 003
+# US3, acceptance scenario 1).
+#
+# The wrapper script (section 3b) pre-creates a VPC out-of-band via curl and
+# exports its id as $TWE_IMPORT_VPC_ID. This bundle applies a Server with
+# `forProvider.networkID: <that id>` and NO networkRef — so the controller
+# skips the cross-resource lookup entirely, runs the FR-012 location-mismatch
+# pre-flight via an upstream VPC GET (both in ru-1 here), and attaches the VM
+# to the dashboard-managed VPC.
+#
+# The Server does NOT own the VPC: kuttl teardown deletes the Server only;
+# the wrapper deallocates the VPC at exit. This bundle is skipped entirely
+# when TIMEWEB_E2E_SKIP_IMPORT=1.
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-server-byid
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  writeConnectionSecretToRef:
+    name: e2e-server-byid-conn
+  forProvider:
+    name: "${TWE_SERVER_NAME}-byid"
+    presetName: "${TWE_SERVER_PRESET}"
+    location: ru-1
+    os:
+      image: ubuntu
+      version: "24.04"
+    networkID: "${TWE_IMPORT_VPC_ID}"

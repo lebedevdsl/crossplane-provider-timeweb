@@ -1,0 +1,13 @@
+# Step 2 - Mutable-field PATCH. Per R-6 / the network contract, only
+# `description` is mutable post-create (name / subnetCIDR / location /
+# availabilityZone are controller-enforced immutable). The Network
+# controller PATCHes /api/v2/vpcs/{id} with the new description and
+# Synced=True stays true (no condition flap).
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: e2e-network
+  namespace: timeweb-e2e
+spec:
+  forProvider:
+    description: "edited by kuttl 08 step 02"

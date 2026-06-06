@@ -1,0 +1,22 @@
+# Single VM provision against the imported VPC; SC-001 caps it at 10 min.
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 600
+---
+# The Server reaches Ready=True + Synced=True attached to the imported VPC.
+# status.atProvider.resolvedNetworkID echoes the operator-supplied VPC id
+# (populated from spec on the import path, US3 / T036). The live canary
+# (T059) additionally eyeballs that privateIP falls inside the VPC's CIDR.
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-server-byid
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"
+  atProvider:
+    resolvedNetworkID: "${TWE_IMPORT_VPC_ID}"

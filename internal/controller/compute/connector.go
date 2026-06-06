@@ -76,8 +76,15 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	// Resolve the same-namespace cross-resource references the controller
 	// needs at Create time. Network ref blocks Create until target is
 	// Ready=True per FR-011; missing-target surfaces a typed error.
-	if err := resolveRefs(ctx, c.kube, cr); err != nil {
-		return nil, fmt.Errorf("compute/server: resolve references: %w", err)
+	//
+	// Skip resolution entirely when the Server is being deleted: Delete uses
+	// only status.atProvider (external-name + boundFloatingIPs), and a
+	// dangling ref (e.g. a referenced FloatingIP already deleted) would
+	// otherwise fail Connect and wedge the finalizer forever.
+	if cr.GetDeletionTimestamp() == nil {
+		if err := resolveRefs(ctx, c.kube, cr); err != nil {
+			return nil, fmt.Errorf("compute/server: resolve references: %w", err)
+		}
 	}
 
 	return &serverExternal{

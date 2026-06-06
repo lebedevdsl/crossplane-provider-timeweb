@@ -1,0 +1,46 @@
+# Step 1 - Allocate a floating IP + a server, unbound (feature 003 US4,
+# Server-consumes-IP model).
+#
+# The FloatingIP is pure allocation (location + isDDoSGuard). The Server is
+# created with NO floatingIPRefs yet. Binding is added in step 02 and is
+# owned by the SERVER controller (POST /floating-ips/{id}/bind), not the
+# FloatingIP controller.
+#
+# Each step re-applies the FULL Server spec so kubectl's 3-way merge can add
+# (step 02) and remove (step 03) floatingIPRefs cleanly.
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: FloatingIP
+metadata:
+  name: e2e-fip
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  writeConnectionSecretToRef:
+    name: e2e-fip-conn
+  forProvider:
+    location: ru-1
+    availabilityZone: spb-1           # MUST match the Server's zone to bind (Timeweb requires same-zone)
+    isDDoSGuard: false
+    comment: "kuttl 11 floating-ip-bind"
+---
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-fip-server
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  writeConnectionSecretToRef:
+    name: e2e-fip-server-conn
+  forProvider:
+    name: "${TWE_SERVER_NAME}-fip"
+    presetName: "${TWE_SERVER_PRESET}"
+    location: ru-1
+    os:
+      image: ubuntu
+      version: "24.04"
+    availabilityZone: spb-1           # same zone as the FloatingIP (Timeweb bind requires same-zone)

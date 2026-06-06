@@ -149,7 +149,7 @@ func (in *ServerObservation) DeepCopyInto(out *ServerObservation) {
 	}
 	if in.BoundFloatingIPs != nil {
 		in, out := &in.BoundFloatingIPs, &out.BoundFloatingIPs
-		*out = make([]int64, len(*in))
+		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
 	if in.State != nil {

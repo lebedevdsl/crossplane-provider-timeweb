@@ -1,0 +1,12 @@
+# After the description PATCH the Network stays Ready=True + Synced=True.
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: e2e-network
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"

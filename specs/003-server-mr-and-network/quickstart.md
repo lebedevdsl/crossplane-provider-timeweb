@@ -10,7 +10,7 @@
 |---|---|---|---|
 | `Server` | `compute.m.timeweb.crossplane.io/v1alpha1` | NEW | Cloud server (VM). Sized via `presetName`; OS via `os.image + os.version`. |
 | `Network` | `network.m.timeweb.crossplane.io/v1alpha1` | NEW | VPC. `subnetCIDR` + `location`. Independently usable. |
-| `FloatingIP` | `network.m.timeweb.crossplane.io/v1alpha1` | NEW | Floating IPv4. Owns its bind/unbind to a Server. |
+| `FloatingIP` | `network.m.timeweb.crossplane.io/v1alpha1` | NEW | Floating IPv4. Pure allocation; the Server binds it via `floatingIPRefs` (2026-06-01 reversal). |
 | `ContainerRegistry`, `S3Bucket`, `Project`, `SshKey`, `ProviderConfig`, `ClusterProviderConfig`, `ContainerRegistryRepository` | (unchanged) | EXISTING | Carried forward from features 001/002. |
 
 The dual-PC pair + the shared `ProviderConfigSpec` + `InvalidProviderConfigRef` semantics from feature 002 apply unchanged. The in-controller resolver primitive grows two new dimensions: `ServerPreset` (Preset) and `ServerOSImage` (Enum).
@@ -57,8 +57,8 @@ spec:
     name: web-01-conn
   forProvider:
     name: web-01
-    presetName: premium-2-2-40-msk-1    # → slugified from /api/v1/presets/servers
-    location: msk-1
+    presetName: premium-2-2-40-ru-1    # → slugified from /api/v1/presets/servers
+    location: ru-1
     os:
       image: ubuntu
       version: "24.04"
@@ -75,7 +75,7 @@ After `kubectl apply -f`:
 
 kubectl -n team-a get server web-01 -w
 # NAME     READY   SYNCED   LOCATION   PRESET                       PUBLIC-IP   STATE   AGE
-# web-01   True    True     msk-1      premium-2-2-40-msk-1         5.6.7.8     on      6m
+# web-01   True    True     ru-1      premium-2-2-40-ru-1         5.6.7.8     on      6m
 
 kubectl -n team-a get secret web-01-conn -o jsonpath='{.data.publicIP}' | base64 -d
 # 5.6.7.8
@@ -98,7 +98,7 @@ spec:
   forProvider:
     name: team-a-shared
     subnetCIDR: 10.30.0.0/24
-    location: msk-1                     # MUST match the location of every attached Server
+    location: ru-1                     # MUST match the location of every attached Server
 ```
 
 Then on a `Server`:
@@ -117,7 +117,10 @@ Server-to-server private connectivity: apply a second Server in the same namespa
 
 ## Pinning a public IPv4 across recreates (FloatingIP)
 
+Per the 2026-06-01 reversal, the binding lives on the **Server** (`floatingIPRefs`), not on the FloatingIP. The FloatingIP is pure allocation — it never references a Server.
+
 ```yaml
+# 1. Allocate the IP (no server reference — allocation only).
 apiVersion: network.m.timeweb.crossplane.io/v1alpha1
 kind: FloatingIP
 metadata:
@@ -130,22 +133,32 @@ spec:
   writeConnectionSecretToRef:
     name: web-01-stable-ip-secret
   forProvider:
-    location: msk-1
-    serverRef:
-      name: web-01                      # binds to the Server above
+    location: ru-1
+    isDDoSGuard: false
+---
+# 2. Reference it FROM the Server to bind.
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: web-01
+  namespace: team-a
+spec:
+  forProvider:
+    # …same as before…
+    floatingIPRefs:
+    - name: web-01-stable-ip            # → the FloatingIP MR above
 ```
 
 Flow:
-1. Controller allocates the floating IP upstream (status `ip: 5.6.7.99`).
-2. Resolves `serverRef` → waits for the Server to reach `Ready=True`.
-3. Calls `POST /floating-ips/{id}/bind` with `resource_type=server, resource_id=<server_id>`.
-4. Server's `status.atProvider.boundFloatingIPs` lists the new IP's upstream ID (observed from upstream, not from the FloatingIP MR's spec).
+1. The `FloatingIP` controller allocates the IP upstream (`status.atProvider.ip: 5.6.7.99`), unbound.
+2. The **Server** controller resolves `floatingIPRefs` → the IP's upstream ID, waits for the Server to reach `state=on`, then calls `POST /floating-ips/{id}/bind` with `resource_type=server, resource_id=<server_id>`.
+3. `Server.status.atProvider.boundFloatingIPs` lists the bound IP's upstream ID (confirmed by reading the IP's upstream `bound_to`). The `FloatingIP.status.atProvider.observedBoundTo` mirrors the same upstream binding for diagnostics.
 
-Re-pointing the IP to a different Server: edit `serverRef.name` to the new target. The controller calls unbind + bind in sequence. `status.atProvider.resolvedServerID` updates.
+Re-pointing the IP to a different Server: move the `floatingIPRefs` entry to the other Server. The new Server's controller binds; the old Server's controller unbinds — exactly one bind + one unbind.
 
-Releasing the binding: clear `serverRef`. Controller unbinds upstream; the FloatingIP stays allocated (so you can re-bind later without losing the address).
+Releasing the binding: remove the entry from `Server.forProvider.floatingIPRefs`. The Server controller unbinds upstream; the FloatingIP stays allocated (re-bindable later without losing the address).
 
-Returning the IP to the pool: `kubectl delete floatingip web-01-stable-ip`. Controller unbinds first (if bound), then releases the upstream allocation.
+Returning the IP to the pool: `kubectl delete floatingip web-01-stable-ip`. (Unbind it first by clearing the Server's `floatingIPRefs`; the FloatingIP controller does not force-unbind — single-owner on the Server.)
 
 ## Project assignment
 
@@ -194,7 +207,7 @@ The new bundles, in execution order:
 | `10-server-with-network/` | Two Servers attached to one Network — `privateIP` falls in the CIDR. |
 | `11-floating-ip-bind/` | Alloc + bind + rebind to a different server + unbind. |
 
-Cost-aware: the suite uses the **smallest** premium preset available (the wrapper script discovers it at runtime). Per `docs/presets.md` (added in this feature), the cheapest msk-1 cloud server is currently ≈800 ₽/мес (≈1.09 ₽/час); a full e2e run takes under 10 minutes so cost is under €0.05 per run.
+Cost-aware: the suite uses the **smallest** premium preset available (the wrapper script discovers it at runtime). Per `docs/presets.md` (added in this feature), the cheapest ru-1 cloud server is currently ≈800 ₽/мес (≈1.09 ₽/час); a full e2e run takes under 10 minutes so cost is under €0.05 per run.
 
 ## Troubleshooting
 
@@ -204,9 +217,11 @@ Cost-aware: the suite uses the **smallest** premium preset available (the wrappe
 | `Synced=False, reason=ReconcileError` with `PresetNotFound` | `presetName` slug doesn't match any preset visible to your token. | The message lists valid slugs. Pick one, re-apply. |
 | `Synced=False, reason=ReconcileError` with `os not found` | `os.image` + `os.version` doesn't match any entry in `/api/v1/os/servers` for your location. | Check the dashboard's OS list for that region; types are lowercased + version-exact. |
 | `Synced=False, reason=ReconcileError` with `location mismatch` | Server.location ≠ resolved-Network.location. | Pick a Network in the same region, or move the Server to the Network's region. |
-| `FloatingIP` stuck at `Synced=False, reason=Reconciling` | Bound target Server hasn't reached `Ready=True` yet. | Wait. The allocation succeeded (IP is in `status.atProvider.ip`); only the bind is pending. |
-| `FloatingIP` shows IP in status but `resolvedServerID` is empty | Spec's binding trio is empty (unbound by design). | Add a `serverRef`, `serverSelector`, or `serverID` if you want it bound. |
-| Server `Ready=False, reason=Deleting` while CR still exists | Kubernetes deletion is in flight. Standard behavior per `feedback_no_unsolicited_commits`-companion memory. | Wait for cascade; investigate with `kubectl describe`. |
+| `Server` stuck at `Synced=False, reason=Reconciling` naming a `FloatingIP` | A referenced FloatingIP (`floatingIPRefs`) isn't `Ready=True` (allocated) yet, or doesn't exist. | Wait for the FloatingIP to allocate; the Server binds it on the next reconcile once the VM is `on`. |
+| `Server.status.atProvider.boundFloatingIPs` empty despite `floatingIPRefs` set | The VM hasn't reached `state=on` yet (bind waits for a running server), or the IP is still allocating. | Wait. Binding converges once both the Server is `on` and the FloatingIP is `Ready`. |
+| `FloatingIP` has an IP but `observedBoundTo` is empty | Unbound by design — no Server references it via `floatingIPRefs`. | Add the FloatingIP's name to a `Server.forProvider.floatingIPRefs` to bind it. |
+| `Server` stuck at `Ready=False, reason=PaymentRequired` | Upstream server state is `no_paid` — the Timeweb account lacks funds/quota to start it. | Top up the account; the server starts once payment clears. Not a controller fault (`Synced` stays `True`). |
+| Server `Ready=False, reason=Deleting` while CR still exists | Kubernetes deletion is in flight. Standard behavior. | Wait for cascade; investigate with `kubectl describe`. |
 
 ## What's NOT in v0.3
 

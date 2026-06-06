@@ -12,11 +12,16 @@ metadata:
       resources: namespaced ProviderConfig + cluster-scoped
       ClusterProviderConfig (with the dual-reference fallback documented
       in the README), Project, SshKey, S3Bucket, ContainerRegistry,
-      ContainerRegistryRepository. Sizing on the two storage-class
-      MRs (S3Bucket, ContainerRegistry) is via `initialSizeGB` with a
-      CEL-enforced enum tied to Timeweb's published tariff tiers.
+      ContainerRegistryRepository, Server (cloud VM, compute group),
+      Network (VPC) and FloatingIP (floating IPv4) in the network group.
+      Sizing on the two storage-class MRs (S3Bucket, ContainerRegistry)
+      is via `initialSizeGB` with a CEL-enforced enum tied to Timeweb's
+      published tariff tiers; the Server is sized via a `presetName` slug
+      resolved by the in-controller catalog resolver. Floating-IP
+      bind/unbind is owned by the Server (Server-consumes-IP).
     meta.crossplane.io/readme: |
-      See the top-level README.md and docs/presets.md for the operator
+      See the top-level README.md, docs/presets.md (storage sizing) and
+      docs/servers.md (Server / Network / FloatingIP) for the operator
       walkthrough.
 spec:
   controller:

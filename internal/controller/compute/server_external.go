@@ -86,11 +86,30 @@ func (e *serverExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 	}
 
 	populateServerStatus(cr, envelope.Server)
+	// Resolved-ref status fields are populated here (not only in Create) —
+	// the runtime persists the atProvider written during Observe, whereas
+	// Create's atProvider writes don't survive to the next reconcile.
+	populateResolvedRefs(cr)
 	setReadyCondition(cr, envelope.Server.Status)
+
+	// Confirm the floating-IP binding set (read-only). Candidates are the
+	// desired refs (resolved in Connect) plus whatever we last recorded as
+	// bound — so an IP the operator just removed is still re-checked and
+	// can be detected as drift requiring an unbind in Update.
+	serverID := int(envelope.Server.Id)
+	candidates := append(append([]string{}, cr.Spec.ForProvider.FloatingIPIDs...), cr.Status.AtProvider.BoundFloatingIPs...)
+	bound, err := e.observeBoundFloatingIPs(ctx, candidates, serverID)
+	if err != nil {
+		return managed.ExternalObservation{}, err
+	}
+	cr.Status.AtProvider.BoundFloatingIPs = bound
+
+	upToDate := isServerUpToDate(cr.Spec.ForProvider, envelope.Server) &&
+		stringSetsEqual(bound, cr.Spec.ForProvider.FloatingIPIDs)
 
 	return managed.ExternalObservation{
 		ResourceExists:    true,
-		ResourceUpToDate:  isServerUpToDate(cr.Spec.ForProvider, envelope.Server),
+		ResourceUpToDate:  upToDate,
 		ConnectionDetails: serverConnectionDetails(cr, envelope.Server),
 	}, nil
 }
@@ -101,6 +120,18 @@ func (e *serverExternal) Create(ctx context.Context, mg resource.Managed) (manag
 	cr, ok := mg.(*computev1alpha1.Server)
 	if !ok {
 		return managed.ExternalCreation{}, errNotServer
+	}
+
+	// FR-012 pre-flight for the networkID import path (US3). The
+	// networkRef/Selector path validated location against the Network MR
+	// in resolveRefs (no upstream call); the import path has no MR, so we
+	// GET the VPC and compare here. NetworkRef==nil && NetworkID!=nil means
+	// the operator set networkID directly (resolveRefs only derives
+	// NetworkID from a ref when NetworkRef!=nil).
+	if cr.Spec.ForProvider.NetworkRef == nil && cr.Spec.ForProvider.NetworkID != nil {
+		if err := e.checkNetworkLocationByID(ctx, *cr.Spec.ForProvider.NetworkID, cr.Spec.ForProvider.Location); err != nil {
+			return managed.ExternalCreation{}, err
+		}
 	}
 
 	presetID, err := e.resolvePreset(ctx, cr.Spec.ForProvider.PresetName)
@@ -135,6 +166,7 @@ func (e *serverExternal) Create(ctx context.Context, mg resource.Managed) (manag
 
 	meta.SetExternalName(cr, shared.EncodeID(int(envelope.Server.Id)))
 	populateServerStatus(cr, envelope.Server)
+	populateResolvedRefs(cr)
 
 	// Record the locked IDs that drive drift detection on subsequent
 	// reconciles (FR-008).
@@ -200,6 +232,20 @@ func (e *serverExternal) Update(ctx context.Context, mg resource.Managed) (manag
 		}
 	}
 
+	// Converge floating-IP bindings (Server owns bind/unbind). Done before
+	// the mutable-field PATCH so a binding change still applies even when
+	// name/comment/cloudInit are unchanged. Binding waits for the VM to be
+	// "on"; until then this returns an error so the reconcile retries.
+	serverOn := strings.EqualFold(string(observed.Status), "on")
+	candidates := append(append([]string{}, cr.Spec.ForProvider.FloatingIPIDs...), cr.Status.AtProvider.BoundFloatingIPs...)
+	currentlyBound, err := e.observeBoundFloatingIPs(ctx, candidates, id)
+	if err != nil {
+		return managed.ExternalUpdate{}, err
+	}
+	if err := e.reconcileFloatingIPBindings(ctx, id, cr.Spec.ForProvider.FloatingIPIDs, currentlyBound, serverOn); err != nil {
+		return managed.ExternalUpdate{}, err
+	}
+
 	// PATCH only the mutable subset.
 	patch := twgen.UpdateServerJSONRequestBody{}
 	dirty := false
@@ -248,6 +294,15 @@ func (e *serverExternal) Delete(ctx context.Context, mg resource.Managed) (manag
 	id, err := shared.DecodeID(meta.GetExternalName(cr))
 	if err != nil {
 		return managed.ExternalDelete{}, nil
+	}
+
+	// Unbind every floating IP bound to this server first (idempotent;
+	// already-unbound tolerated). The FloatingIP MRs are NOT owned by the
+	// Server, so they stay allocated for re-binding elsewhere.
+	for _, fipID := range cr.Status.AtProvider.BoundFloatingIPs {
+		if err := e.unbindFloatingIP(ctx, fipID); err != nil {
+			return managed.ExternalDelete{}, err
+		}
 	}
 
 	// DeleteServerParams carries optional Telegram-confirmation tokens
@@ -308,6 +363,57 @@ func (e *serverExternal) resolveOSImage(ctx context.Context, os computev1alpha1.
 		return 0, fmt.Errorf("compute/server: resolver returned %T, want PresetOutput", out)
 	}
 	return float32(po.UpstreamID), nil
+}
+
+// checkNetworkLocationByID GETs the upstream VPC and verifies its location
+// matches the Server's (FR-012 on the networkID import path, US3 / T038).
+// A 404 surfaces as ErrTargetNotFound so the operator learns the imported
+// VPC ID is wrong; a mismatch surfaces as ErrNetworkLocationMismatch.
+func (e *serverExternal) checkNetworkLocationByID(ctx context.Context, vpcID, serverLocation string) error {
+	resp, err := e.tw.GetVPC(ctx, vpcID)
+	if err != nil {
+		return timeweb.ClassifyNetworkError(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if err := timeweb.Classify(resp); err != nil {
+		if errors.Is(err, timeweb.ErrNotFound) {
+			return fmt.Errorf("%w: VPC %q (networkID import path)", ErrTargetNotFound, vpcID)
+		}
+		return err
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return fmt.Errorf("compute/server: read VPC body: %w", err)
+	}
+	var env struct {
+		VPC twgen.Vpc `json:"vpc"`
+	}
+	if err := json.Unmarshal(body, &env); err != nil {
+		return fmt.Errorf("compute/server: decode VPC body: %w", err)
+	}
+	if loc := string(env.VPC.Location); loc != "" && loc != serverLocation {
+		return fmt.Errorf("%w: VPC %q is in %q but Server is in %q",
+			ErrNetworkLocationMismatch, vpcID, loc, serverLocation)
+	}
+	return nil
+}
+
+// populateResolvedRefs copies the resolved flat upstream IDs (set by
+// resolveRefs on the in-memory spec, or supplied directly by the operator)
+// into status.atProvider so `kubectl describe` shows what the server was
+// actually wired to. For the networkID import path this records the
+// operator-supplied VPC ID verbatim (US3 / T036).
+func populateResolvedRefs(cr *computev1alpha1.Server) {
+	fp := cr.Spec.ForProvider
+	if fp.NetworkID != nil {
+		cr.Status.AtProvider.ResolvedNetworkID = fp.NetworkID
+	}
+	if fp.ProjectID != nil {
+		cr.Status.AtProvider.ResolvedProjectID = fp.ProjectID
+	}
+	if len(fp.SSHKeyIDs) > 0 {
+		cr.Status.AtProvider.ResolvedSSHKeyIDs = fp.SSHKeyIDs
+	}
 }
 
 // --- Body builders + status writers + helpers -----------------------------
@@ -410,13 +516,19 @@ func extractIPs(v twgen.Vds) (pub4, pub6, priv string) {
 }
 
 // setReadyCondition maps the upstream Vds.Status string to the standard
-// Crossplane Ready condition per FR-014.
+// Crossplane Ready condition per FR-014. The `no_paid` state is special:
+// the server exists but the account can't pay for it to start, so we surface
+// Ready=False/reason=PaymentRequired instead of an indefinite Creating spin
+// (per the project_timeweb_no_paid_server_state behavior).
 func setReadyCondition(cr *computev1alpha1.Server, state twgen.VdsStatus) {
 	switch strings.ToLower(string(state)) {
 	case "on":
 		cr.Status.SetConditions(xpv2.Available())
 	case "off":
 		cr.Status.SetConditions(xpv2.Unavailable())
+	case "no_paid":
+		cr.Status.SetConditions(shared.ReadyFalse(shared.ReasonPaymentRequired,
+			"upstream server state is \"no_paid\": the Timeweb account lacks the funds/quota to start this server — top up the account; the server will start once payment clears"))
 	default:
 		cr.Status.SetConditions(xpv2.Creating())
 	}

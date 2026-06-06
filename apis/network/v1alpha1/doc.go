@@ -24,10 +24,12 @@ limitations under the License.
 //   - `Network` — a Timeweb VPC (`POST /api/v2/vpcs`; delete via
 //     `/api/v1/vpcs/{id}` — see feature-003 research §R-6).
 //
-//   - `FloatingIP` — a Timeweb floating IPv4 address. Owns its own
-//     allocation AND bind/unbind to a Server via
-//     `forProvider.serverRef` (single-owner per Constitution §II, see
-//     feature-003 research §R-4).
+//   - `FloatingIP` — a Timeweb floating IPv4 address. Pure allocation
+//     (`POST/DELETE /api/v1/floating-ips`). Per the 2026-06-01 reversal
+//     (spec.md §Clarifications) it carries NO server reference; the
+//     consuming Server owns bind/unbind via its `floatingIPRefs` trio
+//     (single-owner per Constitution §II). `status.atProvider.observedBoundTo`
+//     mirrors the upstream `bound_to` for diagnostics only.
 //
 //   - future features extend the same group + Go package:
 //

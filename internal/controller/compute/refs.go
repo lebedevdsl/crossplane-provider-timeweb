@@ -44,6 +44,14 @@ var ErrTargetNotFound = errors.New("compute/server: referenced MR not found in s
 // `Synced=False, reason=Reconciling` with the dependency named.
 var ErrTargetNotReady = errors.New("compute/server: referenced MR not yet ready (status.atProvider.upstreamID is empty)")
 
+// ErrNetworkLocationMismatch is returned when a referenced Network MR lives
+// in a different location than the Server (FR-012). Caught pre-flight so the
+// operator gets a clear message instead of the raw upstream 4xx the
+// createServer call would otherwise return. Only checked on the
+// `networkRef`/`networkSelector` path here — the `networkID` import path
+// (US3) verifies location via an upstream VPC GET in the Server external.
+var ErrNetworkLocationMismatch = errors.New("compute/server: referenced Network location does not match Server location")
+
 // resolveRefs walks the four optional reference trios on a Server's
 // `forProvider` (project, sshKey, network — floatingIP is deferred to
 // US4/Phase 6) and populates the corresponding flat `*ID` fields on
@@ -90,9 +98,16 @@ func resolveRefs(ctx context.Context, kube client.Client, cr *computev1alpha1.Se
 
 	// --- Network ----------------------------------------------------------
 	if fp.NetworkID == nil && fp.NetworkRef != nil {
-		vid, err := resolveNetworkRef(ctx, kube, ns, fp.NetworkRef)
+		vid, loc, err := resolveNetworkRef(ctx, kube, ns, fp.NetworkRef)
 		if err != nil {
 			return err
+		}
+		// FR-012 pre-flight: a Server may only attach to a Network in the
+		// same location. Catch the mismatch here so the operator sees a
+		// clear message rather than the upstream's raw rejection.
+		if loc != "" && loc != fp.Location {
+			return fmt.Errorf("%w: Network %q is in %q but Server is in %q",
+				ErrNetworkLocationMismatch, fp.NetworkRef.Name, loc, fp.Location)
 		}
 		fp.NetworkID = &vid
 	}
@@ -101,16 +116,41 @@ func resolveRefs(ctx context.Context, kube client.Client, cr *computev1alpha1.Se
 	}
 
 	// --- Floating IPs ------------------------------------------------------
-	// Trio is parsed for admission validation but binding is deferred to
-	// US4/Phase 6 (Server controller will issue POST /floating-ips/{id}/bind
-	// at Create + drift detection). v0.3 surfaces an explicit error if
-	// operators set any of the trio so they're not surprised by silent
-	// no-op behavior.
-	if len(fp.FloatingIPRefs) > 0 || len(fp.FloatingIPIDs) > 0 || fp.FloatingIPSelector != nil {
-		return fmt.Errorf("compute/server: forProvider.floatingIP* fields are accepted by CRD validation but the bind/unbind controller logic ships in feature 003 US4 (Phase 6) — leave them unset for v0.3 MVP")
+	// Server-consumes-IP (2026-06-01 reversal): the Server owns bind/unbind.
+	// Resolve floatingIPRefs → flat floatingIPIDs (FloatingIP upstream IDs,
+	// strings) so the bind reconciler (floatingip_bind.go) has the desired
+	// set. A not-ready FloatingIP (empty upstreamID) gates binding via
+	// ErrTargetNotReady; not-found gates via ErrTargetNotFound.
+	if len(fp.FloatingIPIDs) == 0 && len(fp.FloatingIPRefs) > 0 {
+		ids, err := resolveFloatingIPRefs(ctx, kube, ns, fp.FloatingIPRefs)
+		if err != nil {
+			return err
+		}
+		fp.FloatingIPIDs = ids
+	}
+	if fp.FloatingIPSelector != nil && len(fp.FloatingIPIDs) == 0 {
+		return fmt.Errorf("compute/server: forProvider.floatingIPSelector is not implemented in v0.3 — use floatingIPRefs or floatingIPIDs")
 	}
 
 	return nil
+}
+
+func resolveFloatingIPRefs(ctx context.Context, kube client.Client, ns string, refs []xpv2.Reference) ([]string, error) {
+	ids := make([]string, 0, len(refs))
+	for _, ref := range refs {
+		target := &networkv1alpha1.FloatingIP{}
+		if err := kube.Get(ctx, types.NamespacedName{Namespace: ns, Name: ref.Name}, target); err != nil {
+			if kerrors.IsNotFound(err) {
+				return nil, fmt.Errorf("%w: FloatingIP %q in namespace %q", ErrTargetNotFound, ref.Name, ns)
+			}
+			return nil, fmt.Errorf("get FloatingIP %s/%s: %w", ns, ref.Name, err)
+		}
+		if target.Status.AtProvider.UpstreamID == nil || *target.Status.AtProvider.UpstreamID == "" {
+			return nil, fmt.Errorf("%w: FloatingIP %q", ErrTargetNotReady, ref.Name)
+		}
+		ids = append(ids, *target.Status.AtProvider.UpstreamID)
+	}
+	return ids, nil
 }
 
 func resolveProjectRef(ctx context.Context, kube client.Client, ns string, ref *xpv2.Reference) (int64, error) {
@@ -145,16 +185,21 @@ func resolveSSHKeyRefs(ctx context.Context, kube client.Client, ns string, refs 
 	return ids, nil
 }
 
-func resolveNetworkRef(ctx context.Context, kube client.Client, ns string, ref *xpv2.Reference) (string, error) {
+// resolveNetworkRef returns the referenced Network's upstream VPC ID and its
+// configured location (for the FR-012 location-mismatch pre-flight). An empty
+// `status.atProvider.upstreamID` means the VPC is not yet provisioned →
+// ErrTargetNotReady, which gates Server.Create until the Network is Ready
+// (FR-011).
+func resolveNetworkRef(ctx context.Context, kube client.Client, ns string, ref *xpv2.Reference) (id, location string, err error) {
 	target := &networkv1alpha1.Network{}
 	if err := kube.Get(ctx, types.NamespacedName{Namespace: ns, Name: ref.Name}, target); err != nil {
 		if kerrors.IsNotFound(err) {
-			return "", fmt.Errorf("%w: Network %q in namespace %q", ErrTargetNotFound, ref.Name, ns)
+			return "", "", fmt.Errorf("%w: Network %q in namespace %q", ErrTargetNotFound, ref.Name, ns)
 		}
-		return "", fmt.Errorf("get Network %s/%s: %w", ns, ref.Name, err)
+		return "", "", fmt.Errorf("get Network %s/%s: %w", ns, ref.Name, err)
 	}
 	if target.Status.AtProvider.UpstreamID == nil || *target.Status.AtProvider.UpstreamID == "" {
-		return "", fmt.Errorf("%w: Network %q", ErrTargetNotReady, ref.Name)
+		return "", "", fmt.Errorf("%w: Network %q", ErrTargetNotReady, ref.Name)
 	}
-	return *target.Status.AtProvider.UpstreamID, nil
+	return *target.Status.AtProvider.UpstreamID, target.Spec.ForProvider.Location, nil
 }

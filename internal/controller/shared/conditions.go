@@ -46,6 +46,11 @@ const (
 	ReasonSecretKeyEmpty           xpv2.ConditionReason = "SecretKeyEmpty"
 	ReasonRepositoryNotPushed      xpv2.ConditionReason = "RepositoryNotPushed"
 	ReasonBucketQuarantined        xpv2.ConditionReason = "BucketQuarantined"
+	// ReasonPaymentRequired surfaces the Timeweb `no_paid` upstream server
+	// state — the resource was created but the account lacks the funds/quota
+	// to start it. Not a controller failure (Synced stays true); the server
+	// cannot reach the running state until the account is topped up.
+	ReasonPaymentRequired xpv2.ConditionReason = "PaymentRequired"
 	// Feature-002 resolver / sizing-lock vocabulary (FR-006, FR-007, FR-010,
 	// FR-013, FR-017). Mapped from the typed sentinel errors in
 	// `internal/controller/shared/resolver`.

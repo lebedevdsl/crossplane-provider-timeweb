@@ -1,0 +1,30 @@
+# Server provisioning dominates the timeout (SC-001 ≤ 10 min); the
+# FloatingIP allocates near-instantly.
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 600
+---
+# FloatingIP allocated + Ready, unbound.
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: FloatingIP
+metadata:
+  name: e2e-fip
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"
+---
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-fip-server
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"

@@ -1,0 +1,24 @@
+# Step 3 - Unbind: re-apply the Server WITHOUT floatingIPRefs. kubectl's
+# 3-way merge removes the field (it was in the last-applied config from step
+# 02), so the Server controller sees desired={} vs bound={fip} and issues
+# POST /floating-ips/{id}/unbind. The FloatingIP stays allocated + Ready
+# (re-bindable from a different Server later).
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-fip-server
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  writeConnectionSecretToRef:
+    name: e2e-fip-server-conn
+  forProvider:
+    name: "${TWE_SERVER_NAME}-fip"
+    presetName: "${TWE_SERVER_PRESET}"
+    location: ru-1
+    os:
+      image: ubuntu
+      version: "24.04"
+    availabilityZone: spb-1           # same zone as the FloatingIP (Timeweb bind requires same-zone)

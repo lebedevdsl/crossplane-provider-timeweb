@@ -27,8 +27,12 @@ limitations under the License.
 // dimension in feature 002 but not exposed on the v0.3 CRD.
 //
 // Cross-resource references on Server: optional `sshKeyRefs`, `networkRef`,
-// `projectRef`, `floatingIPRefs` (observe-only — the FloatingIP MR in the
-// network group owns its own bind/unbind side-effects).
+// `projectRef`, and the `floatingIPRefs`/`floatingIPSelector`/`floatingIPIDs`
+// trio. Per the 2026-06-01 reversal (spec.md §Clarifications), Server is the
+// single owner of floating-IP bind/unbind: it resolves the trio to FloatingIP
+// upstream IDs and issues `POST /floating-ips/{id}/bind` + `/unbind`. The
+// FloatingIP kind in the network group is pure allocation and carries no back
+// reference to a Server.
 //
 // +kubebuilder:object:generate=true
 // +groupName=compute.m.timeweb.crossplane.io

@@ -211,6 +211,56 @@ func TestResolveRefs(t *testing.T) {
 		}
 	})
 
+	t.Run("NetworkRef_LocationMismatch", func(t *testing.T) {
+		net := &networkv1alpha1.Network{
+			ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "shared"},
+			Spec: networkv1alpha1.NetworkSpec{ForProvider: networkv1alpha1.NetworkParameters{
+				Location: "spb-3",
+			}},
+			Status: networkv1alpha1.NetworkStatus{
+				AtProvider: networkv1alpha1.NetworkObservation{UpstreamID: strPtr("vpc-abc")},
+			},
+		}
+		k := fake.NewClientBuilder().WithScheme(refsScheme(t)).WithObjects(net).Build()
+		cr := &computev1alpha1.Server{
+			ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "s"},
+			Spec: computev1alpha1.ServerSpec{ForProvider: computev1alpha1.ServerParameters{
+				Location:   "msk-1",
+				NetworkRef: &xpv2.Reference{Name: "shared"},
+			}},
+		}
+		err := resolveRefs(ctx, k, cr)
+		if !errors.Is(err, ErrNetworkLocationMismatch) {
+			t.Errorf("err = %v, want ErrNetworkLocationMismatch", err)
+		}
+	})
+
+	t.Run("NetworkRef_LocationMatch_Resolves", func(t *testing.T) {
+		net := &networkv1alpha1.Network{
+			ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "shared"},
+			Spec: networkv1alpha1.NetworkSpec{ForProvider: networkv1alpha1.NetworkParameters{
+				Location: "msk-1",
+			}},
+			Status: networkv1alpha1.NetworkStatus{
+				AtProvider: networkv1alpha1.NetworkObservation{UpstreamID: strPtr("vpc-abc")},
+			},
+		}
+		k := fake.NewClientBuilder().WithScheme(refsScheme(t)).WithObjects(net).Build()
+		cr := &computev1alpha1.Server{
+			ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "s"},
+			Spec: computev1alpha1.ServerSpec{ForProvider: computev1alpha1.ServerParameters{
+				Location:   "msk-1",
+				NetworkRef: &xpv2.Reference{Name: "shared"},
+			}},
+		}
+		if err := resolveRefs(ctx, k, cr); err != nil {
+			t.Fatalf("resolveRefs: %v", err)
+		}
+		if cr.Spec.ForProvider.NetworkID == nil || *cr.Spec.ForProvider.NetworkID != "vpc-abc" {
+			t.Errorf("NetworkID = %v, want vpc-abc", cr.Spec.ForProvider.NetworkID)
+		}
+	})
+
 	t.Run("NetworkID_PrecedesRef", func(t *testing.T) {
 		k := fake.NewClientBuilder().WithScheme(refsScheme(t)).Build()
 		nid := "vpc-from-spec"
@@ -229,6 +279,27 @@ func TestResolveRefs(t *testing.T) {
 		}
 	})
 
+	t.Run("NetworkID_BypassesRefLookup", func(t *testing.T) {
+		// No Network MR exists in the cluster at all. A Server with a bare
+		// networkID (import path, US3) must resolve without a "target not
+		// ready/found" error — the ID short-circuits the K8s lookup.
+		k := fake.NewClientBuilder().WithScheme(refsScheme(t)).Build()
+		nid := "vpc-externally-managed"
+		cr := &computev1alpha1.Server{
+			ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "s"},
+			Spec: computev1alpha1.ServerSpec{ForProvider: computev1alpha1.ServerParameters{
+				Location:  "msk-1",
+				NetworkID: &nid,
+			}},
+		}
+		if err := resolveRefs(ctx, k, cr); err != nil {
+			t.Fatalf("resolveRefs: %v", err)
+		}
+		if cr.Spec.ForProvider.NetworkID == nil || *cr.Spec.ForProvider.NetworkID != "vpc-externally-managed" {
+			t.Errorf("NetworkID = %v, want vpc-externally-managed (unchanged)", cr.Spec.ForProvider.NetworkID)
+		}
+	})
+
 	t.Run("SelectorNotImplemented_PointsToRefInstead", func(t *testing.T) {
 		k := fake.NewClientBuilder().WithScheme(refsScheme(t)).Build()
 		cr := &computev1alpha1.Server{
@@ -243,17 +314,69 @@ func TestResolveRefs(t *testing.T) {
 		}
 	})
 
-	t.Run("FloatingIPTrio_RejectsUntilPhase6", func(t *testing.T) {
+	t.Run("FloatingIPRefs_Resolved", func(t *testing.T) {
+		fip := &networkv1alpha1.FloatingIP{
+			ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "stable"},
+			Status: networkv1alpha1.FloatingIPStatus{
+				AtProvider: networkv1alpha1.FloatingIPObservation{UpstreamID: strPtr("fip-abc")},
+			},
+		}
+		k := fake.NewClientBuilder().WithScheme(refsScheme(t)).WithObjects(fip).Build()
+		cr := &computev1alpha1.Server{
+			ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "s"},
+			Spec: computev1alpha1.ServerSpec{ForProvider: computev1alpha1.ServerParameters{
+				FloatingIPRefs: []xpv2.Reference{{Name: "stable"}},
+			}},
+		}
+		if err := resolveRefs(ctx, k, cr); err != nil {
+			t.Fatalf("resolveRefs: %v", err)
+		}
+		if len(cr.Spec.ForProvider.FloatingIPIDs) != 1 || cr.Spec.ForProvider.FloatingIPIDs[0] != "fip-abc" {
+			t.Errorf("FloatingIPIDs = %v, want [fip-abc]", cr.Spec.ForProvider.FloatingIPIDs)
+		}
+	})
+
+	t.Run("FloatingIPRefs_NotReady_EmptyUpstreamID", func(t *testing.T) {
+		fip := &networkv1alpha1.FloatingIP{
+			ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "stable"},
+			// UpstreamID unset → not yet allocated.
+		}
+		k := fake.NewClientBuilder().WithScheme(refsScheme(t)).WithObjects(fip).Build()
+		cr := &computev1alpha1.Server{
+			ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "s"},
+			Spec: computev1alpha1.ServerSpec{ForProvider: computev1alpha1.ServerParameters{
+				FloatingIPRefs: []xpv2.Reference{{Name: "stable"}},
+			}},
+		}
+		if err := resolveRefs(ctx, k, cr); !errors.Is(err, ErrTargetNotReady) {
+			t.Errorf("err = %v, want ErrTargetNotReady", err)
+		}
+	})
+
+	t.Run("FloatingIPRefs_NotFound", func(t *testing.T) {
 		k := fake.NewClientBuilder().WithScheme(refsScheme(t)).Build()
 		cr := &computev1alpha1.Server{
 			ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "s"},
 			Spec: computev1alpha1.ServerSpec{ForProvider: computev1alpha1.ServerParameters{
-				FloatingIPRefs: []xpv2.Reference{{Name: "fip"}},
+				FloatingIPRefs: []xpv2.Reference{{Name: "ghost"}},
+			}},
+		}
+		if err := resolveRefs(ctx, k, cr); !errors.Is(err, ErrTargetNotFound) {
+			t.Errorf("err = %v, want ErrTargetNotFound", err)
+		}
+	})
+
+	t.Run("FloatingIPSelector_NotImplemented", func(t *testing.T) {
+		k := fake.NewClientBuilder().WithScheme(refsScheme(t)).Build()
+		cr := &computev1alpha1.Server{
+			ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "s"},
+			Spec: computev1alpha1.ServerSpec{ForProvider: computev1alpha1.ServerParameters{
+				FloatingIPSelector: &xpv2.Selector{MatchLabels: map[string]string{"env": "prod"}},
 			}},
 		}
 		err := resolveRefs(ctx, k, cr)
-		if err == nil || !strings.Contains(err.Error(), "floatingIP* fields") {
-			t.Errorf("err = %v, want floatingIP-deferred error", err)
+		if err == nil || !strings.Contains(err.Error(), "floatingIPSelector is not implemented") {
+			t.Errorf("err = %v, want floatingIPSelector-not-implemented error", err)
 		}
 	})
 }

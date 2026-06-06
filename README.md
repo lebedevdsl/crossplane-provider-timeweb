@@ -14,9 +14,19 @@ resources as Kubernetes managed resources.
 | `S3Bucket`                    | `objectstorage.m.timeweb.crossplane.io`| S3-compatible object storage; size via `initialSizeGB`.  |
 | `ContainerRegistry`           | `containerregistry.m.timeweb.crossplane.io` | Docker registry; size via `initialSizeGB`.          |
 | `ContainerRegistryRepository` | `containerregistry.m.timeweb.crossplane.io` | Observe-only view of repositories within a registry.|
+| `Server`                      | `compute.m.timeweb.crossplane.io`      | Cloud server (VM). Sized via `presetName`; OS via `os.{image,version}`. Refs `Network`, `Project`, `SshKey`, `FloatingIP`. |
+| `Network`                     | `network.m.timeweb.crossplane.io`      | VPC (private network). `subnetCIDR` + `location`.        |
+| `FloatingIP`                  | `network.m.timeweb.crossplane.io`      | Floating IPv4. Pure allocation; bound **from a Server** via `floatingIPRefs`. |
 
 All managed resources are **namespaced** (Crossplane v2 modern MRs), using
-the `<svc>.m.timeweb.crossplane.io` group convention.
+the `<svc>.m.timeweb.crossplane.io` group convention. The
+`network.m.timeweb.crossplane.io` group is the committed home for the whole
+network family — `Network` + `FloatingIP` ship today; `Router`, `Balancer`,
+`FirewallRule` / `SecurityGroup` extend the same group in future features.
+
+See [`docs/servers.md`](./docs/servers.md) for the `Server` / `Network` /
+`FloatingIP` operator guide (network attachment, floating-IP pinning, project
+assignment, troubleshooting).
 
 ## ProviderConfig — namespaced + cluster-scoped pair
 
@@ -93,7 +103,11 @@ resolution failures.
 The `test/e2e/` bundle stands up a k3d cluster + local registry + the
 Crossplane control plane, builds and installs the provider as an xpkg,
 and runs a [kuttl][kuttl] suite that exercises every MR kind against the
-live Timeweb API. Requires only a `TIMEWEB_CLOUD_TOKEN`.
+live Timeweb API. Requires only a `TIMEWEB_CLOUD_TOKEN`. v0.3 adds bundles
+`08-network-lifecycle`, `09-server-lifecycle`, `10-server-with-network`
+(+ the env-gated `10b-server-with-network-id` import path), and
+`11-floating-ip-bind`. The smallest server preset is discovered at runtime
+to keep a full run under ≈€0.05.
 
 [kuttl]: https://kuttl.dev
 

@@ -110,29 +110,29 @@ Per `plan.md → Project Structure`:
 
 ### Controller scaffolding
 
-- [ ] T025 [P] [US2] Write `internal/controller/network/connector.go` — one connector struct serving both `Network` and `FloatingIP` reconcilers (they share the credential + resolver dependencies; the kind-specific behavior lives in the external types).
+- [X] T025 [P] [US2] `internal/controller/network/connector.go` + `controller.go` written. The connector serves `Network` for v0.3 (the FloatingIP reconciler joins the same package in Phase 6). Neither network-group kind needs the catalog resolver (no preset/OS sizing), so the connector is resolver-free — simpler than the compute connector. `SetupNetwork(mgr, log, pollInterval)` registers the reconciler with the standard v2 ModernManaged options + `managed.WithManagementPolicies()`.
 
 ### External methods (single file `internal/controller/network/network_external.go`)
 
-- [ ] T026 [P] [US2] Implement `(*networkExternal).Observe(ctx, mg)`. GET `/api/v2/vpcs/{upstreamID}`; populate `Network.status.atProvider`. 404 → `ResourceExists: false`.
-- [ ] T027 [P] [US2] Implement `(*networkExternal).Create(ctx, mg)`. POST `/api/v2/vpcs` with `name`, `subnet_v4`, `location`, optional `description`, `availability_zone`. Record `upstreamID`. Per R-6, this uses the v2 path.
-- [ ] T028 [P] [US2] Implement `(*networkExternal).Update(ctx, mg)`. PATCH `/api/v2/vpcs/{upstreamID}` for `description` only. Any drift on `name`/`subnetCIDR`/`location`/`availabilityZone` → `ImmutableFieldChange`.
-- [ ] T029 [P] [US2] Implement `(*networkExternal).Delete(ctx, mg)`. DELETE `/api/v1/vpcs/{upstreamID}` (v1 path per R-6); 404 idempotent.
+- [X] T026 [P] [US2] `(*networkExternal).Observe` implemented in `network_external.go`. GET `/api/v2/vpcs/{id}` (the string VPC ID is stored verbatim as the external-name — no `EncodeID` round-trip like the int-ID kinds). 404 → `ResourceExists:false`; else unmarshal `{vpc: Vpc}` envelope, populate `atProvider.{upstreamID, assignedCIDR}`, call `Available()`. `isNetworkUpToDate` compares ALL fields (mutable + immutable) so an immutable-field edit routes through Update for an explicit rejection rather than being silently ignored.
+- [X] T027 [P] [US2] `(*networkExternal).Create` implemented. POST `/api/v2/vpcs` (v2 path per R-6) via `buildCreateVPCBody` (`name`, `subnet_v4`, `location`, optional `description` + `availability_zone`). `meta.SetExternalName` from the returned `vpc.id` string; populate status; `Creating()`.
+- [X] T028 [P] [US2] `(*networkExternal).Update` implemented. Re-fetches via GET, runs the R-6 immutable guard via `shared.FirstImmutableDiff` over `{name, subnetCIDR, location, availabilityZone}` → `shared.RejectImmutableChange` on the first drift. The CRD carries NO `oldSelf==self` CEL (T012 decision — immutability enforced controller-side, matching the Server precedent). Only `description` PATCHes (`/api/v2/vpcs/{id}`); skips the upstream call when unchanged.
+- [X] T029 [P] [US2] `(*networkExternal).Delete` implemented. DELETE `/api/v1/vpcs/{id}` (v1 path per R-6 — handled by the generated `DeleteVPC` method's route). 404 idempotent; empty external-name → no-op.
 
 ### Server controller integration
 
-- [ ] T030 [US2] Extend `internal/controller/compute/refs.go::ResolveReferences` so `NetworkRef` resolution blocks Server.Create until the Network is `Ready=True` (matching FR-011). Surface as `Synced=False, reason=Reconciling` with a message naming the dependency.
-- [ ] T031 [US2] Add a pre-flight location-mismatch check in `Server.Create` (FR-012): after `NetworkRef`/`NetworkSelector` resolves OR `NetworkID` is set, GET the resolved VPC and compare its `location` to `Server.forProvider.location`. Mismatch → `Synced=False, reason=ReconcileError` with a clear message. Same check for the `networkID` import path (US3).
+- [X] T030 [US2] `internal/controller/compute/refs.go::resolveNetworkRef` already gates Server.Create on Network readiness — an empty `status.atProvider.upstreamID` yields `ErrTargetNotReady` (FR-011), and the wrapped message names the Network dependency. NOTE: the connector surfaces resolveRefs failures via crossplane-runtime's standard Connect-error path, which renders as `Synced=False, reason=ReconcileError` (the runtime does not expose a per-error custom reason on Connect, so `reason=Reconciling` from the spec wording is not separately emitted — the message still names the unready dependency). Documented as a minor deviation; revisit if a custom reason is required.
+- [X] T031 [US2] FR-012 location-mismatch pre-flight added in `resolveNetworkRef`: it now also returns the referenced Network's `spec.forProvider.location`, and `resolveRefs` compares it to the Server's location, returning the new typed `ErrNetworkLocationMismatch` on a mismatch. INTERPRETATION: on the `networkRef`/`networkSelector` path the Network MR already carries its location, so no upstream VPC GET is needed (cleaner + keeps the check unit-testable with a fake client per T033). The `networkID` import path (no MR to read) defers its location check to US3/T038 via an upstream `GetVPC` in the Server external — noted there.
 
 ### Tests
 
-- [ ] T032 [P] [US2] Write `internal/controller/network/network_external_test.go` — Constitution §III 4-case per method, plus `Create_LocationEnumValidation_RejectedByCRD` (verifies the kubebuilder enum is in effect; integration-level test using the API server may be needed) and `Update_DescriptionOnly` (other fields ignored on PATCH).
-- [ ] T033 [P] [US2] Extend `internal/controller/compute/refs_test.go` (from T022) with the `NetworkRef` blocked-on-not-ready case + the location-mismatch path.
+- [X] T032 [P] [US2] `internal/controller/network/network_external_test.go` written — Constitution §III 4-case (Success / NotFound / Transient / Terminal) per `Observe`/`Create`/`Update`/`Delete`. Plus: `Observe_ExternalNameEmpty_ReturnsNotExists`, `Observe_DescriptionDrift_NotUpToDate`, `Create_NetworkError`, `Create_TerminalError_OverlappingCIDR`, `Update_DescriptionOnly_PATCHes`, `Update_NoChange_SkipsUpstream`, `Update_ImmutableFieldChange_Name`/`_SubnetCIDR` (asserts `Synced=False, reason=ImmutableFieldChange` + no upstream PATCH), `Delete_EmptyExternalName_NoOp`. The `Create_LocationEnumValidation_RejectedByCRD` case from the original task text is omitted — CRD enum enforcement is an admission-time concern that needs an envtest API server, not the unit-level fake; it's exercised by the e2e bundles instead. Uses `timeweb.FakeClient` (counterfeiter) keyed by `*Returns`.
+- [X] T033 [P] [US2] `internal/controller/compute/refs_test.go` extended: the blocked-on-not-ready case already existed (`NetworkRef_NotReady_EmptyUpstreamID`); added `NetworkRef_LocationMismatch` (asserts `ErrNetworkLocationMismatch`) and `NetworkRef_LocationMatch_Resolves` (same-location resolves to the VPC ID).
 
 ### E2E
 
-- [ ] T034 [P] [US2] Create `test/e2e/kuttl/tests/08-network-lifecycle/` — Network create/observe/delete bundle. Tiny CIDR (`10.30.0.0/24`), `msk-1`. Assert `[Ready=True, Synced=True]` within 1 minute.
-- [ ] T035 [US2] Create `test/e2e/kuttl/tests/10-server-with-network/` — Network + 2 Servers attached. Assert both Servers' `privateIP` fall in the CIDR. Cleanup deletes Servers first, then Network.
+- [X] T034 [P] [US2] `test/e2e/kuttl/tests/08-network-lifecycle/` created (01-create + 01-assert + 02-patch + 02-assert). Tiny CIDR `10.30.0.0/24`, location `ru-1` (the API code; the dashboard's `msk-1` label maps to `ru-1` per `project_timeweb_location_codes_api_vs_dashboard`). Bundle 01 creates a Network and asserts `[Synced=True, Ready=True]` (assert timeout 120s). Bundle 02 PATCHes `description` and asserts no condition flap. Wrapper `test/e2e/scripts/kuttl.sh` extended to export `$TWE_NETWORK_NAME` (timestamped) + add it to the envsubst allow-list; orphan inventory already lists `networks`/`floatingips` (T024).
+- [X] T035 [US2] `test/e2e/kuttl/tests/10-server-with-network/` created (01-create + 01-assert). Creates an SSHKey + a Network (`10.31.0.0/24`, `ru-1`) + 2 Servers each with `networkRef` to it; asserts all three reach `[Synced=True, Ready=True]` (assert timeout 720s for two ~10-min VM provisions). kuttl YAML can't assert CIDR membership of `privateIP`, so that check moves to the live canary (T059) — noted in the bundle header. Cleanup ordering (Servers before Network) is handled by kuttl's reverse-order teardown of the objects it created.
 
 **Checkpoint**: At end of Phase 4, US2 is independently functional. Servers can be wired into private networks via crossplane-style refs.
 
@@ -144,59 +144,72 @@ Per `plan.md → Project Structure`:
 
 **Independent Test**: With an existing dashboard-created VPC ID, apply a Server with `forProvider.networkID: <id>` and no `networkRef`. Server reaches `[Ready=True, Synced=True]`; `status.atProvider.privateIP` falls inside the VPC's CIDR. Deleting the Server leaves the VPC untouched.
 
-- [ ] T036 [US3] In `internal/controller/compute/refs.go::ResolveReferences`, ensure the trio precedence is `ID > Ref > Selector`. When `NetworkID` is set, skip the lookup of any `Network` MR; populate `status.atProvider.resolvedNetworkID` directly from spec.
-- [ ] T037 [P] [US3] Extend `internal/controller/compute/refs_test.go` with `NetworkID_BypassesRefLookup` — fake `client.Client` has NO `Network` MR; Server with `networkID` resolves successfully (no `target not ready`).
-- [ ] T038 [US3] Verify the location-mismatch check (T031) ALSO fires on the `networkID` path: GET the VPC by ID first, compare location, error if mismatched.
-- [ ] T039 [US3] Reuse the existing `10-server-with-network/` bundle pattern but parametrize: add an env-gated variant `10b-server-with-network-id/` that pre-creates a VPC via curl (using `TIMEWEB_CLOUD_TOKEN`), then applies a Server with `forProvider.networkID: <pre-created>` and asserts privateIP placement. Bundle skips if `TIMEWEB_E2E_SKIP_IMPORT=1` set.
+- [X] T036 [US3] Trio precedence `ID > Ref > Selector` confirmed in `refs.go::resolveRefs` (the `NetworkID == nil && NetworkRef != nil` guard means a set `NetworkID` skips the `Network` MR lookup; selector errors only when `NetworkID` is still unset). Added `populateResolvedRefs` in `server_external.go::Create` which records `status.atProvider.{resolvedNetworkID, resolvedProjectID, resolvedSSHKeyIDs}` from the resolved spec — for the import path `resolvedNetworkID` is the operator-supplied VPC id verbatim. (These resolved-* status fields were declared in US1 but not previously populated; wired here.)
+- [X] T037 [P] [US3] `refs_test.go` extended with `NetworkID_BypassesRefLookup` — fake client has NO `Network` MR; a Server with a bare `networkID` resolves with no error and leaves the id unchanged.
+- [X] T038 [US3] Location-mismatch check fires on the `networkID` path via `(*serverExternal).checkNetworkLocationByID` — called at the top of `Create` when `NetworkRef==nil && NetworkID!=nil` (the operator-set-ID signature). GETs the VPC, compares `location`, returns `ErrNetworkLocationMismatch` on mismatch and `ErrTargetNotFound` on 404 (wrong imported id). `server_external_test.go` covers `NetworkIDImport_LocationMatch`/`_LocationMismatch`/`_VPCNotFound` (mismatch asserts no `CreateServer` call). The ref path keeps its no-API check from T031.
+- [X] T039 [US3] `test/e2e/kuttl/tests/10b-server-with-network-id/` created (01-create + 01-assert). The wrapper (`kuttl.sh` section 3b) pre-creates an out-of-band VPC via `curl POST /api/v2/vpcs`, exports `$TWE_IMPORT_VPC_ID`, and deallocates it at exit (`DELETE /api/v1/vpcs/{id}` in the trap, after kuttl tears the Server down). Bundle applies a Server with `forProvider.networkID` + no `networkRef` and asserts `[Synced=True, Ready=True]` plus `status.atProvider.resolvedNetworkID == $TWE_IMPORT_VPC_ID`. Skipped (dir removed from the tmp copy) when `TIMEWEB_E2E_SKIP_IMPORT=1`. `$TWE_IMPORT_VPC_ID` added to the envsubst allow-list. (privateIP-in-CIDR assertion is deferred to the live canary T059 — not expressible in kuttl YAML.)
 
 **Checkpoint**: At end of Phase 5, US3 import path is exercised.
 
 ---
 
-## Phase 6: User Story 4 — Allocate and bind a floating IPv4 to a server (Priority: P2)
+## Phase 6: User Story 4 — Pin a floating IPv4 to a server (Priority: P2)
 
-**Goal**: Operator declares a `FloatingIP` MR with `serverRef`; controller allocates the IP, waits for Server `Ready=True`, calls bind. Re-pointing `serverRef` triggers unbind+bind. Spec US4, FR-016/017, SC-005/007.
+> **Regenerated 2026-06-01** for the reversed **Server-consumes-IP** model
+> (spec.md "FloatingIP reference reversal"). `FloatingIP` is pure
+> allocation (no `serverRef`); the **Server** controller owns bind/unbind
+> via `Server.forProvider.floatingIPRefs`. The original FloatingIP-owns-
+> binding tasks are superseded by the list below. Authoritative shapes:
+> `data-model.md §1.1/§1.3` + `contracts/floatingip-v1alpha1.md` (both
+> regenerated). The committed types already match (`floatingip_types.go`
+> is allocation-only; `server_types.go` has the `floatingIPRefs/Selector/IDs`
+> trio + the CEL mutual-exclusion rule).
 
-**Independent Test**: Apply FloatingIP with no `serverRef` → reaches `[Ready=True, Synced=True]`, `status.atProvider.ip` populated. PATCH to add `serverRef.name: <server>` → controller calls bind, `resolvedServerID` populated. Re-PATCH to different server → exactly one unbind + one bind. Delete FloatingIP → unbinds, deallocates.
+**Goal**: Operator declares an allocation-only `FloatingIP`, then a `Server`
+with `forProvider.floatingIPRefs: [{name: <fip>}]`. The Server controller,
+once the VM is `Ready=True`, calls `POST /floating-ips/{id}/bind` with
+`resource_type: "server"`. Re-pointing `floatingIPRefs` triggers unbind+bind;
+clearing it triggers unbind; Server delete unbinds all first. Spec US4,
+FR-016/017 (post-reversal wording), SC-005/007.
 
-### External methods (single file `internal/controller/network/floatingip_external.go`)
+**Independent Test**: Apply a `FloatingIP` (`location` + `isDDoSGuard` only) →
+`[Ready=True, Synced=True]`, `status.atProvider.ip` populated, unbound. Apply
+a `Server` with `floatingIPRefs: [{name: <fip>}]`. Once Ready, the Server's
+`status.atProvider.boundFloatingIPs` lists the IP's upstream ID and the IP's
+upstream `bound_to.resource_id` == server id. Clear `floatingIPRefs` → Server
+unbinds; the FloatingIP stays allocated+unbound. Delete the FloatingIP →
+deallocates.
 
-- [ ] T040 [US4] Implement `(*floatingIPExternal).Observe(ctx, mg)`. GET `/api/v1/floating-ips/{upstreamID}`. Populate `IP`, `ResolvedServerID` (read upstream `bound_to.resource_id` when `resource_type == "server"`). Drift detection logic per `data-model.md §1.3 lifecycle Observe` — queue bind/unbind action(s) by setting a per-MR transient field that `Update` consults.
-- [ ] T041 [US4] Implement `(*floatingIPExternal).Create(ctx, mg)`. POST `/api/v1/floating-ips` with `is_ddos_guard`, `availability_zone`. Record `upstreamID`, `ip`. If `serverRef`/`serverSelector`/`serverID` resolves AND target Server is `Ready=True`, immediately POST `/floating-ips/{id}/bind` with `resource_type: "server"`, `resource_id: <id>`. Record `resolvedServerID` + `boundAt`. If the binding trio is set but target is NOT ready, surface `Synced=False, reason=Reconciling`; allocation succeeds, binding deferred to Update.
-- [ ] T042 [US4] Implement `(*floatingIPExternal).Update(ctx, mg)`. Applies queued bind/unbind actions from Observe (R-4). Order: unbind first, then bind. Each call is idempotent (re-invoke on already-bound or already-unbound is a no-op upstream → 2xx return). Comment PATCH applies separately.
-- [ ] T043 [US4] Implement `(*floatingIPExternal).Delete(ctx, mg)`. If `resolvedServerID` is set, unbind first; then DELETE `/api/v1/floating-ips/{upstreamID}`. 404 idempotent.
+### Status type fix (precedes the bind logic)
 
-### Refs
+- [X] T040 [US4] `Server.status.atProvider.BoundFloatingIPs` changed `[]int64`→`[]string` in `server_types.go`. `make generate` regenerated `apis/compute/v1alpha1/zz_generated.deepcopy.go` + `package/crds/compute.m.timeweb.crossplane.io_servers.yaml` (string-array). `boundFloatingIPs` is built from per-IP confirmation GETs (the `Vds` server GET has no `floating_ip_ids` field), not the server observation.
 
-- [ ] T044 [US4] Write `(*FloatingIP).ResolveReferences` in `apis/network/v1alpha1/floatingip_refs.go` (or co-locate in `apis/network/v1alpha1/managed.go`) — single `serverRef`/`serverSelector` resolution into `Server.status.atProvider.upstreamID`. Uses `reference.ResolveOne`.
+### FloatingIP controller — allocation only (file `internal/controller/network/floatingip_external.go`)
 
-### Server-side observation hook
+- [X] T041 [P] [US4] `(*floatingIPExternal).Observe` implemented in `network/floatingip_external.go`. GET floating-ip (string ID = external-name); 404 → `ResourceExists:false`; unmarshal `{ip: FloatingIp}` envelope (note: the key is `ip`, not `floating_ip`); populate `ip` + `observedBoundTo.{resourceType, resourceID}` (resourceID via the `FloatingIp_ResourceId` union's `AsFloatingIpResourceId0`); `Available()`; `ResourceUpToDate` compares `comment` only.
+- [X] T042 [P] [US4] `(*floatingIPExternal).Create` implemented. POST floating-ips with `is_ddos_guard` + a resolved `availability_zone` (`availabilityZoneFor`: spec value, else a per-location default map `{ru-1:spb-1, ru-2:msk-1, ru-3:spb-3, nl-1:ams-1, de-1:fra-1, kz-1:ala-1}`, else a loud error since the upstream body requires an AZ). Allocated **unbound**; external-name = `ip.id`; connection details published.
+- [X] T043 [P] [US4] `(*floatingIPExternal).Update` + `Delete` implemented. Update: immutable guard on `availabilityZone`+`isDDoSGuard` via `shared.FirstImmutableDiff` → `RejectImmutableChange`; PATCH `comment` only (skip when unchanged). (`location` isn't on the upstream `FloatingIp` GET shape, so it's not diff-compared — it's structurally immutable via the create-time AZ derivation; documented.) Delete: DELETE floating-ips, 404 idempotent, no force-unbind. The `network` connector now type-switches `Network`/`FloatingIP` (via `resource.ModernManaged`); `network.SetupFloatingIP` added + wired in `main.go`.
 
-- [ ] T045 [US4] In `internal/controller/compute/server_external.go::Observe`, populate `Server.status.atProvider.boundFloatingIPs` from the upstream `floating_ip_ids` or equivalent field returned by `GET /api/v1/servers/{id}`. This is the observability path that lets `kubectl describe server` show its bound FloatingIPs even when none of them are CR-managed. Server controller does NOT mutate any FloatingIP MR.
+### Server controller — owns bind/unbind (`internal/controller/compute/`)
+
+- [X] T044 [US4] `refs.go::resolveRefs` now resolves `floatingIPRefs` → flat `fp.FloatingIPIDs` (`[]string` of FloatingIP upstream IDs) via `resolveFloatingIPRefs`, mirroring the `sshKeyRefs`→`sshKeyIDs` idiom (not-found → `ErrTargetNotFound`; empty upstreamID → `ErrTargetNotReady`; `floatingIPSelector` → not-implemented error). DEVIATION from spec scenario 4: a not-ready FloatingIP ref gates the Server's reconcile via `ErrTargetNotReady` (surfaced `Synced=False, reason=ReconcileError` — same Connect-error limitation as T030) rather than "Server created, binding deferred". Consistent with how network/project/sshkey refs already gate; the converged end-state is identical (Server exists + bound once the FIP is allocated). Documented as an accepted simplification.
+- [X] T045 [US4] Bind/unbind convergence in new `internal/controller/compute/floatingip_bind.go`. `observeBoundFloatingIPs` (read-only, per-IP GET → `bound_to.resource_id == serverID`) is called from `Observe` (records `boundFloatingIPs`, folds `stringSetsEqual(bound, desired)` into `ResourceUpToDate`) and `Update`. `reconcileFloatingIPBindings` (in `Update`) unbinds bound-not-desired and binds desired-not-bound; binding is **deferred until the VM is "on"** (returns a retry error otherwise — matches "bind after Ready"). `bindFloatingIP` uses the `BindFloatingIp_ResourceId` union (`FromBindFloatingIpResourceId0`, `resource_type: server`); `unbindFloatingIP` tolerates 404 (idempotent). NOTE: binding runs in `Update`, not `Create` — `Create` leaves the server unbound (the VM isn't running yet), and the first post-Ready reconcile converges it.
+- [X] T046 [US4] `Server.Delete` now unbinds every `status.atProvider.boundFloatingIPs` entry (idempotent via `unbindFloatingIP`) before `DeleteServer`. The FloatingIP MRs stay in the cluster.
 
 ### Tests
 
-- [ ] T046 [P] [US4] Write `internal/controller/network/floatingip_external_test.go` — Constitution §III 4-case per `Observe`/`Create`/`Update`/`Delete`. Additionally cover the bind/unbind state machine: `Create_AllocateOnly_NoServerRef`, `Create_AllocateThenBind`, `Update_RepointServerRef` (asserts exactly one unbind + one bind call), `Update_ClearServerRef` (unbind only), `Update_TargetServerNotReady` (binding deferred), `Delete_BoundFloatingIP_UnbindsFirst`, `Delete_UnboundFloatingIP` (skips unbind).
-- [ ] T047 [P] [US4] Extend `internal/controller/compute/server_external_test.go` (from T021) with `Observe_PopulatesBoundFloatingIPs` — fake upstream returns a server with `floating_ip_ids: [42]`; status reflects it.
+- [X] T047 [P] [US4] `internal/controller/network/floatingip_external_test.go` written — Constitution §III 4-case per `Observe`/`Create`/`Update`/`Delete`, plus `Observe_Success_Unbound`, `Observe_MirrorsBoundTo`, `Create_AllocatesUnbound` (asserts no Bind call), `Create_NoDefaultAZ_Errors`, `Update_CommentPATCH`, `Update_NoChange_SkipsUpstream`, `Update_ImmutableField_IsDDoSGuard`, `Delete_EmptyExternalName_NoOp`.
+- [X] T048 [P] [US4] `refs_test.go` extended with `FloatingIPRefs_Resolved`/`_NotReady_EmptyUpstreamID`/`_NotFound` + `FloatingIPSelector_NotImplemented` (replacing the obsolete `FloatingIPTrio_RejectsUntilPhase6`). `server_external_test.go` gained `TestServerFloatingIPBinding`: `Create_DoesNotBind`, `Update_BindsDesired`, `Update_RepointFloatingIPRefs` (1 unbind + 1 bind, via `GetFloatingIpReturnsOnCall`), `Update_ClearFloatingIPRefs_UnbindOnly`, `Delete_UnbindsBoundFloatingIPsFirst`, `Observe_ConfirmsBoundSet`. Uses the `timeweb.FakeClient` bind/unbind/GetFloatingIp call counters.
 
 ### Connection secret
 
-- [ ] T048 [P] [US4] When `FloatingIP.spec.writeConnectionSecretToRef` is set, publish `ip` + `upstreamID` to the secret data (per `contracts/floatingip-v1alpha1.md → Connection Secret`).
-
-### Wiring
-
-- [ ] T049 [US4] Wire `network.SetupFloatingIP(mgr, ...)` in `internal/controller/setup.go`. Same Setup function shape as `compute.SetupServer`.
+- [X] T049 [P] [US4] `floatingIPConnectionDetails` publishes `ip` + `upstreamID`, returned from both FloatingIP `Observe` and `Create`. The bundle's `writeConnectionSecretToRef` wires it through the runtime.
 
 ### E2E
 
-- [ ] T050 [US4] Create `test/e2e/kuttl/tests/11-floating-ip-bind/`:
-  - `01-allocate.yaml`: FloatingIP in `msk-1` with no `serverRef`. Assert `[Ready=True, Synced=True]`, `status.atProvider.ip` populated, `resolvedServerID` empty.
-  - `02-bind.yaml`: PATCH to add `serverRef.name: <server-from-09-bundle>`. Assert `resolvedServerID` populated within 2 min.
-  - `03-rebind.yaml`: PATCH `serverRef.name` to a second server. Assert `resolvedServerID` updates; the previous server's upstream observation no longer lists this IP.
-  - `04-unbind.yaml`: PATCH to clear `serverRef`. Assert `resolvedServerID` cleared, IP still allocated.
-  Bundle depends on the `09-server-lifecycle` bundle for the bind target. Optional second-server step uses an inline Server manifest with the smallest preset.
+- [X] T050 [US4] `test/e2e/kuttl/tests/11-floating-ip-bind/` created (Server-driven, 3 steps + asserts). `01-allocate` (FloatingIP `ru-1` + Server, no refs) → both `[Synced,Ready]`. `02-bind` re-applies the full Server with `floatingIPRefs:[{name:e2e-fip}]` (full-spec re-apply so kubectl's 3-way merge adds the field); asserts the FloatingIP's `status.atProvider.observedBoundTo.resourceType == server` (the dynamic `resourceID` and the Server's `boundFloatingIPs` upstream-ID value aren't asserted — kuttl can't match dynamic values; the live canary covers them). `03-unbind` re-applies the Server without `floatingIPRefs` (3-way merge removes it → controller unbinds); asserts both MRs stay `[Synced,Ready]` (kuttl can't assert the ABSENCE of `observedBoundTo`, so the unbind itself is a canary check). No new `$TWE_*` var needed — the FloatingIP has no upstream name field; the Server reuses `$TWE_SERVER_NAME`.
 
-**Checkpoint**: At end of Phase 6, US4 is independently functional. FloatingIP gives operators the persistent-IP guarantee for DNS pinning and firewall allowlists.
+**Checkpoint**: At end of Phase 6, US4 is independently functional. The Server keeps a stable public IPv4 across recreates (DNS pinning, firewall allowlists), with bind/unbind owned solely by the Server controller.
 
 ---
 
@@ -204,15 +217,15 @@ Per `plan.md → Project Structure`:
 
 **Purpose**: Operator docs, lint, constitution audit, live e2e canary.
 
-- [ ] T051 [P] Create `docs/servers.md` operator guide. Covers: minimum viable Server, network attachment via `networkRef`, FloatingIP pinning via `serverRef`, project assignment, troubleshooting matrix (reusing the table from `quickstart.md → Troubleshooting`). Mention what's NOT in v0.3 (custom configurator, backups, dedicated CPU, etc.).
-- [ ] T052 [P] Update top-level `README.md`: add the three new kinds to the Resources table; bump version note to v0.3; update the e2e quickstart to mention the 4 new bundles. Mention the network-group commitment (Network + FloatingIP today; Router/Balancer/FirewallRule/SecurityGroup future).
-- [ ] T053 [P] Update `package/crossplane.yaml` description to mention the three new kinds.
-- [ ] T054 [P] Run `make lint` and fix any new issues. Target: 0 issues. Expect lint findings around the new accessor methods on `apis/{compute,network}/v1alpha1/managed.go` — add `//nolint:revive` for the trivial forwarders following the precedent from `apis/v1alpha1/managed.go` (which uses an `.golangci.yml` exclusion).
-- [ ] T055 [P] Constitution §III audit script (or ad-hoc grep) to confirm every `external` method in `internal/controller/{compute,network}/` has the four required unit-test cases. Use the same approach as feature 002 T060. Add any missing cases.
-- [ ] T056 [P] Update `apis/v1alpha1/doc.go` if needed (probably not — the dual-PC pair description is unchanged). Update `apis/{compute,network}/v1alpha1/doc.go` to document the kinds + the network-group forward-compat commitment.
-- [ ] T057 Update `CLAUDE.md` plan pointer to point at this plan (`specs/003-server-mr-and-network/plan.md`) — already done as part of Phase 1 of `/speckit-plan`, but re-verify after the polish pass.
-- [ ] T058 Run `quickstart.md`'s minimum-viable-Server walkthrough on a fresh k3d cluster + the provider package built from this branch. Capture any divergence in `quickstart.md` and fix.
-- [ ] T059 Live e2e canary: `source ~/.tw && make e2e` against a real Timeweb account. Verify all 11 kuttl bundles pass (existing 02–07 + new 08–11). Cost ≈ €0.05 per run. Investigate any leftover MRs per `feedback_investigate_before_cleanup`; cleanup with `make e2e.cleanup` only after investigation.
+- [X] T051 [P] `docs/servers.md` written — operator guide: minimum Server, private-network attachment (`networkRef` + `networkID` import), FloatingIP pinning via the Server's `floatingIPRefs` (Server-consumes-IP, post-reversal), project assignment, the `PaymentRequired`/`no_paid` row, troubleshooting matrix, and a "what's NOT in v0.3" list (incl. **network disks** — answering the operator question raised this session). Location codes use the API values (`ru-1`…), not dashboard labels.
+- [X] T052 [P] `README.md` updated — added `Server`/`Network`/`FloatingIP` rows to the Resources table, the network-group forward-compat commitment, a `docs/servers.md` pointer, and the new e2e bundles (08–11 + 10b) in the e2e section.
+- [X] T053 [P] `package/crossplane.yaml` description now lists `Server`/`Network`/`FloatingIP` (incl. the Server-consumes-IP note) and points the readme annotation at `docs/servers.md`.
+- [X] T054 [P] `make lint` (full module, project config) → **0 issues**. No `//nolint` needed on the new `managed.go` forwarders — the existing `.golangci.yml` exclusion already covers them.
+- [X] T055 [P] §III audit (grep) confirms the four-case pattern (Success / NotFound / Transient / Terminal) across every `external` method in `internal/controller/{compute,network}`: compute Server `TestObserve`/`TestCreate`/`TestUpdate`/`TestDelete`; network `Network*` + `FloatingIP*` (8 NotFound / 5 Success / 8 Terminal / 7 Transient markers). No gaps. Bonus: `TestSetReadyCondition` + `TestObserve_NoPaid` cover the new `PaymentRequired` mapping.
+- [X] T056 [P] `apis/compute/v1alpha1/doc.go` + `apis/network/v1alpha1/doc.go` corrected to the reversed model (Server owns the `floatingIPRefs` trio + bind/unbind; FloatingIP is pure allocation with no `serverRef`). `apis/v1alpha1/doc.go` unchanged (dual-PC description still accurate). Also fixed the stale FloatingIP section + location codes in `quickstart.md`.
+- [X] T057 `CLAUDE.md` plan pointer already targets `specs/003-server-mr-and-network/plan.md` (verified, line 4) — no change needed.
+- [~] T058 BLOCKED by the user's "do not run e2e more" directive (2026-06-01). The `quickstart.md` divergences findable statically were fixed anyway: the FloatingIP `serverRef` model → `floatingIPRefs`, and `location: msk-1` (dashboard label, rejected by the CRD enum) → `ru-1`. The fresh-k3d walkthrough itself was not re-run.
+- [~] T059 BLOCKED by the same no-e2e directive. A partial live canary DID run earlier this session against `k3d-provider-timeweb-e2e` before being stopped: it verified Server create→`on`→Ready, FloatingIP allocation (real IPs), VPC create (v2) + delete (`/api/v1/vpcs/{id}`→204), and Server delete; it also surfaced two real issues now fixed (kuttl condition-order asserts → `[Ready, Synced]`; `no_paid`→`PaymentRequired`). The full green run is gated on a funded account (the test account hit `no_paid`).
 
 **Checkpoint**: Release-ready. All 4 user stories independently functional + e2e green against live Timeweb.
 
@@ -227,13 +240,13 @@ Per `plan.md → Project Structure`:
 - **Phase 3 (US1, MVP)**: T014–T024 — depends on Phase 2. Most controller work is in `internal/controller/compute/`. **MVP target.**
 - **Phase 4 (US2)**: T025–T035 — depends on Phase 2. US2 controller work is in `internal/controller/network/`. Some US2 tasks touch `internal/controller/compute/` (T030/T031/T033) and so must follow Phase 3 OR coordinate. Recommended: ship US1 first, then US2 as a follow-up PR.
 - **Phase 5 (US3)**: T036–T039 — depends on Phase 4 (specifically T031 location-mismatch check). Tiny phase; can land alongside US2's PR.
-- **Phase 6 (US4)**: T040–T050 — depends on Phase 2 (FloatingIP types + scheme reg) + Phase 3 (US1 ships Server, the bind target). Does NOT require US2 or US3.
+- **Phase 6 (US4)**: T040–T050 — depends on Phase 2 (FloatingIP types + scheme reg) + Phase 3 (US1's Server controller, which post-reversal owns bind/unbind — T044/T045/T046 edit `internal/controller/compute/`). T040 (the `BoundFloatingIPs []int64`→`[]string` type fix + regen) precedes T045. Does NOT require US2 or US3.
 - **Phase 7 (Polish)**: T051–T059 — depends on whichever user stories you ship in the release.
 
 ### User-story dependencies
 
 - US1 → US2: US2 touches `internal/controller/compute/refs.go` (the same file US1 introduces). US1 must merge first.
-- US1 → US4: US4 requires a `Ready=True` Server as a bind target. US1's MVP delivery is the smallest dependency. US4 controller work is in `internal/controller/network/` — independent of US2's controller.
+- US1 → US4: post-reversal, US4 bind/unbind work lives in the **Server** controller (`internal/controller/compute/` — refs.go + a new `floatingip_bind.go`), so US4 now depends directly on US1's compute controller; the FloatingIP allocation half lives in `internal/controller/network/`. Independent of US2's Network controller.
 - US2 ↔ US3: US3 is an extension of US2's resolution code (the `networkID` precedence). US2 must merge first.
 - US4 ↔ US2/US3: independent. The FloatingIP controller doesn't read networks.
 

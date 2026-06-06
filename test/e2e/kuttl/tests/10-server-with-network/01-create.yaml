@@ -1,0 +1,91 @@
+# Step 1 - Server-with-network bundle (feature 003 US2, acceptance
+# scenario 1 + independent test).
+#
+# Apply a Network (VPC) and TWO Servers, each attached to it via
+# `forProvider.networkRef.name`. The Server controller:
+#   1. resolves networkRef → Network.status.atProvider.upstreamID (blocks
+#      until the Network is Ready=True per FR-011),
+#   2. runs the FR-012 location-mismatch pre-flight (Network + Servers all
+#      in ru-1 here, so it passes),
+#   3. creates each VM attached to the VPC.
+#
+# Both Servers land a privateIP inside 10.31.0.0/24. kuttl YAML can't
+# assert CIDR membership directly, so 01-assert checks Ready+Synced on all
+# three MRs; the live canary (T059) eyeballs the privateIP values.
+#
+# Deleting one Server must not affect the other or the Network — verified
+# by the suite teardown (kuttl deletes the objects it created).
+apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: e2e-netsrv-sshkey
+  namespace: timeweb-e2e
+spec:
+  forProvider:
+    name: "${TWE_SSH_NAME}-netsrv"
+    body: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHLCQkE7gXn28djFRYNLzC6abZghcgTFXQ3MrYRvx07s dlebedev@Dmitrys-MacBook-Pro.local"
+    isDefault: false
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: e2e-attach-network
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    name: "${TWE_NETWORK_NAME}-attach"
+    subnetCIDR: 10.31.0.0/24
+    location: ru-1
+    description: "kuttl 10 server-with-network"
+---
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-netsrv-a
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  writeConnectionSecretToRef:
+    name: e2e-netsrv-a-conn
+  forProvider:
+    name: "${TWE_SERVER_NAME}-neta"
+    presetName: "${TWE_SERVER_PRESET}"
+    location: ru-1
+    os:
+      image: ubuntu
+      version: "24.04"
+    sshKeyRefs:
+    - name: e2e-netsrv-sshkey
+    networkRef:
+      name: e2e-attach-network
+---
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-netsrv-b
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  writeConnectionSecretToRef:
+    name: e2e-netsrv-b-conn
+  forProvider:
+    name: "${TWE_SERVER_NAME}-netb"
+    presetName: "${TWE_SERVER_PRESET}"
+    location: ru-1
+    os:
+      image: ubuntu
+      version: "24.04"
+    sshKeyRefs:
+    - name: e2e-netsrv-sshkey
+    networkRef:
+      name: e2e-attach-network

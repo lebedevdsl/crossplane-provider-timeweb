@@ -1,0 +1,25 @@
+# Step 2 - Bind: add floatingIPRefs to the Server (full-spec re-apply so the
+# 3-way merge adds the field). The Server controller resolves the ref to the
+# FloatingIP's upstream ID and issues POST /floating-ips/{id}/bind with
+# resource_type: "server".
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-fip-server
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  writeConnectionSecretToRef:
+    name: e2e-fip-server-conn
+  forProvider:
+    name: "${TWE_SERVER_NAME}-fip"
+    presetName: "${TWE_SERVER_PRESET}"
+    location: ru-1
+    os:
+      image: ubuntu
+      version: "24.04"
+    availabilityZone: spb-1           # same zone as the FloatingIP (Timeweb bind requires same-zone)
+    floatingIPRefs:
+    - name: e2e-fip

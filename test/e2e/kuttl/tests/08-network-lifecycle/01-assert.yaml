@@ -1,0 +1,22 @@
+# VPC create is synchronous upstream, but allow generous headroom over the
+# suite default for the catalog-free connect + create round-trip.
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 120
+---
+# The Network reaches Synced=True then Ready=True. Conditions land in the
+# [Synced, Ready] order because the controller appends Synced=True
+# (ReconcileSuccess) on the first successful reconcile and the external
+# client only calls Available() from inside Observe on the next pass —
+# same dynamic as the Server bundle (09) and the Project bundle (02).
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: e2e-network
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"

@@ -1,0 +1,48 @@
+# Two Servers provision in parallel but each can take up to SC-001's 10
+# minutes; 720s gives both VMs' installing→starting→on transitions room
+# plus the Network's (fast) create that gates them.
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 720
+---
+# The Network reaches Ready=True + Synced=True first (it gates the
+# Servers' Create via FR-011).
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: e2e-attach-network
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"
+---
+# Both Servers reach Ready=True + Synced=True with a private address set.
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-netsrv-a
+  namespace: timeweb-e2e
+status:
+  # [Synced, Ready] — these Servers gate on networkRef + sshKeyRefs (first
+  # reconcile fails Connect → Synced set before Ready). The Network above
+  # has no refs, so it's [Ready, Synced].
+  conditions:
+  - type: Synced
+    status: "True"
+  - type: Ready
+    status: "True"
+---
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-netsrv-b
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Synced
+    status: "True"
+  - type: Ready
+    status: "True"

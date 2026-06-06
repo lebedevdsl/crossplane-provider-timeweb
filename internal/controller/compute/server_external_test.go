@@ -19,17 +19,224 @@ package compute
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 
 	computev1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/compute/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
+	twgen "github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb/generated"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared/resolver"
 )
+
+// fipJSON builds an upstream {ip: FloatingIp} envelope for the Server-side
+// bind tests. boundServer == 0 means unbound.
+func fipJSON(id string, boundServer int) string {
+	bt := `"resource_type":null,"resource_id":null`
+	if boundServer != 0 {
+		bt = fmt.Sprintf(`"resource_type":"server","resource_id":%d`, boundServer)
+	}
+	return fmt.Sprintf(`{"ip":{"id":%q,"ip":"5.6.7.8","comment":null,"availability_zone":"spb-1","is_ddos_guard":false,"ptr":null,%s}}`, id, bt)
+}
+
+// lockedServer returns a created Server with the locked preset/OS IDs that
+// match sampleServerJSON, so Update's immutable guard passes.
+func lockedServer() *computev1alpha1.Server {
+	cr := newServer(1234567)
+	pid := int64(234)
+	oid := int64(47)
+	cr.Status.AtProvider.LockedPresetID = &pid
+	cr.Status.AtProvider.LockedOSID = &oid
+	return cr
+}
+
+func TestSetReadyCondition(t *testing.T) {
+	cases := []struct {
+		state      string
+		wantStatus string
+		wantReason xpv2.ConditionReason
+	}{
+		{"on", "True", xpv2.Available().Reason},
+		{"off", "False", xpv2.Unavailable().Reason},
+		{"no_paid", "False", shared.ReasonPaymentRequired},
+		{"installing", "False", xpv2.Creating().Reason},
+	}
+	for _, tc := range cases {
+		t.Run(tc.state, func(t *testing.T) {
+			cr := &computev1alpha1.Server{}
+			setReadyCondition(cr, twgen.VdsStatus(tc.state))
+			c := cr.Status.GetCondition(xpv2.TypeReady)
+			if string(c.Status) != tc.wantStatus {
+				t.Errorf("Ready status = %q, want %q", c.Status, tc.wantStatus)
+			}
+			if c.Reason != tc.wantReason {
+				t.Errorf("Ready reason = %q, want %q", c.Reason, tc.wantReason)
+			}
+		})
+	}
+}
+
+// Observe must surface no_paid as Ready=False/PaymentRequired (Synced stays
+// true — the create succeeded; only payment is missing).
+func TestObserve_NoPaid(t *testing.T) {
+	fake := &timeweb.FakeClient{}
+	noPaidJSON := strings.Replace(sampleServerJSON, `"status":"on"`, `"status":"no_paid"`, 1)
+	fake.GetServerReturns(httpResp(http.StatusOK, noPaidJSON), nil)
+	e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
+	cr := newServer(1234567)
+	if _, err := e.Observe(context.Background(), cr); err != nil {
+		t.Fatalf("Observe: %v", err)
+	}
+	c := cr.Status.GetCondition(xpv2.TypeReady)
+	if string(c.Status) != "False" || c.Reason != shared.ReasonPaymentRequired {
+		t.Errorf("Ready = %s/%s, want False/PaymentRequired", c.Status, c.Reason)
+	}
+}
+
+func TestServerFloatingIPBinding(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Create_DoesNotBind", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.CreateServerReturns(httpResp(http.StatusCreated, sampleServerJSON), nil)
+		e := &serverExternal{tw: fake, resolver: &fakeResolver{
+			presetByID: map[string]int64{"premium-2-2-40-msk-1": 234},
+			osByID:     map[string]int64{"ubuntu-24-04": 47},
+		}}
+		cr := newServer(0)
+		cr.Spec.ForProvider.FloatingIPIDs = []string{"fip-a"}
+		if _, err := e.Create(ctx, cr); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if fake.BindFloatingIpCallCount() != 0 {
+			t.Error("BindFloatingIp called during Create — binding must wait for Update once the VM is Ready")
+		}
+	})
+
+	t.Run("Update_BindsDesired", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetServerReturns(httpResp(http.StatusOK, sampleServerJSON), nil)
+		fake.GetFloatingIpReturns(httpResp(http.StatusOK, fipJSON("fip-a", 0)), nil) // unbound
+		fake.BindFloatingIpReturns(httpResp(http.StatusOK, ""), nil)
+		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
+		cr := lockedServer()
+		cr.Spec.ForProvider.FloatingIPIDs = []string{"fip-a"}
+		if _, err := e.Update(ctx, cr); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.BindFloatingIpCallCount() != 1 {
+			t.Errorf("BindFloatingIp count = %d, want 1", fake.BindFloatingIpCallCount())
+		}
+		if fake.UnbindFloatingIpCallCount() != 0 {
+			t.Errorf("UnbindFloatingIp count = %d, want 0", fake.UnbindFloatingIpCallCount())
+		}
+	})
+
+	t.Run("Update_RepointFloatingIPRefs", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetServerReturns(httpResp(http.StatusOK, sampleServerJSON), nil)
+		// observeBoundFloatingIPs iterates dedupe(desired ∪ status.bound) =
+		// [fip-b, fip-a]: call 0 = fip-b (unbound), call 1 = fip-a (bound here).
+		fake.GetFloatingIpReturnsOnCall(0, httpResp(http.StatusOK, fipJSON("fip-b", 0)), nil)
+		fake.GetFloatingIpReturnsOnCall(1, httpResp(http.StatusOK, fipJSON("fip-a", 1234567)), nil)
+		fake.BindFloatingIpReturns(httpResp(http.StatusOK, ""), nil)
+		fake.UnbindFloatingIpReturns(httpResp(http.StatusOK, ""), nil)
+		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
+		cr := lockedServer()
+		cr.Spec.ForProvider.FloatingIPIDs = []string{"fip-b"}
+		cr.Status.AtProvider.BoundFloatingIPs = []string{"fip-a"}
+		if _, err := e.Update(ctx, cr); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.UnbindFloatingIpCallCount() != 1 {
+			t.Errorf("UnbindFloatingIp count = %d, want 1 (fip-a)", fake.UnbindFloatingIpCallCount())
+		}
+		if fake.BindFloatingIpCallCount() != 1 {
+			t.Errorf("BindFloatingIp count = %d, want 1 (fip-b)", fake.BindFloatingIpCallCount())
+		}
+	})
+
+	t.Run("Update_ClearFloatingIPRefs_UnbindOnly", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetServerReturns(httpResp(http.StatusOK, sampleServerJSON), nil)
+		fake.GetFloatingIpReturns(httpResp(http.StatusOK, fipJSON("fip-a", 1234567)), nil) // bound here
+		fake.UnbindFloatingIpReturns(httpResp(http.StatusOK, ""), nil)
+		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
+		cr := lockedServer()
+		cr.Spec.ForProvider.FloatingIPIDs = nil // cleared
+		cr.Status.AtProvider.BoundFloatingIPs = []string{"fip-a"}
+		if _, err := e.Update(ctx, cr); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.UnbindFloatingIpCallCount() != 1 {
+			t.Errorf("UnbindFloatingIp count = %d, want 1", fake.UnbindFloatingIpCallCount())
+		}
+		if fake.BindFloatingIpCallCount() != 0 {
+			t.Errorf("BindFloatingIp count = %d, want 0", fake.BindFloatingIpCallCount())
+		}
+	})
+
+	t.Run("Delete_UnbindsBoundFloatingIPsFirst", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.UnbindFloatingIpReturns(httpResp(http.StatusOK, ""), nil)
+		fake.DeleteServerReturns(httpResp(http.StatusNoContent, ""), nil)
+		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
+		cr := lockedServer()
+		cr.Status.AtProvider.BoundFloatingIPs = []string{"fip-a"}
+		if _, err := e.Delete(ctx, cr); err != nil {
+			t.Fatalf("Delete: %v", err)
+		}
+		if fake.UnbindFloatingIpCallCount() != 1 {
+			t.Errorf("UnbindFloatingIp count = %d, want 1 (before server delete)", fake.UnbindFloatingIpCallCount())
+		}
+		if fake.DeleteServerCallCount() != 1 {
+			t.Errorf("DeleteServer count = %d, want 1", fake.DeleteServerCallCount())
+		}
+	})
+
+	t.Run("Observe_PopulatesResolvedNetworkID", func(t *testing.T) {
+		// Bug found in the 2026-06-02 canary: resolved-ref status fields were
+		// set only in Create, whose atProvider writes don't persist. Observe
+		// must (re)populate them so resolvedNetworkID survives.
+		fake := &timeweb.FakeClient{}
+		fake.GetServerReturns(httpResp(http.StatusOK, sampleServerJSON), nil)
+		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
+		cr := lockedServer()
+		nid := "network-import-xyz"
+		cr.Spec.ForProvider.NetworkID = &nid
+		if _, err := e.Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if cr.Status.AtProvider.ResolvedNetworkID == nil || *cr.Status.AtProvider.ResolvedNetworkID != "network-import-xyz" {
+			t.Errorf("ResolvedNetworkID = %v, want network-import-xyz", cr.Status.AtProvider.ResolvedNetworkID)
+		}
+	})
+
+	t.Run("Observe_ConfirmsBoundSet", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetServerReturns(httpResp(http.StatusOK, sampleServerJSON), nil)
+		fake.GetFloatingIpReturns(httpResp(http.StatusOK, fipJSON("fip-a", 1234567)), nil)
+		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
+		cr := lockedServer()
+		cr.Spec.ForProvider.FloatingIPIDs = []string{"fip-a"}
+		obs, err := e.Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if !obs.ResourceUpToDate {
+			t.Error("ResourceUpToDate = false, want true (desired == bound)")
+		}
+		if len(cr.Status.AtProvider.BoundFloatingIPs) != 1 || cr.Status.AtProvider.BoundFloatingIPs[0] != "fip-a" {
+			t.Errorf("BoundFloatingIPs = %v, want [fip-a]", cr.Status.AtProvider.BoundFloatingIPs)
+		}
+	})
+}
 
 // --- fakeResolver — mimics resolver.Resolver for unit tests. -----------------
 
@@ -290,6 +497,65 @@ func TestCreate(t *testing.T) {
 			t.Fatalf("err = %v, want *APIError", err)
 		}
 	})
+
+	// US3 / T038 — the networkID import path verifies VPC location via an
+	// upstream GET before the server Create (the ref path checks against the
+	// Network MR in resolveRefs instead).
+	t.Run("NetworkIDImport_LocationMatch", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetVPCReturns(httpResp(http.StatusOK, sampleVPCJSON("msk-1")), nil)
+		fake.CreateServerReturns(httpResp(http.StatusCreated, sampleServerJSON), nil)
+		e := &serverExternal{tw: fake, resolver: resolverOK}
+		cr := newServer(0)
+		nid := "vpc-import"
+		cr.Spec.ForProvider.NetworkID = &nid
+		if _, err := e.Create(ctx, cr); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if fake.CreateServerCallCount() != 1 {
+			t.Errorf("CreateServer call count = %d, want 1", fake.CreateServerCallCount())
+		}
+		if cr.Status.AtProvider.ResolvedNetworkID == nil || *cr.Status.AtProvider.ResolvedNetworkID != "vpc-import" {
+			t.Errorf("ResolvedNetworkID = %v, want vpc-import", cr.Status.AtProvider.ResolvedNetworkID)
+		}
+	})
+
+	t.Run("NetworkIDImport_LocationMismatch", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetVPCReturns(httpResp(http.StatusOK, sampleVPCJSON("spb-3")), nil)
+		fake.CreateServerReturns(httpResp(http.StatusCreated, sampleServerJSON), nil)
+		e := &serverExternal{tw: fake, resolver: resolverOK}
+		cr := newServer(0)
+		nid := "vpc-wrong-region"
+		cr.Spec.ForProvider.NetworkID = &nid
+		_, err := e.Create(ctx, cr)
+		if !errors.Is(err, ErrNetworkLocationMismatch) {
+			t.Errorf("err = %v, want ErrNetworkLocationMismatch", err)
+		}
+		if fake.CreateServerCallCount() != 0 {
+			t.Error("CreateServer called despite location mismatch")
+		}
+	})
+
+	t.Run("NetworkIDImport_VPCNotFound", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetVPCReturns(httpResp(http.StatusNotFound, ""), nil)
+		e := &serverExternal{tw: fake, resolver: resolverOK}
+		cr := newServer(0)
+		nid := "vpc-ghost"
+		cr.Spec.ForProvider.NetworkID = &nid
+		_, err := e.Create(ctx, cr)
+		if !errors.Is(err, ErrTargetNotFound) {
+			t.Errorf("err = %v, want ErrTargetNotFound", err)
+		}
+	})
+}
+
+// sampleVPCJSON builds a {vpc: Vpc} envelope for the networkID-import
+// location check, parameterized by location code.
+func sampleVPCJSON(location string) string {
+	return `{"vpc":{"id":"vpc-import","name":"imported","description":"","subnet_v4":"10.0.0.0/24","location":"` +
+		location + `","availability_zone":"spb-1","busy_address":[],"public_ip":null,"type":"vpc","created_at":"2026-06-01T13:00:00Z"}}`
 }
 
 func TestUpdate(t *testing.T) {

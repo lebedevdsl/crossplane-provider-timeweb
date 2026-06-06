@@ -1,0 +1,23 @@
+# Step 1 - Network (VPC) lifecycle bundle (feature 003 US2).
+#
+# Apply a Network MR with a tiny /24 CIDR in ru-1. The Network controller
+# POSTs to /api/v2/vpcs (R-6 v2 create path), records the upstream vpc_id
+# as the external-name, and reports Ready=True once the VPC exists.
+# VPC create is effectively synchronous so this is fast (assert ~60s).
+#
+# Unique name (`$TWE_NETWORK_NAME`) lets the suite re-run safely against
+# the same Timeweb account.
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: e2e-network
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    name: "${TWE_NETWORK_NAME}"
+    subnetCIDR: 10.30.0.0/24
+    location: ru-1
+    description: "kuttl 08 network-lifecycle"

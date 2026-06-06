@@ -89,11 +89,16 @@ type ServerParameters struct {
     // +optional
     ProjectID *int64 `json:"projectID,omitempty"`
 
-    // Observed-only references — the FloatingIP MR drives binding (FR-017).
-    // Listed here so kubectl describe shows the relationship; controller
-    // does NOT mutate floating IPs.
+    // Floating-IP binding trio (authoritative as of the 2026-06-01
+    // reversal — Server-consumes-IP). The Server controller resolves these
+    // to FloatingIP upstream IDs and owns POST /floating-ips/{id}/bind +
+    // /unbind. At most one of the trio MAY be set (CEL).
     // +optional
     FloatingIPRefs []xpv2.Reference `json:"floatingIPRefs,omitempty"`
+    // +optional
+    FloatingIPSelector *xpv2.Selector `json:"floatingIPSelector,omitempty"`
+    // +optional
+    FloatingIPIDs []string `json:"floatingIPIDs,omitempty"`
 }
 
 type ServerOS struct {
@@ -113,7 +118,8 @@ type ServerOS struct {
 
 - At most one of `{networkRef, networkSelector, networkID}` MAY be set.
 - At most one of `{projectRef, projectSelector, projectID}` MAY be set.
-- Immutability: `presetName`, `location`, `availabilityZone`, `os.image`, `os.version`, all SSH key fields, all Network fields, all Project fields are immutable once set on a created object (`oldSelf == self` rule). Mutating any of them → `Synced=False, reason=ImmutableFieldChange`.
+- At most one of `{floatingIPRefs, floatingIPSelector, floatingIPIDs}` MAY be set (2026-06-01 reversal — the binding trio lives on Server).
+- Immutability: `presetName`, `location`, `availabilityZone`, `os.image`, `os.version`, all SSH key fields, all Network fields, all Project fields are immutable once set on a created object. The **floating-IP trio is MUTABLE** — re-pointing `floatingIPRefs` is the supported re-bind path (Server controller issues unbind+bind). Mutating an immutable field → `Synced=False, reason=ImmutableFieldChange`.
 
 **Status**:
 
@@ -136,10 +142,16 @@ type ServerObservation struct {
     ResolvedProjectID  *int64    `json:"resolvedProjectID,omitempty"`
     ResolvedSshKeyIDs  []int64   `json:"resolvedSshKeyIDs,omitempty"`
 
-    // FloatingIPs observed bound to this server upstream. Populated by
-    // the Server controller from the upstream observation (NOT from
-    // floatingIPRefs in spec).
-    BoundFloatingIPs   []int64   `json:"boundFloatingIPs,omitempty"`
+    // BoundFloatingIPs is the authoritative list of floating-IP upstream
+    // IDs currently bound to this server. The Server controller resolves
+    // floatingIPRefs/Selector/IDs → FloatingIP upstreamIDs and confirms
+    // each binding by reading the IP's upstream bound_to.resource_id.
+    // NOTE: upstream floating-IP IDs are STRINGS (FloatingIpId = string),
+    // so this is []string — the original []int64 in this draft was a
+    // pre-reversal mistake. The Server GET (Vds) carries no
+    // floating_ip_ids field, so this is built from the per-IP GETs, not
+    // from the server observation.
+    BoundFloatingIPs   []string  `json:"boundFloatingIPs,omitempty"`
 
     // Lifecycle state from the upstream /servers GET — one of:
     // "installing", "starting", "on", "off", "rebooting", "transfer",
@@ -228,9 +240,17 @@ type NetworkObservation struct {
 
 **API**: `network.m.timeweb.crossplane.io/v1alpha1`, kind `FloatingIP`, **scope: Namespaced**.
 
-**Purpose**: A Timeweb floating IPv4 address. Owns its upstream allocation AND its binding to a single Server (per R-4).
+> **Reversed 2026-06-01** (spec.md "FloatingIP reference reversal"). The
+> shape below is the authoritative **pure-allocation** model and matches
+> the committed `apis/network/v1alpha1/floatingip_types.go`. The original
+> "FloatingIP owns serverRef + bind/unbind" design (R-4) is superseded —
+> binding now lives on `Server.forProvider.floatingIPRefs` (§1.1) and the
+> Server controller is the single bind/unbind owner.
 
-**Spec**:
+**Purpose**: A Timeweb floating IPv4 address — pure allocation. Owns only
+the upstream allocate + release. Binding is driven by the consuming MR.
+
+**Spec** (matches committed `floatingip_types.go`):
 
 ```go
 type FloatingIPSpec struct {
@@ -239,57 +259,64 @@ type FloatingIPSpec struct {
 }
 
 type FloatingIPParameters struct {
-    // +kubebuilder:validation:Enum=spb-3;msk-1;nsk-1;ams-1;fra-1;ala-1;buf-2
+    // Region. Immutable. Location codes are the upstream API values
+    // (ru-1/ru-2/ru-3/nl-1/de-1/kz-1/us-4/pl-1), NOT dashboard labels.
+    // +kubebuilder:validation:Enum=ru-1;ru-2;ru-3;nl-1;de-1;kz-1;us-4;pl-1
     Location string `json:"location"`
 
-    // +optional
+    // +optional   (mutable)
     Comment *string `json:"comment,omitempty"`
 
-    // +optional
+    // +optional   (immutable)
     AvailabilityZone *string `json:"availabilityZone,omitempty"`
 
-    // DDoS guard toggle. The upstream createFloatingIP body marks this
-    // required; CRD default = false so operators don't have to think
-    // about it for the common case.
+    // DDoS guard toggle. Upstream marks it required; CRD default=false.
+    // Immutable.
     // +kubebuilder:default=false
     IsDDoSGuard bool `json:"isDDoSGuard"`
-
-    // --- Server-binding trio (mutually exclusive, all optional) ---
-
-    // +optional
-    ServerRef *xpv2.Reference `json:"serverRef,omitempty"`
-    // +optional
-    ServerSelector *xpv2.Selector `json:"serverSelector,omitempty"`
-    // +optional
-    ServerID *int64 `json:"serverID,omitempty"`
 }
 ```
 
-**XValidation**: at most one of `{serverRef, serverSelector, serverID}` MAY be set. `location`, `availabilityZone`, `isDDoSGuard` are immutable after create. `comment` and the binding trio are mutable.
+**No server-binding trio on FloatingIP.** The binding fields live on
+`Server.forProvider.{floatingIPRefs, floatingIPSelector, floatingIPIDs}`.
 
-**Status**:
+**XValidation**: `location`, `availabilityZone`, `isDDoSGuard` immutable
+after create. `comment` mutable. (No mutual-exclusion rule here.)
+
+**Status** (matches committed `floatingip_types.go`):
 
 ```go
 type FloatingIPObservation struct {
-    UpstreamID         *string      `json:"upstreamID,omitempty"`
-    IP                 *string      `json:"ip,omitempty"`              // the IPv4 address itself
-    ResolvedServerID   *int64       `json:"resolvedServerID,omitempty"`
-    BoundAt            *metav1.Time `json:"boundAt,omitempty"`
+    UpstreamID      *string                        `json:"upstreamID,omitempty"`
+    IP              *string                        `json:"ip,omitempty"`
+    // ObservedBoundTo mirrors the upstream `bound_to` verbatim — purely
+    // diagnostic (kubectl describe). NOT authoritative for reconciliation;
+    // the consuming Server's status carries the authoritative binding.
+    ObservedBoundTo *FloatingIPBindingObservation  `json:"observedBoundTo,omitempty"`
+}
+
+type FloatingIPBindingObservation struct {
+    ResourceType *string `json:"resourceType,omitempty"` // server|balancer|database|network
+    ResourceID   *int64  `json:"resourceID,omitempty"`
 }
 ```
 
-**Lifecycle** (the most-involved of the three new MRs):
+**Lifecycle** (now the simplest of the three — allocation only):
 
-- **Create**: POST `/api/v1/floating-ips` with `availability_zone` derived from spec (or default for the location). Record `upstreamID` + `ip`. If `serverRef`/`serverSelector`/`serverID` resolves AND the target Server is `Ready=True`, immediately POST `/floating-ips/{id}/bind` with `{resource_type: "server", resource_id: <id>}`. Record `resolvedServerID` + `boundAt`.
-- **Observe**: GET `/api/v1/floating-ips/{id}`. Read `bound_to` field. Drift detection:
-  - `status.atProvider.resolvedServerID == upstream.bound_to.resource_id` → no drift.
-  - operator removed the ref (spec server-binding trio all unset) but upstream still shows bound → unbind action queued for Update.
-  - operator changed the ref target → unbind-then-bind sequence queued for Update.
-  - upstream got rebound out-of-band → not corrected (Crossplane v2 default is `ObserveOnly` for unmanaged drift; we don't aggressively re-bind to match spec).
-- **Update**: applies the queued action(s) from Observe. Order: unbind first, then bind. If only one is needed, only one is called.
-- **Delete**: if currently bound, unbind first; then DELETE `/api/v1/floating-ips/{id}`. Idempotent on 404.
+- **Create**: POST `/api/v1/floating-ips` with `is_ddos_guard` + `availability_zone`. Record `upstreamID` + `ip`. Allocated **unbound** — no bind here.
+- **Observe**: GET `/api/v1/floating-ips/{id}`. Populate `ip`; mirror `bound_to` → `observedBoundTo` (diagnostic). `ResourceUpToDate` compares only the mutable `comment`.
+- **Update**: PATCH `/api/v1/floating-ips/{id}` for `comment`. Immutable drift on `location`/`availabilityZone`/`isDDoSGuard` → `ImmutableFieldChange`. **No bind/unbind.**
+- **Delete**: DELETE `/api/v1/floating-ips/{id}`. Idempotent on 404. The Server controller is expected to have unbound it during the Server's repoint/delete flow (single-owner); the FloatingIP controller does NOT force-unbind.
 
-**Connection Secret**: optional — published with the IP address as key `ip` so downstream resources (e.g. external DNS providers) can consume it.
+**Bind/unbind ownership** lives in the Server controller (§1.1 lifecycle):
+on Server Observe/Create/Update it resolves `floatingIPRefs` → FloatingIP
+upstream IDs, and issues `POST /floating-ips/{id}/bind` (`resource_type:
+"server"`, `resource_id: <server id>`) / `/unbind` to converge the set,
+recording the bound IDs in `Server.status.atProvider.boundFloatingIPs`
+(`[]string`). On Server delete it unbinds every entry first.
+
+**Connection Secret**: optional — published with key `ip` (the IPv4) +
+`upstreamID` so downstream resources (e.g. external-DNS) can consume it.
 
 ---
 
@@ -325,34 +352,33 @@ No change to the cache key shape — `cacheKey{pc PCRef, dim Dimension}` covers 
                 ▼                  ▼                             ▼
         ┌────────────┐      ┌────────────┐               ┌────────────┐
         │   Server   │      │  Network   │               │ FloatingIP │
-        │ (compute)  │      │ (network)  │               │ (network)  │
-        └─────┬──────┘      └────────────┘               └─────┬──────┘
-              │ ▲                  ▲                           │
-              │ │ networkRef       │ (resolved upstream ID)    │
-              │ └──────────────────┘                           │
-              │                                                │
-              │ projectRef                                     │ serverRef
-              ▼                                                ▼
-        ┌────────────┐                                   ┌────────────┐
-        │  Project   │ (feat 001)                        │   Server   │
-        └────────────┘                                   └────────────┘
-              ▲                                                ▲
-              │ sshKeyRefs (list)                              │ (observe-only floatingIPRefs)
-              │                                                │
-        ┌────────────┐                                         │
-        │   SshKey   │ (feat 001)                              │
-        └────────────┘                                         │
-                                                               │
-                                                               (no controller-side mutation)
+        │ (compute)  │─────────────────────────────────▶ │ (network)  │
+        │            │      │ (network)  │  floatingIPRefs│  (alloc-   │
+        └─────┬──────┘      └────────────┘  (Server binds)│   only)    │
+              │ ▲                  ▲                       └────────────┘
+              │ │ networkRef       │ (resolved upstream ID)
+              │ └──────────────────┘
+              │
+              │ projectRef
+              ▼
+        ┌────────────┐
+        │  Project   │ (feat 001)
+        └────────────┘
+              ▲
+              │ sshKeyRefs (list)
+              │
+        ┌────────────┐
+        │   SshKey   │ (feat 001)
+        └────────────┘
 ```
 
 - `Server.forProvider.networkRef` → resolves to `Network.status.atProvider.upstreamID`. Controller blocks Server.Create until Network is `Ready=True`.
 - `Server.forProvider.projectRef` → resolves to existing `Project.status.atProvider.upstreamID`.
 - `Server.forProvider.sshKeyRefs` (list) → resolves to existing `SshKey.status.atProvider.upstreamID` per entry.
-- `Server.forProvider.floatingIPRefs` (list) → **observe-only**. The Server controller never mutates these.
-- `FloatingIP.forProvider.serverRef` → resolves to `Server.status.atProvider.upstreamID`. The FloatingIP controller owns the bind/unbind.
+- `Server.forProvider.floatingIPRefs` (list, **authoritative** as of 2026-06-01) → resolves to `FloatingIP.status.atProvider.upstreamID` per entry. **The Server controller owns bind/unbind** and records bound IDs in `Server.status.atProvider.boundFloatingIPs`.
+- `FloatingIP` has **no back-reference** to Server — it is pure allocation. Its `status.atProvider.observedBoundTo` is a diagnostic mirror of the upstream `bound_to`.
 
-The cycle that could happen if both `Server.floatingIPRefs` and `FloatingIP.serverRef` were authoritative is avoided by FR-017: `floatingIPRefs` is observe-only.
+No reference cycle is possible: binding flows one way (Server → FloatingIP), and the FloatingIP controller never mutates a Server (single-owner per Constitution §II).
 
 ---
 
@@ -360,8 +386,8 @@ The cycle that could happen if both `Server.floatingIPRefs` and `FloatingIP.serv
 
 | Kind | `forProvider` fields | `atProvider` fields | CEL rules |
 |---|---:|---:|---:|
-| `Server` | 19 (3 required + 6 optional scalar + 3+3+3+1 ref pairs/lists) | 11 | 2 mutual-exclusion + ~10 immutability |
-| `Network` | 5 (3 required + 2 optional) | 2 | 4 immutability |
-| `FloatingIP` | 7 (1 required + 2 optional + 1 default + 3 ref-trio) | 4 | 1 mutual-exclusion + 3 immutability |
+| `Server` | 21 (3 required + 6 optional scalar + 3+3+3+3 ref trios/lists incl. floatingIP) | 11 | 3 mutual-exclusion (network/project/floatingIP) + ~10 immutability (controller-side) |
+| `Network` | 5 (3 required + 2 optional) | 2 | 4 immutability (controller-side, T012) |
+| `FloatingIP` | 4 (1 required + 2 optional + 1 default) — pure allocation, no binding trio | 3 (upstreamID, ip, observedBoundTo) | 3 immutability (controller-side) |
 
 Generated CRD YAML estimated ~200–280 lines each — well within Crossplane's tolerance.

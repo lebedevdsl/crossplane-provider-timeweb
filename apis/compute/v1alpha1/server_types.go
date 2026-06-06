@@ -185,11 +185,13 @@ type ServerObservation struct {
 	// +optional
 	ResolvedSSHKeyIDs []int64 `json:"resolvedSSHKeyIDs,omitempty"`
 
-	// BoundFloatingIPs lists the upstream IDs of floating IPs bound to
-	// this server, as observed upstream (NOT from `floatingIPRefs` in
-	// spec). The Server controller never mutates this binding.
+	// BoundFloatingIPs lists the upstream IDs (strings) of floating IPs
+	// currently bound to this server, confirmed via each IP's upstream
+	// bound_to.resource_id. The Server controller owns this binding
+	// (bind/unbind) per the 2026-06-01 reversal — single-owner. Upstream
+	// floating-IP IDs are strings (FloatingIpId), so this is []string.
 	// +optional
-	BoundFloatingIPs []int64 `json:"boundFloatingIPs,omitempty"`
+	BoundFloatingIPs []string `json:"boundFloatingIPs,omitempty"`
 
 	// State is the upstream server state — one of: "installing",
 	// "starting", "on", "off", "rebooting", "transfer", "removing".

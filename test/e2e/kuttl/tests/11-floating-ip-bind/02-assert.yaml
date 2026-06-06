@@ -1,0 +1,31 @@
+# Binding takes a couple of reconcile cycles (Server Update binds, then the
+# FloatingIP controller re-observes bound_to on its next poll).
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 240
+---
+# The FloatingIP's diagnostic observedBoundTo now mirrors the upstream
+# bound_to: resource_type "server" (the resource_id is the server's dynamic
+# upstream id, so it's not asserted here — the live canary eyeballs it).
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: FloatingIP
+metadata:
+  name: e2e-fip
+  namespace: timeweb-e2e
+status:
+  atProvider:
+    observedBoundTo:
+      resourceType: server
+---
+# Server stays healthy after the bind (no condition flap).
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-fip-server
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"

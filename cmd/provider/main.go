@@ -39,6 +39,7 @@ import (
 	"github.com/lebedevdsl/crossplane-provider-timeweb/apis"
 	computectrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/compute"
 	containerregistryctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/containerregistry"
+	networkctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/network"
 	projectctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/project"
 	providerconfigctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/providerconfig"
 	s3bucketctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/s3bucket"
@@ -138,6 +139,14 @@ func main() {
 	}
 	if err := computectrl.Setup(mgr, log, pollInterval); err != nil {
 		log.Info("unable to register Server controller", "error", err.Error())
+		os.Exit(1)
+	}
+	if err := networkctrl.SetupNetwork(mgr, log, pollInterval); err != nil {
+		log.Info("unable to register Network controller", "error", err.Error())
+		os.Exit(1)
+	}
+	if err := networkctrl.SetupFloatingIP(mgr, log, pollInterval); err != nil {
+		log.Info("unable to register FloatingIP controller", "error", err.Error())
 		os.Exit(1)
 	}
 
