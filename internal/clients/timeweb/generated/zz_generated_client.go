@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,12 +15,62 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
 	BearerScopes = "Bearer.Scopes"
+)
+
+// Defines values for ClusterInAvailabilityZone.
+const (
+	ClusterInAvailabilityZoneAms1 ClusterInAvailabilityZone = "ams-1"
+	ClusterInAvailabilityZoneFra1 ClusterInAvailabilityZone = "fra-1"
+	ClusterInAvailabilityZoneMsk1 ClusterInAvailabilityZone = "msk-1"
+	ClusterInAvailabilityZoneSpb3 ClusterInAvailabilityZone = "spb-3"
+)
+
+// Defines values for ClusterInMaintenanceSlotType.
+const (
+	AnyTime   ClusterInMaintenanceSlotType = "any_time"
+	FixedTime ClusterInMaintenanceSlotType = "fixed_time"
+)
+
+// Defines values for ClusterInNetworkDriver.
+const (
+	ClusterInNetworkDriverCalico     ClusterInNetworkDriver = "calico"
+	ClusterInNetworkDriverCilium     ClusterInNetworkDriver = "cilium"
+	ClusterInNetworkDriverFlannel    ClusterInNetworkDriver = "flannel"
+	ClusterInNetworkDriverKuberouter ClusterInNetworkDriver = "kuberouter"
+)
+
+// Defines values for ClusterOutAvailabilityZone.
+const (
+	ClusterOutAvailabilityZoneAms1 ClusterOutAvailabilityZone = "ams-1"
+	ClusterOutAvailabilityZoneFra1 ClusterOutAvailabilityZone = "fra-1"
+	ClusterOutAvailabilityZoneMsk1 ClusterOutAvailabilityZone = "msk-1"
+	ClusterOutAvailabilityZoneSpb3 ClusterOutAvailabilityZone = "spb-3"
+)
+
+// Defines values for ClusterOutNetworkDriver.
+const (
+	ClusterOutNetworkDriverCalico     ClusterOutNetworkDriver = "calico"
+	ClusterOutNetworkDriverCilium     ClusterOutNetworkDriver = "cilium"
+	ClusterOutNetworkDriverFlannel    ClusterOutNetworkDriver = "flannel"
+	ClusterOutNetworkDriverKuberouter ClusterOutNetworkDriver = "kuberouter"
+)
+
+// Defines values for MasterPresetOutApiType.
+const (
+	Master MasterPresetOutApiType = "master"
+)
+
+// Defines values for WorkerPresetOutApiType.
+const (
+	Worker WorkerPresetOutApiType = "worker"
 )
 
 // Defines values for AddedSubdomainStatus.
@@ -431,6 +482,18 @@ const (
 	VpcServiceTypeServer   VpcServiceType = "server"
 )
 
+// Defines values for PostKubernetesAddonsJSONBodyConfigType.
+const (
+	PostKubernetesAddonsJSONBodyConfigTypeBasic  PostKubernetesAddonsJSONBodyConfigType = "basic"
+	PostKubernetesAddonsJSONBodyConfigTypeCustom PostKubernetesAddonsJSONBodyConfigType = "custom"
+)
+
+// Defines values for PostKubernetesAddonsUpdateJSONBodyConfigType.
+const (
+	PostKubernetesAddonsUpdateJSONBodyConfigTypeBasic  PostKubernetesAddonsUpdateJSONBodyConfigType = "basic"
+	PostKubernetesAddonsUpdateJSONBodyConfigTypeCustom PostKubernetesAddonsUpdateJSONBodyConfigType = "custom"
+)
+
 // Defines values for PerformActionOnServerJSONBodyAction.
 const (
 	PerformActionOnServerJSONBodyActionClone         PerformActionOnServerJSONBodyAction = "clone"
@@ -495,6 +558,503 @@ const (
 	Private UpdateStorageJSONBodyBucketType = "private"
 	Public  UpdateStorageJSONBodyBucketType = "public"
 )
+
+// AddonConfigOut defines model for AddonConfigOut.
+type AddonConfigOut struct {
+	// Dependencies Зависимости дополнения
+	Dependencies []string `json:"dependencies"`
+
+	// Id ID конфигурации дополнения
+	Id int `json:"id"`
+
+	// Type Тип дополнения
+	Type string `json:"type"`
+
+	// Version Версия дополнения
+	Version string `json:"version"`
+
+	// YamlConfig YAML конфигурации дополнения
+	YamlConfig string `json:"yaml_config"`
+}
+
+// AddonOut defines model for AddonOut.
+type AddonOut struct {
+	// Config Дополнительная конфигурация дополнения
+	Config *map[string]interface{} `json:"config,omitempty"`
+
+	// ConfigType Тип конфигурации дополнения
+	ConfigType string `json:"config_type"`
+
+	// CreatedAt Дата и время создания дополнения в формате ISO8601
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id ID дополнения
+	Id int `json:"id"`
+
+	// Status Статус дополнения
+	Status string `json:"status"`
+
+	// Type Тип дополнения
+	Type string `json:"type"`
+
+	// Version Версия дополнения
+	Version string `json:"version"`
+
+	// YamlConfig Yaml конфигурация дополнения
+	YamlConfig string `json:"yaml_config"`
+}
+
+// AddonsConfigResponse defines model for AddonsConfigResponse.
+type AddonsConfigResponse struct {
+	// K8sAddons Массив конфигураций дополнений k8s
+	K8sAddons []AddonConfigOut `json:"k8s_addons"`
+
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta SchemasMeta `json:"meta"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// AddonsResponse defines model for AddonsResponse.
+type AddonsResponse struct {
+	// Addons Массив дополнений k8s
+	Addons []AddonOut `json:"addons"`
+
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta SchemasMeta `json:"meta"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// ClusterEdit defines model for ClusterEdit.
+type ClusterEdit struct {
+	// Description Новое описание кластера
+	Description *string `json:"description,omitempty"`
+
+	// Name Новое название кластера
+	Name *string `json:"name,omitempty"`
+
+	// OidcProvider OIDC-провайдер
+	OidcProvider *struct {
+		// ClientId Идентификатор сервиса, выданный OIDC-провайдером, от имени которого осуществляется запрос к ресурсам
+		ClientId string `json:"client_id"`
+
+		// GroupsClaim Поле в JSON Web Token (JWT), содержащее названии группы, к которой принадлежит пользователь
+		GroupsClaim *string `json:"groups_claim,omitempty"`
+
+		// IssuerUrl Адрес OIDC-провайдера, используемый для аутентификации пользователей, запрашивающих доступ к кластеру
+		IssuerUrl string `json:"issuer_url"`
+
+		// Name Название создаваемого подключения. Используется только для идентификации и не влияет на остальные параметры
+		Name string `json:"name"`
+
+		// UsernameClaim Поле в JSON Web Token (JWT), используемое для идентификации пользователя
+		UsernameClaim *string `json:"username_claim,omitempty"`
+	} `json:"oidc_provider,omitempty"`
+}
+
+// ClusterIn defines model for ClusterIn.
+type ClusterIn struct {
+	// AvailabilityZone Зона доступности
+	AvailabilityZone *ClusterInAvailabilityZone `json:"availability_zone,omitempty"`
+
+	// ClusterNetworkCidr Определяет сетевые диапазоны (CIDR) для подов (pods_network) и сервисов (services_network) в Kubernetes-кластере.
+	ClusterNetworkCidr *struct {
+		// PodsNetwork Диапазон адресов подов. Подсеть должна принадлежать диапазонам 10.0.0.0/x, 192.168.0.0/x, 172.16.0.0/x. Максимальный размер для подов CIDR 10.0.0.0/x - /8, 192.168.0.0/x - /16, 172.16.0.0/x - /12, минимальный CIDR в этих диапазонах - /28.
+		PodsNetwork *string `json:"pods_network,omitempty"`
+
+		// ServicesNetwork Диапазон адресов сервисов. Подсеть должна принадлежать диапазонам 10.0.0.0/x, 192.168.0.0/x, 172.16.0.0/x. Максимальный размер CIDR для сервисов 10.0.0.0/x - /12, 192.168.0.0/x - /16, 172.16.0.0/x - /12, минимальный CIDR в этих диапазонах - /28.
+		ServicesNetwork *string `json:"services_network,omitempty"`
+	} `json:"cluster_network_cidr,omitempty"`
+
+	// Configuration Параметры конфигурации мастер-ноды. Нельзя передавать вместе с `preset_id`.
+	Configuration *struct {
+		// ConfiguratorId ID конфигуратора мастер-ноды
+		ConfiguratorId int `json:"configurator_id"`
+
+		// Cpu Количество ядер процессора
+		Cpu int `json:"cpu"`
+
+		// Disk Размер диска в МБ
+		Disk int `json:"disk"`
+
+		// Ram Размер ОЗУ сервера в МБ
+		Ram int `json:"ram"`
+	} `json:"configuration,omitempty"`
+
+	// Description Описание кластера
+	Description *string `json:"description,omitempty"`
+
+	// IsIngress Логическое значение, которое показывает, использовать ли Ingress в кластере
+	IsIngress *bool `json:"is_ingress,omitempty"`
+
+	// IsK8sDashboard Логическое значение, которое показывает, использовать ли Kubernetes Dashboard в кластере
+	IsK8sDashboard *bool `json:"is_k8s_dashboard,omitempty"`
+
+	// K8sVersion Версия Kubernetes
+	K8sVersion string `json:"k8s_version"`
+
+	// MaintenanceSlot Окно обслуживания кластера
+	MaintenanceSlot *struct {
+		// From Интервал времени с. Время должно быть в формате HH:MM (24 часа)
+		From *string `json:"from,omitempty"`
+
+		// To Интервал времени до. Время должно быть в формате HH:MM (24 часа)
+		To *string `json:"to,omitempty"`
+
+		// Type В любое время или в заданное время. При значении `fixed_time` поля `from` и `to` являются обязательными. Минимально допустимый временной интервал — 3 часа. Время задается в часовом поясе UTC.
+		Type ClusterInMaintenanceSlotType `json:"type"`
+	} `json:"maintenance_slot,omitempty"`
+
+	// MasterNodesCount Количество мастер нод
+	MasterNodesCount *int `json:"master_nodes_count,omitempty"`
+
+	// Name Название кластера
+	Name string `json:"name"`
+
+	// NetworkDriver Тип используемого сетевого драйвера в кластере
+	NetworkDriver ClusterInNetworkDriver `json:"network_driver"`
+
+	// NetworkId ID приватной сети
+	NetworkId *string `json:"network_id,omitempty"`
+
+	// OidcProvider OIDC-провайдер
+	OidcProvider *struct {
+		// ClientId Идентификатор сервиса, выданный OIDC-провайдером, от имени которого осуществляется запрос к ресурсам
+		ClientId string `json:"client_id"`
+
+		// GroupsClaim Поле в JSON Web Token (JWT), содержащее названии группы, к которой принадлежит пользователь
+		GroupsClaim *string `json:"groups_claim,omitempty"`
+
+		// IssuerUrl Адрес OIDC-провайдера, используемый для аутентификации пользователей, запрашивающих доступ к кластеру
+		IssuerUrl string `json:"issuer_url"`
+
+		// Name Название создаваемого подключения. Используется только для идентификации и не влияет на остальные параметры
+		Name string `json:"name"`
+
+		// UsernameClaim Поле в JSON Web Token (JWT), используемое для идентификации пользователя
+		UsernameClaim *string `json:"username_claim,omitempty"`
+	} `json:"oidc_provider,omitempty"`
+
+	// PresetId ID тарифа мастер-ноды. Нельзя передавать вместе с `configuration`
+	PresetId *int `json:"preset_id,omitempty"`
+
+	// ProjectId ID проекта
+	ProjectId *int `json:"project_id,omitempty"`
+
+	// WorkerGroups Группы воркеров в кластере
+	WorkerGroups *[]NodeGroupIn `json:"worker_groups,omitempty"`
+}
+
+// ClusterInAvailabilityZone Зона доступности
+type ClusterInAvailabilityZone string
+
+// ClusterInMaintenanceSlotType В любое время или в заданное время. При значении `fixed_time` поля `from` и `to` являются обязательными. Минимально допустимый временной интервал — 3 часа. Время задается в часовом поясе UTC.
+type ClusterInMaintenanceSlotType string
+
+// ClusterInNetworkDriver Тип используемого сетевого драйвера в кластере
+type ClusterInNetworkDriver string
+
+// ClusterOut defines model for ClusterOut.
+type ClusterOut struct {
+	// AvailabilityZone Зона доступности
+	AvailabilityZone *ClusterOutAvailabilityZone `json:"availability_zone,omitempty"`
+
+	// AvatarLink Ссылка на аватар кластера.
+	AvatarLink *string `json:"avatar_link"`
+
+	// Cpu Общее количество ядер
+	Cpu *int `json:"cpu,omitempty"`
+
+	// CreatedAt Дата и время создания кластера в формате ISO8601
+	CreatedAt time.Time `json:"created_at"`
+
+	// Description Описание
+	Description string `json:"description"`
+
+	// Disk Общее дисковое пространство
+	Disk *int `json:"disk,omitempty"`
+
+	// Id ID кластера
+	Id int `json:"id"`
+
+	// Ingress Логическое значение, показывающее, включен ли Ingress
+	Ingress bool `json:"ingress"`
+
+	// K8sVersion Версия Kubernetes
+	K8sVersion string `json:"k8s_version"`
+
+	// Name Название
+	Name string `json:"name"`
+
+	// NetworkDriver Используемый сетевой драйвер
+	NetworkDriver ClusterOutNetworkDriver `json:"network_driver"`
+
+	// PresetId ID тарифа мастер-ноды
+	PresetId int `json:"preset_id"`
+
+	// ProjectId ID проекта
+	ProjectId *int `json:"project_id,omitempty"`
+
+	// Ram Общее количество памяти
+	Ram *int `json:"ram,omitempty"`
+
+	// Status Статус
+	Status string `json:"status"`
+}
+
+// ClusterOutAvailabilityZone Зона доступности
+type ClusterOutAvailabilityZone string
+
+// ClusterOutNetworkDriver Используемый сетевой драйвер
+type ClusterOutNetworkDriver string
+
+// ClusterResponse defines model for ClusterResponse.
+type ClusterResponse struct {
+	// Cluster Кластер
+	Cluster ClusterOut `json:"cluster"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// ClustersResponse defines model for ClustersResponse.
+type ClustersResponse struct {
+	// Clusters Массив объектов Кластер
+	Clusters []ClusterOut `json:"clusters"`
+
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta SchemasMeta `json:"meta"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// IncreaseNodes defines model for IncreaseNodes.
+type IncreaseNodes struct {
+	// Count Количество нод
+	Count int `json:"count"`
+
+	// Labels Лейблы добавляемых нод
+	Labels *[]SetLabels `json:"labels,omitempty"`
+}
+
+// K8SVersionsResponse defines model for K8SVersionsResponse.
+type K8SVersionsResponse struct {
+	// K8sVersions Массив версий k8s
+	K8sVersions []string `json:"k8s_versions"`
+
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta SchemasMeta `json:"meta"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// MasterPresetOutApi defines model for MasterPresetOutApi.
+type MasterPresetOutApi struct {
+	// Cpu Количество ядер ноды
+	Cpu int `json:"cpu"`
+
+	// Description Описание тарифа
+	Description string `json:"description"`
+
+	// DescriptionShort Краткое описание тарифа
+	DescriptionShort string `json:"description_short"`
+
+	// Disk Количество пространства на ноде
+	Disk int `json:"disk"`
+
+	// Id ID тарифа
+	Id int `json:"id"`
+
+	// Limit Ограничение по количеству воркер-нод в кластере
+	Limit *int `json:"limit,omitempty"`
+
+	// Network Пропускная способность ноды
+	Network int `json:"network"`
+
+	// Price Стоимость
+	Price float32 `json:"price"`
+
+	// Ram Количество памяти ноды
+	Ram int `json:"ram"`
+
+	// Type Тип тарифа
+	Type *MasterPresetOutApiType `json:"type,omitempty"`
+}
+
+// MasterPresetOutApiType Тип тарифа
+type MasterPresetOutApiType string
+
+// NetworkDriversResponse defines model for NetworkDriversResponse.
+type NetworkDriversResponse struct {
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta SchemasMeta `json:"meta"`
+
+	// NetworkDrivers Массив сетевых драйверов k8s
+	NetworkDrivers []string `json:"network_drivers"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// NodeGroupIn defines model for NodeGroupIn.
+type NodeGroupIn struct {
+	// Configuration Параметры конфигурации воркер-ноды. Нельзя передавать вместе с `preset_id`. Локация воркер-нод должна совпадать с локацией кластера
+	Configuration *struct {
+		// ConfiguratorId ID конфигуратора кластера
+		ConfiguratorId int `json:"configurator_id"`
+
+		// Cpu Количество ядер процессора
+		Cpu int `json:"cpu"`
+
+		// Disk Размер диска в МБ
+		Disk int `json:"disk"`
+
+		// Gpu Количество видеокарт
+		Gpu *int `json:"gpu,omitempty"`
+
+		// Ram Размер ОЗУ сервера в МБ
+		Ram int `json:"ram"`
+	} `json:"configuration,omitempty"`
+
+	// IsAutohealing Автоматическое восстановление работоспособности вышедших из строя узлов
+	IsAutohealing *bool `json:"is_autohealing,omitempty"`
+
+	// IsAutoscaling Автомасштабирование. Автоматическое увеличение и уменьшение количества нод в группе в зависимости от текущей нагрузки
+	IsAutoscaling *bool `json:"is_autoscaling,omitempty"`
+
+	// Labels Лейблы для группы нод
+	Labels *[]SetLabels `json:"labels,omitempty"`
+
+	// MaxSize Максимальное количество нод. Передавать в связке с параметрами `is_autoscaling` и `min_size`. Максимальное количество нод ограничено тарифом кластера
+	MaxSize *int `json:"max-size,omitempty"`
+
+	// MinSize Минимальное количество нод. Передавать в связке с параметрами `is_autoscaling` и `max_size`
+	MinSize *int `json:"min-size,omitempty"`
+
+	// Name Название группы
+	Name string `json:"name"`
+
+	// NodeCount Количество нод в группе
+	NodeCount int `json:"node_count"`
+
+	// PresetId ID тарифа воркер-ноды. Нельзя передавать вместе с `configuration`. Локация воркер-нод должна совпадать с локацией кластера
+	PresetId *int `json:"preset_id,omitempty"`
+}
+
+// NodeGroupOut defines model for NodeGroupOut.
+type NodeGroupOut struct {
+	// CreatedAt Дата и время создания группы в формате ISO8601
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id ID группы
+	Id int `json:"id"`
+
+	// Name Название группы
+	Name string `json:"name"`
+
+	// NodeCount Количество нод в группе
+	NodeCount int `json:"node_count"`
+
+	// PresetId ID тарифа мастер-ноды
+	PresetId int `json:"preset_id"`
+}
+
+// NodeGroupResponse defines model for NodeGroupResponse.
+type NodeGroupResponse struct {
+	// NodeGroup Группа нод
+	NodeGroup NodeGroupOut `json:"node_group"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// NodeGroupsResponse defines model for NodeGroupsResponse.
+type NodeGroupsResponse struct {
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta SchemasMeta `json:"meta"`
+
+	// NodeGroups Массив объектов Группа нод
+	NodeGroups []NodeGroupOut `json:"node_groups"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// NodeOut defines model for NodeOut.
+type NodeOut struct {
+	// Cpu Количество ядер
+	Cpu int `json:"cpu"`
+
+	// CreatedAt Дата и время создания ноды в формате ISO8601
+	CreatedAt time.Time `json:"created_at"`
+
+	// Disk Количество пространства
+	Disk int `json:"disk"`
+
+	// GroupId ID группы нод
+	GroupId int `json:"group_id"`
+
+	// Id ID ноды
+	Id int `json:"id"`
+
+	// Network Пропускная способность сети
+	Network int `json:"network"`
+
+	// NodeIp Ip-адрес ноды
+	NodeIp string `json:"node_ip"`
+
+	// PresetId ID тарифа ноды
+	PresetId int `json:"preset_id"`
+
+	// Ram Количество памяти
+	Ram int `json:"ram"`
+
+	// Status Статус
+	Status string `json:"status"`
+
+	// Type Тип ноды
+	Type string `json:"type"`
+}
+
+// NodesResponse defines model for NodesResponse.
+type NodesResponse struct {
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta SchemasMeta `json:"meta"`
+
+	// Nodes Массив объектов Нода
+	Nodes []NodeOut `json:"nodes"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// PresetsResponse defines model for PresetsResponse.
+type PresetsResponse struct {
+	// K8sPresets Массив тарифов k8s
+	K8sPresets []PresetsResponse_K8sPresets_Item `json:"k8s_presets"`
+
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta SchemasMeta `json:"meta"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// PresetsResponse_K8sPresets_Item defines model for PresetsResponse.k8s_presets.Item.
+type PresetsResponse_K8sPresets_Item struct {
+	union json.RawMessage
+}
+
+// ReduceNodes defines model for ReduceNodes.
+type ReduceNodes struct {
+	// Count Количество нод
+	Count int `json:"count"`
+}
 
 // RegistriesResponse defines model for RegistriesResponse.
 type RegistriesResponse struct {
@@ -619,6 +1179,87 @@ type RepositoriesResponse struct {
 	// ResponseId ID запроса
 	ResponseId *string `json:"response_id,omitempty"`
 }
+
+// Resource defines model for Resource.
+type Resource struct {
+	// Allocatable Доступное количество
+	Allocatable *float32 `json:"allocatable,omitempty"`
+
+	// Capacity Общее количество
+	Capacity *float32 `json:"capacity,omitempty"`
+
+	// Requested Запрошенное количество ресурса
+	Requested *float32 `json:"requested,omitempty"`
+
+	// Used Используемое количество
+	Used *float32 `json:"used,omitempty"`
+}
+
+// Resources defines model for Resources.
+type Resources struct {
+	// Cores Процессорный ресурс
+	Cores *Resource `json:"cores,omitempty"`
+
+	// Memory Ресурс по памяти
+	Memory *Resource `json:"memory,omitempty"`
+
+	// Nodes Количество нод
+	Nodes *int `json:"nodes,omitempty"`
+
+	// Pods Поды в кластере
+	Pods *Resource `json:"pods,omitempty"`
+}
+
+// ResourcesResponse defines model for ResourcesResponse.
+type ResourcesResponse struct {
+	// Resources Ресурсы кластера
+	Resources Resources `json:"resources"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// SetLabels Лейбл для группы нод
+type SetLabels struct {
+	// Key Ключ
+	Key string `json:"key"`
+
+	// Value Значение
+	Value string `json:"value"`
+}
+
+// WorkerPresetOutApi defines model for WorkerPresetOutApi.
+type WorkerPresetOutApi struct {
+	// Cpu Количество ядер ноды
+	Cpu int `json:"cpu"`
+
+	// Description Описание тарифа
+	Description string `json:"description"`
+
+	// DescriptionShort Краткое описание тарифа
+	DescriptionShort string `json:"description_short"`
+
+	// Disk Количество пространства на ноде
+	Disk int `json:"disk"`
+
+	// Id ID тарифа
+	Id int `json:"id"`
+
+	// Network Пропускная способность ноды
+	Network int `json:"network"`
+
+	// Price Стоимость
+	Price float32 `json:"price"`
+
+	// Ram Количество памяти ноды
+	Ram int `json:"ram"`
+
+	// Type Тип тарифа
+	Type *WorkerPresetOutApiType `json:"type,omitempty"`
+}
+
+// WorkerPresetOutApiType Тип тарифа
+type WorkerPresetOutApiType string
 
 // AddedSubdomain Добавленный поддомен.
 type AddedSubdomain struct {
@@ -1558,6 +2199,12 @@ type S3Subdomain struct {
 // S3SubdomainStatus Поддомен.
 type S3SubdomainStatus string
 
+// SchemasMeta defines model for schemas-Meta.
+type SchemasMeta struct {
+	// Total Число элементов в результате
+	Total int `json:"total"`
+}
+
 // SchemasPresetsResponse defines model for schemas-PresetsResponse.
 type SchemasPresetsResponse struct {
 	// ContainerRegistryPresets Массив тарифов container registry
@@ -2447,6 +3094,77 @@ type Conflict struct {
 	StatusCode float32 `json:"status_code"`
 }
 
+// GetClustersParams defines parameters for GetClusters.
+type GetClustersParams struct {
+	// Limit Обозначает количество записей, которое необходимо вернуть.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Указывает на смещение относительно начала списка.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// DeleteClusterParams defines parameters for DeleteCluster.
+type DeleteClusterParams struct {
+	// Hash Хеш, который совместно с кодом авторизации надо отправить для удаления, если включено подтверждение удаления сервисов через Телеграм.
+	Hash *Hash `form:"hash,omitempty" json:"hash,omitempty"`
+
+	// Code Код подтверждения, который придет к вам в Телеграм, после запроса удаления, если включено подтверждение удаления сервисов.
+	//
+	// При помощи API токена сервисы можно удалять без подтверждения, если параметр токена `is_able_to_delete` установлен в значение `true`
+	Code *Code `form:"code,omitempty" json:"code,omitempty"`
+}
+
+// PostKubernetesAddonsJSONBody defines parameters for PostKubernetesAddons.
+type PostKubernetesAddonsJSONBody struct {
+	// ConfigType Тип конфигурации дополнения
+	ConfigType PostKubernetesAddonsJSONBodyConfigType `json:"config_type"`
+
+	// Type Тип дополнения
+	Type string `json:"type"`
+
+	// Version Версия дополнения
+	Version string `json:"version"`
+
+	// YamlConfig YAML-конфигурация дополнения
+	YamlConfig string `json:"yaml_config"`
+}
+
+// PostKubernetesAddonsJSONBodyConfigType defines parameters for PostKubernetesAddons.
+type PostKubernetesAddonsJSONBodyConfigType string
+
+// PostKubernetesAddonsUpdateJSONBody defines parameters for PostKubernetesAddonsUpdate.
+type PostKubernetesAddonsUpdateJSONBody struct {
+	// ConfigType Тип конфигурации дополнения
+	ConfigType PostKubernetesAddonsUpdateJSONBodyConfigType `json:"config_type"`
+
+	// Type Тип дополнения
+	Type string `json:"type"`
+
+	// Version Версия дополнения
+	Version string `json:"version"`
+
+	// YamlConfig YAML-конфигурация дополнения
+	YamlConfig string `json:"yaml_config"`
+}
+
+// PostKubernetesAddonsUpdateJSONBodyConfigType defines parameters for PostKubernetesAddonsUpdate.
+type PostKubernetesAddonsUpdateJSONBodyConfigType string
+
+// GetClusterNodesFromGroupParams defines parameters for GetClusterNodesFromGroup.
+type GetClusterNodesFromGroupParams struct {
+	// Limit Обозначает количество записей, которое необходимо вернуть.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Указывает на смещение, относительно начала списка.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// UpdateClusterVersionJSONBody defines parameters for UpdateClusterVersion.
+type UpdateClusterVersionJSONBody struct {
+	// K8sVersion Новая версия кластера
+	K8sVersion *string `json:"k8s_version,omitempty"`
+}
+
 // AddBalancerToProjectJSONBody defines parameters for AddBalancerToProject.
 type AddBalancerToProjectJSONBody struct {
 	// ResourceId ID добавляемого балансировщика.
@@ -2774,6 +3492,30 @@ type UpdateFloatingIPJSONRequestBody = UpdateFloatingIp
 // BindFloatingIpJSONRequestBody defines body for BindFloatingIp for application/json ContentType.
 type BindFloatingIpJSONRequestBody = BindFloatingIp
 
+// CreateClusterJSONRequestBody defines body for CreateCluster for application/json ContentType.
+type CreateClusterJSONRequestBody = ClusterIn
+
+// UpdateClusterJSONRequestBody defines body for UpdateCluster for application/json ContentType.
+type UpdateClusterJSONRequestBody = ClusterEdit
+
+// PostKubernetesAddonsJSONRequestBody defines body for PostKubernetesAddons for application/json ContentType.
+type PostKubernetesAddonsJSONRequestBody PostKubernetesAddonsJSONBody
+
+// PostKubernetesAddonsUpdateJSONRequestBody defines body for PostKubernetesAddonsUpdate for application/json ContentType.
+type PostKubernetesAddonsUpdateJSONRequestBody PostKubernetesAddonsUpdateJSONBody
+
+// CreateClusterNodeGroupJSONRequestBody defines body for CreateClusterNodeGroup for application/json ContentType.
+type CreateClusterNodeGroupJSONRequestBody = NodeGroupIn
+
+// ReduceCountOfNodesInGroupJSONRequestBody defines body for ReduceCountOfNodesInGroup for application/json ContentType.
+type ReduceCountOfNodesInGroupJSONRequestBody = ReduceNodes
+
+// IncreaseCountOfNodesInGroupJSONRequestBody defines body for IncreaseCountOfNodesInGroup for application/json ContentType.
+type IncreaseCountOfNodesInGroupJSONRequestBody = IncreaseNodes
+
+// UpdateClusterVersionJSONRequestBody defines body for UpdateClusterVersion for application/json ContentType.
+type UpdateClusterVersionJSONRequestBody UpdateClusterVersionJSONBody
+
 // CreateProjectJSONRequestBody defines body for CreateProject for application/json ContentType.
 type CreateProjectJSONRequestBody = CreateProject
 
@@ -2878,6 +3620,91 @@ type CreateVPCJSONRequestBody = CreateVpc
 
 // UpdateVPCsJSONRequestBody defines body for UpdateVPCs for application/json ContentType.
 type UpdateVPCsJSONRequestBody = UpdateVpc
+
+// AsWorkerPresetOutApi returns the union data inside the PresetsResponse_K8sPresets_Item as a WorkerPresetOutApi
+func (t PresetsResponse_K8sPresets_Item) AsWorkerPresetOutApi() (WorkerPresetOutApi, error) {
+	var body WorkerPresetOutApi
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWorkerPresetOutApi overwrites any union data inside the PresetsResponse_K8sPresets_Item as the provided WorkerPresetOutApi
+func (t *PresetsResponse_K8sPresets_Item) FromWorkerPresetOutApi(v WorkerPresetOutApi) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWorkerPresetOutApi performs a merge with any union data inside the PresetsResponse_K8sPresets_Item, using the provided WorkerPresetOutApi
+func (t *PresetsResponse_K8sPresets_Item) MergeWorkerPresetOutApi(v WorkerPresetOutApi) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMasterPresetOutApi returns the union data inside the PresetsResponse_K8sPresets_Item as a MasterPresetOutApi
+func (t PresetsResponse_K8sPresets_Item) AsMasterPresetOutApi() (MasterPresetOutApi, error) {
+	var body MasterPresetOutApi
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMasterPresetOutApi overwrites any union data inside the PresetsResponse_K8sPresets_Item as the provided MasterPresetOutApi
+func (t *PresetsResponse_K8sPresets_Item) FromMasterPresetOutApi(v MasterPresetOutApi) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMasterPresetOutApi performs a merge with any union data inside the PresetsResponse_K8sPresets_Item, using the provided MasterPresetOutApi
+func (t *PresetsResponse_K8sPresets_Item) MergeMasterPresetOutApi(v MasterPresetOutApi) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PresetsResponse_K8sPresets_Item) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t PresetsResponse_K8sPresets_Item) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "master":
+		return t.AsMasterPresetOutApi()
+	case "worker":
+		return t.AsWorkerPresetOutApi()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t PresetsResponse_K8sPresets_Item) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PresetsResponse_K8sPresets_Item) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
 
 // AsBindFloatingIpResourceId0 returns the union data inside the BindFloatingIp_ResourceId as a BindFloatingIpResourceId0
 func (t BindFloatingIp_ResourceId) AsBindFloatingIpResourceId0() (BindFloatingIpResourceId0, error) {
@@ -3131,8 +3958,99 @@ type ClientInterface interface {
 	// UnbindFloatingIp request
 	UnbindFloatingIp(ctx context.Context, floatingIpId FloatingIpId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetClusters request
+	GetClusters(ctx context.Context, params *GetClustersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateClusterWithBody request with any body
+	CreateClusterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateCluster(ctx context.Context, body CreateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteCluster request
+	DeleteCluster(ctx context.Context, clusterId int, params *DeleteClusterParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetCluster request
+	GetCluster(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateClusterWithBody request with any body
+	UpdateClusterWithBody(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateCluster(ctx context.Context, clusterId int, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetKubernetesAddons request
+	GetKubernetesAddons(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostKubernetesAddonsWithBody request with any body
+	PostKubernetesAddonsWithBody(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostKubernetesAddons(ctx context.Context, clusterId int, body PostKubernetesAddonsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetKubernetesAddonsConfig request
+	GetKubernetesAddonsConfig(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteKubernetesAddons request
+	DeleteKubernetesAddons(ctx context.Context, clusterId int, addonId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostKubernetesAddonsUpdateWithBody request with any body
+	PostKubernetesAddonsUpdateWithBody(ctx context.Context, clusterId int, addonId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostKubernetesAddonsUpdate(ctx context.Context, clusterId int, addonId int, body PostKubernetesAddonsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClusterNodeGroups request
+	GetClusterNodeGroups(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateClusterNodeGroupWithBody request with any body
+	CreateClusterNodeGroupWithBody(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateClusterNodeGroup(ctx context.Context, clusterId int, body CreateClusterNodeGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteClusterNodeGroup request
+	DeleteClusterNodeGroup(ctx context.Context, clusterId int, groupId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClusterNodeGroup request
+	GetClusterNodeGroup(ctx context.Context, clusterId int, groupId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ReduceCountOfNodesInGroupWithBody request with any body
+	ReduceCountOfNodesInGroupWithBody(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ReduceCountOfNodesInGroup(ctx context.Context, clusterId int, groupId int, body ReduceCountOfNodesInGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClusterNodesFromGroup request
+	GetClusterNodesFromGroup(ctx context.Context, clusterId int, groupId int, params *GetClusterNodesFromGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// IncreaseCountOfNodesInGroupWithBody request with any body
+	IncreaseCountOfNodesInGroupWithBody(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	IncreaseCountOfNodesInGroup(ctx context.Context, clusterId int, groupId int, body IncreaseCountOfNodesInGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClusterKubeconfig request
+	GetClusterKubeconfig(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClusterNodes request
+	GetClusterNodes(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteClusterNode request
+	DeleteClusterNode(ctx context.Context, clusterId int, nodeId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClusterResources request
+	GetClusterResources(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateClusterVersionWithBody request with any body
+	UpdateClusterVersionWithBody(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateClusterVersion(ctx context.Context, clusterId int, body UpdateClusterVersionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetK8SVersions request
+	GetK8SVersions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetK8SNetworkDrivers request
+	GetK8SNetworkDrivers(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetOsList request
 	GetOsList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetKubernetesPresets request
+	GetKubernetesPresets(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetServersPresets request
 	GetServersPresets(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3718,8 +4636,404 @@ func (c *Client) UnbindFloatingIp(ctx context.Context, floatingIpId FloatingIpId
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetClusters(ctx context.Context, params *GetClustersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClustersRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateClusterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateClusterRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateCluster(ctx context.Context, body CreateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateClusterRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteCluster(ctx context.Context, clusterId int, params *DeleteClusterParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteClusterRequest(c.Server, clusterId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetCluster(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterRequest(c.Server, clusterId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClusterWithBody(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterRequestWithBody(c.Server, clusterId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCluster(ctx context.Context, clusterId int, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterRequest(c.Server, clusterId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetKubernetesAddons(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetKubernetesAddonsRequest(c.Server, clusterId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostKubernetesAddonsWithBody(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostKubernetesAddonsRequestWithBody(c.Server, clusterId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostKubernetesAddons(ctx context.Context, clusterId int, body PostKubernetesAddonsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostKubernetesAddonsRequest(c.Server, clusterId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetKubernetesAddonsConfig(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetKubernetesAddonsConfigRequest(c.Server, clusterId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteKubernetesAddons(ctx context.Context, clusterId int, addonId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteKubernetesAddonsRequest(c.Server, clusterId, addonId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostKubernetesAddonsUpdateWithBody(ctx context.Context, clusterId int, addonId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostKubernetesAddonsUpdateRequestWithBody(c.Server, clusterId, addonId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostKubernetesAddonsUpdate(ctx context.Context, clusterId int, addonId int, body PostKubernetesAddonsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostKubernetesAddonsUpdateRequest(c.Server, clusterId, addonId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClusterNodeGroups(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterNodeGroupsRequest(c.Server, clusterId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateClusterNodeGroupWithBody(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateClusterNodeGroupRequestWithBody(c.Server, clusterId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateClusterNodeGroup(ctx context.Context, clusterId int, body CreateClusterNodeGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateClusterNodeGroupRequest(c.Server, clusterId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteClusterNodeGroup(ctx context.Context, clusterId int, groupId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteClusterNodeGroupRequest(c.Server, clusterId, groupId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClusterNodeGroup(ctx context.Context, clusterId int, groupId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterNodeGroupRequest(c.Server, clusterId, groupId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ReduceCountOfNodesInGroupWithBody(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewReduceCountOfNodesInGroupRequestWithBody(c.Server, clusterId, groupId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ReduceCountOfNodesInGroup(ctx context.Context, clusterId int, groupId int, body ReduceCountOfNodesInGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewReduceCountOfNodesInGroupRequest(c.Server, clusterId, groupId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClusterNodesFromGroup(ctx context.Context, clusterId int, groupId int, params *GetClusterNodesFromGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterNodesFromGroupRequest(c.Server, clusterId, groupId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) IncreaseCountOfNodesInGroupWithBody(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewIncreaseCountOfNodesInGroupRequestWithBody(c.Server, clusterId, groupId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) IncreaseCountOfNodesInGroup(ctx context.Context, clusterId int, groupId int, body IncreaseCountOfNodesInGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewIncreaseCountOfNodesInGroupRequest(c.Server, clusterId, groupId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClusterKubeconfig(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterKubeconfigRequest(c.Server, clusterId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClusterNodes(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterNodesRequest(c.Server, clusterId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteClusterNode(ctx context.Context, clusterId int, nodeId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteClusterNodeRequest(c.Server, clusterId, nodeId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClusterResources(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterResourcesRequest(c.Server, clusterId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClusterVersionWithBody(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterVersionRequestWithBody(c.Server, clusterId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClusterVersion(ctx context.Context, clusterId int, body UpdateClusterVersionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterVersionRequest(c.Server, clusterId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetK8SVersions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetK8SVersionsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetK8SNetworkDrivers(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetK8SNetworkDriversRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetOsList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetOsListRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetKubernetesPresets(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetKubernetesPresetsRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -5775,6 +7089,1068 @@ func NewUnbindFloatingIpRequest(server string, floatingIpId FloatingIpId) (*http
 	return req, nil
 }
 
+// NewGetClustersRequest generates requests for GetClusters
+func NewGetClustersRequest(server string, params *GetClustersParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateClusterRequest calls the generic CreateCluster builder with application/json body
+func NewCreateClusterRequest(server string, body CreateClusterJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateClusterRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateClusterRequestWithBody generates requests for CreateCluster with any type of body
+func NewCreateClusterRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteClusterRequest generates requests for DeleteCluster
+func NewDeleteClusterRequest(server string, clusterId int, params *DeleteClusterParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Hash != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "hash", runtime.ParamLocationQuery, *params.Hash); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Code != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "code", runtime.ParamLocationQuery, *params.Code); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetClusterRequest generates requests for GetCluster
+func NewGetClusterRequest(server string, clusterId int) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateClusterRequest calls the generic UpdateCluster builder with application/json body
+func NewUpdateClusterRequest(server string, clusterId int, body UpdateClusterJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateClusterRequestWithBody(server, clusterId, "application/json", bodyReader)
+}
+
+// NewUpdateClusterRequestWithBody generates requests for UpdateCluster with any type of body
+func NewUpdateClusterRequestWithBody(server string, clusterId int, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetKubernetesAddonsRequest generates requests for GetKubernetesAddons
+func NewGetKubernetesAddonsRequest(server string, clusterId int) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/addons", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostKubernetesAddonsRequest calls the generic PostKubernetesAddons builder with application/json body
+func NewPostKubernetesAddonsRequest(server string, clusterId int, body PostKubernetesAddonsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostKubernetesAddonsRequestWithBody(server, clusterId, "application/json", bodyReader)
+}
+
+// NewPostKubernetesAddonsRequestWithBody generates requests for PostKubernetesAddons with any type of body
+func NewPostKubernetesAddonsRequestWithBody(server string, clusterId int, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/addons", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetKubernetesAddonsConfigRequest generates requests for GetKubernetesAddonsConfig
+func NewGetKubernetesAddonsConfigRequest(server string, clusterId int) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/addons-configs", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteKubernetesAddonsRequest generates requests for DeleteKubernetesAddons
+func NewDeleteKubernetesAddonsRequest(server string, clusterId int, addonId int) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "addon_id", runtime.ParamLocationPath, addonId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/addons/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostKubernetesAddonsUpdateRequest calls the generic PostKubernetesAddonsUpdate builder with application/json body
+func NewPostKubernetesAddonsUpdateRequest(server string, clusterId int, addonId int, body PostKubernetesAddonsUpdateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostKubernetesAddonsUpdateRequestWithBody(server, clusterId, addonId, "application/json", bodyReader)
+}
+
+// NewPostKubernetesAddonsUpdateRequestWithBody generates requests for PostKubernetesAddonsUpdate with any type of body
+func NewPostKubernetesAddonsUpdateRequestWithBody(server string, clusterId int, addonId int, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "addon_id", runtime.ParamLocationPath, addonId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/addons/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetClusterNodeGroupsRequest generates requests for GetClusterNodeGroups
+func NewGetClusterNodeGroupsRequest(server string, clusterId int) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/groups", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateClusterNodeGroupRequest calls the generic CreateClusterNodeGroup builder with application/json body
+func NewCreateClusterNodeGroupRequest(server string, clusterId int, body CreateClusterNodeGroupJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateClusterNodeGroupRequestWithBody(server, clusterId, "application/json", bodyReader)
+}
+
+// NewCreateClusterNodeGroupRequestWithBody generates requests for CreateClusterNodeGroup with any type of body
+func NewCreateClusterNodeGroupRequestWithBody(server string, clusterId int, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/groups", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteClusterNodeGroupRequest generates requests for DeleteClusterNodeGroup
+func NewDeleteClusterNodeGroupRequest(server string, clusterId int, groupId int) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "group_id", runtime.ParamLocationPath, groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/groups/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetClusterNodeGroupRequest generates requests for GetClusterNodeGroup
+func NewGetClusterNodeGroupRequest(server string, clusterId int, groupId int) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "group_id", runtime.ParamLocationPath, groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/groups/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewReduceCountOfNodesInGroupRequest calls the generic ReduceCountOfNodesInGroup builder with application/json body
+func NewReduceCountOfNodesInGroupRequest(server string, clusterId int, groupId int, body ReduceCountOfNodesInGroupJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewReduceCountOfNodesInGroupRequestWithBody(server, clusterId, groupId, "application/json", bodyReader)
+}
+
+// NewReduceCountOfNodesInGroupRequestWithBody generates requests for ReduceCountOfNodesInGroup with any type of body
+func NewReduceCountOfNodesInGroupRequestWithBody(server string, clusterId int, groupId int, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "group_id", runtime.ParamLocationPath, groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/groups/%s/nodes", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetClusterNodesFromGroupRequest generates requests for GetClusterNodesFromGroup
+func NewGetClusterNodesFromGroupRequest(server string, clusterId int, groupId int, params *GetClusterNodesFromGroupParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "group_id", runtime.ParamLocationPath, groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/groups/%s/nodes", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewIncreaseCountOfNodesInGroupRequest calls the generic IncreaseCountOfNodesInGroup builder with application/json body
+func NewIncreaseCountOfNodesInGroupRequest(server string, clusterId int, groupId int, body IncreaseCountOfNodesInGroupJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewIncreaseCountOfNodesInGroupRequestWithBody(server, clusterId, groupId, "application/json", bodyReader)
+}
+
+// NewIncreaseCountOfNodesInGroupRequestWithBody generates requests for IncreaseCountOfNodesInGroup with any type of body
+func NewIncreaseCountOfNodesInGroupRequestWithBody(server string, clusterId int, groupId int, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "group_id", runtime.ParamLocationPath, groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/groups/%s/nodes", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetClusterKubeconfigRequest generates requests for GetClusterKubeconfig
+func NewGetClusterKubeconfigRequest(server string, clusterId int) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/kubeconfig", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetClusterNodesRequest generates requests for GetClusterNodes
+func NewGetClusterNodesRequest(server string, clusterId int) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/nodes", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteClusterNodeRequest generates requests for DeleteClusterNode
+func NewDeleteClusterNodeRequest(server string, clusterId int, nodeId int) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "node_id", runtime.ParamLocationPath, nodeId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/nodes/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetClusterResourcesRequest generates requests for GetClusterResources
+func NewGetClusterResourcesRequest(server string, clusterId int) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/resources", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateClusterVersionRequest calls the generic UpdateClusterVersion builder with application/json body
+func NewUpdateClusterVersionRequest(server string, clusterId int, body UpdateClusterVersionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateClusterVersionRequestWithBody(server, clusterId, "application/json", bodyReader)
+}
+
+// NewUpdateClusterVersionRequestWithBody generates requests for UpdateClusterVersion with any type of body
+func NewUpdateClusterVersionRequestWithBody(server string, clusterId int, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/versions/update", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetK8SVersionsRequest generates requests for GetK8SVersions
+func NewGetK8SVersionsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/k8s-versions")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetK8SNetworkDriversRequest generates requests for GetK8SNetworkDrivers
+func NewGetK8SNetworkDriversRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/network-drivers")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetOsListRequest generates requests for GetOsList
 func NewGetOsListRequest(server string) (*http.Request, error) {
 	var err error
@@ -5785,6 +8161,33 @@ func NewGetOsListRequest(server string) (*http.Request, error) {
 	}
 
 	operationPath := fmt.Sprintf("/api/v1/os/servers")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetKubernetesPresetsRequest generates requests for GetKubernetesPresets
+func NewGetKubernetesPresetsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/presets/k8s")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -9626,8 +12029,99 @@ type ClientWithResponsesInterface interface {
 	// UnbindFloatingIpWithResponse request
 	UnbindFloatingIpWithResponse(ctx context.Context, floatingIpId FloatingIpId, reqEditors ...RequestEditorFn) (*UnbindFloatingIpResponse, error)
 
+	// GetClustersWithResponse request
+	GetClustersWithResponse(ctx context.Context, params *GetClustersParams, reqEditors ...RequestEditorFn) (*GetClustersResponse, error)
+
+	// CreateClusterWithBodyWithResponse request with any body
+	CreateClusterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClusterResponse, error)
+
+	CreateClusterWithResponse(ctx context.Context, body CreateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateClusterResponse, error)
+
+	// DeleteClusterWithResponse request
+	DeleteClusterWithResponse(ctx context.Context, clusterId int, params *DeleteClusterParams, reqEditors ...RequestEditorFn) (*DeleteClusterResponse, error)
+
+	// GetClusterWithResponse request
+	GetClusterWithResponse(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*GetClusterResponse, error)
+
+	// UpdateClusterWithBodyWithResponse request with any body
+	UpdateClusterWithBodyWithResponse(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error)
+
+	UpdateClusterWithResponse(ctx context.Context, clusterId int, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error)
+
+	// GetKubernetesAddonsWithResponse request
+	GetKubernetesAddonsWithResponse(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*GetKubernetesAddonsResponse, error)
+
+	// PostKubernetesAddonsWithBodyWithResponse request with any body
+	PostKubernetesAddonsWithBodyWithResponse(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostKubernetesAddonsResponse, error)
+
+	PostKubernetesAddonsWithResponse(ctx context.Context, clusterId int, body PostKubernetesAddonsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostKubernetesAddonsResponse, error)
+
+	// GetKubernetesAddonsConfigWithResponse request
+	GetKubernetesAddonsConfigWithResponse(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*GetKubernetesAddonsConfigResponse, error)
+
+	// DeleteKubernetesAddonsWithResponse request
+	DeleteKubernetesAddonsWithResponse(ctx context.Context, clusterId int, addonId int, reqEditors ...RequestEditorFn) (*DeleteKubernetesAddonsResponse, error)
+
+	// PostKubernetesAddonsUpdateWithBodyWithResponse request with any body
+	PostKubernetesAddonsUpdateWithBodyWithResponse(ctx context.Context, clusterId int, addonId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostKubernetesAddonsUpdateResponse, error)
+
+	PostKubernetesAddonsUpdateWithResponse(ctx context.Context, clusterId int, addonId int, body PostKubernetesAddonsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*PostKubernetesAddonsUpdateResponse, error)
+
+	// GetClusterNodeGroupsWithResponse request
+	GetClusterNodeGroupsWithResponse(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*GetClusterNodeGroupsResponse, error)
+
+	// CreateClusterNodeGroupWithBodyWithResponse request with any body
+	CreateClusterNodeGroupWithBodyWithResponse(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClusterNodeGroupResponse, error)
+
+	CreateClusterNodeGroupWithResponse(ctx context.Context, clusterId int, body CreateClusterNodeGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateClusterNodeGroupResponse, error)
+
+	// DeleteClusterNodeGroupWithResponse request
+	DeleteClusterNodeGroupWithResponse(ctx context.Context, clusterId int, groupId int, reqEditors ...RequestEditorFn) (*DeleteClusterNodeGroupResponse, error)
+
+	// GetClusterNodeGroupWithResponse request
+	GetClusterNodeGroupWithResponse(ctx context.Context, clusterId int, groupId int, reqEditors ...RequestEditorFn) (*GetClusterNodeGroupResponse, error)
+
+	// ReduceCountOfNodesInGroupWithBodyWithResponse request with any body
+	ReduceCountOfNodesInGroupWithBodyWithResponse(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReduceCountOfNodesInGroupResponse, error)
+
+	ReduceCountOfNodesInGroupWithResponse(ctx context.Context, clusterId int, groupId int, body ReduceCountOfNodesInGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*ReduceCountOfNodesInGroupResponse, error)
+
+	// GetClusterNodesFromGroupWithResponse request
+	GetClusterNodesFromGroupWithResponse(ctx context.Context, clusterId int, groupId int, params *GetClusterNodesFromGroupParams, reqEditors ...RequestEditorFn) (*GetClusterNodesFromGroupResponse, error)
+
+	// IncreaseCountOfNodesInGroupWithBodyWithResponse request with any body
+	IncreaseCountOfNodesInGroupWithBodyWithResponse(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*IncreaseCountOfNodesInGroupResponse, error)
+
+	IncreaseCountOfNodesInGroupWithResponse(ctx context.Context, clusterId int, groupId int, body IncreaseCountOfNodesInGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*IncreaseCountOfNodesInGroupResponse, error)
+
+	// GetClusterKubeconfigWithResponse request
+	GetClusterKubeconfigWithResponse(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*GetClusterKubeconfigResponse, error)
+
+	// GetClusterNodesWithResponse request
+	GetClusterNodesWithResponse(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*GetClusterNodesResponse, error)
+
+	// DeleteClusterNodeWithResponse request
+	DeleteClusterNodeWithResponse(ctx context.Context, clusterId int, nodeId int, reqEditors ...RequestEditorFn) (*DeleteClusterNodeResponse, error)
+
+	// GetClusterResourcesWithResponse request
+	GetClusterResourcesWithResponse(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*GetClusterResourcesResponse, error)
+
+	// UpdateClusterVersionWithBodyWithResponse request with any body
+	UpdateClusterVersionWithBodyWithResponse(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterVersionResponse, error)
+
+	UpdateClusterVersionWithResponse(ctx context.Context, clusterId int, body UpdateClusterVersionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterVersionResponse, error)
+
+	// GetK8SVersionsWithResponse request
+	GetK8SVersionsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetK8SVersionsResponse, error)
+
+	// GetK8SNetworkDriversWithResponse request
+	GetK8SNetworkDriversWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetK8SNetworkDriversResponse, error)
+
 	// GetOsListWithResponse request
 	GetOsListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetOsListResponse, error)
+
+	// GetKubernetesPresetsWithResponse request
+	GetKubernetesPresetsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetKubernetesPresetsResponse, error)
 
 	// GetServersPresetsWithResponse request
 	GetServersPresetsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetServersPresetsResponse, error)
@@ -10483,6 +12977,775 @@ func (r UnbindFloatingIpResponse) StatusCode() int {
 	return 0
 }
 
+type GetClustersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Clusters Массив объектов Кластер
+		Clusters []ClusterOut `json:"clusters"`
+
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta SchemasMeta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClustersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClustersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateClusterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *struct {
+		// Cluster Кластер
+		Cluster ClusterOut `json:"cluster"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateClusterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateClusterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteClusterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		ClusterDelete DeleteServiceResponse `json:"cluster_delete"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteClusterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteClusterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClusterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Cluster Кластер
+		Cluster ClusterOut `json:"cluster"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClusterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClusterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateClusterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Cluster Кластер
+		Cluster ClusterOut `json:"cluster"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateClusterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateClusterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetKubernetesAddonsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Addons Массив дополнений k8s
+		Addons []AddonOut `json:"addons"`
+
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta SchemasMeta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetKubernetesAddonsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetKubernetesAddonsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostKubernetesAddonsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r PostKubernetesAddonsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostKubernetesAddonsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetKubernetesAddonsConfigResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// K8sAddons Массив конфигураций дополнений k8s
+		K8sAddons []AddonConfigOut `json:"k8s_addons"`
+
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta SchemasMeta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetKubernetesAddonsConfigResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetKubernetesAddonsConfigResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteKubernetesAddonsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteKubernetesAddonsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteKubernetesAddonsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostKubernetesAddonsUpdateResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r PostKubernetesAddonsUpdateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostKubernetesAddonsUpdateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClusterNodeGroupsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta SchemasMeta `json:"meta"`
+
+		// NodeGroups Массив объектов Группа нод
+		NodeGroups []NodeGroupOut `json:"node_groups"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClusterNodeGroupsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClusterNodeGroupsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateClusterNodeGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *struct {
+		// NodeGroup Группа нод
+		NodeGroup NodeGroupOut `json:"node_group"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateClusterNodeGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateClusterNodeGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteClusterNodeGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteClusterNodeGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteClusterNodeGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClusterNodeGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// NodeGroup Группа нод
+		NodeGroup NodeGroupOut `json:"node_group"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClusterNodeGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClusterNodeGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ReduceCountOfNodesInGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r ReduceCountOfNodesInGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ReduceCountOfNodesInGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClusterNodesFromGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta SchemasMeta `json:"meta"`
+
+		// Nodes Массив объектов Нода
+		Nodes []NodeOut `json:"nodes"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClusterNodesFromGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClusterNodesFromGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type IncreaseCountOfNodesInGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta SchemasMeta `json:"meta"`
+
+		// Nodes Массив объектов Нода
+		Nodes []NodeOut `json:"nodes"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r IncreaseCountOfNodesInGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r IncreaseCountOfNodesInGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClusterKubeconfigResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	YAML200      *string
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClusterKubeconfigResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClusterKubeconfigResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClusterNodesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta SchemasMeta `json:"meta"`
+
+		// Nodes Массив объектов Нода
+		Nodes []NodeOut `json:"nodes"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClusterNodesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClusterNodesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteClusterNodeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteClusterNodeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteClusterNodeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClusterResourcesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Resources Ресурсы кластера
+		Resources Resources `json:"resources"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClusterResourcesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClusterResourcesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateClusterVersionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateClusterVersionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateClusterVersionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetK8SVersionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// K8sVersions Массив версий k8s
+		K8sVersions []string `json:"k8s_versions"`
+
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta SchemasMeta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetK8SVersionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetK8SVersionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetK8SNetworkDriversResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta SchemasMeta `json:"meta"`
+
+		// NetworkDrivers Массив сетевых драйверов k8s
+		NetworkDrivers []string `json:"network_drivers"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetK8SNetworkDriversResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetK8SNetworkDriversResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetOsListResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -10512,6 +13775,41 @@ func (r GetOsListResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetOsListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetKubernetesPresetsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// K8sPresets Массив тарифов k8s
+		K8sPresets []K8sPresetItem `json:"k8s_presets"`
+
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta SchemasMeta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetKubernetesPresetsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetKubernetesPresetsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -13717,6 +17015,286 @@ func (c *ClientWithResponses) UnbindFloatingIpWithResponse(ctx context.Context, 
 	return ParseUnbindFloatingIpResponse(rsp)
 }
 
+// GetClustersWithResponse request returning *GetClustersResponse
+func (c *ClientWithResponses) GetClustersWithResponse(ctx context.Context, params *GetClustersParams, reqEditors ...RequestEditorFn) (*GetClustersResponse, error) {
+	rsp, err := c.GetClusters(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClustersResponse(rsp)
+}
+
+// CreateClusterWithBodyWithResponse request with arbitrary body returning *CreateClusterResponse
+func (c *ClientWithResponses) CreateClusterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClusterResponse, error) {
+	rsp, err := c.CreateClusterWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateClusterResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateClusterWithResponse(ctx context.Context, body CreateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateClusterResponse, error) {
+	rsp, err := c.CreateCluster(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateClusterResponse(rsp)
+}
+
+// DeleteClusterWithResponse request returning *DeleteClusterResponse
+func (c *ClientWithResponses) DeleteClusterWithResponse(ctx context.Context, clusterId int, params *DeleteClusterParams, reqEditors ...RequestEditorFn) (*DeleteClusterResponse, error) {
+	rsp, err := c.DeleteCluster(ctx, clusterId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteClusterResponse(rsp)
+}
+
+// GetClusterWithResponse request returning *GetClusterResponse
+func (c *ClientWithResponses) GetClusterWithResponse(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*GetClusterResponse, error) {
+	rsp, err := c.GetCluster(ctx, clusterId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClusterResponse(rsp)
+}
+
+// UpdateClusterWithBodyWithResponse request with arbitrary body returning *UpdateClusterResponse
+func (c *ClientWithResponses) UpdateClusterWithBodyWithResponse(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error) {
+	rsp, err := c.UpdateClusterWithBody(ctx, clusterId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClusterResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateClusterWithResponse(ctx context.Context, clusterId int, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error) {
+	rsp, err := c.UpdateCluster(ctx, clusterId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClusterResponse(rsp)
+}
+
+// GetKubernetesAddonsWithResponse request returning *GetKubernetesAddonsResponse
+func (c *ClientWithResponses) GetKubernetesAddonsWithResponse(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*GetKubernetesAddonsResponse, error) {
+	rsp, err := c.GetKubernetesAddons(ctx, clusterId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetKubernetesAddonsResponse(rsp)
+}
+
+// PostKubernetesAddonsWithBodyWithResponse request with arbitrary body returning *PostKubernetesAddonsResponse
+func (c *ClientWithResponses) PostKubernetesAddonsWithBodyWithResponse(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostKubernetesAddonsResponse, error) {
+	rsp, err := c.PostKubernetesAddonsWithBody(ctx, clusterId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostKubernetesAddonsResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostKubernetesAddonsWithResponse(ctx context.Context, clusterId int, body PostKubernetesAddonsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostKubernetesAddonsResponse, error) {
+	rsp, err := c.PostKubernetesAddons(ctx, clusterId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostKubernetesAddonsResponse(rsp)
+}
+
+// GetKubernetesAddonsConfigWithResponse request returning *GetKubernetesAddonsConfigResponse
+func (c *ClientWithResponses) GetKubernetesAddonsConfigWithResponse(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*GetKubernetesAddonsConfigResponse, error) {
+	rsp, err := c.GetKubernetesAddonsConfig(ctx, clusterId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetKubernetesAddonsConfigResponse(rsp)
+}
+
+// DeleteKubernetesAddonsWithResponse request returning *DeleteKubernetesAddonsResponse
+func (c *ClientWithResponses) DeleteKubernetesAddonsWithResponse(ctx context.Context, clusterId int, addonId int, reqEditors ...RequestEditorFn) (*DeleteKubernetesAddonsResponse, error) {
+	rsp, err := c.DeleteKubernetesAddons(ctx, clusterId, addonId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteKubernetesAddonsResponse(rsp)
+}
+
+// PostKubernetesAddonsUpdateWithBodyWithResponse request with arbitrary body returning *PostKubernetesAddonsUpdateResponse
+func (c *ClientWithResponses) PostKubernetesAddonsUpdateWithBodyWithResponse(ctx context.Context, clusterId int, addonId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostKubernetesAddonsUpdateResponse, error) {
+	rsp, err := c.PostKubernetesAddonsUpdateWithBody(ctx, clusterId, addonId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostKubernetesAddonsUpdateResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostKubernetesAddonsUpdateWithResponse(ctx context.Context, clusterId int, addonId int, body PostKubernetesAddonsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*PostKubernetesAddonsUpdateResponse, error) {
+	rsp, err := c.PostKubernetesAddonsUpdate(ctx, clusterId, addonId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostKubernetesAddonsUpdateResponse(rsp)
+}
+
+// GetClusterNodeGroupsWithResponse request returning *GetClusterNodeGroupsResponse
+func (c *ClientWithResponses) GetClusterNodeGroupsWithResponse(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*GetClusterNodeGroupsResponse, error) {
+	rsp, err := c.GetClusterNodeGroups(ctx, clusterId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClusterNodeGroupsResponse(rsp)
+}
+
+// CreateClusterNodeGroupWithBodyWithResponse request with arbitrary body returning *CreateClusterNodeGroupResponse
+func (c *ClientWithResponses) CreateClusterNodeGroupWithBodyWithResponse(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClusterNodeGroupResponse, error) {
+	rsp, err := c.CreateClusterNodeGroupWithBody(ctx, clusterId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateClusterNodeGroupResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateClusterNodeGroupWithResponse(ctx context.Context, clusterId int, body CreateClusterNodeGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateClusterNodeGroupResponse, error) {
+	rsp, err := c.CreateClusterNodeGroup(ctx, clusterId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateClusterNodeGroupResponse(rsp)
+}
+
+// DeleteClusterNodeGroupWithResponse request returning *DeleteClusterNodeGroupResponse
+func (c *ClientWithResponses) DeleteClusterNodeGroupWithResponse(ctx context.Context, clusterId int, groupId int, reqEditors ...RequestEditorFn) (*DeleteClusterNodeGroupResponse, error) {
+	rsp, err := c.DeleteClusterNodeGroup(ctx, clusterId, groupId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteClusterNodeGroupResponse(rsp)
+}
+
+// GetClusterNodeGroupWithResponse request returning *GetClusterNodeGroupResponse
+func (c *ClientWithResponses) GetClusterNodeGroupWithResponse(ctx context.Context, clusterId int, groupId int, reqEditors ...RequestEditorFn) (*GetClusterNodeGroupResponse, error) {
+	rsp, err := c.GetClusterNodeGroup(ctx, clusterId, groupId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClusterNodeGroupResponse(rsp)
+}
+
+// ReduceCountOfNodesInGroupWithBodyWithResponse request with arbitrary body returning *ReduceCountOfNodesInGroupResponse
+func (c *ClientWithResponses) ReduceCountOfNodesInGroupWithBodyWithResponse(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReduceCountOfNodesInGroupResponse, error) {
+	rsp, err := c.ReduceCountOfNodesInGroupWithBody(ctx, clusterId, groupId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseReduceCountOfNodesInGroupResponse(rsp)
+}
+
+func (c *ClientWithResponses) ReduceCountOfNodesInGroupWithResponse(ctx context.Context, clusterId int, groupId int, body ReduceCountOfNodesInGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*ReduceCountOfNodesInGroupResponse, error) {
+	rsp, err := c.ReduceCountOfNodesInGroup(ctx, clusterId, groupId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseReduceCountOfNodesInGroupResponse(rsp)
+}
+
+// GetClusterNodesFromGroupWithResponse request returning *GetClusterNodesFromGroupResponse
+func (c *ClientWithResponses) GetClusterNodesFromGroupWithResponse(ctx context.Context, clusterId int, groupId int, params *GetClusterNodesFromGroupParams, reqEditors ...RequestEditorFn) (*GetClusterNodesFromGroupResponse, error) {
+	rsp, err := c.GetClusterNodesFromGroup(ctx, clusterId, groupId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClusterNodesFromGroupResponse(rsp)
+}
+
+// IncreaseCountOfNodesInGroupWithBodyWithResponse request with arbitrary body returning *IncreaseCountOfNodesInGroupResponse
+func (c *ClientWithResponses) IncreaseCountOfNodesInGroupWithBodyWithResponse(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*IncreaseCountOfNodesInGroupResponse, error) {
+	rsp, err := c.IncreaseCountOfNodesInGroupWithBody(ctx, clusterId, groupId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseIncreaseCountOfNodesInGroupResponse(rsp)
+}
+
+func (c *ClientWithResponses) IncreaseCountOfNodesInGroupWithResponse(ctx context.Context, clusterId int, groupId int, body IncreaseCountOfNodesInGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*IncreaseCountOfNodesInGroupResponse, error) {
+	rsp, err := c.IncreaseCountOfNodesInGroup(ctx, clusterId, groupId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseIncreaseCountOfNodesInGroupResponse(rsp)
+}
+
+// GetClusterKubeconfigWithResponse request returning *GetClusterKubeconfigResponse
+func (c *ClientWithResponses) GetClusterKubeconfigWithResponse(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*GetClusterKubeconfigResponse, error) {
+	rsp, err := c.GetClusterKubeconfig(ctx, clusterId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClusterKubeconfigResponse(rsp)
+}
+
+// GetClusterNodesWithResponse request returning *GetClusterNodesResponse
+func (c *ClientWithResponses) GetClusterNodesWithResponse(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*GetClusterNodesResponse, error) {
+	rsp, err := c.GetClusterNodes(ctx, clusterId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClusterNodesResponse(rsp)
+}
+
+// DeleteClusterNodeWithResponse request returning *DeleteClusterNodeResponse
+func (c *ClientWithResponses) DeleteClusterNodeWithResponse(ctx context.Context, clusterId int, nodeId int, reqEditors ...RequestEditorFn) (*DeleteClusterNodeResponse, error) {
+	rsp, err := c.DeleteClusterNode(ctx, clusterId, nodeId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteClusterNodeResponse(rsp)
+}
+
+// GetClusterResourcesWithResponse request returning *GetClusterResourcesResponse
+func (c *ClientWithResponses) GetClusterResourcesWithResponse(ctx context.Context, clusterId int, reqEditors ...RequestEditorFn) (*GetClusterResourcesResponse, error) {
+	rsp, err := c.GetClusterResources(ctx, clusterId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClusterResourcesResponse(rsp)
+}
+
+// UpdateClusterVersionWithBodyWithResponse request with arbitrary body returning *UpdateClusterVersionResponse
+func (c *ClientWithResponses) UpdateClusterVersionWithBodyWithResponse(ctx context.Context, clusterId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterVersionResponse, error) {
+	rsp, err := c.UpdateClusterVersionWithBody(ctx, clusterId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClusterVersionResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateClusterVersionWithResponse(ctx context.Context, clusterId int, body UpdateClusterVersionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterVersionResponse, error) {
+	rsp, err := c.UpdateClusterVersion(ctx, clusterId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClusterVersionResponse(rsp)
+}
+
+// GetK8SVersionsWithResponse request returning *GetK8SVersionsResponse
+func (c *ClientWithResponses) GetK8SVersionsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetK8SVersionsResponse, error) {
+	rsp, err := c.GetK8SVersions(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetK8SVersionsResponse(rsp)
+}
+
+// GetK8SNetworkDriversWithResponse request returning *GetK8SNetworkDriversResponse
+func (c *ClientWithResponses) GetK8SNetworkDriversWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetK8SNetworkDriversResponse, error) {
+	rsp, err := c.GetK8SNetworkDrivers(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetK8SNetworkDriversResponse(rsp)
+}
+
 // GetOsListWithResponse request returning *GetOsListResponse
 func (c *ClientWithResponses) GetOsListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetOsListResponse, error) {
 	rsp, err := c.GetOsList(ctx, reqEditors...)
@@ -13724,6 +17302,15 @@ func (c *ClientWithResponses) GetOsListWithResponse(ctx context.Context, reqEdit
 		return nil, err
 	}
 	return ParseGetOsListResponse(rsp)
+}
+
+// GetKubernetesPresetsWithResponse request returning *GetKubernetesPresetsResponse
+func (c *ClientWithResponses) GetKubernetesPresetsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetKubernetesPresetsResponse, error) {
+	rsp, err := c.GetKubernetesPresets(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetKubernetesPresetsResponse(rsp)
 }
 
 // GetServersPresetsWithResponse request returning *GetServersPresetsResponse
@@ -15857,6 +19444,1585 @@ func ParseUnbindFloatingIpResponse(rsp *http.Response) (*UnbindFloatingIpRespons
 	return response, nil
 }
 
+// ParseGetClustersResponse parses an HTTP response from a GetClustersWithResponse call
+func ParseGetClustersResponse(rsp *http.Response) (*GetClustersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClustersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Clusters Массив объектов Кластер
+			Clusters []ClusterOut `json:"clusters"`
+
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta SchemasMeta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateClusterResponse parses an HTTP response from a CreateClusterWithResponse call
+func ParseCreateClusterResponse(rsp *http.Response) (*CreateClusterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateClusterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest struct {
+			// Cluster Кластер
+			Cluster ClusterOut `json:"cluster"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteClusterResponse parses an HTTP response from a DeleteClusterWithResponse call
+func ParseDeleteClusterResponse(rsp *http.Response) (*DeleteClusterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteClusterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			ClusterDelete DeleteServiceResponse `json:"cluster_delete"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClusterResponse parses an HTTP response from a GetClusterWithResponse call
+func ParseGetClusterResponse(rsp *http.Response) (*GetClusterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClusterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Cluster Кластер
+			Cluster ClusterOut `json:"cluster"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateClusterResponse parses an HTTP response from a UpdateClusterWithResponse call
+func ParseUpdateClusterResponse(rsp *http.Response) (*UpdateClusterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateClusterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Cluster Кластер
+			Cluster ClusterOut `json:"cluster"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetKubernetesAddonsResponse parses an HTTP response from a GetKubernetesAddonsWithResponse call
+func ParseGetKubernetesAddonsResponse(rsp *http.Response) (*GetKubernetesAddonsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetKubernetesAddonsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Addons Массив дополнений k8s
+			Addons []AddonOut `json:"addons"`
+
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta SchemasMeta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostKubernetesAddonsResponse parses an HTTP response from a PostKubernetesAddonsWithResponse call
+func ParsePostKubernetesAddonsResponse(rsp *http.Response) (*PostKubernetesAddonsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostKubernetesAddonsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetKubernetesAddonsConfigResponse parses an HTTP response from a GetKubernetesAddonsConfigWithResponse call
+func ParseGetKubernetesAddonsConfigResponse(rsp *http.Response) (*GetKubernetesAddonsConfigResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetKubernetesAddonsConfigResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// K8sAddons Массив конфигураций дополнений k8s
+			K8sAddons []AddonConfigOut `json:"k8s_addons"`
+
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta SchemasMeta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteKubernetesAddonsResponse parses an HTTP response from a DeleteKubernetesAddonsWithResponse call
+func ParseDeleteKubernetesAddonsResponse(rsp *http.Response) (*DeleteKubernetesAddonsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteKubernetesAddonsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostKubernetesAddonsUpdateResponse parses an HTTP response from a PostKubernetesAddonsUpdateWithResponse call
+func ParsePostKubernetesAddonsUpdateResponse(rsp *http.Response) (*PostKubernetesAddonsUpdateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostKubernetesAddonsUpdateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClusterNodeGroupsResponse parses an HTTP response from a GetClusterNodeGroupsWithResponse call
+func ParseGetClusterNodeGroupsResponse(rsp *http.Response) (*GetClusterNodeGroupsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClusterNodeGroupsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta SchemasMeta `json:"meta"`
+
+			// NodeGroups Массив объектов Группа нод
+			NodeGroups []NodeGroupOut `json:"node_groups"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateClusterNodeGroupResponse parses an HTTP response from a CreateClusterNodeGroupWithResponse call
+func ParseCreateClusterNodeGroupResponse(rsp *http.Response) (*CreateClusterNodeGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateClusterNodeGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest struct {
+			// NodeGroup Группа нод
+			NodeGroup NodeGroupOut `json:"node_group"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteClusterNodeGroupResponse parses an HTTP response from a DeleteClusterNodeGroupWithResponse call
+func ParseDeleteClusterNodeGroupResponse(rsp *http.Response) (*DeleteClusterNodeGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteClusterNodeGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClusterNodeGroupResponse parses an HTTP response from a GetClusterNodeGroupWithResponse call
+func ParseGetClusterNodeGroupResponse(rsp *http.Response) (*GetClusterNodeGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClusterNodeGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// NodeGroup Группа нод
+			NodeGroup NodeGroupOut `json:"node_group"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseReduceCountOfNodesInGroupResponse parses an HTTP response from a ReduceCountOfNodesInGroupWithResponse call
+func ParseReduceCountOfNodesInGroupResponse(rsp *http.Response) (*ReduceCountOfNodesInGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ReduceCountOfNodesInGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClusterNodesFromGroupResponse parses an HTTP response from a GetClusterNodesFromGroupWithResponse call
+func ParseGetClusterNodesFromGroupResponse(rsp *http.Response) (*GetClusterNodesFromGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClusterNodesFromGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta SchemasMeta `json:"meta"`
+
+			// Nodes Массив объектов Нода
+			Nodes []NodeOut `json:"nodes"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseIncreaseCountOfNodesInGroupResponse parses an HTTP response from a IncreaseCountOfNodesInGroupWithResponse call
+func ParseIncreaseCountOfNodesInGroupResponse(rsp *http.Response) (*IncreaseCountOfNodesInGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &IncreaseCountOfNodesInGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta SchemasMeta `json:"meta"`
+
+			// Nodes Массив объектов Нода
+			Nodes []NodeOut `json:"nodes"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClusterKubeconfigResponse parses an HTTP response from a GetClusterKubeconfigWithResponse call
+func ParseGetClusterKubeconfigResponse(rsp *http.Response) (*GetClusterKubeconfigResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClusterKubeconfigResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest string
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClusterNodesResponse parses an HTTP response from a GetClusterNodesWithResponse call
+func ParseGetClusterNodesResponse(rsp *http.Response) (*GetClusterNodesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClusterNodesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta SchemasMeta `json:"meta"`
+
+			// Nodes Массив объектов Нода
+			Nodes []NodeOut `json:"nodes"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteClusterNodeResponse parses an HTTP response from a DeleteClusterNodeWithResponse call
+func ParseDeleteClusterNodeResponse(rsp *http.Response) (*DeleteClusterNodeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteClusterNodeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClusterResourcesResponse parses an HTTP response from a GetClusterResourcesWithResponse call
+func ParseGetClusterResourcesResponse(rsp *http.Response) (*GetClusterResourcesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClusterResourcesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Resources Ресурсы кластера
+			Resources Resources `json:"resources"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateClusterVersionResponse parses an HTTP response from a UpdateClusterVersionWithResponse call
+func ParseUpdateClusterVersionResponse(rsp *http.Response) (*UpdateClusterVersionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateClusterVersionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetK8SVersionsResponse parses an HTTP response from a GetK8SVersionsWithResponse call
+func ParseGetK8SVersionsResponse(rsp *http.Response) (*GetK8SVersionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetK8SVersionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// K8sVersions Массив версий k8s
+			K8sVersions []string `json:"k8s_versions"`
+
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta SchemasMeta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetK8SNetworkDriversResponse parses an HTTP response from a GetK8SNetworkDriversWithResponse call
+func ParseGetK8SNetworkDriversResponse(rsp *http.Response) (*GetK8SNetworkDriversResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetK8SNetworkDriversResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta SchemasMeta `json:"meta"`
+
+			// NetworkDrivers Массив сетевых драйверов k8s
+			NetworkDrivers []string `json:"network_drivers"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetOsListResponse parses an HTTP response from a GetOsListWithResponse call
 func ParseGetOsListResponse(rsp *http.Response) (*GetOsListResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -15912,6 +21078,69 @@ func ParseGetOsListResponse(rsp *http.Response) (*GetOsListResponse, error) {
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetKubernetesPresetsResponse parses an HTTP response from a GetKubernetesPresetsWithResponse call
+func ParseGetKubernetesPresetsResponse(rsp *http.Response) (*GetKubernetesPresetsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetKubernetesPresetsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// K8sPresets Массив тарифов k8s
+			K8sPresets []K8sPresetItem `json:"k8s_presets"`
+
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta SchemasMeta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
 		var dest N429

@@ -1,0 +1,467 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.21.0
+  name: kubernetesclusters.kubernetes.m.timeweb.crossplane.io
+spec:
+  group: kubernetes.m.timeweb.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - timeweb
+    kind: KubernetesCluster
+    listKind: KubernetesClusterList
+    plural: kubernetesclusters
+    singular: kubernetescluster
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .status.atProvider.k8sVersion
+      name: K8S-VERSION
+      type: string
+    - jsonPath: .spec.forProvider.availabilityZone
+      name: AZ
+      type: string
+    - jsonPath: .spec.forProvider.presetName
+      name: PRESET
+      type: string
+    - jsonPath: .status.atProvider.state
+      name: STATE
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          KubernetesCluster is a Timeweb managed Kubernetes control plane. See
+          contracts/kubernetescluster-v1alpha1.md for the full operator surface.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: KubernetesClusterSpec is the desired state.
+            properties:
+              forProvider:
+                description: |-
+                  KubernetesClusterParameters is the operator-settable surface for the
+                  managed control plane. See spec.md FR-004/FR-005 and
+                  contracts/kubernetescluster-v1alpha1.md for the authoritative shape.
+                properties:
+                  availabilityZone:
+                    description: |-
+                      AvailabilityZone is the AZ the control plane lives in. Immutable
+                      post-create. Codes are the upstream API values (NOT dashboard labels).
+                      Sold-out zones are not hard-blocked beyond this set's evolution.
+                    enum:
+                    - spb-3
+                    - msk-1
+                    - ams-1
+                    - fra-1
+                    type: string
+                  description:
+                    description: Description is a free-form note. Mutable (PATCH).
+                    type: string
+                  k8sVersion:
+                    description: |-
+                      K8sVersion is the EXACT upstream Kubernetes version string (e.g.
+                      "1.31.2"), matched 1:1 against /api/v1/k8s/k8s-versions. Forward-only
+                      upgrade-mutable: bumping to a newer catalog version triggers the
+                      in-place upstream upgrade; downgrade/non-catalog is rejected.
+                    minLength: 1
+                    type: string
+                  masterNodesCount:
+                    default: 1
+                    description: |-
+                      MasterNodesCount is the control-plane size (default 1; set 3 for HA).
+                      Forwarded upstream and validated by the API. Immutable post-create.
+                    minimum: 1
+                    type: integer
+                  name:
+                    description: Name as it appears in the Timeweb dashboard. Mutable
+                      (PATCH).
+                    maxLength: 255
+                    minLength: 1
+                    type: string
+                  networkDriver:
+                    description: NetworkDriver is the cluster's CNI. Immutable post-create.
+                    enum:
+                    - kuberouter
+                    - calico
+                    - flannel
+                    - cilium
+                    type: string
+                  networkID:
+                    type: string
+                  networkRef:
+                    description: |-
+                      NetworkRef / NetworkSelector / NetworkID attach the cluster to a
+                      private network (feat-003 Network kind). At most one MAY be set.
+                      Immutable post-create.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  networkSelector:
+                    description: A Selector selects an object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                  presetName:
+                    description: |-
+                      PresetName is the master-node preset slug resolved against
+                      /api/v1/presets/k8s (type=master) to the upstream preset_id.
+                      Immutable post-create.
+                    pattern: ^[a-z0-9][a-z0-9-]*[a-z0-9]$
+                    type: string
+                  projectID:
+                    format: int64
+                    type: integer
+                  projectRef:
+                    description: |-
+                      ProjectRef / ProjectSelector / ProjectID assign the cluster to a
+                      Timeweb project. At most one MAY be set; all unset → default project.
+                      Immutable post-create.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  projectSelector:
+                    description: A Selector selects an object.
+                    properties:
+                      matchControllerRef:
+                        description: |-
+                          MatchControllerRef ensures an object with the same controller reference
+                          as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                      policy:
+                        description: Policies for selection.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    type: object
+                required:
+                - availabilityZone
+                - k8sVersion
+                - name
+                - networkDriver
+                - presetName
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: KubernetesClusterStatus is the observed state.
+            properties:
+              atProvider:
+                description: KubernetesClusterObservation is the observed state. Populated
+                  by Observe.
+                properties:
+                  cpu:
+                    description: CPU / RAM / Disk are the master sizing readout the
+                      upstream returns.
+                    type: integer
+                  disk:
+                    type: integer
+                  k8sVersion:
+                    description: K8sVersion is the observed cluster version (drives
+                      the upgrade diff).
+                    type: string
+                  lockedPresetID:
+                    description: LockedPresetID is the upstream master preset_id resolved
+                      at Create.
+                    format: int64
+                    type: integer
+                  ram:
+                    type: integer
+                  resolvedNetworkID:
+                    description: |-
+                      ResolvedNetworkID is the upstream private-network ID the cluster
+                      attached to (resolved from networkRef/Selector/ID).
+                    type: string
+                  resolvedProjectID:
+                    description: ResolvedProjectID is the upstream project_id the
+                      cluster lives in.
+                    format: int64
+                    type: integer
+                  state:
+                    description: State is the upstream cluster status string. Maps
+                      to Ready per FR-015.
+                    type: string
+                  upstreamID:
+                    description: UpstreamID is the Timeweb cluster id (stored verbatim
+                      as external-name).
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+        x-kubernetes-validations:
+        - message: at most one of networkRef, networkSelector, networkID may be set
+          rule: (has(self.spec.forProvider.networkRef)?1:0) + (has(self.spec.forProvider.networkSelector)?1:0)
+            + (has(self.spec.forProvider.networkID)?1:0) <= 1
+        - message: at most one of projectRef, projectSelector, projectID may be set
+          rule: (has(self.spec.forProvider.projectRef)?1:0) + (has(self.spec.forProvider.projectSelector)?1:0)
+            + (has(self.spec.forProvider.projectID)?1:0) <= 1
+    served: true
+    storage: true
+    subresources:
+      status: {}

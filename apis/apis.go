@@ -25,6 +25,7 @@ import (
 
 	computev1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/compute/v1alpha1"
 	containerregistryv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/containerregistry/v1alpha1"
+	kubernetesv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/kubernetes/v1alpha1"
 	networkv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/network/v1alpha1"
 	objectstoragev1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/objectstorage/v1alpha1"
 	projectv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/project/v1alpha1"
@@ -42,6 +43,7 @@ var AddToSchemes = runtime.SchemeBuilder{
 	containerregistryv1alpha1.AddToScheme,
 	computev1alpha1.AddToScheme,
 	networkv1alpha1.AddToScheme,
+	kubernetesv1alpha1.AddToScheme,
 }
 
 // AddToScheme registers every provider kind with s.

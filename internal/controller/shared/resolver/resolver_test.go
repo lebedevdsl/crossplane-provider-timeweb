@@ -39,6 +39,14 @@ type fakeCatalog struct {
 	storPresetsErr   error
 	storPresetsCalls int32
 
+	k8sPresets      *twgen.GetKubernetesPresetsResponse
+	k8sPresetsErr   error
+	k8sPresetsCalls int32
+
+	k8sVersions      *twgen.GetK8SVersionsResponse
+	k8sVersionsErr   error
+	k8sVersionsCalls int32
+
 	// gate, if set, blocks the fetcher until closed — used to exercise
 	// singleflight coalescing.
 	gate chan struct{}
@@ -66,6 +74,22 @@ func (f *fakeCatalog) GetServersPresetsWithResponse(_ context.Context, _ ...twge
 
 func (f *fakeCatalog) GetOsListWithResponse(_ context.Context, _ ...twgen.RequestEditorFn) (*twgen.GetOsListResponse, error) {
 	return nil, nil
+}
+
+func (f *fakeCatalog) GetKubernetesPresetsWithResponse(_ context.Context, _ ...twgen.RequestEditorFn) (*twgen.GetKubernetesPresetsResponse, error) {
+	atomic.AddInt32(&f.k8sPresetsCalls, 1)
+	if f.gate != nil {
+		<-f.gate
+	}
+	return f.k8sPresets, f.k8sPresetsErr
+}
+
+func (f *fakeCatalog) GetK8SVersionsWithResponse(_ context.Context, _ ...twgen.RequestEditorFn) (*twgen.GetK8SVersionsResponse, error) {
+	atomic.AddInt32(&f.k8sVersionsCalls, 1)
+	if f.gate != nil {
+		<-f.gate
+	}
+	return f.k8sVersions, f.k8sVersionsErr
 }
 
 // helpers to build the typed JSON200 payloads -------------------------------
@@ -150,6 +174,72 @@ func TestResolver_Preset_NotFound(t *testing.T) {
 	)
 	if !errors.Is(err, ErrPresetNotFound) {
 		t.Errorf("err = %v, want ErrPresetNotFound", err)
+	}
+}
+
+// mkK8sPresetsResp builds a typed /api/v1/presets/k8s response.
+func mkK8sPresetsResp(items []twgen.K8sPresetItem) *twgen.GetKubernetesPresetsResponse {
+	resp := &twgen.GetKubernetesPresetsResponse{HTTPResponse: &http.Response{StatusCode: 200}}
+	resp.JSON200 = &struct {
+		K8sPresets []twgen.K8sPresetItem `json:"k8s_presets"`
+		Meta       twgen.SchemasMeta     `json:"meta"`
+		ResponseId twgen.ResponseId      `json:"response_id"` //nolint:revive // mirrors oapi-codegen output
+	}{K8sPresets: items}
+	return resp
+}
+
+func k8sPreset(id int, role, short string) twgen.K8sPresetItem {
+	r, s := role, short
+	return twgen.K8sPresetItem{Id: &id, Type: &r, DescriptionShort: &s}
+}
+
+// TestResolver_K8sMasterPreset_FiltersRoleAndCaches covers SC-006: the master
+// dimension resolves a slug only among type=master presets, and a second
+// resolve of the same (PCRef, dimension) within the TTL window hits the cache
+// (exactly one upstream call).
+func TestResolver_K8sMasterPreset_FiltersRoleAndCaches(t *testing.T) {
+	// Same description_short on a master and a worker preset; the role filter
+	// must pick the master (id 5), not the worker (id 9).
+	fake := &fakeCatalog{k8sPresets: mkK8sPresetsResp([]twgen.K8sPresetItem{
+		k8sPreset(5, "master", "Start"),
+		k8sPreset(9, "worker", "Start"),
+	})}
+	r := New(fake, Options{TTL: 5 * time.Minute, Now: time.Now})
+	pc := PCRef{Name: "default", Namespace: "team-a"}
+	dim := Dimension{Name: DimKubernetesMasterPreset, Kind: DimensionPreset}
+
+	for i := 0; i < 3; i++ {
+		out, err := r.Resolve(context.Background(), pc, dim, PresetInput{Slug: "start"})
+		if err != nil {
+			t.Fatalf("resolve %d: %v", i, err)
+		}
+		if po, ok := out.(PresetOutput); !ok || po.UpstreamID != 5 {
+			t.Fatalf("resolve %d: out = %v, want master id 5", i, out)
+		}
+	}
+	if got := atomic.LoadInt32(&fake.k8sPresetsCalls); got != 1 {
+		t.Errorf("expected 1 upstream call (cached), got %d", got)
+	}
+}
+
+// TestResolver_K8sVersion_ExactMatch covers the exact-string Enum dimension.
+func TestResolver_K8sVersion_ExactMatch(t *testing.T) {
+	resp := &twgen.GetK8SVersionsResponse{HTTPResponse: &http.Response{StatusCode: 200}}
+	resp.JSON200 = &struct {
+		K8sVersions []string          `json:"k8s_versions"`
+		Meta        twgen.SchemasMeta `json:"meta"`
+		ResponseId  twgen.ResponseId  `json:"response_id"` //nolint:revive // mirrors oapi-codegen output
+	}{K8sVersions: []string{"1.30.4", "1.31.2"}}
+	fake := &fakeCatalog{k8sVersions: resp}
+	r := New(fake, Options{TTL: 5 * time.Minute, Now: time.Now})
+	pc := PCRef{Name: "default"}
+	dim := Dimension{Name: DimKubernetesVersion, Kind: DimensionEnum}
+
+	if _, err := r.Resolve(context.Background(), pc, dim, EnumInput{Value: "1.31.2"}); err != nil {
+		t.Fatalf("valid version: %v", err)
+	}
+	if _, err := r.Resolve(context.Background(), pc, dim, EnumInput{Value: "1.99.9"}); !errors.Is(err, ErrDimensionValueNotFound) {
+		t.Errorf("unknown version err = %v, want ErrDimensionValueNotFound", err)
 	}
 }
 

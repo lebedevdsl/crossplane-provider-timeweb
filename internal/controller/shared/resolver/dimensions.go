@@ -80,6 +80,8 @@ type CatalogClient interface {
 	GetStoragesPresetsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetStoragesPresetsResponse, error)
 	GetServersPresetsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetServersPresetsResponse, error)
 	GetOsListWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetOsListResponse, error)
+	GetKubernetesPresetsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetKubernetesPresetsResponse, error)
+	GetK8SVersionsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetK8SVersionsResponse, error)
 }
 
 // Dimension names. The first two are live (consumed by S3Bucket /
@@ -126,14 +128,83 @@ func defaultRegistry() map[string]dimensionDef {
 		DimServerPreset:            {kind: DimensionPreset, fetch: fetchServerPresets},
 		DimServerOSImage:           {kind: DimensionPreset, fetch: fetchServerOSImages},
 
-		// Forward-compat — see header comment + feature 002 data-model.md §2.2.
+		// Feature 004 — promoted to real fetchers (was fetchUnwired).
+		DimKubernetesMasterPreset: {kind: DimensionPreset, fetch: fetchK8sMasterPresets},
+		DimKubernetesWorkerPreset: {kind: DimensionPreset, fetch: fetchK8sWorkerPresets},
+		DimKubernetesVersion:      {kind: DimensionEnum, fetch: fetchK8sVersions},
+
+		// Forward-compat — still stubbed. ServerConfigurator awaits the
+		// custom-configurator path; NetworkDriver + AvailabilityZone are
+		// validated by CRD enums on the KubernetesCluster kind instead of a
+		// catalog lookup (feature 004 research R-4).
 		DimServerConfigurator:      {kind: DimensionConfigurator, fetch: fetchUnwired},
-		DimKubernetesMasterPreset:  {kind: DimensionPreset, fetch: fetchUnwired},
-		DimKubernetesWorkerPreset:  {kind: DimensionPreset, fetch: fetchUnwired},
-		DimKubernetesVersion:       {kind: DimensionEnum, fetch: fetchUnwired},
 		DimKubernetesNetworkDriver: {kind: DimensionEnum, fetch: fetchUnwired},
 		DimAvailabilityZone:        {kind: DimensionEnum, fetch: fetchUnwired},
 	}
+}
+
+// fetchK8sMasterPresets / fetchK8sWorkerPresets read /api/v1/presets/k8s and
+// filter the discriminated (master|worker) list by role. K8s presets carry no
+// location, so the slug is Slugify(description_short, "") — the role split is
+// what disambiguates master from worker (feature 004 research R-2).
+func fetchK8sMasterPresets(ctx context.Context, c CatalogClient) (any, error) {
+	return fetchK8sPresetsByType(ctx, c, "master")
+}
+
+func fetchK8sWorkerPresets(ctx context.Context, c CatalogClient) (any, error) {
+	return fetchK8sPresetsByType(ctx, c, "worker")
+}
+
+func fetchK8sPresetsByType(ctx context.Context, c CatalogClient, role string) (any, error) {
+	resp, err := c.GetKubernetesPresetsWithResponse(ctx)
+	if err != nil {
+		return nil, classifyUpstream(0, err)
+	}
+	if resp.JSON200 == nil {
+		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+	}
+	out := make([]PresetEntry, 0, len(resp.JSON200.K8sPresets))
+	for _, p := range resp.JSON200.K8sPresets {
+		if p.Type == nil || *p.Type != role {
+			continue
+		}
+		short := ""
+		if p.DescriptionShort != nil {
+			short = *p.DescriptionShort
+		}
+		var id int64
+		if p.Id != nil {
+			id = int64(*p.Id)
+		}
+		var diskGB int64
+		if p.Disk != nil {
+			// K8s preset disk is in MB; normalize to GB for consistency with
+			// the other fetchers (Server v0.x selects by slug, not size).
+			diskGB = int64(*p.Disk) / 1024
+		}
+		out = append(out, PresetEntry{
+			UpstreamID: id,
+			DescShort:  short,
+			Location:   "", // K8s presets are AZ-set at cluster level; no per-preset location.
+			DiskGB:     diskGB,
+		})
+	}
+	return out, nil
+}
+
+// fetchK8sVersions reads /api/v1/k8s/k8s-versions as a flat string list for
+// the Enum dimension (exact-match validation; feature 004 research R-3).
+func fetchK8sVersions(ctx context.Context, c CatalogClient) (any, error) {
+	resp, err := c.GetK8SVersionsWithResponse(ctx)
+	if err != nil {
+		return nil, classifyUpstream(0, err)
+	}
+	if resp.JSON200 == nil {
+		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+	}
+	out := make([]string, 0, len(resp.JSON200.K8sVersions))
+	out = append(out, resp.JSON200.K8sVersions...)
+	return out, nil
 }
 
 func fetchContainerRegistryPresets(ctx context.Context, c CatalogClient) (any, error) {

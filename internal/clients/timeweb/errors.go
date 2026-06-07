@@ -112,9 +112,15 @@ func Classify(resp *http.Response) error {
 	case resp.StatusCode == http.StatusNotFound:
 		return ErrNotFound
 	case isTransientStatus(resp.StatusCode):
+		reason := http.StatusText(resp.StatusCode)
+		// Surface the upstream explanation (don't swallow it — Constitution §II).
+		// e.g. a 409 on cluster create carries the actual conflict reason.
+		if msg := readErrorMessage(resp); msg != "" {
+			reason = reason + ": " + msg
+		}
 		return &TransientError{
 			StatusCode: resp.StatusCode,
-			Reason:     http.StatusText(resp.StatusCode),
+			Reason:     reason,
 		}
 	default:
 		return decodeAPIError(resp)
@@ -160,6 +166,35 @@ func decodeAPIError(resp *http.Response) error {
 		}
 	}
 	return apiErr
+}
+
+// readErrorMessage best-effort extracts the upstream error message from a
+// response body (JSON `message` oneOf<string,[]string>, falling back to a raw
+// snippet). Returns "" when nothing useful is present. Used to enrich both
+// transient and terminal error reasons so the upstream explanation is never
+// silently dropped.
+func readErrorMessage(resp *http.Response) string {
+	if resp == nil || resp.Body == nil {
+		return ""
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
+	if err != nil || len(body) == 0 {
+		return ""
+	}
+	var b errorResponseBody
+	if err := json.Unmarshal(body, &b); err == nil {
+		if m := stringifyMessage(b.Message); m != "" {
+			return m
+		}
+	}
+	// Not the expected JSON shape — return a trimmed raw snippet.
+	if s := strings.TrimSpace(string(body)); s != "" {
+		if len(s) > 300 {
+			s = s[:300]
+		}
+		return s
+	}
+	return ""
 }
 
 // stringifyMessage flattens the oneOf<string, []string> message into a single

@@ -1,0 +1,29 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 1200
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: e2e-k8s-net
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"
+---
+# Cluster gates on the Network being Ready (networkRef) → [Synced, Ready].
+# resolvedNetworkID is recorded once the ref resolves.
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesCluster
+metadata:
+  name: e2e-k8s-net-cluster
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Synced
+    status: "True"
+  - type: Ready
+    status: "True"

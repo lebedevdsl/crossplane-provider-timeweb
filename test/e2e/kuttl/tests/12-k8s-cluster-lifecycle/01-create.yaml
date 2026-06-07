@@ -1,0 +1,44 @@
+# Step 1 — managed-Kubernetes lifecycle bundle (feature 004 US1 MVP).
+#
+# Create a KubernetesCluster (smallest master preset + newest catalog k8s
+# version, discovered at runtime as $TWE_K8S_MASTER_PRESET / $TWE_K8S_VERSION)
+# and a KubernetesClusterNodepool referencing it. The cluster controller
+# resolves the master preset + validates the version against the in-controller
+# catalog resolver, creates the upstream cluster, and publishes a kubeconfig
+# connection Secret once active. The nodepool waits for the cluster to be
+# Ready=True, then creates the worker group. SC-001 caps cluster Ready at
+# 20 min and nodepool Ready at 15 min.
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesCluster
+metadata:
+  name: e2e-k8s
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  writeConnectionSecretToRef:
+    name: e2e-k8s-kubeconfig
+  forProvider:
+    name: "${TWE_K8S_CLUSTER_NAME}"
+    k8sVersion: "${TWE_K8S_VERSION}"
+    networkDriver: cilium
+    availabilityZone: msk-1
+    presetName: "${TWE_K8S_MASTER_PRESET}"
+    masterNodesCount: 1
+---
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesClusterNodepool
+metadata:
+  name: e2e-k8s-workers
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    name: workers
+    clusterRef:
+      name: e2e-k8s
+    presetName: "${TWE_K8S_WORKER_PRESET}"
+    nodeCount: 2

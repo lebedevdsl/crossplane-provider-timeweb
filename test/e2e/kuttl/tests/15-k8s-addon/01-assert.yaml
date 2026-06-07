@@ -1,0 +1,16 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 1200
+---
+# Addon gates on the cluster being Ready (clusterRef) → [Synced, Ready].
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesClusterAddon
+metadata:
+  name: e2e-k8s-addon
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Synced
+    status: "True"
+  - type: Ready
+    status: "True"

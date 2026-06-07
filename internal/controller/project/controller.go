@@ -43,7 +43,7 @@ func Setup(mgr manager.Manager, l logging.Logger, pollInterval time.Duration) er
 			logger: l.WithValues("controller", name),
 		}),
 		managed.WithLogger(l.WithValues("controller", name)),
-		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name) /*nolint:staticcheck*/)),
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))), //nolint:staticcheck // SA1019 — old events API; same pattern across this provider
 		managed.WithPollInterval(pollInterval),
 		// Opt the reconciler into spec.managementPolicies — needed for users
 		// to set per-resource action lists (e.g. [Observe, Create, Update,

@@ -1,0 +1,17 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 1200
+---
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesClusterNodepool
+metadata:
+  name: e2e-k8s-scale-workers
+  namespace: timeweb-e2e
+status:
+  atProvider:
+    observedNodeCount: 2
+  conditions:
+  - type: Synced
+    status: "True"
+  - type: Ready
+    status: "True"

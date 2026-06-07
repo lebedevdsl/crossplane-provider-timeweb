@@ -40,11 +40,13 @@ func TestDefaultRegistry_Discoverable(t *testing.T) {
 		{DimServerPreset, DimensionPreset, true},  // feature 003
 		{DimServerOSImage, DimensionPreset, true}, // feature 003
 
-		// Forward-compat — K8s. See dimensions.go header comment.
+		// Feature 004 — promoted to live fetchers.
+		{DimKubernetesMasterPreset, DimensionPreset, true},
+		{DimKubernetesWorkerPreset, DimensionPreset, true},
+		{DimKubernetesVersion, DimensionEnum, true},
+
+		// Forward-compat — still stubbed. See dimensions.go header comment.
 		{DimServerConfigurator, DimensionConfigurator, false},
-		{DimKubernetesMasterPreset, DimensionPreset, false},
-		{DimKubernetesWorkerPreset, DimensionPreset, false},
-		{DimKubernetesVersion, DimensionEnum, false},
 		{DimKubernetesNetworkDriver, DimensionEnum, false},
 		{DimAvailabilityZone, DimensionEnum, false},
 	}

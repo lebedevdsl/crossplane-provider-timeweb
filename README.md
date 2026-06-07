@@ -17,16 +17,23 @@ resources as Kubernetes managed resources.
 | `Server`                      | `compute.m.timeweb.crossplane.io`      | Cloud server (VM). Sized via `presetName`; OS via `os.{image,version}`. Refs `Network`, `Project`, `SshKey`, `FloatingIP`. |
 | `Network`                     | `network.m.timeweb.crossplane.io`      | VPC (private network). `subnetCIDR` + `location`.        |
 | `FloatingIP`                  | `network.m.timeweb.crossplane.io`      | Floating IPv4. Pure allocation; bound **from a Server** via `floatingIPRefs`. |
+| `KubernetesCluster`           | `kubernetes.m.timeweb.crossplane.io`   | Managed K8s control plane. Sized via master `presetName`; exact `k8sVersion`; publishes a `kubeconfig` connection Secret; in-place version upgrade. Refs `Network`, `Project`. |
+| `KubernetesClusterNodepool`   | `kubernetes.m.timeweb.crossplane.io`   | Worker group (`clusterRef`). Scalable `nodeCount`; optional autoscaling/autohealing. |
+| `KubernetesClusterAddon`      | `kubernetes.m.timeweb.crossplane.io`   | One installed cluster addon (`clusterRef`, `type`+`version`). |
 
 All managed resources are **namespaced** (Crossplane v2 modern MRs), using
 the `<svc>.m.timeweb.crossplane.io` group convention. The
 `network.m.timeweb.crossplane.io` group is the committed home for the whole
 network family — `Network` + `FloatingIP` ship today; `Router`, `Balancer`,
-`FirewallRule` / `SecurityGroup` extend the same group in future features.
+`FirewallRule` / `SecurityGroup` extend the same group in future features. The
+`kubernetes.m.timeweb.crossplane.io` group is the committed home for all
+managed-Kubernetes kinds (`KubernetesCluster` + `KubernetesClusterNodepool` +
+`KubernetesClusterAddon` today; future OIDC/maintenance kinds extend it).
 
 See [`docs/servers.md`](./docs/servers.md) for the `Server` / `Network` /
-`FloatingIP` operator guide (network attachment, floating-IP pinning, project
-assignment, troubleshooting).
+`FloatingIP` operator guide, and [`docs/kubernetes.md`](./docs/kubernetes.md)
+for the managed-Kubernetes guide (cluster + nodepool + addon, scaling, version
+upgrade, kubeconfig, troubleshooting).
 
 ## ProviderConfig — namespaced + cluster-scoped pair
 
@@ -106,8 +113,11 @@ and runs a [kuttl][kuttl] suite that exercises every MR kind against the
 live Timeweb API. Requires only a `TIMEWEB_CLOUD_TOKEN`. v0.3 adds bundles
 `08-network-lifecycle`, `09-server-lifecycle`, `10-server-with-network`
 (+ the env-gated `10b-server-with-network-id` import path), and
-`11-floating-ip-bind`. The smallest server preset is discovered at runtime
-to keep a full run under ≈€0.05.
+`11-floating-ip-bind`. v0.4 adds the managed-Kubernetes bundles
+`12-k8s-cluster-lifecycle`, `13-k8s-nodepool-scaling`,
+`14-k8s-cluster-with-network`, and `15-k8s-addon`. The smallest server /
+cluster presets are discovered at runtime to keep a full run cheap (the K8s
+cluster bundles are the slowest — up to ~20 min provisioning per SC-001).
 
 [kuttl]: https://kuttl.dev
 

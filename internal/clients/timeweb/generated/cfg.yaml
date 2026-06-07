@@ -27,5 +27,6 @@ output-options:
     - "Облачные серверы"   # feat 003 — Server (40 paths: CRUD + /presets/servers + /os/servers + /configurator/servers + actions + disks)
     - "VPC"                # feat 003 — Network kind (/api/v2/vpcs CRUD + /api/v1/vpcs/{id} delete)
     - "Плавающие IP"       # feat 003 — FloatingIP kind (/api/v1/floating-ips CRUD + bind/unbind)
+    - "Kubernetes"         # feat 004 — KubernetesCluster + Nodepool + Addon (/api/v1/k8s/* + /api/v1/presets/k8s)
 compatibility:
   always-prefix-enum-values: true

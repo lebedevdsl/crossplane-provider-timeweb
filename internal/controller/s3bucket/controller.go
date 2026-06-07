@@ -33,7 +33,7 @@ import (
 // Setup registers the S3Bucket controller with mgr.
 func Setup(mgr manager.Manager, l logging.Logger, pollInterval time.Duration) error {
 	name := managed.ControllerName(objectstoragev1alpha1.S3BucketGroupVersionKind.String())
-	recorder := mgr.GetEventRecorderFor(name) /*nolint:staticcheck*/
+	recorder := mgr.GetEventRecorderFor(name) //nolint:staticcheck // SA1019 — old events API; same pattern across this provider
 
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(objectstoragev1alpha1.S3BucketGroupVersionKind),

@@ -33,7 +33,7 @@ import (
 // Setup registers the SSHKey controller with mgr.
 func Setup(mgr manager.Manager, l logging.Logger, pollInterval time.Duration) error {
 	name := managed.ControllerName(sshkeyv1alpha1.SSHKeyGroupVersionKind.String())
-	recorder := mgr.GetEventRecorderFor(name) /*nolint:staticcheck*/
+	recorder := mgr.GetEventRecorderFor(name) //nolint:staticcheck // SA1019 — old events API; same pattern across this provider
 
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(sshkeyv1alpha1.SSHKeyGroupVersionKind),

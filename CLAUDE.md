@@ -1,36 +1,39 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan at
-`specs/003-server-mr-and-network/plan.md`.
+`specs/004-k8s-cluster-nodepool/plan.md`.
 
 Companion artifacts in the same directory:
 - `spec.md` — feature specification with locked clarifications. Adds three
-  new MR kinds: `Server` (cloud VM, `compute.m.timeweb.crossplane.io`),
-  `Network` (VPC, `network.m.timeweb.crossplane.io`), and `FloatingIP`
-  (floating IPv4, `network.m.timeweb.crossplane.io`). Scope is the
-  dashboard's "Create Server" flow simplified to the fixed-preset path
-  (custom configurator deferred). Cloud servers only — dedicated servers
-  out. Cross-MR refs use the standard crossplane-runtime resolver:
-  `Server` references `Network`, `Project`, `SshKey`, and (observe-only)
-  `FloatingIP`; `FloatingIP` owns bind/unbind to a `Server`.
-- `research.md` — Phase 0 decisions (R-1 sizing shape, R-2 OS object shape,
-  R-3 cross-resource references via crossplane-runtime, R-4 FloatingIP
-  bind ownership, R-5 server field mutability, R-6 the VPC v1/v2 path
-  split, R-7 cloud-init pass-through, R-8 e2e bundle strategy).
-- `data-model.md` — entities: `Server`, `Network`, `FloatingIP` (with full
-  Go-style spec/status shapes + CEL rule list + lifecycle), the two new
-  resolver dimension registrations (`ServerPreset`, `ServerOSImage`), and
-  the relationships diagram.
-- `contracts/` — per-kind operator-facing contracts: `server-v1alpha1.md`,
-  `network-v1alpha1.md`, `floatingip-v1alpha1.md`, plus the upstream
-  endpoint inventory in `timeweb-endpoints.md`.
-- `quickstart.md` — operator walkthrough from a minimum Server up through
-  network attachment and floating-IP pinning; troubleshooting matrix; what's
-  NOT in v0.3.
+  new MR kinds in API group `kubernetes.m.timeweb.crossplane.io`:
+  `KubernetesCluster` (managed control plane), `KubernetesClusterNodepool`
+  (worker group, `clusterRef`), and `KubernetesClusterAddon` (one installed
+  addon, `clusterRef`). Scope is the dashboard's "Create Kubernetes cluster"
+  flow, fixed-preset path (custom configurator deferred). Day-2 ops in scope:
+  nodepool scaling, autoscaling/autohealing, in-place version upgrade,
+  kubeconfig connection Secret. Reuses feat-003 `Network` (VPC attach) +
+  feat-001 `Project` as ref targets.
+- `research.md` — Phase 0 decisions (R-1 group/package layout, R-2 master/
+  worker preset dimension split, R-3 exact-match k8sVersion, R-4 driver/AZ as
+  CRD enums, R-5 Nodepool-MR-only / zero-worker create, R-6 relative-delta
+  scaling, R-7 in-place upgrade, R-8 kubeconfig secret, R-9 addon shape,
+  R-10 external-name/clusterID persistence, R-11 ref resolution, R-12 client
+  tag + e2e).
+- `data-model.md` — entities: `KubernetesCluster`, `KubernetesClusterNodepool`,
+  `KubernetesClusterAddon` (Go-style spec/status + CEL + lifecycle), the three
+  promoted resolver dimensions (`DimKubernetesMasterPreset`/`WorkerPreset`/
+  `Version` stub→real), and the relationships diagram.
+- `contracts/` — per-kind contracts: `kubernetescluster-v1alpha1.md`,
+  `kubernetesclusternodepool-v1alpha1.md`, `kubernetesclusteraddon-v1alpha1.md`,
+  plus the upstream endpoint inventory in `timeweb-k8s-endpoints.md`.
+- `quickstart.md` — operator walkthrough: minimum cluster+pool, scaling,
+  network/project attach, version upgrade, addons; troubleshooting matrix;
+  what's NOT in v0.x.
 
-Feature 002 (`specs/002-readonly-presets-design/`) merged into main —
-shared `ProviderConfigSpec`, the in-controller catalog resolver primitive,
-the K8s forward-compat dimension registry, and the kuttl/k3d e2e harness
+Features 001/002/003 merged into main — shared `ProviderConfigSpec`, the
+in-controller catalog resolver primitive (incl. the K8s forward-compat
+dimensions this feature promotes to real fetchers), the cross-MR `client.Get`
+ref idiom, the feat-003 `Network`/`Server` kinds, and the kuttl/k3d e2e harness
 all carry forward unchanged. The MVP foundation at `specs/001-mvp-scaffolding/`
 remains authoritative for the `Project` / `SshKey` kinds and the cross-cutting
 decisions (error classification, external-name, tooling).

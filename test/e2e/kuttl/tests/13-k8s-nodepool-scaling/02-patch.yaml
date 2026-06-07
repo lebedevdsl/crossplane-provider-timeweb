@@ -1,0 +1,14 @@
+# Step 2 — scale the pool up to 3 nodes; the controller adds 1 node via a
+# relative IncreaseCountOfNodesInGroup delta (the group is never recreated).
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesClusterNodepool
+metadata:
+  name: e2e-k8s-scale-workers
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef: { kind: ProviderConfig, name: e2e }
+  forProvider:
+    name: workers
+    clusterRef: { name: e2e-k8s-scale }
+    presetName: "${TWE_K8S_WORKER_PRESET}"
+    nodeCount: 3

@@ -39,7 +39,7 @@ type SetupOptions struct {
 // SetupRegistry registers the ContainerRegistry controller.
 func SetupRegistry(mgr manager.Manager, l logging.Logger, opts SetupOptions) error {
 	name := managed.ControllerName(cregv1alpha1.ContainerRegistryGroupVersionKind.String())
-	recorder := mgr.GetEventRecorderFor(name) /*nolint:staticcheck*/
+	recorder := mgr.GetEventRecorderFor(name) //nolint:staticcheck // SA1019 — old events API; same pattern across this provider
 
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(cregv1alpha1.ContainerRegistryGroupVersionKind),
@@ -65,7 +65,7 @@ func SetupRegistry(mgr manager.Manager, l logging.Logger, opts SetupOptions) err
 // SetupRepository registers the ContainerRegistryRepository controller.
 func SetupRepository(mgr manager.Manager, l logging.Logger, opts SetupOptions) error {
 	name := managed.ControllerName(cregv1alpha1.ContainerRegistryRepositoryGroupVersionKind.String())
-	recorder := mgr.GetEventRecorderFor(name) /*nolint:staticcheck*/
+	recorder := mgr.GetEventRecorderFor(name) //nolint:staticcheck // SA1019 — old events API; same pattern across this provider
 
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(cregv1alpha1.ContainerRegistryRepositoryGroupVersionKind),

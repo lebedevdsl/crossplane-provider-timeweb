@@ -1,0 +1,46 @@
+# K8s cluster provisioning is the slowest e2e path: this step waits for BOTH
+# the cluster (~12 min observed) AND the nodepool (gated on cluster Ready, then
+# ~10 min) — so the combined wait can exceed 20 min. 1800s (30 min) gives the
+# sequential cluster→nodepool provisioning headroom.
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 1800
+---
+# Cluster has no gating ref → conditions land [Ready, Synced] (Available is
+# set from inside Observe once upstream status is active, before the runtime
+# appends Synced=True on the next reconcile).
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesCluster
+metadata:
+  name: e2e-k8s
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"
+---
+# Nodepool gates on the cluster being Ready=True (clusterRef) → first reconcile
+# fails Connect, so conditions land [Synced, Ready]. Observed worker count
+# converges to the desired 2.
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesClusterNodepool
+metadata:
+  name: e2e-k8s-workers
+  namespace: timeweb-e2e
+status:
+  atProvider:
+    observedNodeCount: 2
+  conditions:
+  - type: Synced
+    status: "True"
+  - type: Ready
+    status: "True"
+---
+# The cluster's kubeconfig connection Secret is published in the MR namespace.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: e2e-k8s-kubeconfig
+  namespace: timeweb-e2e

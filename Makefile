@@ -54,7 +54,7 @@ generate-client: ## Regenerate the Timeweb HTTP client from docs/openapi-timeweb
 	$(OAPI_CODEGEN) \
 	    -package generated \
 	    -generate types,client,skip-fmt \
-	    -include-tags "Проекты,SSH-ключи,S3-хранилище,Реестр контейнеров,Облачные серверы,VPC,Плавающие IP" \
+	    -include-tags "Проекты,SSH-ключи,S3-хранилище,Реестр контейнеров,Облачные серверы,VPC,Плавающие IP,Kubernetes" \
 	    -o internal/clients/timeweb/generated/zz_generated_client.go \
 	    docs/openapi-timeweb.json
 	# Patch invalid identifiers produced by anonymous response schemas named
@@ -72,6 +72,19 @@ generate-client: ## Regenerate the Timeweb HTTP client from docs/openapi-timeweb
 	# defines the English ones. Add type aliases to bridge the gap.
 	printf '\n// Aliases for digit-prefixed response types referenced internally by the generator.\ntype N400 = BadRequest\ntype N401 = Unauthorized\ntype N403 = Forbidden\ntype N404 = NotFound\ntype N409 = Conflict\ntype N429 = TooManyRequests\ntype N500 = InternalServerError\n' \
 	    >> internal/clients/timeweb/generated/zz_generated_client.go
+	# The k8s presets list (`/api/v1/presets/k8s`) is a discriminated oneOf
+	# (master|worker). oapi-codegen names the anonymous list item
+	# `200_K8sPresets_Item`, an invalid Go identifier. Rename it to the
+	# hand-defined `K8sPresetItem` (see k8s_patch.go in this package).
+	sed -i.bak -E 's/200_K8sPresets_Item/K8sPresetItem/g' \
+	    internal/clients/timeweb/generated/zz_generated_client.go
+	# The PresetsResponse_K8sPresets_Item union (master|worker) request-builder
+	# helpers (`From*`/`Merge*`) assign an untyped string to the typed
+	# discriminator pointer (`v.Type = "worker"`) — a generator bug. The
+	# provider only READS presets (never constructs these unions), so the
+	# assignments are dead code; drop them so the package compiles.
+	sed -i.bak -E '/^[[:space:]]*v\.Type = "(worker|master)"$$/d' \
+	    internal/clients/timeweb/generated/zz_generated_client.go
 	rm -f internal/clients/timeweb/generated/zz_generated_client.go.bak
 	# goimports removes the unused web-framework imports oapi-codegen emits
 	# even with -generate types,client (server stubs are excluded but their

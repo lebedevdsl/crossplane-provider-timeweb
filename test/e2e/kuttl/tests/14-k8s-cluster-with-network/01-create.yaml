@@ -1,0 +1,29 @@
+# Step 1 — cluster attached to a private network via networkRef (feature 004 US3).
+# The Network must be Ready before the cluster Create resolves the ref.
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: e2e-k8s-net
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef: { kind: ProviderConfig, name: e2e }
+  forProvider:
+    name: "${TWE_NETWORK_NAME}-k8s"
+    subnetCIDR: "10.40.0.0/24"
+    location: ru-1
+---
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesCluster
+metadata:
+  name: e2e-k8s-net-cluster
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef: { kind: ProviderConfig, name: e2e }
+  writeConnectionSecretToRef: { name: e2e-k8s-net-kubeconfig }
+  forProvider:
+    name: "${TWE_K8S_CLUSTER_NAME}-net"
+    k8sVersion: "${TWE_K8S_VERSION}"
+    networkDriver: cilium
+    availabilityZone: msk-1
+    presetName: "${TWE_K8S_MASTER_PRESET}"
+    networkRef: { name: e2e-k8s-net }

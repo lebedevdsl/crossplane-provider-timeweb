@@ -1,0 +1,27 @@
+# Step 1 — cluster + one installed addon (feature 004 US5).
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesCluster
+metadata:
+  name: e2e-k8s-addon-cluster
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef: { kind: ProviderConfig, name: e2e }
+  writeConnectionSecretToRef: { name: e2e-k8s-addon-kubeconfig }
+  forProvider:
+    name: "${TWE_K8S_CLUSTER_NAME}-addon"
+    k8sVersion: "${TWE_K8S_VERSION}"
+    networkDriver: cilium
+    availabilityZone: msk-1
+    presetName: "${TWE_K8S_MASTER_PRESET}"
+---
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesClusterAddon
+metadata:
+  name: e2e-k8s-addon
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef: { kind: ProviderConfig, name: e2e }
+  forProvider:
+    clusterRef: { name: e2e-k8s-addon-cluster }
+    type: "${TWE_K8S_ADDON_TYPE}"
+    version: "${TWE_K8S_ADDON_VERSION}"

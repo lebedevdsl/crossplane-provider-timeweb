@@ -387,6 +387,70 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	CreateClusterStub        func(context.Context, generated.CreateClusterJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	createClusterMutex       sync.RWMutex
+	createClusterArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.CreateClusterJSONRequestBody
+		arg3 []generated.RequestEditorFn
+	}
+	createClusterReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createClusterReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	CreateClusterNodeGroupStub        func(context.Context, int, generated.CreateClusterNodeGroupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	createClusterNodeGroupMutex       sync.RWMutex
+	createClusterNodeGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 generated.CreateClusterNodeGroupJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	createClusterNodeGroupReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createClusterNodeGroupReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	CreateClusterNodeGroupWithBodyStub        func(context.Context, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	createClusterNodeGroupWithBodyMutex       sync.RWMutex
+	createClusterNodeGroupWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	createClusterNodeGroupWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createClusterNodeGroupWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	CreateClusterWithBodyStub        func(context.Context, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	createClusterWithBodyMutex       sync.RWMutex
+	createClusterWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 io.Reader
+		arg4 []generated.RequestEditorFn
+	}
+	createClusterWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createClusterWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	CreateFloatingIpStub        func(context.Context, generated.CreateFloatingIpJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
 	createFloatingIpMutex       sync.RWMutex
 	createFloatingIpArgsForCall []struct {
@@ -672,6 +736,54 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	DeleteClusterStub        func(context.Context, int, *generated.DeleteClusterParams, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteClusterMutex       sync.RWMutex
+	deleteClusterArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 *generated.DeleteClusterParams
+		arg4 []generated.RequestEditorFn
+	}
+	deleteClusterReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteClusterReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	DeleteClusterNodeStub        func(context.Context, int, int, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteClusterNodeMutex       sync.RWMutex
+	deleteClusterNodeArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 []generated.RequestEditorFn
+	}
+	deleteClusterNodeReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteClusterNodeReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	DeleteClusterNodeGroupStub        func(context.Context, int, int, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteClusterNodeGroupMutex       sync.RWMutex
+	deleteClusterNodeGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 []generated.RequestEditorFn
+	}
+	deleteClusterNodeGroupReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteClusterNodeGroupReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	DeleteFloatingIPStub        func(context.Context, generated.FloatingIpId, ...generated.RequestEditorFn) (*http.Response, error)
 	deleteFloatingIPMutex       sync.RWMutex
 	deleteFloatingIPArgsForCall []struct {
@@ -715,6 +827,22 @@ type FakeClient struct {
 		result2 error
 	}
 	deleteKeyFromServerReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	DeleteKubernetesAddonsStub        func(context.Context, int, int, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteKubernetesAddonsMutex       sync.RWMutex
+	deleteKubernetesAddonsArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 []generated.RequestEditorFn
+	}
+	deleteKubernetesAddonsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteKubernetesAddonsReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -993,6 +1121,129 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	GetClusterStub        func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)
+	getClusterMutex       sync.RWMutex
+	getClusterArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 []generated.RequestEditorFn
+	}
+	getClusterReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getClusterReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetClusterKubeconfigStub        func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)
+	getClusterKubeconfigMutex       sync.RWMutex
+	getClusterKubeconfigArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 []generated.RequestEditorFn
+	}
+	getClusterKubeconfigReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getClusterKubeconfigReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetClusterNodeGroupStub        func(context.Context, int, int, ...generated.RequestEditorFn) (*http.Response, error)
+	getClusterNodeGroupMutex       sync.RWMutex
+	getClusterNodeGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 []generated.RequestEditorFn
+	}
+	getClusterNodeGroupReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getClusterNodeGroupReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetClusterNodeGroupsStub        func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)
+	getClusterNodeGroupsMutex       sync.RWMutex
+	getClusterNodeGroupsArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 []generated.RequestEditorFn
+	}
+	getClusterNodeGroupsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getClusterNodeGroupsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetClusterNodesStub        func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)
+	getClusterNodesMutex       sync.RWMutex
+	getClusterNodesArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 []generated.RequestEditorFn
+	}
+	getClusterNodesReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getClusterNodesReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetClusterNodesFromGroupStub        func(context.Context, int, int, *generated.GetClusterNodesFromGroupParams, ...generated.RequestEditorFn) (*http.Response, error)
+	getClusterNodesFromGroupMutex       sync.RWMutex
+	getClusterNodesFromGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 *generated.GetClusterNodesFromGroupParams
+		arg5 []generated.RequestEditorFn
+	}
+	getClusterNodesFromGroupReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getClusterNodesFromGroupReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetClusterResourcesStub        func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)
+	getClusterResourcesMutex       sync.RWMutex
+	getClusterResourcesArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 []generated.RequestEditorFn
+	}
+	getClusterResourcesReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getClusterResourcesReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetClustersStub        func(context.Context, *generated.GetClustersParams, ...generated.RequestEditorFn) (*http.Response, error)
+	getClustersMutex       sync.RWMutex
+	getClustersArgsForCall []struct {
+		arg1 context.Context
+		arg2 *generated.GetClustersParams
+		arg3 []generated.RequestEditorFn
+	}
+	getClustersReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getClustersReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	GetConfiguratorsStub        func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)
 	getConfiguratorsMutex       sync.RWMutex
 	getConfiguratorsArgsForCall []struct {
@@ -1036,6 +1287,34 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	GetK8SNetworkDriversStub        func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)
+	getK8SNetworkDriversMutex       sync.RWMutex
+	getK8SNetworkDriversArgsForCall []struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}
+	getK8SNetworkDriversReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getK8SNetworkDriversReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetK8SVersionsStub        func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)
+	getK8SVersionsMutex       sync.RWMutex
+	getK8SVersionsArgsForCall []struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}
+	getK8SVersionsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getK8SVersionsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	GetKeyStub        func(context.Context, generated.SshKeyId, ...generated.RequestEditorFn) (*http.Response, error)
 	getKeyMutex       sync.RWMutex
 	getKeyArgsForCall []struct {
@@ -1062,6 +1341,50 @@ type FakeClient struct {
 		result2 error
 	}
 	getKeysReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetKubernetesAddonsStub        func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)
+	getKubernetesAddonsMutex       sync.RWMutex
+	getKubernetesAddonsArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 []generated.RequestEditorFn
+	}
+	getKubernetesAddonsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getKubernetesAddonsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetKubernetesAddonsConfigStub        func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)
+	getKubernetesAddonsConfigMutex       sync.RWMutex
+	getKubernetesAddonsConfigArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 []generated.RequestEditorFn
+	}
+	getKubernetesAddonsConfigReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getKubernetesAddonsConfigReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetKubernetesPresetsStub        func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)
+	getKubernetesPresetsMutex       sync.RWMutex
+	getKubernetesPresetsArgsForCall []struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}
+	getKubernetesPresetsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getKubernetesPresetsReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -1635,6 +1958,41 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	IncreaseCountOfNodesInGroupStub        func(context.Context, int, int, generated.IncreaseCountOfNodesInGroupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	increaseCountOfNodesInGroupMutex       sync.RWMutex
+	increaseCountOfNodesInGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 generated.IncreaseCountOfNodesInGroupJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}
+	increaseCountOfNodesInGroupReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	increaseCountOfNodesInGroupReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	IncreaseCountOfNodesInGroupWithBodyStub        func(context.Context, int, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	increaseCountOfNodesInGroupWithBodyMutex       sync.RWMutex
+	increaseCountOfNodesInGroupWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}
+	increaseCountOfNodesInGroupWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	increaseCountOfNodesInGroupWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	PerformActionOnBackupStub        func(context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, generated.PerformActionOnBackupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
 	performActionOnBackupMutex       sync.RWMutex
 	performActionOnBackupArgsForCall []struct {
@@ -1705,6 +2063,74 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	PostKubernetesAddonsStub        func(context.Context, int, generated.PostKubernetesAddonsJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	postKubernetesAddonsMutex       sync.RWMutex
+	postKubernetesAddonsArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 generated.PostKubernetesAddonsJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	postKubernetesAddonsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	postKubernetesAddonsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	PostKubernetesAddonsUpdateStub        func(context.Context, int, int, generated.PostKubernetesAddonsUpdateJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	postKubernetesAddonsUpdateMutex       sync.RWMutex
+	postKubernetesAddonsUpdateArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 generated.PostKubernetesAddonsUpdateJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}
+	postKubernetesAddonsUpdateReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	postKubernetesAddonsUpdateReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	PostKubernetesAddonsUpdateWithBodyStub        func(context.Context, int, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	postKubernetesAddonsUpdateWithBodyMutex       sync.RWMutex
+	postKubernetesAddonsUpdateWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}
+	postKubernetesAddonsUpdateWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	postKubernetesAddonsUpdateWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	PostKubernetesAddonsWithBodyStub        func(context.Context, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	postKubernetesAddonsWithBodyMutex       sync.RWMutex
+	postKubernetesAddonsWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	postKubernetesAddonsWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	postKubernetesAddonsWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	RebootServerStub        func(context.Context, generated.ServerId, ...generated.RequestEditorFn) (*http.Response, error)
 	rebootServerMutex       sync.RWMutex
 	rebootServerArgsForCall []struct {
@@ -1732,6 +2158,41 @@ type FakeClient struct {
 		result2 error
 	}
 	rebootServerHardReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	ReduceCountOfNodesInGroupStub        func(context.Context, int, int, generated.ReduceCountOfNodesInGroupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	reduceCountOfNodesInGroupMutex       sync.RWMutex
+	reduceCountOfNodesInGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 generated.ReduceCountOfNodesInGroupJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}
+	reduceCountOfNodesInGroupReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	reduceCountOfNodesInGroupReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	ReduceCountOfNodesInGroupWithBodyStub        func(context.Context, int, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	reduceCountOfNodesInGroupWithBodyMutex       sync.RWMutex
+	reduceCountOfNodesInGroupWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}
+	reduceCountOfNodesInGroupWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	reduceCountOfNodesInGroupWithBodyReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -1856,6 +2317,72 @@ type FakeClient struct {
 		result2 error
 	}
 	unbindFloatingIpReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateClusterStub        func(context.Context, int, generated.UpdateClusterJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	updateClusterMutex       sync.RWMutex
+	updateClusterArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 generated.UpdateClusterJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	updateClusterReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateClusterReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateClusterVersionStub        func(context.Context, int, generated.UpdateClusterVersionJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	updateClusterVersionMutex       sync.RWMutex
+	updateClusterVersionArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 generated.UpdateClusterVersionJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	updateClusterVersionReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateClusterVersionReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateClusterVersionWithBodyStub        func(context.Context, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	updateClusterVersionWithBodyMutex       sync.RWMutex
+	updateClusterVersionWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	updateClusterVersionWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateClusterVersionWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateClusterWithBodyStub        func(context.Context, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	updateClusterWithBodyMutex       sync.RWMutex
+	updateClusterWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	updateClusterWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateClusterWithBodyReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -3882,6 +4409,274 @@ func (fake *FakeClient) CloneServerReturnsOnCall(i int, result1 *http.Response, 
 	}{result1, result2}
 }
 
+func (fake *FakeClient) CreateCluster(arg1 context.Context, arg2 generated.CreateClusterJSONRequestBody, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createClusterMutex.Lock()
+	ret, specificReturn := fake.createClusterReturnsOnCall[len(fake.createClusterArgsForCall)]
+	fake.createClusterArgsForCall = append(fake.createClusterArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.CreateClusterJSONRequestBody
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.CreateClusterStub
+	fakeReturns := fake.createClusterReturns
+	fake.recordInvocation("CreateCluster", []interface{}{arg1, arg2, arg3})
+	fake.createClusterMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateClusterCallCount() int {
+	fake.createClusterMutex.RLock()
+	defer fake.createClusterMutex.RUnlock()
+	return len(fake.createClusterArgsForCall)
+}
+
+func (fake *FakeClient) CreateClusterCalls(stub func(context.Context, generated.CreateClusterJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createClusterMutex.Lock()
+	defer fake.createClusterMutex.Unlock()
+	fake.CreateClusterStub = stub
+}
+
+func (fake *FakeClient) CreateClusterArgsForCall(i int) (context.Context, generated.CreateClusterJSONRequestBody, []generated.RequestEditorFn) {
+	fake.createClusterMutex.RLock()
+	defer fake.createClusterMutex.RUnlock()
+	argsForCall := fake.createClusterArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) CreateClusterReturns(result1 *http.Response, result2 error) {
+	fake.createClusterMutex.Lock()
+	defer fake.createClusterMutex.Unlock()
+	fake.CreateClusterStub = nil
+	fake.createClusterReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateClusterReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createClusterMutex.Lock()
+	defer fake.createClusterMutex.Unlock()
+	fake.CreateClusterStub = nil
+	if fake.createClusterReturnsOnCall == nil {
+		fake.createClusterReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createClusterReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateClusterNodeGroup(arg1 context.Context, arg2 int, arg3 generated.CreateClusterNodeGroupJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createClusterNodeGroupMutex.Lock()
+	ret, specificReturn := fake.createClusterNodeGroupReturnsOnCall[len(fake.createClusterNodeGroupArgsForCall)]
+	fake.createClusterNodeGroupArgsForCall = append(fake.createClusterNodeGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 generated.CreateClusterNodeGroupJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.CreateClusterNodeGroupStub
+	fakeReturns := fake.createClusterNodeGroupReturns
+	fake.recordInvocation("CreateClusterNodeGroup", []interface{}{arg1, arg2, arg3, arg4})
+	fake.createClusterNodeGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateClusterNodeGroupCallCount() int {
+	fake.createClusterNodeGroupMutex.RLock()
+	defer fake.createClusterNodeGroupMutex.RUnlock()
+	return len(fake.createClusterNodeGroupArgsForCall)
+}
+
+func (fake *FakeClient) CreateClusterNodeGroupCalls(stub func(context.Context, int, generated.CreateClusterNodeGroupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createClusterNodeGroupMutex.Lock()
+	defer fake.createClusterNodeGroupMutex.Unlock()
+	fake.CreateClusterNodeGroupStub = stub
+}
+
+func (fake *FakeClient) CreateClusterNodeGroupArgsForCall(i int) (context.Context, int, generated.CreateClusterNodeGroupJSONRequestBody, []generated.RequestEditorFn) {
+	fake.createClusterNodeGroupMutex.RLock()
+	defer fake.createClusterNodeGroupMutex.RUnlock()
+	argsForCall := fake.createClusterNodeGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) CreateClusterNodeGroupReturns(result1 *http.Response, result2 error) {
+	fake.createClusterNodeGroupMutex.Lock()
+	defer fake.createClusterNodeGroupMutex.Unlock()
+	fake.CreateClusterNodeGroupStub = nil
+	fake.createClusterNodeGroupReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateClusterNodeGroupReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createClusterNodeGroupMutex.Lock()
+	defer fake.createClusterNodeGroupMutex.Unlock()
+	fake.CreateClusterNodeGroupStub = nil
+	if fake.createClusterNodeGroupReturnsOnCall == nil {
+		fake.createClusterNodeGroupReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createClusterNodeGroupReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateClusterNodeGroupWithBody(arg1 context.Context, arg2 int, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createClusterNodeGroupWithBodyMutex.Lock()
+	ret, specificReturn := fake.createClusterNodeGroupWithBodyReturnsOnCall[len(fake.createClusterNodeGroupWithBodyArgsForCall)]
+	fake.createClusterNodeGroupWithBodyArgsForCall = append(fake.createClusterNodeGroupWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.CreateClusterNodeGroupWithBodyStub
+	fakeReturns := fake.createClusterNodeGroupWithBodyReturns
+	fake.recordInvocation("CreateClusterNodeGroupWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.createClusterNodeGroupWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateClusterNodeGroupWithBodyCallCount() int {
+	fake.createClusterNodeGroupWithBodyMutex.RLock()
+	defer fake.createClusterNodeGroupWithBodyMutex.RUnlock()
+	return len(fake.createClusterNodeGroupWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) CreateClusterNodeGroupWithBodyCalls(stub func(context.Context, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createClusterNodeGroupWithBodyMutex.Lock()
+	defer fake.createClusterNodeGroupWithBodyMutex.Unlock()
+	fake.CreateClusterNodeGroupWithBodyStub = stub
+}
+
+func (fake *FakeClient) CreateClusterNodeGroupWithBodyArgsForCall(i int) (context.Context, int, string, io.Reader, []generated.RequestEditorFn) {
+	fake.createClusterNodeGroupWithBodyMutex.RLock()
+	defer fake.createClusterNodeGroupWithBodyMutex.RUnlock()
+	argsForCall := fake.createClusterNodeGroupWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) CreateClusterNodeGroupWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.createClusterNodeGroupWithBodyMutex.Lock()
+	defer fake.createClusterNodeGroupWithBodyMutex.Unlock()
+	fake.CreateClusterNodeGroupWithBodyStub = nil
+	fake.createClusterNodeGroupWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateClusterNodeGroupWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createClusterNodeGroupWithBodyMutex.Lock()
+	defer fake.createClusterNodeGroupWithBodyMutex.Unlock()
+	fake.CreateClusterNodeGroupWithBodyStub = nil
+	if fake.createClusterNodeGroupWithBodyReturnsOnCall == nil {
+		fake.createClusterNodeGroupWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createClusterNodeGroupWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateClusterWithBody(arg1 context.Context, arg2 string, arg3 io.Reader, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createClusterWithBodyMutex.Lock()
+	ret, specificReturn := fake.createClusterWithBodyReturnsOnCall[len(fake.createClusterWithBodyArgsForCall)]
+	fake.createClusterWithBodyArgsForCall = append(fake.createClusterWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 io.Reader
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.CreateClusterWithBodyStub
+	fakeReturns := fake.createClusterWithBodyReturns
+	fake.recordInvocation("CreateClusterWithBody", []interface{}{arg1, arg2, arg3, arg4})
+	fake.createClusterWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateClusterWithBodyCallCount() int {
+	fake.createClusterWithBodyMutex.RLock()
+	defer fake.createClusterWithBodyMutex.RUnlock()
+	return len(fake.createClusterWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) CreateClusterWithBodyCalls(stub func(context.Context, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createClusterWithBodyMutex.Lock()
+	defer fake.createClusterWithBodyMutex.Unlock()
+	fake.CreateClusterWithBodyStub = stub
+}
+
+func (fake *FakeClient) CreateClusterWithBodyArgsForCall(i int) (context.Context, string, io.Reader, []generated.RequestEditorFn) {
+	fake.createClusterWithBodyMutex.RLock()
+	defer fake.createClusterWithBodyMutex.RUnlock()
+	argsForCall := fake.createClusterWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) CreateClusterWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.createClusterWithBodyMutex.Lock()
+	defer fake.createClusterWithBodyMutex.Unlock()
+	fake.CreateClusterWithBodyStub = nil
+	fake.createClusterWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateClusterWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createClusterWithBodyMutex.Lock()
+	defer fake.createClusterWithBodyMutex.Unlock()
+	fake.CreateClusterWithBodyStub = nil
+	if fake.createClusterWithBodyReturnsOnCall == nil {
+		fake.createClusterWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createClusterWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) CreateFloatingIp(arg1 context.Context, arg2 generated.CreateFloatingIpJSONRequestBody, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.createFloatingIpMutex.Lock()
 	ret, specificReturn := fake.createFloatingIpReturnsOnCall[len(fake.createFloatingIpArgsForCall)]
@@ -5085,6 +5880,207 @@ func (fake *FakeClient) CreateVPCWithBodyReturnsOnCall(i int, result1 *http.Resp
 	}{result1, result2}
 }
 
+func (fake *FakeClient) DeleteCluster(arg1 context.Context, arg2 int, arg3 *generated.DeleteClusterParams, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteClusterMutex.Lock()
+	ret, specificReturn := fake.deleteClusterReturnsOnCall[len(fake.deleteClusterArgsForCall)]
+	fake.deleteClusterArgsForCall = append(fake.deleteClusterArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 *generated.DeleteClusterParams
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.DeleteClusterStub
+	fakeReturns := fake.deleteClusterReturns
+	fake.recordInvocation("DeleteCluster", []interface{}{arg1, arg2, arg3, arg4})
+	fake.deleteClusterMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteClusterCallCount() int {
+	fake.deleteClusterMutex.RLock()
+	defer fake.deleteClusterMutex.RUnlock()
+	return len(fake.deleteClusterArgsForCall)
+}
+
+func (fake *FakeClient) DeleteClusterCalls(stub func(context.Context, int, *generated.DeleteClusterParams, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteClusterMutex.Lock()
+	defer fake.deleteClusterMutex.Unlock()
+	fake.DeleteClusterStub = stub
+}
+
+func (fake *FakeClient) DeleteClusterArgsForCall(i int) (context.Context, int, *generated.DeleteClusterParams, []generated.RequestEditorFn) {
+	fake.deleteClusterMutex.RLock()
+	defer fake.deleteClusterMutex.RUnlock()
+	argsForCall := fake.deleteClusterArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) DeleteClusterReturns(result1 *http.Response, result2 error) {
+	fake.deleteClusterMutex.Lock()
+	defer fake.deleteClusterMutex.Unlock()
+	fake.DeleteClusterStub = nil
+	fake.deleteClusterReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteClusterReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteClusterMutex.Lock()
+	defer fake.deleteClusterMutex.Unlock()
+	fake.DeleteClusterStub = nil
+	if fake.deleteClusterReturnsOnCall == nil {
+		fake.deleteClusterReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteClusterReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteClusterNode(arg1 context.Context, arg2 int, arg3 int, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteClusterNodeMutex.Lock()
+	ret, specificReturn := fake.deleteClusterNodeReturnsOnCall[len(fake.deleteClusterNodeArgsForCall)]
+	fake.deleteClusterNodeArgsForCall = append(fake.deleteClusterNodeArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.DeleteClusterNodeStub
+	fakeReturns := fake.deleteClusterNodeReturns
+	fake.recordInvocation("DeleteClusterNode", []interface{}{arg1, arg2, arg3, arg4})
+	fake.deleteClusterNodeMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteClusterNodeCallCount() int {
+	fake.deleteClusterNodeMutex.RLock()
+	defer fake.deleteClusterNodeMutex.RUnlock()
+	return len(fake.deleteClusterNodeArgsForCall)
+}
+
+func (fake *FakeClient) DeleteClusterNodeCalls(stub func(context.Context, int, int, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteClusterNodeMutex.Lock()
+	defer fake.deleteClusterNodeMutex.Unlock()
+	fake.DeleteClusterNodeStub = stub
+}
+
+func (fake *FakeClient) DeleteClusterNodeArgsForCall(i int) (context.Context, int, int, []generated.RequestEditorFn) {
+	fake.deleteClusterNodeMutex.RLock()
+	defer fake.deleteClusterNodeMutex.RUnlock()
+	argsForCall := fake.deleteClusterNodeArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) DeleteClusterNodeReturns(result1 *http.Response, result2 error) {
+	fake.deleteClusterNodeMutex.Lock()
+	defer fake.deleteClusterNodeMutex.Unlock()
+	fake.DeleteClusterNodeStub = nil
+	fake.deleteClusterNodeReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteClusterNodeReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteClusterNodeMutex.Lock()
+	defer fake.deleteClusterNodeMutex.Unlock()
+	fake.DeleteClusterNodeStub = nil
+	if fake.deleteClusterNodeReturnsOnCall == nil {
+		fake.deleteClusterNodeReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteClusterNodeReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteClusterNodeGroup(arg1 context.Context, arg2 int, arg3 int, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteClusterNodeGroupMutex.Lock()
+	ret, specificReturn := fake.deleteClusterNodeGroupReturnsOnCall[len(fake.deleteClusterNodeGroupArgsForCall)]
+	fake.deleteClusterNodeGroupArgsForCall = append(fake.deleteClusterNodeGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.DeleteClusterNodeGroupStub
+	fakeReturns := fake.deleteClusterNodeGroupReturns
+	fake.recordInvocation("DeleteClusterNodeGroup", []interface{}{arg1, arg2, arg3, arg4})
+	fake.deleteClusterNodeGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteClusterNodeGroupCallCount() int {
+	fake.deleteClusterNodeGroupMutex.RLock()
+	defer fake.deleteClusterNodeGroupMutex.RUnlock()
+	return len(fake.deleteClusterNodeGroupArgsForCall)
+}
+
+func (fake *FakeClient) DeleteClusterNodeGroupCalls(stub func(context.Context, int, int, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteClusterNodeGroupMutex.Lock()
+	defer fake.deleteClusterNodeGroupMutex.Unlock()
+	fake.DeleteClusterNodeGroupStub = stub
+}
+
+func (fake *FakeClient) DeleteClusterNodeGroupArgsForCall(i int) (context.Context, int, int, []generated.RequestEditorFn) {
+	fake.deleteClusterNodeGroupMutex.RLock()
+	defer fake.deleteClusterNodeGroupMutex.RUnlock()
+	argsForCall := fake.deleteClusterNodeGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) DeleteClusterNodeGroupReturns(result1 *http.Response, result2 error) {
+	fake.deleteClusterNodeGroupMutex.Lock()
+	defer fake.deleteClusterNodeGroupMutex.Unlock()
+	fake.DeleteClusterNodeGroupStub = nil
+	fake.deleteClusterNodeGroupReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteClusterNodeGroupReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteClusterNodeGroupMutex.Lock()
+	defer fake.deleteClusterNodeGroupMutex.Unlock()
+	fake.DeleteClusterNodeGroupStub = nil
+	if fake.deleteClusterNodeGroupReturnsOnCall == nil {
+		fake.deleteClusterNodeGroupReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteClusterNodeGroupReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) DeleteFloatingIP(arg1 context.Context, arg2 generated.FloatingIpId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.deleteFloatingIPMutex.Lock()
 	ret, specificReturn := fake.deleteFloatingIPReturnsOnCall[len(fake.deleteFloatingIPArgsForCall)]
@@ -5279,6 +6275,73 @@ func (fake *FakeClient) DeleteKeyFromServerReturnsOnCall(i int, result1 *http.Re
 		})
 	}
 	fake.deleteKeyFromServerReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteKubernetesAddons(arg1 context.Context, arg2 int, arg3 int, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteKubernetesAddonsMutex.Lock()
+	ret, specificReturn := fake.deleteKubernetesAddonsReturnsOnCall[len(fake.deleteKubernetesAddonsArgsForCall)]
+	fake.deleteKubernetesAddonsArgsForCall = append(fake.deleteKubernetesAddonsArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.DeleteKubernetesAddonsStub
+	fakeReturns := fake.deleteKubernetesAddonsReturns
+	fake.recordInvocation("DeleteKubernetesAddons", []interface{}{arg1, arg2, arg3, arg4})
+	fake.deleteKubernetesAddonsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteKubernetesAddonsCallCount() int {
+	fake.deleteKubernetesAddonsMutex.RLock()
+	defer fake.deleteKubernetesAddonsMutex.RUnlock()
+	return len(fake.deleteKubernetesAddonsArgsForCall)
+}
+
+func (fake *FakeClient) DeleteKubernetesAddonsCalls(stub func(context.Context, int, int, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteKubernetesAddonsMutex.Lock()
+	defer fake.deleteKubernetesAddonsMutex.Unlock()
+	fake.DeleteKubernetesAddonsStub = stub
+}
+
+func (fake *FakeClient) DeleteKubernetesAddonsArgsForCall(i int) (context.Context, int, int, []generated.RequestEditorFn) {
+	fake.deleteKubernetesAddonsMutex.RLock()
+	defer fake.deleteKubernetesAddonsMutex.RUnlock()
+	argsForCall := fake.deleteKubernetesAddonsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) DeleteKubernetesAddonsReturns(result1 *http.Response, result2 error) {
+	fake.deleteKubernetesAddonsMutex.Lock()
+	defer fake.deleteKubernetesAddonsMutex.Unlock()
+	fake.DeleteKubernetesAddonsStub = nil
+	fake.deleteKubernetesAddonsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteKubernetesAddonsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteKubernetesAddonsMutex.Lock()
+	defer fake.deleteKubernetesAddonsMutex.Unlock()
+	fake.DeleteKubernetesAddonsStub = nil
+	if fake.deleteKubernetesAddonsReturnsOnCall == nil {
+		fake.deleteKubernetesAddonsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteKubernetesAddonsReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -6477,6 +7540,537 @@ func (fake *FakeClient) GetAllProjectResourcesReturnsOnCall(i int, result1 *http
 	}{result1, result2}
 }
 
+func (fake *FakeClient) GetCluster(arg1 context.Context, arg2 int, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getClusterMutex.Lock()
+	ret, specificReturn := fake.getClusterReturnsOnCall[len(fake.getClusterArgsForCall)]
+	fake.getClusterArgsForCall = append(fake.getClusterArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetClusterStub
+	fakeReturns := fake.getClusterReturns
+	fake.recordInvocation("GetCluster", []interface{}{arg1, arg2, arg3})
+	fake.getClusterMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetClusterCallCount() int {
+	fake.getClusterMutex.RLock()
+	defer fake.getClusterMutex.RUnlock()
+	return len(fake.getClusterArgsForCall)
+}
+
+func (fake *FakeClient) GetClusterCalls(stub func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getClusterMutex.Lock()
+	defer fake.getClusterMutex.Unlock()
+	fake.GetClusterStub = stub
+}
+
+func (fake *FakeClient) GetClusterArgsForCall(i int) (context.Context, int, []generated.RequestEditorFn) {
+	fake.getClusterMutex.RLock()
+	defer fake.getClusterMutex.RUnlock()
+	argsForCall := fake.getClusterArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetClusterReturns(result1 *http.Response, result2 error) {
+	fake.getClusterMutex.Lock()
+	defer fake.getClusterMutex.Unlock()
+	fake.GetClusterStub = nil
+	fake.getClusterReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClusterReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getClusterMutex.Lock()
+	defer fake.getClusterMutex.Unlock()
+	fake.GetClusterStub = nil
+	if fake.getClusterReturnsOnCall == nil {
+		fake.getClusterReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getClusterReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClusterKubeconfig(arg1 context.Context, arg2 int, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getClusterKubeconfigMutex.Lock()
+	ret, specificReturn := fake.getClusterKubeconfigReturnsOnCall[len(fake.getClusterKubeconfigArgsForCall)]
+	fake.getClusterKubeconfigArgsForCall = append(fake.getClusterKubeconfigArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetClusterKubeconfigStub
+	fakeReturns := fake.getClusterKubeconfigReturns
+	fake.recordInvocation("GetClusterKubeconfig", []interface{}{arg1, arg2, arg3})
+	fake.getClusterKubeconfigMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetClusterKubeconfigCallCount() int {
+	fake.getClusterKubeconfigMutex.RLock()
+	defer fake.getClusterKubeconfigMutex.RUnlock()
+	return len(fake.getClusterKubeconfigArgsForCall)
+}
+
+func (fake *FakeClient) GetClusterKubeconfigCalls(stub func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getClusterKubeconfigMutex.Lock()
+	defer fake.getClusterKubeconfigMutex.Unlock()
+	fake.GetClusterKubeconfigStub = stub
+}
+
+func (fake *FakeClient) GetClusterKubeconfigArgsForCall(i int) (context.Context, int, []generated.RequestEditorFn) {
+	fake.getClusterKubeconfigMutex.RLock()
+	defer fake.getClusterKubeconfigMutex.RUnlock()
+	argsForCall := fake.getClusterKubeconfigArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetClusterKubeconfigReturns(result1 *http.Response, result2 error) {
+	fake.getClusterKubeconfigMutex.Lock()
+	defer fake.getClusterKubeconfigMutex.Unlock()
+	fake.GetClusterKubeconfigStub = nil
+	fake.getClusterKubeconfigReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClusterKubeconfigReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getClusterKubeconfigMutex.Lock()
+	defer fake.getClusterKubeconfigMutex.Unlock()
+	fake.GetClusterKubeconfigStub = nil
+	if fake.getClusterKubeconfigReturnsOnCall == nil {
+		fake.getClusterKubeconfigReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getClusterKubeconfigReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClusterNodeGroup(arg1 context.Context, arg2 int, arg3 int, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getClusterNodeGroupMutex.Lock()
+	ret, specificReturn := fake.getClusterNodeGroupReturnsOnCall[len(fake.getClusterNodeGroupArgsForCall)]
+	fake.getClusterNodeGroupArgsForCall = append(fake.getClusterNodeGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.GetClusterNodeGroupStub
+	fakeReturns := fake.getClusterNodeGroupReturns
+	fake.recordInvocation("GetClusterNodeGroup", []interface{}{arg1, arg2, arg3, arg4})
+	fake.getClusterNodeGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetClusterNodeGroupCallCount() int {
+	fake.getClusterNodeGroupMutex.RLock()
+	defer fake.getClusterNodeGroupMutex.RUnlock()
+	return len(fake.getClusterNodeGroupArgsForCall)
+}
+
+func (fake *FakeClient) GetClusterNodeGroupCalls(stub func(context.Context, int, int, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getClusterNodeGroupMutex.Lock()
+	defer fake.getClusterNodeGroupMutex.Unlock()
+	fake.GetClusterNodeGroupStub = stub
+}
+
+func (fake *FakeClient) GetClusterNodeGroupArgsForCall(i int) (context.Context, int, int, []generated.RequestEditorFn) {
+	fake.getClusterNodeGroupMutex.RLock()
+	defer fake.getClusterNodeGroupMutex.RUnlock()
+	argsForCall := fake.getClusterNodeGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) GetClusterNodeGroupReturns(result1 *http.Response, result2 error) {
+	fake.getClusterNodeGroupMutex.Lock()
+	defer fake.getClusterNodeGroupMutex.Unlock()
+	fake.GetClusterNodeGroupStub = nil
+	fake.getClusterNodeGroupReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClusterNodeGroupReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getClusterNodeGroupMutex.Lock()
+	defer fake.getClusterNodeGroupMutex.Unlock()
+	fake.GetClusterNodeGroupStub = nil
+	if fake.getClusterNodeGroupReturnsOnCall == nil {
+		fake.getClusterNodeGroupReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getClusterNodeGroupReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClusterNodeGroups(arg1 context.Context, arg2 int, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getClusterNodeGroupsMutex.Lock()
+	ret, specificReturn := fake.getClusterNodeGroupsReturnsOnCall[len(fake.getClusterNodeGroupsArgsForCall)]
+	fake.getClusterNodeGroupsArgsForCall = append(fake.getClusterNodeGroupsArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetClusterNodeGroupsStub
+	fakeReturns := fake.getClusterNodeGroupsReturns
+	fake.recordInvocation("GetClusterNodeGroups", []interface{}{arg1, arg2, arg3})
+	fake.getClusterNodeGroupsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetClusterNodeGroupsCallCount() int {
+	fake.getClusterNodeGroupsMutex.RLock()
+	defer fake.getClusterNodeGroupsMutex.RUnlock()
+	return len(fake.getClusterNodeGroupsArgsForCall)
+}
+
+func (fake *FakeClient) GetClusterNodeGroupsCalls(stub func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getClusterNodeGroupsMutex.Lock()
+	defer fake.getClusterNodeGroupsMutex.Unlock()
+	fake.GetClusterNodeGroupsStub = stub
+}
+
+func (fake *FakeClient) GetClusterNodeGroupsArgsForCall(i int) (context.Context, int, []generated.RequestEditorFn) {
+	fake.getClusterNodeGroupsMutex.RLock()
+	defer fake.getClusterNodeGroupsMutex.RUnlock()
+	argsForCall := fake.getClusterNodeGroupsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetClusterNodeGroupsReturns(result1 *http.Response, result2 error) {
+	fake.getClusterNodeGroupsMutex.Lock()
+	defer fake.getClusterNodeGroupsMutex.Unlock()
+	fake.GetClusterNodeGroupsStub = nil
+	fake.getClusterNodeGroupsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClusterNodeGroupsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getClusterNodeGroupsMutex.Lock()
+	defer fake.getClusterNodeGroupsMutex.Unlock()
+	fake.GetClusterNodeGroupsStub = nil
+	if fake.getClusterNodeGroupsReturnsOnCall == nil {
+		fake.getClusterNodeGroupsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getClusterNodeGroupsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClusterNodes(arg1 context.Context, arg2 int, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getClusterNodesMutex.Lock()
+	ret, specificReturn := fake.getClusterNodesReturnsOnCall[len(fake.getClusterNodesArgsForCall)]
+	fake.getClusterNodesArgsForCall = append(fake.getClusterNodesArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetClusterNodesStub
+	fakeReturns := fake.getClusterNodesReturns
+	fake.recordInvocation("GetClusterNodes", []interface{}{arg1, arg2, arg3})
+	fake.getClusterNodesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetClusterNodesCallCount() int {
+	fake.getClusterNodesMutex.RLock()
+	defer fake.getClusterNodesMutex.RUnlock()
+	return len(fake.getClusterNodesArgsForCall)
+}
+
+func (fake *FakeClient) GetClusterNodesCalls(stub func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getClusterNodesMutex.Lock()
+	defer fake.getClusterNodesMutex.Unlock()
+	fake.GetClusterNodesStub = stub
+}
+
+func (fake *FakeClient) GetClusterNodesArgsForCall(i int) (context.Context, int, []generated.RequestEditorFn) {
+	fake.getClusterNodesMutex.RLock()
+	defer fake.getClusterNodesMutex.RUnlock()
+	argsForCall := fake.getClusterNodesArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetClusterNodesReturns(result1 *http.Response, result2 error) {
+	fake.getClusterNodesMutex.Lock()
+	defer fake.getClusterNodesMutex.Unlock()
+	fake.GetClusterNodesStub = nil
+	fake.getClusterNodesReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClusterNodesReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getClusterNodesMutex.Lock()
+	defer fake.getClusterNodesMutex.Unlock()
+	fake.GetClusterNodesStub = nil
+	if fake.getClusterNodesReturnsOnCall == nil {
+		fake.getClusterNodesReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getClusterNodesReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClusterNodesFromGroup(arg1 context.Context, arg2 int, arg3 int, arg4 *generated.GetClusterNodesFromGroupParams, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getClusterNodesFromGroupMutex.Lock()
+	ret, specificReturn := fake.getClusterNodesFromGroupReturnsOnCall[len(fake.getClusterNodesFromGroupArgsForCall)]
+	fake.getClusterNodesFromGroupArgsForCall = append(fake.getClusterNodesFromGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 *generated.GetClusterNodesFromGroupParams
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.GetClusterNodesFromGroupStub
+	fakeReturns := fake.getClusterNodesFromGroupReturns
+	fake.recordInvocation("GetClusterNodesFromGroup", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.getClusterNodesFromGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetClusterNodesFromGroupCallCount() int {
+	fake.getClusterNodesFromGroupMutex.RLock()
+	defer fake.getClusterNodesFromGroupMutex.RUnlock()
+	return len(fake.getClusterNodesFromGroupArgsForCall)
+}
+
+func (fake *FakeClient) GetClusterNodesFromGroupCalls(stub func(context.Context, int, int, *generated.GetClusterNodesFromGroupParams, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getClusterNodesFromGroupMutex.Lock()
+	defer fake.getClusterNodesFromGroupMutex.Unlock()
+	fake.GetClusterNodesFromGroupStub = stub
+}
+
+func (fake *FakeClient) GetClusterNodesFromGroupArgsForCall(i int) (context.Context, int, int, *generated.GetClusterNodesFromGroupParams, []generated.RequestEditorFn) {
+	fake.getClusterNodesFromGroupMutex.RLock()
+	defer fake.getClusterNodesFromGroupMutex.RUnlock()
+	argsForCall := fake.getClusterNodesFromGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) GetClusterNodesFromGroupReturns(result1 *http.Response, result2 error) {
+	fake.getClusterNodesFromGroupMutex.Lock()
+	defer fake.getClusterNodesFromGroupMutex.Unlock()
+	fake.GetClusterNodesFromGroupStub = nil
+	fake.getClusterNodesFromGroupReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClusterNodesFromGroupReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getClusterNodesFromGroupMutex.Lock()
+	defer fake.getClusterNodesFromGroupMutex.Unlock()
+	fake.GetClusterNodesFromGroupStub = nil
+	if fake.getClusterNodesFromGroupReturnsOnCall == nil {
+		fake.getClusterNodesFromGroupReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getClusterNodesFromGroupReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClusterResources(arg1 context.Context, arg2 int, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getClusterResourcesMutex.Lock()
+	ret, specificReturn := fake.getClusterResourcesReturnsOnCall[len(fake.getClusterResourcesArgsForCall)]
+	fake.getClusterResourcesArgsForCall = append(fake.getClusterResourcesArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetClusterResourcesStub
+	fakeReturns := fake.getClusterResourcesReturns
+	fake.recordInvocation("GetClusterResources", []interface{}{arg1, arg2, arg3})
+	fake.getClusterResourcesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetClusterResourcesCallCount() int {
+	fake.getClusterResourcesMutex.RLock()
+	defer fake.getClusterResourcesMutex.RUnlock()
+	return len(fake.getClusterResourcesArgsForCall)
+}
+
+func (fake *FakeClient) GetClusterResourcesCalls(stub func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getClusterResourcesMutex.Lock()
+	defer fake.getClusterResourcesMutex.Unlock()
+	fake.GetClusterResourcesStub = stub
+}
+
+func (fake *FakeClient) GetClusterResourcesArgsForCall(i int) (context.Context, int, []generated.RequestEditorFn) {
+	fake.getClusterResourcesMutex.RLock()
+	defer fake.getClusterResourcesMutex.RUnlock()
+	argsForCall := fake.getClusterResourcesArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetClusterResourcesReturns(result1 *http.Response, result2 error) {
+	fake.getClusterResourcesMutex.Lock()
+	defer fake.getClusterResourcesMutex.Unlock()
+	fake.GetClusterResourcesStub = nil
+	fake.getClusterResourcesReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClusterResourcesReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getClusterResourcesMutex.Lock()
+	defer fake.getClusterResourcesMutex.Unlock()
+	fake.GetClusterResourcesStub = nil
+	if fake.getClusterResourcesReturnsOnCall == nil {
+		fake.getClusterResourcesReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getClusterResourcesReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClusters(arg1 context.Context, arg2 *generated.GetClustersParams, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getClustersMutex.Lock()
+	ret, specificReturn := fake.getClustersReturnsOnCall[len(fake.getClustersArgsForCall)]
+	fake.getClustersArgsForCall = append(fake.getClustersArgsForCall, struct {
+		arg1 context.Context
+		arg2 *generated.GetClustersParams
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetClustersStub
+	fakeReturns := fake.getClustersReturns
+	fake.recordInvocation("GetClusters", []interface{}{arg1, arg2, arg3})
+	fake.getClustersMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetClustersCallCount() int {
+	fake.getClustersMutex.RLock()
+	defer fake.getClustersMutex.RUnlock()
+	return len(fake.getClustersArgsForCall)
+}
+
+func (fake *FakeClient) GetClustersCalls(stub func(context.Context, *generated.GetClustersParams, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getClustersMutex.Lock()
+	defer fake.getClustersMutex.Unlock()
+	fake.GetClustersStub = stub
+}
+
+func (fake *FakeClient) GetClustersArgsForCall(i int) (context.Context, *generated.GetClustersParams, []generated.RequestEditorFn) {
+	fake.getClustersMutex.RLock()
+	defer fake.getClustersMutex.RUnlock()
+	argsForCall := fake.getClustersArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetClustersReturns(result1 *http.Response, result2 error) {
+	fake.getClustersMutex.Lock()
+	defer fake.getClustersMutex.Unlock()
+	fake.GetClustersStub = nil
+	fake.getClustersReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetClustersReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getClustersMutex.Lock()
+	defer fake.getClustersMutex.Unlock()
+	fake.GetClustersStub = nil
+	if fake.getClustersReturnsOnCall == nil {
+		fake.getClustersReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getClustersReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) GetConfigurators(arg1 context.Context, arg2 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.getConfiguratorsMutex.Lock()
 	ret, specificReturn := fake.getConfiguratorsReturnsOnCall[len(fake.getConfiguratorsArgsForCall)]
@@ -6673,6 +8267,136 @@ func (fake *FakeClient) GetFloatingIpsReturnsOnCall(i int, result1 *http.Respons
 	}{result1, result2}
 }
 
+func (fake *FakeClient) GetK8SNetworkDrivers(arg1 context.Context, arg2 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getK8SNetworkDriversMutex.Lock()
+	ret, specificReturn := fake.getK8SNetworkDriversReturnsOnCall[len(fake.getK8SNetworkDriversArgsForCall)]
+	fake.getK8SNetworkDriversArgsForCall = append(fake.getK8SNetworkDriversArgsForCall, struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}{arg1, arg2})
+	stub := fake.GetK8SNetworkDriversStub
+	fakeReturns := fake.getK8SNetworkDriversReturns
+	fake.recordInvocation("GetK8SNetworkDrivers", []interface{}{arg1, arg2})
+	fake.getK8SNetworkDriversMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetK8SNetworkDriversCallCount() int {
+	fake.getK8SNetworkDriversMutex.RLock()
+	defer fake.getK8SNetworkDriversMutex.RUnlock()
+	return len(fake.getK8SNetworkDriversArgsForCall)
+}
+
+func (fake *FakeClient) GetK8SNetworkDriversCalls(stub func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getK8SNetworkDriversMutex.Lock()
+	defer fake.getK8SNetworkDriversMutex.Unlock()
+	fake.GetK8SNetworkDriversStub = stub
+}
+
+func (fake *FakeClient) GetK8SNetworkDriversArgsForCall(i int) (context.Context, []generated.RequestEditorFn) {
+	fake.getK8SNetworkDriversMutex.RLock()
+	defer fake.getK8SNetworkDriversMutex.RUnlock()
+	argsForCall := fake.getK8SNetworkDriversArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeClient) GetK8SNetworkDriversReturns(result1 *http.Response, result2 error) {
+	fake.getK8SNetworkDriversMutex.Lock()
+	defer fake.getK8SNetworkDriversMutex.Unlock()
+	fake.GetK8SNetworkDriversStub = nil
+	fake.getK8SNetworkDriversReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetK8SNetworkDriversReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getK8SNetworkDriversMutex.Lock()
+	defer fake.getK8SNetworkDriversMutex.Unlock()
+	fake.GetK8SNetworkDriversStub = nil
+	if fake.getK8SNetworkDriversReturnsOnCall == nil {
+		fake.getK8SNetworkDriversReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getK8SNetworkDriversReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetK8SVersions(arg1 context.Context, arg2 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getK8SVersionsMutex.Lock()
+	ret, specificReturn := fake.getK8SVersionsReturnsOnCall[len(fake.getK8SVersionsArgsForCall)]
+	fake.getK8SVersionsArgsForCall = append(fake.getK8SVersionsArgsForCall, struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}{arg1, arg2})
+	stub := fake.GetK8SVersionsStub
+	fakeReturns := fake.getK8SVersionsReturns
+	fake.recordInvocation("GetK8SVersions", []interface{}{arg1, arg2})
+	fake.getK8SVersionsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetK8SVersionsCallCount() int {
+	fake.getK8SVersionsMutex.RLock()
+	defer fake.getK8SVersionsMutex.RUnlock()
+	return len(fake.getK8SVersionsArgsForCall)
+}
+
+func (fake *FakeClient) GetK8SVersionsCalls(stub func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getK8SVersionsMutex.Lock()
+	defer fake.getK8SVersionsMutex.Unlock()
+	fake.GetK8SVersionsStub = stub
+}
+
+func (fake *FakeClient) GetK8SVersionsArgsForCall(i int) (context.Context, []generated.RequestEditorFn) {
+	fake.getK8SVersionsMutex.RLock()
+	defer fake.getK8SVersionsMutex.RUnlock()
+	argsForCall := fake.getK8SVersionsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeClient) GetK8SVersionsReturns(result1 *http.Response, result2 error) {
+	fake.getK8SVersionsMutex.Lock()
+	defer fake.getK8SVersionsMutex.Unlock()
+	fake.GetK8SVersionsStub = nil
+	fake.getK8SVersionsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetK8SVersionsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getK8SVersionsMutex.Lock()
+	defer fake.getK8SVersionsMutex.Unlock()
+	fake.GetK8SVersionsStub = nil
+	if fake.getK8SVersionsReturnsOnCall == nil {
+		fake.getK8SVersionsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getK8SVersionsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) GetKey(arg1 context.Context, arg2 generated.SshKeyId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.getKeyMutex.Lock()
 	ret, specificReturn := fake.getKeyReturnsOnCall[len(fake.getKeyArgsForCall)]
@@ -6799,6 +8523,203 @@ func (fake *FakeClient) GetKeysReturnsOnCall(i int, result1 *http.Response, resu
 		})
 	}
 	fake.getKeysReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetKubernetesAddons(arg1 context.Context, arg2 int, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getKubernetesAddonsMutex.Lock()
+	ret, specificReturn := fake.getKubernetesAddonsReturnsOnCall[len(fake.getKubernetesAddonsArgsForCall)]
+	fake.getKubernetesAddonsArgsForCall = append(fake.getKubernetesAddonsArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetKubernetesAddonsStub
+	fakeReturns := fake.getKubernetesAddonsReturns
+	fake.recordInvocation("GetKubernetesAddons", []interface{}{arg1, arg2, arg3})
+	fake.getKubernetesAddonsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetKubernetesAddonsCallCount() int {
+	fake.getKubernetesAddonsMutex.RLock()
+	defer fake.getKubernetesAddonsMutex.RUnlock()
+	return len(fake.getKubernetesAddonsArgsForCall)
+}
+
+func (fake *FakeClient) GetKubernetesAddonsCalls(stub func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getKubernetesAddonsMutex.Lock()
+	defer fake.getKubernetesAddonsMutex.Unlock()
+	fake.GetKubernetesAddonsStub = stub
+}
+
+func (fake *FakeClient) GetKubernetesAddonsArgsForCall(i int) (context.Context, int, []generated.RequestEditorFn) {
+	fake.getKubernetesAddonsMutex.RLock()
+	defer fake.getKubernetesAddonsMutex.RUnlock()
+	argsForCall := fake.getKubernetesAddonsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetKubernetesAddonsReturns(result1 *http.Response, result2 error) {
+	fake.getKubernetesAddonsMutex.Lock()
+	defer fake.getKubernetesAddonsMutex.Unlock()
+	fake.GetKubernetesAddonsStub = nil
+	fake.getKubernetesAddonsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetKubernetesAddonsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getKubernetesAddonsMutex.Lock()
+	defer fake.getKubernetesAddonsMutex.Unlock()
+	fake.GetKubernetesAddonsStub = nil
+	if fake.getKubernetesAddonsReturnsOnCall == nil {
+		fake.getKubernetesAddonsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getKubernetesAddonsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetKubernetesAddonsConfig(arg1 context.Context, arg2 int, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getKubernetesAddonsConfigMutex.Lock()
+	ret, specificReturn := fake.getKubernetesAddonsConfigReturnsOnCall[len(fake.getKubernetesAddonsConfigArgsForCall)]
+	fake.getKubernetesAddonsConfigArgsForCall = append(fake.getKubernetesAddonsConfigArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetKubernetesAddonsConfigStub
+	fakeReturns := fake.getKubernetesAddonsConfigReturns
+	fake.recordInvocation("GetKubernetesAddonsConfig", []interface{}{arg1, arg2, arg3})
+	fake.getKubernetesAddonsConfigMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetKubernetesAddonsConfigCallCount() int {
+	fake.getKubernetesAddonsConfigMutex.RLock()
+	defer fake.getKubernetesAddonsConfigMutex.RUnlock()
+	return len(fake.getKubernetesAddonsConfigArgsForCall)
+}
+
+func (fake *FakeClient) GetKubernetesAddonsConfigCalls(stub func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getKubernetesAddonsConfigMutex.Lock()
+	defer fake.getKubernetesAddonsConfigMutex.Unlock()
+	fake.GetKubernetesAddonsConfigStub = stub
+}
+
+func (fake *FakeClient) GetKubernetesAddonsConfigArgsForCall(i int) (context.Context, int, []generated.RequestEditorFn) {
+	fake.getKubernetesAddonsConfigMutex.RLock()
+	defer fake.getKubernetesAddonsConfigMutex.RUnlock()
+	argsForCall := fake.getKubernetesAddonsConfigArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetKubernetesAddonsConfigReturns(result1 *http.Response, result2 error) {
+	fake.getKubernetesAddonsConfigMutex.Lock()
+	defer fake.getKubernetesAddonsConfigMutex.Unlock()
+	fake.GetKubernetesAddonsConfigStub = nil
+	fake.getKubernetesAddonsConfigReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetKubernetesAddonsConfigReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getKubernetesAddonsConfigMutex.Lock()
+	defer fake.getKubernetesAddonsConfigMutex.Unlock()
+	fake.GetKubernetesAddonsConfigStub = nil
+	if fake.getKubernetesAddonsConfigReturnsOnCall == nil {
+		fake.getKubernetesAddonsConfigReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getKubernetesAddonsConfigReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetKubernetesPresets(arg1 context.Context, arg2 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getKubernetesPresetsMutex.Lock()
+	ret, specificReturn := fake.getKubernetesPresetsReturnsOnCall[len(fake.getKubernetesPresetsArgsForCall)]
+	fake.getKubernetesPresetsArgsForCall = append(fake.getKubernetesPresetsArgsForCall, struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}{arg1, arg2})
+	stub := fake.GetKubernetesPresetsStub
+	fakeReturns := fake.getKubernetesPresetsReturns
+	fake.recordInvocation("GetKubernetesPresets", []interface{}{arg1, arg2})
+	fake.getKubernetesPresetsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetKubernetesPresetsCallCount() int {
+	fake.getKubernetesPresetsMutex.RLock()
+	defer fake.getKubernetesPresetsMutex.RUnlock()
+	return len(fake.getKubernetesPresetsArgsForCall)
+}
+
+func (fake *FakeClient) GetKubernetesPresetsCalls(stub func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getKubernetesPresetsMutex.Lock()
+	defer fake.getKubernetesPresetsMutex.Unlock()
+	fake.GetKubernetesPresetsStub = stub
+}
+
+func (fake *FakeClient) GetKubernetesPresetsArgsForCall(i int) (context.Context, []generated.RequestEditorFn) {
+	fake.getKubernetesPresetsMutex.RLock()
+	defer fake.getKubernetesPresetsMutex.RUnlock()
+	argsForCall := fake.getKubernetesPresetsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeClient) GetKubernetesPresetsReturns(result1 *http.Response, result2 error) {
+	fake.getKubernetesPresetsMutex.Lock()
+	defer fake.getKubernetesPresetsMutex.Unlock()
+	fake.GetKubernetesPresetsStub = nil
+	fake.getKubernetesPresetsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetKubernetesPresetsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getKubernetesPresetsMutex.Lock()
+	defer fake.getKubernetesPresetsMutex.Unlock()
+	fake.GetKubernetesPresetsStub = nil
+	if fake.getKubernetesPresetsReturnsOnCall == nil {
+		fake.getKubernetesPresetsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getKubernetesPresetsReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -9312,6 +11233,143 @@ func (fake *FakeClient) ImageUnmountAndServerReloadReturnsOnCall(i int, result1 
 	}{result1, result2}
 }
 
+func (fake *FakeClient) IncreaseCountOfNodesInGroup(arg1 context.Context, arg2 int, arg3 int, arg4 generated.IncreaseCountOfNodesInGroupJSONRequestBody, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.increaseCountOfNodesInGroupMutex.Lock()
+	ret, specificReturn := fake.increaseCountOfNodesInGroupReturnsOnCall[len(fake.increaseCountOfNodesInGroupArgsForCall)]
+	fake.increaseCountOfNodesInGroupArgsForCall = append(fake.increaseCountOfNodesInGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 generated.IncreaseCountOfNodesInGroupJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.IncreaseCountOfNodesInGroupStub
+	fakeReturns := fake.increaseCountOfNodesInGroupReturns
+	fake.recordInvocation("IncreaseCountOfNodesInGroup", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.increaseCountOfNodesInGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) IncreaseCountOfNodesInGroupCallCount() int {
+	fake.increaseCountOfNodesInGroupMutex.RLock()
+	defer fake.increaseCountOfNodesInGroupMutex.RUnlock()
+	return len(fake.increaseCountOfNodesInGroupArgsForCall)
+}
+
+func (fake *FakeClient) IncreaseCountOfNodesInGroupCalls(stub func(context.Context, int, int, generated.IncreaseCountOfNodesInGroupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.increaseCountOfNodesInGroupMutex.Lock()
+	defer fake.increaseCountOfNodesInGroupMutex.Unlock()
+	fake.IncreaseCountOfNodesInGroupStub = stub
+}
+
+func (fake *FakeClient) IncreaseCountOfNodesInGroupArgsForCall(i int) (context.Context, int, int, generated.IncreaseCountOfNodesInGroupJSONRequestBody, []generated.RequestEditorFn) {
+	fake.increaseCountOfNodesInGroupMutex.RLock()
+	defer fake.increaseCountOfNodesInGroupMutex.RUnlock()
+	argsForCall := fake.increaseCountOfNodesInGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) IncreaseCountOfNodesInGroupReturns(result1 *http.Response, result2 error) {
+	fake.increaseCountOfNodesInGroupMutex.Lock()
+	defer fake.increaseCountOfNodesInGroupMutex.Unlock()
+	fake.IncreaseCountOfNodesInGroupStub = nil
+	fake.increaseCountOfNodesInGroupReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) IncreaseCountOfNodesInGroupReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.increaseCountOfNodesInGroupMutex.Lock()
+	defer fake.increaseCountOfNodesInGroupMutex.Unlock()
+	fake.IncreaseCountOfNodesInGroupStub = nil
+	if fake.increaseCountOfNodesInGroupReturnsOnCall == nil {
+		fake.increaseCountOfNodesInGroupReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.increaseCountOfNodesInGroupReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) IncreaseCountOfNodesInGroupWithBody(arg1 context.Context, arg2 int, arg3 int, arg4 string, arg5 io.Reader, arg6 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.increaseCountOfNodesInGroupWithBodyMutex.Lock()
+	ret, specificReturn := fake.increaseCountOfNodesInGroupWithBodyReturnsOnCall[len(fake.increaseCountOfNodesInGroupWithBodyArgsForCall)]
+	fake.increaseCountOfNodesInGroupWithBodyArgsForCall = append(fake.increaseCountOfNodesInGroupWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6})
+	stub := fake.IncreaseCountOfNodesInGroupWithBodyStub
+	fakeReturns := fake.increaseCountOfNodesInGroupWithBodyReturns
+	fake.recordInvocation("IncreaseCountOfNodesInGroupWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6})
+	fake.increaseCountOfNodesInGroupWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) IncreaseCountOfNodesInGroupWithBodyCallCount() int {
+	fake.increaseCountOfNodesInGroupWithBodyMutex.RLock()
+	defer fake.increaseCountOfNodesInGroupWithBodyMutex.RUnlock()
+	return len(fake.increaseCountOfNodesInGroupWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) IncreaseCountOfNodesInGroupWithBodyCalls(stub func(context.Context, int, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.increaseCountOfNodesInGroupWithBodyMutex.Lock()
+	defer fake.increaseCountOfNodesInGroupWithBodyMutex.Unlock()
+	fake.IncreaseCountOfNodesInGroupWithBodyStub = stub
+}
+
+func (fake *FakeClient) IncreaseCountOfNodesInGroupWithBodyArgsForCall(i int) (context.Context, int, int, string, io.Reader, []generated.RequestEditorFn) {
+	fake.increaseCountOfNodesInGroupWithBodyMutex.RLock()
+	defer fake.increaseCountOfNodesInGroupWithBodyMutex.RUnlock()
+	argsForCall := fake.increaseCountOfNodesInGroupWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6
+}
+
+func (fake *FakeClient) IncreaseCountOfNodesInGroupWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.increaseCountOfNodesInGroupWithBodyMutex.Lock()
+	defer fake.increaseCountOfNodesInGroupWithBodyMutex.Unlock()
+	fake.IncreaseCountOfNodesInGroupWithBodyStub = nil
+	fake.increaseCountOfNodesInGroupWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) IncreaseCountOfNodesInGroupWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.increaseCountOfNodesInGroupWithBodyMutex.Lock()
+	defer fake.increaseCountOfNodesInGroupWithBodyMutex.Unlock()
+	fake.IncreaseCountOfNodesInGroupWithBodyStub = nil
+	if fake.increaseCountOfNodesInGroupWithBodyReturnsOnCall == nil {
+		fake.increaseCountOfNodesInGroupWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.increaseCountOfNodesInGroupWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) PerformActionOnBackup(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 generated.ServerBackupId, arg5 generated.PerformActionOnBackupJSONRequestBody, arg6 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.performActionOnBackupMutex.Lock()
 	ret, specificReturn := fake.performActionOnBackupReturnsOnCall[len(fake.performActionOnBackupArgsForCall)]
@@ -9586,6 +11644,278 @@ func (fake *FakeClient) PerformActionOnServerWithBodyReturnsOnCall(i int, result
 	}{result1, result2}
 }
 
+func (fake *FakeClient) PostKubernetesAddons(arg1 context.Context, arg2 int, arg3 generated.PostKubernetesAddonsJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.postKubernetesAddonsMutex.Lock()
+	ret, specificReturn := fake.postKubernetesAddonsReturnsOnCall[len(fake.postKubernetesAddonsArgsForCall)]
+	fake.postKubernetesAddonsArgsForCall = append(fake.postKubernetesAddonsArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 generated.PostKubernetesAddonsJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.PostKubernetesAddonsStub
+	fakeReturns := fake.postKubernetesAddonsReturns
+	fake.recordInvocation("PostKubernetesAddons", []interface{}{arg1, arg2, arg3, arg4})
+	fake.postKubernetesAddonsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PostKubernetesAddonsCallCount() int {
+	fake.postKubernetesAddonsMutex.RLock()
+	defer fake.postKubernetesAddonsMutex.RUnlock()
+	return len(fake.postKubernetesAddonsArgsForCall)
+}
+
+func (fake *FakeClient) PostKubernetesAddonsCalls(stub func(context.Context, int, generated.PostKubernetesAddonsJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.postKubernetesAddonsMutex.Lock()
+	defer fake.postKubernetesAddonsMutex.Unlock()
+	fake.PostKubernetesAddonsStub = stub
+}
+
+func (fake *FakeClient) PostKubernetesAddonsArgsForCall(i int) (context.Context, int, generated.PostKubernetesAddonsJSONRequestBody, []generated.RequestEditorFn) {
+	fake.postKubernetesAddonsMutex.RLock()
+	defer fake.postKubernetesAddonsMutex.RUnlock()
+	argsForCall := fake.postKubernetesAddonsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) PostKubernetesAddonsReturns(result1 *http.Response, result2 error) {
+	fake.postKubernetesAddonsMutex.Lock()
+	defer fake.postKubernetesAddonsMutex.Unlock()
+	fake.PostKubernetesAddonsStub = nil
+	fake.postKubernetesAddonsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PostKubernetesAddonsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.postKubernetesAddonsMutex.Lock()
+	defer fake.postKubernetesAddonsMutex.Unlock()
+	fake.PostKubernetesAddonsStub = nil
+	if fake.postKubernetesAddonsReturnsOnCall == nil {
+		fake.postKubernetesAddonsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.postKubernetesAddonsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PostKubernetesAddonsUpdate(arg1 context.Context, arg2 int, arg3 int, arg4 generated.PostKubernetesAddonsUpdateJSONRequestBody, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.postKubernetesAddonsUpdateMutex.Lock()
+	ret, specificReturn := fake.postKubernetesAddonsUpdateReturnsOnCall[len(fake.postKubernetesAddonsUpdateArgsForCall)]
+	fake.postKubernetesAddonsUpdateArgsForCall = append(fake.postKubernetesAddonsUpdateArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 generated.PostKubernetesAddonsUpdateJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.PostKubernetesAddonsUpdateStub
+	fakeReturns := fake.postKubernetesAddonsUpdateReturns
+	fake.recordInvocation("PostKubernetesAddonsUpdate", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.postKubernetesAddonsUpdateMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PostKubernetesAddonsUpdateCallCount() int {
+	fake.postKubernetesAddonsUpdateMutex.RLock()
+	defer fake.postKubernetesAddonsUpdateMutex.RUnlock()
+	return len(fake.postKubernetesAddonsUpdateArgsForCall)
+}
+
+func (fake *FakeClient) PostKubernetesAddonsUpdateCalls(stub func(context.Context, int, int, generated.PostKubernetesAddonsUpdateJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.postKubernetesAddonsUpdateMutex.Lock()
+	defer fake.postKubernetesAddonsUpdateMutex.Unlock()
+	fake.PostKubernetesAddonsUpdateStub = stub
+}
+
+func (fake *FakeClient) PostKubernetesAddonsUpdateArgsForCall(i int) (context.Context, int, int, generated.PostKubernetesAddonsUpdateJSONRequestBody, []generated.RequestEditorFn) {
+	fake.postKubernetesAddonsUpdateMutex.RLock()
+	defer fake.postKubernetesAddonsUpdateMutex.RUnlock()
+	argsForCall := fake.postKubernetesAddonsUpdateArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) PostKubernetesAddonsUpdateReturns(result1 *http.Response, result2 error) {
+	fake.postKubernetesAddonsUpdateMutex.Lock()
+	defer fake.postKubernetesAddonsUpdateMutex.Unlock()
+	fake.PostKubernetesAddonsUpdateStub = nil
+	fake.postKubernetesAddonsUpdateReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PostKubernetesAddonsUpdateReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.postKubernetesAddonsUpdateMutex.Lock()
+	defer fake.postKubernetesAddonsUpdateMutex.Unlock()
+	fake.PostKubernetesAddonsUpdateStub = nil
+	if fake.postKubernetesAddonsUpdateReturnsOnCall == nil {
+		fake.postKubernetesAddonsUpdateReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.postKubernetesAddonsUpdateReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PostKubernetesAddonsUpdateWithBody(arg1 context.Context, arg2 int, arg3 int, arg4 string, arg5 io.Reader, arg6 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.postKubernetesAddonsUpdateWithBodyMutex.Lock()
+	ret, specificReturn := fake.postKubernetesAddonsUpdateWithBodyReturnsOnCall[len(fake.postKubernetesAddonsUpdateWithBodyArgsForCall)]
+	fake.postKubernetesAddonsUpdateWithBodyArgsForCall = append(fake.postKubernetesAddonsUpdateWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6})
+	stub := fake.PostKubernetesAddonsUpdateWithBodyStub
+	fakeReturns := fake.postKubernetesAddonsUpdateWithBodyReturns
+	fake.recordInvocation("PostKubernetesAddonsUpdateWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6})
+	fake.postKubernetesAddonsUpdateWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PostKubernetesAddonsUpdateWithBodyCallCount() int {
+	fake.postKubernetesAddonsUpdateWithBodyMutex.RLock()
+	defer fake.postKubernetesAddonsUpdateWithBodyMutex.RUnlock()
+	return len(fake.postKubernetesAddonsUpdateWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) PostKubernetesAddonsUpdateWithBodyCalls(stub func(context.Context, int, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.postKubernetesAddonsUpdateWithBodyMutex.Lock()
+	defer fake.postKubernetesAddonsUpdateWithBodyMutex.Unlock()
+	fake.PostKubernetesAddonsUpdateWithBodyStub = stub
+}
+
+func (fake *FakeClient) PostKubernetesAddonsUpdateWithBodyArgsForCall(i int) (context.Context, int, int, string, io.Reader, []generated.RequestEditorFn) {
+	fake.postKubernetesAddonsUpdateWithBodyMutex.RLock()
+	defer fake.postKubernetesAddonsUpdateWithBodyMutex.RUnlock()
+	argsForCall := fake.postKubernetesAddonsUpdateWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6
+}
+
+func (fake *FakeClient) PostKubernetesAddonsUpdateWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.postKubernetesAddonsUpdateWithBodyMutex.Lock()
+	defer fake.postKubernetesAddonsUpdateWithBodyMutex.Unlock()
+	fake.PostKubernetesAddonsUpdateWithBodyStub = nil
+	fake.postKubernetesAddonsUpdateWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PostKubernetesAddonsUpdateWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.postKubernetesAddonsUpdateWithBodyMutex.Lock()
+	defer fake.postKubernetesAddonsUpdateWithBodyMutex.Unlock()
+	fake.PostKubernetesAddonsUpdateWithBodyStub = nil
+	if fake.postKubernetesAddonsUpdateWithBodyReturnsOnCall == nil {
+		fake.postKubernetesAddonsUpdateWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.postKubernetesAddonsUpdateWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PostKubernetesAddonsWithBody(arg1 context.Context, arg2 int, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.postKubernetesAddonsWithBodyMutex.Lock()
+	ret, specificReturn := fake.postKubernetesAddonsWithBodyReturnsOnCall[len(fake.postKubernetesAddonsWithBodyArgsForCall)]
+	fake.postKubernetesAddonsWithBodyArgsForCall = append(fake.postKubernetesAddonsWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.PostKubernetesAddonsWithBodyStub
+	fakeReturns := fake.postKubernetesAddonsWithBodyReturns
+	fake.recordInvocation("PostKubernetesAddonsWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.postKubernetesAddonsWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PostKubernetesAddonsWithBodyCallCount() int {
+	fake.postKubernetesAddonsWithBodyMutex.RLock()
+	defer fake.postKubernetesAddonsWithBodyMutex.RUnlock()
+	return len(fake.postKubernetesAddonsWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) PostKubernetesAddonsWithBodyCalls(stub func(context.Context, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.postKubernetesAddonsWithBodyMutex.Lock()
+	defer fake.postKubernetesAddonsWithBodyMutex.Unlock()
+	fake.PostKubernetesAddonsWithBodyStub = stub
+}
+
+func (fake *FakeClient) PostKubernetesAddonsWithBodyArgsForCall(i int) (context.Context, int, string, io.Reader, []generated.RequestEditorFn) {
+	fake.postKubernetesAddonsWithBodyMutex.RLock()
+	defer fake.postKubernetesAddonsWithBodyMutex.RUnlock()
+	argsForCall := fake.postKubernetesAddonsWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) PostKubernetesAddonsWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.postKubernetesAddonsWithBodyMutex.Lock()
+	defer fake.postKubernetesAddonsWithBodyMutex.Unlock()
+	fake.PostKubernetesAddonsWithBodyStub = nil
+	fake.postKubernetesAddonsWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PostKubernetesAddonsWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.postKubernetesAddonsWithBodyMutex.Lock()
+	defer fake.postKubernetesAddonsWithBodyMutex.Unlock()
+	fake.PostKubernetesAddonsWithBodyStub = nil
+	if fake.postKubernetesAddonsWithBodyReturnsOnCall == nil {
+		fake.postKubernetesAddonsWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.postKubernetesAddonsWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) RebootServer(arg1 context.Context, arg2 generated.ServerId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.rebootServerMutex.Lock()
 	ret, specificReturn := fake.rebootServerReturnsOnCall[len(fake.rebootServerArgsForCall)]
@@ -9713,6 +12043,143 @@ func (fake *FakeClient) RebootServerHardReturnsOnCall(i int, result1 *http.Respo
 		})
 	}
 	fake.rebootServerHardReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) ReduceCountOfNodesInGroup(arg1 context.Context, arg2 int, arg3 int, arg4 generated.ReduceCountOfNodesInGroupJSONRequestBody, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.reduceCountOfNodesInGroupMutex.Lock()
+	ret, specificReturn := fake.reduceCountOfNodesInGroupReturnsOnCall[len(fake.reduceCountOfNodesInGroupArgsForCall)]
+	fake.reduceCountOfNodesInGroupArgsForCall = append(fake.reduceCountOfNodesInGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 generated.ReduceCountOfNodesInGroupJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.ReduceCountOfNodesInGroupStub
+	fakeReturns := fake.reduceCountOfNodesInGroupReturns
+	fake.recordInvocation("ReduceCountOfNodesInGroup", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.reduceCountOfNodesInGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) ReduceCountOfNodesInGroupCallCount() int {
+	fake.reduceCountOfNodesInGroupMutex.RLock()
+	defer fake.reduceCountOfNodesInGroupMutex.RUnlock()
+	return len(fake.reduceCountOfNodesInGroupArgsForCall)
+}
+
+func (fake *FakeClient) ReduceCountOfNodesInGroupCalls(stub func(context.Context, int, int, generated.ReduceCountOfNodesInGroupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.reduceCountOfNodesInGroupMutex.Lock()
+	defer fake.reduceCountOfNodesInGroupMutex.Unlock()
+	fake.ReduceCountOfNodesInGroupStub = stub
+}
+
+func (fake *FakeClient) ReduceCountOfNodesInGroupArgsForCall(i int) (context.Context, int, int, generated.ReduceCountOfNodesInGroupJSONRequestBody, []generated.RequestEditorFn) {
+	fake.reduceCountOfNodesInGroupMutex.RLock()
+	defer fake.reduceCountOfNodesInGroupMutex.RUnlock()
+	argsForCall := fake.reduceCountOfNodesInGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) ReduceCountOfNodesInGroupReturns(result1 *http.Response, result2 error) {
+	fake.reduceCountOfNodesInGroupMutex.Lock()
+	defer fake.reduceCountOfNodesInGroupMutex.Unlock()
+	fake.ReduceCountOfNodesInGroupStub = nil
+	fake.reduceCountOfNodesInGroupReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) ReduceCountOfNodesInGroupReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.reduceCountOfNodesInGroupMutex.Lock()
+	defer fake.reduceCountOfNodesInGroupMutex.Unlock()
+	fake.ReduceCountOfNodesInGroupStub = nil
+	if fake.reduceCountOfNodesInGroupReturnsOnCall == nil {
+		fake.reduceCountOfNodesInGroupReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.reduceCountOfNodesInGroupReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) ReduceCountOfNodesInGroupWithBody(arg1 context.Context, arg2 int, arg3 int, arg4 string, arg5 io.Reader, arg6 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.reduceCountOfNodesInGroupWithBodyMutex.Lock()
+	ret, specificReturn := fake.reduceCountOfNodesInGroupWithBodyReturnsOnCall[len(fake.reduceCountOfNodesInGroupWithBodyArgsForCall)]
+	fake.reduceCountOfNodesInGroupWithBodyArgsForCall = append(fake.reduceCountOfNodesInGroupWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6})
+	stub := fake.ReduceCountOfNodesInGroupWithBodyStub
+	fakeReturns := fake.reduceCountOfNodesInGroupWithBodyReturns
+	fake.recordInvocation("ReduceCountOfNodesInGroupWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6})
+	fake.reduceCountOfNodesInGroupWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) ReduceCountOfNodesInGroupWithBodyCallCount() int {
+	fake.reduceCountOfNodesInGroupWithBodyMutex.RLock()
+	defer fake.reduceCountOfNodesInGroupWithBodyMutex.RUnlock()
+	return len(fake.reduceCountOfNodesInGroupWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) ReduceCountOfNodesInGroupWithBodyCalls(stub func(context.Context, int, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.reduceCountOfNodesInGroupWithBodyMutex.Lock()
+	defer fake.reduceCountOfNodesInGroupWithBodyMutex.Unlock()
+	fake.ReduceCountOfNodesInGroupWithBodyStub = stub
+}
+
+func (fake *FakeClient) ReduceCountOfNodesInGroupWithBodyArgsForCall(i int) (context.Context, int, int, string, io.Reader, []generated.RequestEditorFn) {
+	fake.reduceCountOfNodesInGroupWithBodyMutex.RLock()
+	defer fake.reduceCountOfNodesInGroupWithBodyMutex.RUnlock()
+	argsForCall := fake.reduceCountOfNodesInGroupWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6
+}
+
+func (fake *FakeClient) ReduceCountOfNodesInGroupWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.reduceCountOfNodesInGroupWithBodyMutex.Lock()
+	defer fake.reduceCountOfNodesInGroupWithBodyMutex.Unlock()
+	fake.ReduceCountOfNodesInGroupWithBodyStub = nil
+	fake.reduceCountOfNodesInGroupWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) ReduceCountOfNodesInGroupWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.reduceCountOfNodesInGroupWithBodyMutex.Lock()
+	defer fake.reduceCountOfNodesInGroupWithBodyMutex.Unlock()
+	fake.ReduceCountOfNodesInGroupWithBodyStub = nil
+	if fake.reduceCountOfNodesInGroupWithBodyReturnsOnCall == nil {
+		fake.reduceCountOfNodesInGroupWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.reduceCountOfNodesInGroupWithBodyReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -10245,6 +12712,276 @@ func (fake *FakeClient) UnbindFloatingIpReturnsOnCall(i int, result1 *http.Respo
 		})
 	}
 	fake.unbindFloatingIpReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateCluster(arg1 context.Context, arg2 int, arg3 generated.UpdateClusterJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateClusterMutex.Lock()
+	ret, specificReturn := fake.updateClusterReturnsOnCall[len(fake.updateClusterArgsForCall)]
+	fake.updateClusterArgsForCall = append(fake.updateClusterArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 generated.UpdateClusterJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.UpdateClusterStub
+	fakeReturns := fake.updateClusterReturns
+	fake.recordInvocation("UpdateCluster", []interface{}{arg1, arg2, arg3, arg4})
+	fake.updateClusterMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateClusterCallCount() int {
+	fake.updateClusterMutex.RLock()
+	defer fake.updateClusterMutex.RUnlock()
+	return len(fake.updateClusterArgsForCall)
+}
+
+func (fake *FakeClient) UpdateClusterCalls(stub func(context.Context, int, generated.UpdateClusterJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateClusterMutex.Lock()
+	defer fake.updateClusterMutex.Unlock()
+	fake.UpdateClusterStub = stub
+}
+
+func (fake *FakeClient) UpdateClusterArgsForCall(i int) (context.Context, int, generated.UpdateClusterJSONRequestBody, []generated.RequestEditorFn) {
+	fake.updateClusterMutex.RLock()
+	defer fake.updateClusterMutex.RUnlock()
+	argsForCall := fake.updateClusterArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) UpdateClusterReturns(result1 *http.Response, result2 error) {
+	fake.updateClusterMutex.Lock()
+	defer fake.updateClusterMutex.Unlock()
+	fake.UpdateClusterStub = nil
+	fake.updateClusterReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateClusterReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateClusterMutex.Lock()
+	defer fake.updateClusterMutex.Unlock()
+	fake.UpdateClusterStub = nil
+	if fake.updateClusterReturnsOnCall == nil {
+		fake.updateClusterReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateClusterReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateClusterVersion(arg1 context.Context, arg2 int, arg3 generated.UpdateClusterVersionJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateClusterVersionMutex.Lock()
+	ret, specificReturn := fake.updateClusterVersionReturnsOnCall[len(fake.updateClusterVersionArgsForCall)]
+	fake.updateClusterVersionArgsForCall = append(fake.updateClusterVersionArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 generated.UpdateClusterVersionJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.UpdateClusterVersionStub
+	fakeReturns := fake.updateClusterVersionReturns
+	fake.recordInvocation("UpdateClusterVersion", []interface{}{arg1, arg2, arg3, arg4})
+	fake.updateClusterVersionMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateClusterVersionCallCount() int {
+	fake.updateClusterVersionMutex.RLock()
+	defer fake.updateClusterVersionMutex.RUnlock()
+	return len(fake.updateClusterVersionArgsForCall)
+}
+
+func (fake *FakeClient) UpdateClusterVersionCalls(stub func(context.Context, int, generated.UpdateClusterVersionJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateClusterVersionMutex.Lock()
+	defer fake.updateClusterVersionMutex.Unlock()
+	fake.UpdateClusterVersionStub = stub
+}
+
+func (fake *FakeClient) UpdateClusterVersionArgsForCall(i int) (context.Context, int, generated.UpdateClusterVersionJSONRequestBody, []generated.RequestEditorFn) {
+	fake.updateClusterVersionMutex.RLock()
+	defer fake.updateClusterVersionMutex.RUnlock()
+	argsForCall := fake.updateClusterVersionArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) UpdateClusterVersionReturns(result1 *http.Response, result2 error) {
+	fake.updateClusterVersionMutex.Lock()
+	defer fake.updateClusterVersionMutex.Unlock()
+	fake.UpdateClusterVersionStub = nil
+	fake.updateClusterVersionReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateClusterVersionReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateClusterVersionMutex.Lock()
+	defer fake.updateClusterVersionMutex.Unlock()
+	fake.UpdateClusterVersionStub = nil
+	if fake.updateClusterVersionReturnsOnCall == nil {
+		fake.updateClusterVersionReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateClusterVersionReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateClusterVersionWithBody(arg1 context.Context, arg2 int, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateClusterVersionWithBodyMutex.Lock()
+	ret, specificReturn := fake.updateClusterVersionWithBodyReturnsOnCall[len(fake.updateClusterVersionWithBodyArgsForCall)]
+	fake.updateClusterVersionWithBodyArgsForCall = append(fake.updateClusterVersionWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.UpdateClusterVersionWithBodyStub
+	fakeReturns := fake.updateClusterVersionWithBodyReturns
+	fake.recordInvocation("UpdateClusterVersionWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.updateClusterVersionWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateClusterVersionWithBodyCallCount() int {
+	fake.updateClusterVersionWithBodyMutex.RLock()
+	defer fake.updateClusterVersionWithBodyMutex.RUnlock()
+	return len(fake.updateClusterVersionWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) UpdateClusterVersionWithBodyCalls(stub func(context.Context, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateClusterVersionWithBodyMutex.Lock()
+	defer fake.updateClusterVersionWithBodyMutex.Unlock()
+	fake.UpdateClusterVersionWithBodyStub = stub
+}
+
+func (fake *FakeClient) UpdateClusterVersionWithBodyArgsForCall(i int) (context.Context, int, string, io.Reader, []generated.RequestEditorFn) {
+	fake.updateClusterVersionWithBodyMutex.RLock()
+	defer fake.updateClusterVersionWithBodyMutex.RUnlock()
+	argsForCall := fake.updateClusterVersionWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) UpdateClusterVersionWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.updateClusterVersionWithBodyMutex.Lock()
+	defer fake.updateClusterVersionWithBodyMutex.Unlock()
+	fake.UpdateClusterVersionWithBodyStub = nil
+	fake.updateClusterVersionWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateClusterVersionWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateClusterVersionWithBodyMutex.Lock()
+	defer fake.updateClusterVersionWithBodyMutex.Unlock()
+	fake.UpdateClusterVersionWithBodyStub = nil
+	if fake.updateClusterVersionWithBodyReturnsOnCall == nil {
+		fake.updateClusterVersionWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateClusterVersionWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateClusterWithBody(arg1 context.Context, arg2 int, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateClusterWithBodyMutex.Lock()
+	ret, specificReturn := fake.updateClusterWithBodyReturnsOnCall[len(fake.updateClusterWithBodyArgsForCall)]
+	fake.updateClusterWithBodyArgsForCall = append(fake.updateClusterWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.UpdateClusterWithBodyStub
+	fakeReturns := fake.updateClusterWithBodyReturns
+	fake.recordInvocation("UpdateClusterWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.updateClusterWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateClusterWithBodyCallCount() int {
+	fake.updateClusterWithBodyMutex.RLock()
+	defer fake.updateClusterWithBodyMutex.RUnlock()
+	return len(fake.updateClusterWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) UpdateClusterWithBodyCalls(stub func(context.Context, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateClusterWithBodyMutex.Lock()
+	defer fake.updateClusterWithBodyMutex.Unlock()
+	fake.UpdateClusterWithBodyStub = stub
+}
+
+func (fake *FakeClient) UpdateClusterWithBodyArgsForCall(i int) (context.Context, int, string, io.Reader, []generated.RequestEditorFn) {
+	fake.updateClusterWithBodyMutex.RLock()
+	defer fake.updateClusterWithBodyMutex.RUnlock()
+	argsForCall := fake.updateClusterWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) UpdateClusterWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.updateClusterWithBodyMutex.Lock()
+	defer fake.updateClusterWithBodyMutex.Unlock()
+	fake.UpdateClusterWithBodyStub = nil
+	fake.updateClusterWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateClusterWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateClusterWithBodyMutex.Lock()
+	defer fake.updateClusterWithBodyMutex.Unlock()
+	fake.UpdateClusterWithBodyStub = nil
+	if fake.updateClusterWithBodyReturnsOnCall == nil {
+		fake.updateClusterWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateClusterWithBodyReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -12197,6 +14934,14 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.bindFloatingIpWithBodyMutex.RUnlock()
 	fake.cloneServerMutex.RLock()
 	defer fake.cloneServerMutex.RUnlock()
+	fake.createClusterMutex.RLock()
+	defer fake.createClusterMutex.RUnlock()
+	fake.createClusterNodeGroupMutex.RLock()
+	defer fake.createClusterNodeGroupMutex.RUnlock()
+	fake.createClusterNodeGroupWithBodyMutex.RLock()
+	defer fake.createClusterNodeGroupWithBodyMutex.RUnlock()
+	fake.createClusterWithBodyMutex.RLock()
+	defer fake.createClusterWithBodyMutex.RUnlock()
 	fake.createFloatingIpMutex.RLock()
 	defer fake.createFloatingIpMutex.RUnlock()
 	fake.createFloatingIpWithBodyMutex.RLock()
@@ -12233,12 +14978,20 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.createVPCMutex.RUnlock()
 	fake.createVPCWithBodyMutex.RLock()
 	defer fake.createVPCWithBodyMutex.RUnlock()
+	fake.deleteClusterMutex.RLock()
+	defer fake.deleteClusterMutex.RUnlock()
+	fake.deleteClusterNodeMutex.RLock()
+	defer fake.deleteClusterNodeMutex.RUnlock()
+	fake.deleteClusterNodeGroupMutex.RLock()
+	defer fake.deleteClusterNodeGroupMutex.RUnlock()
 	fake.deleteFloatingIPMutex.RLock()
 	defer fake.deleteFloatingIPMutex.RUnlock()
 	fake.deleteKeyMutex.RLock()
 	defer fake.deleteKeyMutex.RUnlock()
 	fake.deleteKeyFromServerMutex.RLock()
 	defer fake.deleteKeyFromServerMutex.RUnlock()
+	fake.deleteKubernetesAddonsMutex.RLock()
+	defer fake.deleteKubernetesAddonsMutex.RUnlock()
 	fake.deleteProjectMutex.RLock()
 	defer fake.deleteProjectMutex.RUnlock()
 	fake.deleteRegistryMutex.RLock()
@@ -12275,16 +15028,42 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.getAccountStoragesMutex.RUnlock()
 	fake.getAllProjectResourcesMutex.RLock()
 	defer fake.getAllProjectResourcesMutex.RUnlock()
+	fake.getClusterMutex.RLock()
+	defer fake.getClusterMutex.RUnlock()
+	fake.getClusterKubeconfigMutex.RLock()
+	defer fake.getClusterKubeconfigMutex.RUnlock()
+	fake.getClusterNodeGroupMutex.RLock()
+	defer fake.getClusterNodeGroupMutex.RUnlock()
+	fake.getClusterNodeGroupsMutex.RLock()
+	defer fake.getClusterNodeGroupsMutex.RUnlock()
+	fake.getClusterNodesMutex.RLock()
+	defer fake.getClusterNodesMutex.RUnlock()
+	fake.getClusterNodesFromGroupMutex.RLock()
+	defer fake.getClusterNodesFromGroupMutex.RUnlock()
+	fake.getClusterResourcesMutex.RLock()
+	defer fake.getClusterResourcesMutex.RUnlock()
+	fake.getClustersMutex.RLock()
+	defer fake.getClustersMutex.RUnlock()
 	fake.getConfiguratorsMutex.RLock()
 	defer fake.getConfiguratorsMutex.RUnlock()
 	fake.getFloatingIpMutex.RLock()
 	defer fake.getFloatingIpMutex.RUnlock()
 	fake.getFloatingIpsMutex.RLock()
 	defer fake.getFloatingIpsMutex.RUnlock()
+	fake.getK8SNetworkDriversMutex.RLock()
+	defer fake.getK8SNetworkDriversMutex.RUnlock()
+	fake.getK8SVersionsMutex.RLock()
+	defer fake.getK8SVersionsMutex.RUnlock()
 	fake.getKeyMutex.RLock()
 	defer fake.getKeyMutex.RUnlock()
 	fake.getKeysMutex.RLock()
 	defer fake.getKeysMutex.RUnlock()
+	fake.getKubernetesAddonsMutex.RLock()
+	defer fake.getKubernetesAddonsMutex.RUnlock()
+	fake.getKubernetesAddonsConfigMutex.RLock()
+	defer fake.getKubernetesAddonsConfigMutex.RUnlock()
+	fake.getKubernetesPresetsMutex.RLock()
+	defer fake.getKubernetesPresetsMutex.RUnlock()
 	fake.getOsListMutex.RLock()
 	defer fake.getOsListMutex.RUnlock()
 	fake.getProjectMutex.RLock()
@@ -12361,6 +15140,10 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.hardShutdownServerMutex.RUnlock()
 	fake.imageUnmountAndServerReloadMutex.RLock()
 	defer fake.imageUnmountAndServerReloadMutex.RUnlock()
+	fake.increaseCountOfNodesInGroupMutex.RLock()
+	defer fake.increaseCountOfNodesInGroupMutex.RUnlock()
+	fake.increaseCountOfNodesInGroupWithBodyMutex.RLock()
+	defer fake.increaseCountOfNodesInGroupWithBodyMutex.RUnlock()
 	fake.performActionOnBackupMutex.RLock()
 	defer fake.performActionOnBackupMutex.RUnlock()
 	fake.performActionOnBackupWithBodyMutex.RLock()
@@ -12369,10 +15152,22 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.performActionOnServerMutex.RUnlock()
 	fake.performActionOnServerWithBodyMutex.RLock()
 	defer fake.performActionOnServerWithBodyMutex.RUnlock()
+	fake.postKubernetesAddonsMutex.RLock()
+	defer fake.postKubernetesAddonsMutex.RUnlock()
+	fake.postKubernetesAddonsUpdateMutex.RLock()
+	defer fake.postKubernetesAddonsUpdateMutex.RUnlock()
+	fake.postKubernetesAddonsUpdateWithBodyMutex.RLock()
+	defer fake.postKubernetesAddonsUpdateWithBodyMutex.RUnlock()
+	fake.postKubernetesAddonsWithBodyMutex.RLock()
+	defer fake.postKubernetesAddonsWithBodyMutex.RUnlock()
 	fake.rebootServerMutex.RLock()
 	defer fake.rebootServerMutex.RUnlock()
 	fake.rebootServerHardMutex.RLock()
 	defer fake.rebootServerHardMutex.RUnlock()
+	fake.reduceCountOfNodesInGroupMutex.RLock()
+	defer fake.reduceCountOfNodesInGroupMutex.RUnlock()
+	fake.reduceCountOfNodesInGroupWithBodyMutex.RLock()
+	defer fake.reduceCountOfNodesInGroupWithBodyMutex.RUnlock()
 	fake.resetServerPasswordMutex.RLock()
 	defer fake.resetServerPasswordMutex.RUnlock()
 	fake.shutdownServerMutex.RLock()
@@ -12389,6 +15184,14 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.transferStorageWithBodyMutex.RUnlock()
 	fake.unbindFloatingIpMutex.RLock()
 	defer fake.unbindFloatingIpMutex.RUnlock()
+	fake.updateClusterMutex.RLock()
+	defer fake.updateClusterMutex.RUnlock()
+	fake.updateClusterVersionMutex.RLock()
+	defer fake.updateClusterVersionMutex.RUnlock()
+	fake.updateClusterVersionWithBodyMutex.RLock()
+	defer fake.updateClusterVersionWithBodyMutex.RUnlock()
+	fake.updateClusterWithBodyMutex.RLock()
+	defer fake.updateClusterWithBodyMutex.RUnlock()
 	fake.updateFloatingIPMutex.RLock()
 	defer fake.updateFloatingIPMutex.RUnlock()
 	fake.updateFloatingIPWithBodyMutex.RLock()

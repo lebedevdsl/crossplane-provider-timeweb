@@ -201,6 +201,30 @@ TWE_SERVER_PRESET=$(curl -fsS \
   ')
 echo "[e2e]   → $TWE_SERVER_PRESET"
 
+# --- 2b. Discover managed-Kubernetes presets + a k8s version (feature 004) ---
+# /api/v1/presets/k8s is a discriminated list (type=master|worker); the slug is
+# `description_short` (no location — AZ is set at cluster level). Pick the
+# cheapest of each role; pick the newest catalog k8s version.
+echo "[e2e] discovering cheapest k8s master/worker presets + a k8s version"
+K8S_PRESETS=$(curl -fsS -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" "${TW_API}/api/v1/presets/k8s")
+slugByRole() {
+  # K8s presets carry no location, and Timeweb ships several identically-named
+  # tiers → the bare slug is ambiguous; emit the `<slug>-<id>` disambiguator
+  # the resolver accepts (FR-006). EXCLUDE "promo" tiers: Timeweb caps promo
+  # clusters at ONE per account, so they 409 ("Promo cluster already exists")
+  # and aren't repeatable for e2e — pick the cheapest non-promo instead.
+  echo "$K8S_PRESETS" | jq -er --arg role "$1" '
+    .k8s_presets
+    | map(select(.type == $role and (.description_short | ascii_downcase | test("promo") | not)))
+    | sort_by(.price) | .[0]
+    | ((.description_short | ascii_downcase | gsub("[^a-z0-9-]+"; "-") | gsub("^-+|-+$"; "")) + "-" + (.id|tostring))'
+}
+TWE_K8S_MASTER_PRESET=$(slugByRole master)
+TWE_K8S_WORKER_PRESET=$(slugByRole worker)
+TWE_K8S_VERSION=$(curl -fsS -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "${TW_API}/api/v1/k8s/k8s-versions" | jq -er '.k8s_versions | sort | last')
+echo "[e2e]   → master=$TWE_K8S_MASTER_PRESET worker=$TWE_K8S_WORKER_PRESET version=$TWE_K8S_VERSION"
+
 # --- 3. Generate unique names -----------------------------------------------
 
 TS="$(date +%s)"
@@ -209,8 +233,10 @@ TWE_S3_NAME="e2e-s3-$TS"
 TWE_CR_NAME="e2e-cr-$TS"
 TWE_SERVER_NAME="e2e-srv-$TS"
 TWE_NETWORK_NAME="e2e-net-$TS"
+TWE_K8S_CLUSTER_NAME="e2e-k8s-$TS"
 
 export TWE_PROJECT_ID TWE_SSH_NAME TWE_S3_NAME TWE_CR_NAME TWE_SERVER_NAME TWE_SERVER_PRESET TWE_NETWORK_NAME
+export TWE_K8S_MASTER_PRESET TWE_K8S_WORKER_PRESET TWE_K8S_VERSION TWE_K8S_CLUSTER_NAME
 
 echo "[e2e] generated names:"
 echo "[e2e]   SSHKey:        $TWE_SSH_NAME"
@@ -218,6 +244,7 @@ echo "[e2e]   S3Bucket:      $TWE_S3_NAME"
 echo "[e2e]   ContainerReg:  $TWE_CR_NAME"
 echo "[e2e]   Server:        $TWE_SERVER_NAME"
 echo "[e2e]   Network:       $TWE_NETWORK_NAME"
+echo "[e2e]   K8sCluster:    $TWE_K8S_CLUSTER_NAME"
 
 # --- 3b. Pre-create an out-of-band VPC for the networkID import test --------
 #
@@ -306,7 +333,7 @@ cp -R test/e2e/kuttl/. "$TMP_BUNDLE/"
 # Restrict envsubst to the TWE_* allow-list so unrelated `$` literals
 # elsewhere in YAML (e.g. JSONPath expressions in assertions) are not
 # clobbered.
-TWE_VARS='${TWE_PROJECT_ID} ${TWE_SSH_NAME} ${TWE_S3_NAME} ${TWE_CR_NAME} ${TWE_SERVER_NAME} ${TWE_SERVER_PRESET} ${TWE_NETWORK_NAME} ${TWE_IMPORT_VPC_ID}'
+TWE_VARS='${TWE_PROJECT_ID} ${TWE_SSH_NAME} ${TWE_S3_NAME} ${TWE_CR_NAME} ${TWE_SERVER_NAME} ${TWE_SERVER_PRESET} ${TWE_NETWORK_NAME} ${TWE_IMPORT_VPC_ID} ${TWE_K8S_MASTER_PRESET} ${TWE_K8S_WORKER_PRESET} ${TWE_K8S_VERSION} ${TWE_K8S_CLUSTER_NAME} ${TWE_K8S_ADDON_TYPE} ${TWE_K8S_ADDON_VERSION}'
 
 find "$TMP_BUNDLE" -type f \( -name '*.yaml' -o -name '*.yml' \) -print0 \
   | while IFS= read -r -d '' f; do
@@ -360,6 +387,12 @@ echo "[e2e] context safety checks passed: $E2E_KUBECONTEXT → $api_server"
 # --- 7. Run kuttl -----------------------------------------------------------
 
 KUTTL_ARGS=()
+# Optional scoping: KUTTL_TEST="<name>" restricts the run to matching bundle(s)
+# (kuttl --test is a substring filter; repeat for multiple). Handy for iterating
+# on one bundle (e.g. KUTTL_TEST=12-k8s-cluster-lifecycle) without the full suite.
+if [ -n "${KUTTL_TEST:-}" ]; then
+  for t in $KUTTL_TEST; do KUTTL_ARGS+=(--test "$t"); done
+fi
 if [ "$TWE_MULTI_PC_ENABLED" = "0" ]; then
   # kuttl's --skip-delete + --test (regex filter) wouldn't suppress the
   # bundle from being LOADED; the simplest reliable skip is to physically
@@ -370,6 +403,12 @@ if [ "$TWE_IMPORT_VPC_ENABLED" = "0" ]; then
   # No pre-created VPC → the networkID-import bundle can't run. Remove it
   # from the tmpdir copy so kuttl doesn't load it.
   rm -rf "$TMP_BUNDLE/tests/10b-server-with-network-id"
+fi
+if [ -z "${TWE_K8S_ADDON_TYPE:-}" ] || [ -z "${TWE_K8S_ADDON_VERSION:-}" ]; then
+  # The addon catalog is per-cluster, so type/version are operator-supplied
+  # (TWE_K8S_ADDON_TYPE/_VERSION). Unset → drop the addon bundle (15).
+  echo "[e2e] TWE_K8S_ADDON_TYPE/_VERSION unset → k8s addon bundle (15) SKIPPED"
+  rm -rf "$TMP_BUNDLE/tests/15-k8s-addon"
 fi
 
 echo "[e2e] running kuttl test bundle from $TMP_BUNDLE"

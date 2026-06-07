@@ -39,6 +39,7 @@ import (
 	"github.com/lebedevdsl/crossplane-provider-timeweb/apis"
 	computectrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/compute"
 	containerregistryctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/containerregistry"
+	kubernetesctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/kubernetes"
 	networkctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/network"
 	projectctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/project"
 	providerconfigctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/providerconfig"
@@ -147,6 +148,18 @@ func main() {
 	}
 	if err := networkctrl.SetupFloatingIP(mgr, log, pollInterval); err != nil {
 		log.Info("unable to register FloatingIP controller", "error", err.Error())
+		os.Exit(1)
+	}
+	if err := kubernetesctrl.SetupCluster(mgr, log, pollInterval); err != nil {
+		log.Info("unable to register KubernetesCluster controller", "error", err.Error())
+		os.Exit(1)
+	}
+	if err := kubernetesctrl.SetupNodepool(mgr, log, pollInterval); err != nil {
+		log.Info("unable to register KubernetesClusterNodepool controller", "error", err.Error())
+		os.Exit(1)
+	}
+	if err := kubernetesctrl.SetupAddon(mgr, log, pollInterval); err != nil {
+		log.Info("unable to register KubernetesClusterAddon controller", "error", err.Error())
 		os.Exit(1)
 	}
 
