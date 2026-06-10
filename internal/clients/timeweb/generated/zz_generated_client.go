@@ -688,9 +688,11 @@ type ClusterIn struct {
 	Description *string `json:"description,omitempty"`
 
 	// IsIngress Логическое значение, которое показывает, использовать ли Ingress в кластере
+	// Deprecated:
 	IsIngress *bool `json:"is_ingress,omitempty"`
 
 	// IsK8sDashboard Логическое значение, которое показывает, использовать ли Kubernetes Dashboard в кластере
+	// Deprecated:
 	IsK8sDashboard *bool `json:"is_k8s_dashboard,omitempty"`
 
 	// K8sVersion Версия Kubernetes

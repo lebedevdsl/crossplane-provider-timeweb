@@ -18,6 +18,7 @@ package resolver
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"sync"
@@ -46,6 +47,10 @@ type fakeCatalog struct {
 	k8sVersions      *twgen.GetK8SVersionsResponse
 	k8sVersionsErr   error
 	k8sVersionsCalls int32
+
+	configurators      *twgen.GetConfiguratorsResponse
+	configuratorsErr   error
+	configuratorsCalls int32
 
 	// gate, if set, blocks the fetcher until closed — used to exercise
 	// singleflight coalescing.
@@ -90,6 +95,14 @@ func (f *fakeCatalog) GetK8SVersionsWithResponse(_ context.Context, _ ...twgen.R
 		<-f.gate
 	}
 	return f.k8sVersions, f.k8sVersionsErr
+}
+
+func (f *fakeCatalog) GetConfiguratorsWithResponse(_ context.Context, _ ...twgen.RequestEditorFn) (*twgen.GetConfiguratorsResponse, error) {
+	atomic.AddInt32(&f.configuratorsCalls, 1)
+	if f.gate != nil {
+		<-f.gate
+	}
+	return f.configurators, f.configuratorsErr
 }
 
 // helpers to build the typed JSON200 payloads -------------------------------
@@ -240,6 +253,67 @@ func TestResolver_K8sVersion_ExactMatch(t *testing.T) {
 	}
 	if _, err := r.Resolve(context.Background(), pc, dim, EnumInput{Value: "1.99.9"}); !errors.Is(err, ErrDimensionValueNotFound) {
 		t.Errorf("unknown version err = %v, want ErrDimensionValueNotFound", err)
+	}
+}
+
+// mkConfiguratorsResp builds a /api/v1/configurator/servers response from a
+// JSON array string (avoids hand-writing the anonymous requirements struct).
+func mkConfiguratorsResp(t *testing.T, itemsJSON string) *twgen.GetConfiguratorsResponse {
+	t.Helper()
+	resp := &twgen.GetConfiguratorsResponse{HTTPResponse: &http.Response{StatusCode: 200}}
+	body := `{"server_configurators":` + itemsJSON + `}`
+	if err := json.Unmarshal([]byte(body), &resp.JSON200); err != nil {
+		t.Fatalf("build configurators resp: %v", err)
+	}
+	return resp
+}
+
+// two ru-1/nvme configurators: id 11 (small) and id 22 (large). Both satisfy a
+// modest request; tightest-fit (lower max) must pick 11.
+const twoConfiguratorsJSON = `[
+ {"id":11,"location":"ru-1","disk_type":"nvme","is_allowed_local_network":true,"cpu_frequency":"3.3",
+  "requirements":{"cpu_min":1,"cpu_step":1,"cpu_max":8,"ram_min":1024,"ram_step":1024,"ram_max":16384,
+   "disk_min":15360,"disk_step":5120,"disk_max":204800,"network_bandwidth_min":1000,"network_bandwidth_step":100,"network_bandwidth_max":1000,
+   "gpu_min":null,"gpu_max":null,"gpu_step":null}},
+ {"id":22,"location":"ru-1","disk_type":"nvme","is_allowed_local_network":true,"cpu_frequency":"3.3",
+  "requirements":{"cpu_min":1,"cpu_step":1,"cpu_max":104,"ram_min":1024,"ram_step":1024,"ram_max":747520,
+   "disk_min":15360,"disk_step":5120,"disk_max":2048000,"network_bandwidth_min":1000,"network_bandwidth_step":100,"network_bandwidth_max":1000,
+   "gpu_min":null,"gpu_max":null,"gpu_step":null}}
+]`
+
+func TestResolver_ServerConfigurator_TightestFitAndCache(t *testing.T) {
+	fake := &fakeCatalog{configurators: mkConfiguratorsResp(t, twoConfiguratorsJSON)}
+	r := New(fake, Options{TTL: 5 * time.Minute, Now: time.Now})
+	pc := PCRef{Name: "default"}
+	dim := Dimension{Name: DimServerConfigurator, Kind: DimensionConfigurator}
+	in := ConfiguratorInput{
+		Filters: map[string]any{"location": "ru-1", "disk_type": "nvme"},
+		Sizing:  map[string]int64{"cpu": 2, "ramMB": 2048, "diskGB": 20}, // 20GB = 15+5 step-aligned
+	}
+	for i := 0; i < 3; i++ {
+		out, err := r.Resolve(context.Background(), pc, dim, in)
+		if err != nil {
+			t.Fatalf("resolve %d: %v", i, err)
+		}
+		co, ok := out.(ConfiguratorOutput)
+		if !ok || co.UpstreamID != 11 {
+			t.Fatalf("resolve %d: out=%v, want tightest-fit id 11", i, out)
+		}
+	}
+	if got := atomic.LoadInt32(&fake.configuratorsCalls); got != 1 {
+		t.Errorf("expected 1 upstream call (cached), got %d", got)
+	}
+}
+
+func TestResolver_ServerConfigurator_NoneAvailable(t *testing.T) {
+	fake := &fakeCatalog{configurators: mkConfiguratorsResp(t, twoConfiguratorsJSON)}
+	r := New(fake, Options{TTL: 5 * time.Minute, Now: time.Now})
+	_, err := r.Resolve(context.Background(), PCRef{Name: "default"},
+		Dimension{Name: DimServerConfigurator, Kind: DimensionConfigurator},
+		ConfiguratorInput{Filters: map[string]any{"location": "ru-1"}, Sizing: map[string]int64{"cpu": 999, "ramMB": 1024, "diskGB": 20}},
+	)
+	if !errors.Is(err, ErrNoConfiguratorAvailable) {
+		t.Errorf("err=%v, want ErrNoConfiguratorAvailable", err)
 	}
 }
 

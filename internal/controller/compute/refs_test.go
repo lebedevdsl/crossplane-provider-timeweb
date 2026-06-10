@@ -62,11 +62,13 @@ func TestResolveRefs(t *testing.T) {
 		cr := &computev1alpha1.Server{
 			ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "s"},
 			Spec: computev1alpha1.ServerSpec{ForProvider: computev1alpha1.ServerParameters{
-				Name: "s", PresetName: "p", Location: "msk-1",
+				Name: "s", PresetName: strPtr("p"), Location: "msk-1",
 				OS: computev1alpha1.ServerOS{Image: "ubuntu", Version: "24.04"},
 			}},
 		}
-		if err := resolveRefs(ctx, k, cr); err != nil {
+		r, err := resolveRefs(ctx, k, cr)
+		_ = r
+		if err != nil {
 			t.Fatalf("resolveRefs: %v", err)
 		}
 	})
@@ -85,11 +87,13 @@ func TestResolveRefs(t *testing.T) {
 				ProjectRef: &xpv2.Reference{Name: "p"},
 			}},
 		}
-		if err := resolveRefs(ctx, k, cr); err != nil {
+		r, err := resolveRefs(ctx, k, cr)
+		_ = r
+		if err != nil {
 			t.Fatalf("resolveRefs: %v", err)
 		}
-		if cr.Spec.ForProvider.ProjectID == nil || *cr.Spec.ForProvider.ProjectID != 2277851 {
-			t.Errorf("ProjectID = %v, want 2277851", cr.Spec.ForProvider.ProjectID)
+		if r.projectID == nil || *r.projectID != 2277851 {
+			t.Errorf("ProjectID = %v, want 2277851", r.projectID)
 		}
 	})
 
@@ -101,7 +105,7 @@ func TestResolveRefs(t *testing.T) {
 				ProjectRef: &xpv2.Reference{Name: "ghost"},
 			}},
 		}
-		err := resolveRefs(ctx, k, cr)
+		_, err := resolveRefs(ctx, k, cr)
 		if !errors.Is(err, ErrTargetNotFound) {
 			t.Errorf("err = %v, want ErrTargetNotFound", err)
 		}
@@ -119,7 +123,7 @@ func TestResolveRefs(t *testing.T) {
 				ProjectRef: &xpv2.Reference{Name: "p"},
 			}},
 		}
-		err := resolveRefs(ctx, k, cr)
+		_, err := resolveRefs(ctx, k, cr)
 		if !errors.Is(err, ErrTargetNotReady) {
 			t.Errorf("err = %v, want ErrTargetNotReady", err)
 		}
@@ -135,11 +139,13 @@ func TestResolveRefs(t *testing.T) {
 				ProjectRef: &xpv2.Reference{Name: "would-not-be-found"},
 			}},
 		}
-		if err := resolveRefs(ctx, k, cr); err != nil {
+		r, err := resolveRefs(ctx, k, cr)
+		_ = r
+		if err != nil {
 			t.Fatalf("resolveRefs: %v", err)
 		}
-		if *cr.Spec.ForProvider.ProjectID != 9999 {
-			t.Errorf("ProjectID = %v, want 9999 (ID set, ref skipped)", *cr.Spec.ForProvider.ProjectID)
+		if *r.projectID != 9999 {
+			t.Errorf("ProjectID = %v, want 9999 (ID set, ref skipped)", *r.projectID)
 		}
 	})
 
@@ -163,11 +169,13 @@ func TestResolveRefs(t *testing.T) {
 				SSHKeyRefs: []xpv2.Reference{{Name: "key-a"}, {Name: "key-b"}},
 			}},
 		}
-		if err := resolveRefs(ctx, k, cr); err != nil {
+		r, err := resolveRefs(ctx, k, cr)
+		_ = r
+		if err != nil {
 			t.Fatalf("resolveRefs: %v", err)
 		}
-		if len(cr.Spec.ForProvider.SSHKeyIDs) != 2 || cr.Spec.ForProvider.SSHKeyIDs[0] != 42 || cr.Spec.ForProvider.SSHKeyIDs[1] != 43 {
-			t.Errorf("SSHKeyIDs = %v, want [42 43]", cr.Spec.ForProvider.SSHKeyIDs)
+		if len(r.sshKeyIDs) != 2 || r.sshKeyIDs[0] != 42 || r.sshKeyIDs[1] != 43 {
+			t.Errorf("SSHKeyIDs = %v, want [42 43]", r.sshKeyIDs)
 		}
 	})
 
@@ -185,11 +193,13 @@ func TestResolveRefs(t *testing.T) {
 				NetworkRef: &xpv2.Reference{Name: "shared"},
 			}},
 		}
-		if err := resolveRefs(ctx, k, cr); err != nil {
+		r, err := resolveRefs(ctx, k, cr)
+		_ = r
+		if err != nil {
 			t.Fatalf("resolveRefs: %v", err)
 		}
-		if cr.Spec.ForProvider.NetworkID == nil || *cr.Spec.ForProvider.NetworkID != "vpc-abc" {
-			t.Errorf("NetworkID = %v, want vpc-abc", cr.Spec.ForProvider.NetworkID)
+		if r.networkID == nil || *r.networkID != "vpc-abc" {
+			t.Errorf("NetworkID = %v, want vpc-abc", r.networkID)
 		}
 	})
 
@@ -205,7 +215,7 @@ func TestResolveRefs(t *testing.T) {
 				NetworkRef: &xpv2.Reference{Name: "shared"},
 			}},
 		}
-		err := resolveRefs(ctx, k, cr)
+		_, err := resolveRefs(ctx, k, cr)
 		if !errors.Is(err, ErrTargetNotReady) {
 			t.Errorf("err = %v, want ErrTargetNotReady", err)
 		}
@@ -229,7 +239,7 @@ func TestResolveRefs(t *testing.T) {
 				NetworkRef: &xpv2.Reference{Name: "shared"},
 			}},
 		}
-		err := resolveRefs(ctx, k, cr)
+		_, err := resolveRefs(ctx, k, cr)
 		if !errors.Is(err, ErrNetworkLocationMismatch) {
 			t.Errorf("err = %v, want ErrNetworkLocationMismatch", err)
 		}
@@ -253,11 +263,13 @@ func TestResolveRefs(t *testing.T) {
 				NetworkRef: &xpv2.Reference{Name: "shared"},
 			}},
 		}
-		if err := resolveRefs(ctx, k, cr); err != nil {
+		r, err := resolveRefs(ctx, k, cr)
+		_ = r
+		if err != nil {
 			t.Fatalf("resolveRefs: %v", err)
 		}
-		if cr.Spec.ForProvider.NetworkID == nil || *cr.Spec.ForProvider.NetworkID != "vpc-abc" {
-			t.Errorf("NetworkID = %v, want vpc-abc", cr.Spec.ForProvider.NetworkID)
+		if r.networkID == nil || *r.networkID != "vpc-abc" {
+			t.Errorf("NetworkID = %v, want vpc-abc", r.networkID)
 		}
 	})
 
@@ -271,11 +283,13 @@ func TestResolveRefs(t *testing.T) {
 				NetworkRef: &xpv2.Reference{Name: "would-not-be-found"},
 			}},
 		}
-		if err := resolveRefs(ctx, k, cr); err != nil {
+		r, err := resolveRefs(ctx, k, cr)
+		_ = r
+		if err != nil {
 			t.Fatalf("resolveRefs: %v", err)
 		}
-		if *cr.Spec.ForProvider.NetworkID != "vpc-from-spec" {
-			t.Errorf("NetworkID = %v, want vpc-from-spec", *cr.Spec.ForProvider.NetworkID)
+		if *r.networkID != "vpc-from-spec" {
+			t.Errorf("NetworkID = %v, want vpc-from-spec", *r.networkID)
 		}
 	})
 
@@ -292,11 +306,13 @@ func TestResolveRefs(t *testing.T) {
 				NetworkID: &nid,
 			}},
 		}
-		if err := resolveRefs(ctx, k, cr); err != nil {
+		r, err := resolveRefs(ctx, k, cr)
+		_ = r
+		if err != nil {
 			t.Fatalf("resolveRefs: %v", err)
 		}
-		if cr.Spec.ForProvider.NetworkID == nil || *cr.Spec.ForProvider.NetworkID != "vpc-externally-managed" {
-			t.Errorf("NetworkID = %v, want vpc-externally-managed (unchanged)", cr.Spec.ForProvider.NetworkID)
+		if r.networkID == nil || *r.networkID != "vpc-externally-managed" {
+			t.Errorf("NetworkID = %v, want vpc-externally-managed (unchanged)", r.networkID)
 		}
 	})
 
@@ -308,7 +324,7 @@ func TestResolveRefs(t *testing.T) {
 				ProjectSelector: &xpv2.Selector{MatchLabels: map[string]string{"env": "prod"}},
 			}},
 		}
-		err := resolveRefs(ctx, k, cr)
+		_, err := resolveRefs(ctx, k, cr)
 		if err == nil || !strings.Contains(err.Error(), "projectSelector is not implemented") {
 			t.Errorf("err = %v, want projectSelector-not-implemented error", err)
 		}
@@ -328,11 +344,13 @@ func TestResolveRefs(t *testing.T) {
 				FloatingIPRefs: []xpv2.Reference{{Name: "stable"}},
 			}},
 		}
-		if err := resolveRefs(ctx, k, cr); err != nil {
+		r, err := resolveRefs(ctx, k, cr)
+		_ = r
+		if err != nil {
 			t.Fatalf("resolveRefs: %v", err)
 		}
-		if len(cr.Spec.ForProvider.FloatingIPIDs) != 1 || cr.Spec.ForProvider.FloatingIPIDs[0] != "fip-abc" {
-			t.Errorf("FloatingIPIDs = %v, want [fip-abc]", cr.Spec.ForProvider.FloatingIPIDs)
+		if len(r.floatingIPIDs) != 1 || r.floatingIPIDs[0] != "fip-abc" {
+			t.Errorf("FloatingIPIDs = %v, want [fip-abc]", r.floatingIPIDs)
 		}
 	})
 
@@ -348,7 +366,7 @@ func TestResolveRefs(t *testing.T) {
 				FloatingIPRefs: []xpv2.Reference{{Name: "stable"}},
 			}},
 		}
-		if err := resolveRefs(ctx, k, cr); !errors.Is(err, ErrTargetNotReady) {
+		if _, err := resolveRefs(ctx, k, cr); !errors.Is(err, ErrTargetNotReady) {
 			t.Errorf("err = %v, want ErrTargetNotReady", err)
 		}
 	})
@@ -361,7 +379,7 @@ func TestResolveRefs(t *testing.T) {
 				FloatingIPRefs: []xpv2.Reference{{Name: "ghost"}},
 			}},
 		}
-		if err := resolveRefs(ctx, k, cr); !errors.Is(err, ErrTargetNotFound) {
+		if _, err := resolveRefs(ctx, k, cr); !errors.Is(err, ErrTargetNotFound) {
 			t.Errorf("err = %v, want ErrTargetNotFound", err)
 		}
 	})
@@ -374,9 +392,41 @@ func TestResolveRefs(t *testing.T) {
 				FloatingIPSelector: &xpv2.Selector{MatchLabels: map[string]string{"env": "prod"}},
 			}},
 		}
-		err := resolveRefs(ctx, k, cr)
+		_, err := resolveRefs(ctx, k, cr)
 		if err == nil || !strings.Contains(err.Error(), "floatingIPSelector is not implemented") {
 			t.Errorf("err = %v, want floatingIPSelector-not-implemented error", err)
 		}
 	})
+}
+
+// TestResolveRefs_DoesNotMutateSpec is the FR-010 regression: resolveRefs must
+// return the resolved network id WITHOUT writing it onto spec.forProvider —
+// otherwise both networkRef and networkID end up set and the at-most-one CEL
+// rule rejects the object when the runtime persists it.
+func TestResolveRefs_DoesNotMutateSpec(t *testing.T) {
+	net := &networkv1alpha1.Network{
+		ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "shared"},
+		Spec:       networkv1alpha1.NetworkSpec{ForProvider: networkv1alpha1.NetworkParameters{Location: "msk-1"}},
+		Status:     networkv1alpha1.NetworkStatus{AtProvider: networkv1alpha1.NetworkObservation{UpstreamID: strPtr("vpc-abc")}},
+	}
+	k := fake.NewClientBuilder().WithScheme(refsScheme(t)).WithObjects(net).Build()
+	cr := &computev1alpha1.Server{
+		ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "s"},
+		Spec: computev1alpha1.ServerSpec{ForProvider: computev1alpha1.ServerParameters{
+			Location:   "msk-1",
+			NetworkRef: &xpv2.Reference{Name: "shared"},
+		}},
+	}
+	r, err := resolveRefs(context.Background(), k, cr)
+	if err != nil {
+		t.Fatalf("resolveRefs: %v", err)
+	}
+	if r.networkID == nil || *r.networkID != "vpc-abc" {
+		t.Errorf("resolved networkID = %v, want vpc-abc", r.networkID)
+	}
+	// The critical assertion: spec.forProvider.networkID stays nil (no mutation),
+	// so networkRef remains the only set member of its trio.
+	if cr.Spec.ForProvider.NetworkID != nil {
+		t.Errorf("spec.forProvider.networkID was mutated to %v — would trip the at-most-one CEL rule on persist", *cr.Spec.ForProvider.NetworkID)
+	}
 }

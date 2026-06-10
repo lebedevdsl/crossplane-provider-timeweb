@@ -55,10 +55,24 @@ var (
 	KubernetesClusterAddonKind = "KubernetesClusterAddon"
 	// KubernetesClusterAddonGroupVersionKind is the GVK for KubernetesClusterAddon.
 	KubernetesClusterAddonGroupVersionKind = GroupVersion.WithKind(KubernetesClusterAddonKind)
+
+	// ContainerRegistryKind is the Kind for ContainerRegistry (feature 005:
+	// relocated into the kubernetes group, mirroring the dashboard's
+	// Kubernetes -> "Реестры контейнеров" tab).
+	ContainerRegistryKind = "ContainerRegistry"
+	// ContainerRegistryGroupVersionKind is the GVK for ContainerRegistry.
+	ContainerRegistryGroupVersionKind = GroupVersion.WithKind(ContainerRegistryKind)
+
+	// ContainerRegistryRepositoryKind is the Kind for ContainerRegistryRepository.
+	ContainerRegistryRepositoryKind = "ContainerRegistryRepository"
+	// ContainerRegistryRepositoryGroupVersionKind is the GVK.
+	ContainerRegistryRepositoryGroupVersionKind = GroupVersion.WithKind(ContainerRegistryRepositoryKind)
 )
 
 func init() {
 	SchemeBuilder.Register(&KubernetesCluster{}, &KubernetesClusterList{})
 	SchemeBuilder.Register(&KubernetesClusterNodepool{}, &KubernetesClusterNodepoolList{})
 	SchemeBuilder.Register(&KubernetesClusterAddon{}, &KubernetesClusterAddonList{})
+	SchemeBuilder.Register(&ContainerRegistry{}, &ContainerRegistryList{})
+	SchemeBuilder.Register(&ContainerRegistryRepository{}, &ContainerRegistryRepositoryList{})
 }

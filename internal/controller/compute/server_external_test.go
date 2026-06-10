@@ -111,6 +111,7 @@ func TestServerFloatingIPBinding(t *testing.T) {
 		}}
 		cr := newServer(0)
 		cr.Spec.ForProvider.FloatingIPIDs = []string{"fip-a"}
+		e.resolved.floatingIPIDs = cr.Spec.ForProvider.FloatingIPIDs
 		if _, err := e.Create(ctx, cr); err != nil {
 			t.Fatalf("Create: %v", err)
 		}
@@ -127,6 +128,7 @@ func TestServerFloatingIPBinding(t *testing.T) {
 		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
 		cr := lockedServer()
 		cr.Spec.ForProvider.FloatingIPIDs = []string{"fip-a"}
+		e.resolved.floatingIPIDs = cr.Spec.ForProvider.FloatingIPIDs
 		if _, err := e.Update(ctx, cr); err != nil {
 			t.Fatalf("Update: %v", err)
 		}
@@ -150,6 +152,7 @@ func TestServerFloatingIPBinding(t *testing.T) {
 		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
 		cr := lockedServer()
 		cr.Spec.ForProvider.FloatingIPIDs = []string{"fip-b"}
+		e.resolved.floatingIPIDs = cr.Spec.ForProvider.FloatingIPIDs
 		cr.Status.AtProvider.BoundFloatingIPs = []string{"fip-a"}
 		if _, err := e.Update(ctx, cr); err != nil {
 			t.Fatalf("Update: %v", err)
@@ -170,6 +173,7 @@ func TestServerFloatingIPBinding(t *testing.T) {
 		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
 		cr := lockedServer()
 		cr.Spec.ForProvider.FloatingIPIDs = nil // cleared
+		e.resolved.floatingIPIDs = cr.Spec.ForProvider.FloatingIPIDs
 		cr.Status.AtProvider.BoundFloatingIPs = []string{"fip-a"}
 		if _, err := e.Update(ctx, cr); err != nil {
 			t.Fatalf("Update: %v", err)
@@ -210,6 +214,7 @@ func TestServerFloatingIPBinding(t *testing.T) {
 		cr := lockedServer()
 		nid := "network-import-xyz"
 		cr.Spec.ForProvider.NetworkID = &nid
+		e.resolved.networkID = cr.Spec.ForProvider.NetworkID
 		if _, err := e.Observe(ctx, cr); err != nil {
 			t.Fatalf("Observe: %v", err)
 		}
@@ -225,6 +230,7 @@ func TestServerFloatingIPBinding(t *testing.T) {
 		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
 		cr := lockedServer()
 		cr.Spec.ForProvider.FloatingIPIDs = []string{"fip-a"}
+		e.resolved.floatingIPIDs = cr.Spec.ForProvider.FloatingIPIDs
 		obs, err := e.Observe(ctx, cr)
 		if err != nil {
 			t.Fatalf("Observe: %v", err)
@@ -241,33 +247,41 @@ func TestServerFloatingIPBinding(t *testing.T) {
 // --- fakeResolver — mimics resolver.Resolver for unit tests. -----------------
 
 type fakeResolver struct {
-	presetByID map[string]int64 // map[slug] → upstreamID
-	osByID     map[string]int64 // map[slugified(image,version)] → upstreamID
-	resolveErr error            // if non-nil, return this from every Resolve
+	presetByID     map[string]int64 // map[slug] → upstreamID
+	osByID         map[string]int64 // map[slugified(image,version)] → upstreamID
+	configuratorID int64            // returned for DimServerConfigurator resolves
+	noConfigurator bool             // if true, ConfiguratorInput → ErrNoConfiguratorAvailable
+	resolveErr     error            // if non-nil, return this from every Resolve
 }
 
 func (f *fakeResolver) Resolve(_ context.Context, _ resolver.PCRef, dim resolver.Dimension, input resolver.ResolveInput) (resolver.ResolveOutput, error) {
 	if f.resolveErr != nil {
 		return nil, f.resolveErr
 	}
-	in, ok := input.(resolver.PresetInput)
-	if !ok {
+	switch in := input.(type) {
+	case resolver.PresetInput:
+		var table map[string]int64
+		switch dim.Name {
+		case resolver.DimServerPreset:
+			table = f.presetByID
+		case resolver.DimServerOSImage:
+			table = f.osByID
+		default:
+			return nil, resolver.ErrUnknownDimension
+		}
+		id, ok := table[in.Slug]
+		if !ok {
+			return nil, resolver.ErrPresetNotFound
+		}
+		return resolver.PresetOutput{UpstreamID: id}, nil
+	case resolver.ConfiguratorInput:
+		if f.noConfigurator {
+			return nil, resolver.ErrNoConfiguratorAvailable
+		}
+		return resolver.ConfiguratorOutput{UpstreamID: f.configuratorID}, nil
+	default:
 		return nil, resolver.ErrInvalidInput
 	}
-	var table map[string]int64
-	switch dim.Name {
-	case resolver.DimServerPreset:
-		table = f.presetByID
-	case resolver.DimServerOSImage:
-		table = f.osByID
-	default:
-		return nil, resolver.ErrUnknownDimension
-	}
-	id, ok := table[in.Slug]
-	if !ok {
-		return nil, resolver.ErrPresetNotFound
-	}
-	return resolver.PresetOutput{UpstreamID: id}, nil
 }
 
 func (f *fakeResolver) Invalidate(_ resolver.PCRef, _ resolver.Dimension) {}
@@ -279,7 +293,7 @@ func newServer(id int) *computev1alpha1.Server {
 		Spec: computev1alpha1.ServerSpec{
 			ForProvider: computev1alpha1.ServerParameters{
 				Name:       "web-01",
-				PresetName: "premium-2-2-40-msk-1",
+				PresetName: strPtr("premium-2-2-40-msk-1"),
 				Location:   "msk-1",
 				OS: computev1alpha1.ServerOS{
 					Image:   "ubuntu",
@@ -509,6 +523,7 @@ func TestCreate(t *testing.T) {
 		cr := newServer(0)
 		nid := "vpc-import"
 		cr.Spec.ForProvider.NetworkID = &nid
+		e.resolved.networkID = cr.Spec.ForProvider.NetworkID
 		if _, err := e.Create(ctx, cr); err != nil {
 			t.Fatalf("Create: %v", err)
 		}
@@ -528,6 +543,7 @@ func TestCreate(t *testing.T) {
 		cr := newServer(0)
 		nid := "vpc-wrong-region"
 		cr.Spec.ForProvider.NetworkID = &nid
+		e.resolved.networkID = cr.Spec.ForProvider.NetworkID
 		_, err := e.Create(ctx, cr)
 		if !errors.Is(err, ErrNetworkLocationMismatch) {
 			t.Errorf("err = %v, want ErrNetworkLocationMismatch", err)
@@ -544,6 +560,7 @@ func TestCreate(t *testing.T) {
 		cr := newServer(0)
 		nid := "vpc-ghost"
 		cr.Spec.ForProvider.NetworkID = &nid
+		e.resolved.networkID = cr.Spec.ForProvider.NetworkID
 		_, err := e.Create(ctx, cr)
 		if !errors.Is(err, ErrTargetNotFound) {
 			t.Errorf("err = %v, want ErrTargetNotFound", err)
@@ -706,6 +723,86 @@ func TestDelete(t *testing.T) {
 		var apiErr *timeweb.APIError
 		if !errors.As(err, &apiErr) {
 			t.Fatalf("err = %v, want *APIError", err)
+		}
+	})
+}
+
+// --- feature 005: Server custom configurator sizing ---------------------------
+
+func newServerResources(externalName string) *computev1alpha1.Server {
+	s := &computev1alpha1.Server{
+		Spec: computev1alpha1.ServerSpec{ForProvider: computev1alpha1.ServerParameters{
+			Name:     "web-rs",
+			Location: "ru-1",
+			OS:       computev1alpha1.ServerOS{Image: "ubuntu", Version: "24.04"},
+			Resources: &computev1alpha1.ServerResources{
+				CPU: 2, RAMGB: 4, DiskGB: 40,
+			},
+		}},
+	}
+	if externalName != "" {
+		meta.SetExternalName(s, externalName)
+	}
+	return s
+}
+
+func TestServerCustomSizing(t *testing.T) {
+	ctx := context.Background()
+	okRes := &fakeResolver{osByID: map[string]int64{"ubuntu-24-04": 79}, configuratorID: 11}
+
+	t.Run("Create_Resources_SetsLockedConfiguratorID_AndConfigBody", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.CreateServerReturns(httpResp(http.StatusCreated, sampleServerJSON), nil)
+		cr := newServerResources("")
+		if _, err := (&serverExternal{tw: fake, resolver: okRes}).Create(ctx, cr); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if cr.Status.AtProvider.LockedConfiguratorID == nil || *cr.Status.AtProvider.LockedConfiguratorID != 11 {
+			t.Errorf("LockedConfiguratorID=%v, want 11", cr.Status.AtProvider.LockedConfiguratorID)
+		}
+		if cr.Status.AtProvider.LockedPresetID != nil {
+			t.Error("LockedPresetID must be nil on the resources path")
+		}
+		_, body, _ := fake.CreateServerArgsForCall(0)
+		if body.Configuration == nil {
+			t.Fatal("create body: Configuration block not set on the resources path")
+		}
+		if body.PresetId != nil {
+			t.Error("create body: PresetId must be nil on the resources path")
+		}
+		if body.Configuration.Ram != 4096 || body.Configuration.Disk != 40960 || body.Configuration.Cpu != 2 {
+			t.Errorf("config cpu/ram/disk = %v/%v/%v, want 2/4096/40960 (MB)", body.Configuration.Cpu, body.Configuration.Ram, body.Configuration.Disk)
+		}
+	})
+
+	t.Run("Create_NoConfiguratorAvailable", func(t *testing.T) {
+		e := &serverExternal{tw: &timeweb.FakeClient{}, resolver: &fakeResolver{
+			osByID: map[string]int64{"ubuntu-24-04": 79}, noConfigurator: true,
+		}}
+		if _, err := e.Create(ctx, newServerResources("")); !errors.Is(err, resolver.ErrNoConfiguratorAvailable) {
+			t.Errorf("err=%v, want ErrNoConfiguratorAvailable", err)
+		}
+	})
+
+	t.Run("Update_SizingSwitch_ResourcesToPreset_Rejected", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetServerReturns(httpResp(http.StatusOK, sampleServerJSON), nil)
+		cr := newServer(1234567) // preset-based spec
+		cid := int64(11)
+		cr.Status.AtProvider.LockedConfiguratorID = &cid // but locked as configurator
+		if _, err := (&serverExternal{tw: fake, resolver: okRes}).Update(ctx, cr); !errors.Is(err, shared.ErrSizingSwitchRequiresRecreate) {
+			t.Errorf("err=%v, want ErrSizingSwitchRequiresRecreate", err)
+		}
+	})
+
+	t.Run("Update_SizingSwitch_PresetToResources_Rejected", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetServerReturns(httpResp(http.StatusOK, sampleServerJSON), nil)
+		cr := newServerResources("1234567") // resources-based spec
+		pid := int64(42)
+		cr.Status.AtProvider.LockedPresetID = &pid // but locked as preset
+		if _, err := (&serverExternal{tw: fake, resolver: okRes}).Update(ctx, cr); !errors.Is(err, shared.ErrSizingSwitchRequiresRecreate) {
+			t.Errorf("err=%v, want ErrSizingSwitchRequiresRecreate", err)
 		}
 	})
 }

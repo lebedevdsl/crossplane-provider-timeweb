@@ -1,0 +1,18 @@
+# Server provisioning takes longer than the suite default; SC-001 window.
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 720
+---
+# Server sized via resources reaches [Synced, Ready] (gating ref → Synced first)
+# and records the resolved configurator id in status.
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: e2e-srv-custom
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Synced
+    status: "True"
+  - type: Ready
+    status: "True"

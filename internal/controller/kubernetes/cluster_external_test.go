@@ -41,10 +41,12 @@ func httpResp(status int, body string) *http.Response {
 // fakeResolver mimics resolver.Resolver for the K8s controllers: a preset
 // lookup table keyed by (dimension, slug) plus a set of valid k8s versions.
 type fakeResolver struct {
-	masterPresets map[string]int64
-	workerPresets map[string]int64
-	versions      map[string]bool
-	resolveErr    error
+	masterPresets  map[string]int64
+	workerPresets  map[string]int64
+	versions       map[string]bool
+	configuratorID int64 // returned for DimServerConfigurator
+	noConfigurator bool  // if true, ConfiguratorInput → ErrNoConfiguratorAvailable
+	resolveErr     error
 }
 
 func (f *fakeResolver) Resolve(_ context.Context, _ resolver.PCRef, dim resolver.Dimension, input resolver.ResolveInput) (resolver.ResolveOutput, error) {
@@ -75,6 +77,14 @@ func (f *fakeResolver) Resolve(_ context.Context, _ resolver.PCRef, dim resolver
 			return nil, resolver.ErrDimensionValueNotFound
 		}
 		return resolver.EnumOutput{Valid: true}, nil
+	case resolver.DimServerConfigurator:
+		if _, ok := input.(resolver.ConfiguratorInput); !ok {
+			return nil, resolver.ErrInvalidInput
+		}
+		if f.noConfigurator {
+			return nil, resolver.ErrNoConfiguratorAvailable
+		}
+		return resolver.ConfiguratorOutput{UpstreamID: f.configuratorID}, nil
 	default:
 		return nil, resolver.ErrUnknownDimension
 	}
@@ -98,7 +108,7 @@ func newCluster(created bool) *kubernetesv1alpha1.KubernetesCluster {
 				K8sVersion:       "1.31.2",
 				NetworkDriver:    "cilium",
 				AvailabilityZone: "msk-1",
-				PresetName:       "start-master",
+				PresetName:       strPtr("start-master"),
 			},
 		},
 	}
@@ -204,7 +214,7 @@ func TestClusterCreate(t *testing.T) {
 
 	t.Run("MasterPresetNotFound", func(t *testing.T) {
 		cr := newCluster(false)
-		cr.Spec.ForProvider.PresetName = "ghost"
+		cr.Spec.ForProvider.PresetName = strPtr("ghost")
 		_, err := clusterE(&timeweb.FakeClient{}, okResolver()).Create(ctx, cr)
 		if !errors.Is(err, resolver.ErrPresetNotFound) {
 			t.Errorf("err=%v, want ErrPresetNotFound", err)
@@ -387,6 +397,63 @@ func TestClusterDelete(t *testing.T) {
 		fake.DeleteClusterReturns(nil, errors.New("connection reset"))
 		if _, err := clusterE(fake, okResolver()).Delete(ctx, newCluster(true)); err == nil {
 			t.Fatal("want error on transport failure")
+		}
+	})
+}
+
+// --- feature 005: cluster custom configurator sizing -------------------------
+
+func TestClusterCustomSizing(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Create_Resources_SetsConfigurationAndLock", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.CreateClusterReturns(httpResp(http.StatusCreated, clusterActiveJSON), nil)
+		r := okResolver()
+		r.configuratorID = 11
+		cr := newCluster(false)
+		cr.Spec.ForProvider.PresetName = nil
+		cr.Spec.ForProvider.Resources = &kubernetesv1alpha1.KubernetesResources{CPU: 2, RAMGB: 4, DiskGB: 40}
+		if _, err := clusterE(fake, r).Create(ctx, cr); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if cr.Status.AtProvider.LockedConfiguratorID == nil || *cr.Status.AtProvider.LockedConfiguratorID != 11 {
+			t.Errorf("LockedConfiguratorID=%v, want 11", cr.Status.AtProvider.LockedConfiguratorID)
+		}
+		if cr.Status.AtProvider.LockedPresetID != nil {
+			t.Error("LockedPresetID must be nil on the resources path")
+		}
+		_, body, _ := fake.CreateClusterArgsForCall(0)
+		if body.Configuration == nil {
+			t.Fatal("create body: Configuration not set on the resources path")
+		}
+		if body.PresetId != nil {
+			t.Error("create body: PresetId must be nil on the resources path")
+		}
+		if body.Configuration.Ram != 4096 || body.Configuration.Disk != 40960 || body.Configuration.Cpu != 2 {
+			t.Errorf("config cpu/ram/disk = %d/%d/%d, want 2/4096/40960", body.Configuration.Cpu, body.Configuration.Ram, body.Configuration.Disk)
+		}
+	})
+
+	t.Run("Create_NoConfiguratorAvailable", func(t *testing.T) {
+		r := okResolver()
+		r.noConfigurator = true
+		cr := newCluster(false)
+		cr.Spec.ForProvider.PresetName = nil
+		cr.Spec.ForProvider.Resources = &kubernetesv1alpha1.KubernetesResources{CPU: 99, RAMGB: 4, DiskGB: 40}
+		if _, err := clusterE(&timeweb.FakeClient{}, r).Create(ctx, cr); !errors.Is(err, resolver.ErrNoConfiguratorAvailable) {
+			t.Errorf("err=%v, want ErrNoConfiguratorAvailable", err)
+		}
+	})
+
+	t.Run("Update_SizingSwitch_Rejected", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
+		cr := newCluster(true) // preset-based spec
+		cid := int64(11)
+		cr.Status.AtProvider.LockedConfiguratorID = &cid // but locked as configurator
+		if _, err := clusterE(fake, okResolver()).Update(ctx, cr); !errors.Is(err, shared.ErrSizingSwitchRequiresRecreate) {
+			t.Errorf("err=%v, want ErrSizingSwitchRequiresRecreate", err)
 		}
 	})
 }

@@ -36,7 +36,7 @@ func newNodepool(created bool, nodeCount int) *kubernetesv1alpha1.KubernetesClus
 		Spec: kubernetesv1alpha1.KubernetesClusterNodepoolSpec{
 			ForProvider: kubernetesv1alpha1.KubernetesClusterNodepoolParameters{
 				Name:       "workers",
-				PresetName: "start-worker",
+				PresetName: strPtr("start-worker"),
 				NodeCount:  nodeCount,
 				ClusterRef: &xpv2.Reference{Name: "demo"},
 			},
@@ -132,7 +132,7 @@ func TestNodepoolCreate(t *testing.T) {
 
 	t.Run("WorkerPresetNotFound", func(t *testing.T) {
 		cr := newNodepool(false, 2)
-		cr.Spec.ForProvider.PresetName = "ghost"
+		cr.Spec.ForProvider.PresetName = strPtr("ghost")
 		_, err := nodepoolE(&timeweb.FakeClient{}).Create(ctx, cr)
 		if !errors.Is(err, resolver.ErrPresetNotFound) {
 			t.Errorf("err=%v, want ErrPresetNotFound", err)
@@ -247,6 +247,52 @@ func TestNodepoolDelete(t *testing.T) {
 		fake.DeleteClusterNodeGroupReturns(nil, errors.New("connection reset"))
 		if _, err := nodepoolE(fake).Delete(ctx, newNodepool(true, 2)); err == nil {
 			t.Fatal("want error on transport failure")
+		}
+	})
+}
+
+// --- feature 005: nodepool custom configurator sizing ------------------------
+
+func TestNodepoolCustomSizing(t *testing.T) {
+	ctx := context.Background()
+	mkE := func(fake *timeweb.FakeClient, r *fakeResolver) *nodepoolExternal {
+		return &nodepoolExternal{tw: fake, resolver: r, pcRef: resolver.PCRef{Name: "default"}, resolvedClusterID: shared.EncodeID(777)}
+	}
+
+	t.Run("Create_Resources_SetsConfiguration", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.CreateClusterNodeGroupReturns(httpResp(http.StatusCreated, nodeGroupJSON), nil)
+		r := okResolver()
+		r.configuratorID = 22
+		cr := newNodepool(false, 2)
+		cr.Spec.ForProvider.PresetName = nil
+		cr.Spec.ForProvider.Resources = &kubernetesv1alpha1.KubernetesNodepoolResources{CPU: 2, RAMGB: 4, DiskGB: 40}
+		if _, err := mkE(fake, r).Create(ctx, cr); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if cr.Status.AtProvider.LockedConfiguratorID == nil || *cr.Status.AtProvider.LockedConfiguratorID != 22 {
+			t.Errorf("LockedConfiguratorID=%v, want 22", cr.Status.AtProvider.LockedConfiguratorID)
+		}
+		_, _, body, _ := fake.CreateClusterNodeGroupArgsForCall(0)
+		if body.Configuration == nil {
+			t.Fatal("create body: Configuration not set on the resources path")
+		}
+		if body.PresetId != nil {
+			t.Error("create body: PresetId must be nil on the resources path")
+		}
+		if body.Configuration.Ram != 4096 {
+			t.Errorf("config ram=%d MB, want 4096", body.Configuration.Ram)
+		}
+	})
+
+	t.Run("Update_SizingSwitch_Rejected", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		cr := newNodepool(true, 2) // preset-based spec
+		cid := int64(22)
+		cr.Status.AtProvider.LockedConfiguratorID = &cid // but locked as configurator
+		if _, err := mkE(fake, okResolver()).Update(ctx, cr); !errors.Is(err, shared.ErrSizingSwitchRequiresRecreate) {
+			t.Errorf("err=%v, want ErrSizingSwitchRequiresRecreate", err)
 		}
 	})
 }

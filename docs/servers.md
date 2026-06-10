@@ -55,6 +55,36 @@ else (`presetName`, `location`, `os`, `availabilityZone`, the SSH-key /
 network / project fields) is immutable — editing it surfaces `Synced=False,
 reason=ImmutableFieldChange`. Resizing is a delete-and-recreate.
 
+## Custom sizing (configurators)
+
+Instead of a `presetName` slug you can declare the resources you actually want
+and let the provider pick the matching upstream configurator — no opaque slug:
+
+```yaml
+spec:
+  forProvider:
+    name: app
+    location: ru-1
+    os: { image: ubuntu, version: "24.04" }
+    resources:                 # exactly one of presetName / resources
+      cpu: 4                   # cores
+      ramGB: 8                 # GB  (controller normalizes to MB upstream)
+      diskGB: 80               # GB
+      # optional: diskType, bandwidthMbps, gpu, cpuFrequencyTier, enableLocalNetwork
+    sshKeyRefs: [{ name: my-key }]
+```
+
+- The controller resolves `resources` to the **tightest-fit** configurator in
+  the Server's `location` (filtered by any optional axes) and records it in
+  `status.atProvider.lockedConfiguratorID`.
+- An unsatisfiable request (e.g. `cpu: 999`) → `Synced=False,
+  reason=NoConfiguratorAvailable` naming the unmet axis.
+- `presetName` still works and stays supported — `resources` is an additive
+  alternative; admission rejects setting both.
+- The sizing **variant** is immutable: flipping a live Server between
+  `presetName` and `resources` → `Synced=False,
+  reason=SizingSwitchRequiresRecreate` (delete + recreate to change).
+
 ## Attaching a private network (VPC)
 
 Create a `Network`, then reference it from the Server:

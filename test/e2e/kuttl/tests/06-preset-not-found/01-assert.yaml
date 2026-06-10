@@ -1,4 +1,4 @@
-apiVersion: containerregistry.m.timeweb.crossplane.io/v1alpha1
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
 kind: ContainerRegistry
 metadata:
   name: e2e-preset-not-found

@@ -321,6 +321,7 @@ spec:
                       resolver (`<description_short>-<location>`, e.g.
                       `premium-2-2-40-msk-1`). Resolved against `/api/v1/presets/servers`.
                       Immutable post-create — resize lands in a follow-up feature.
+                      Exactly one of `presetName` / `resources` MUST be set (CEL).
                     pattern: ^[a-z0-9][a-z0-9-]*[a-z0-9]$
                     type: string
                   projectID:
@@ -402,6 +403,46 @@ spec:
                             - IfNotPresent
                             type: string
                         type: object
+                    type: object
+                  resources:
+                    description: |-
+                      Resources is the custom-configurator sizing path — the operator types
+                      the CPU/RAM/disk they want and the controller resolves them to an
+                      upstream configurator. Alternative to `presetName` (exactly one set).
+                      Immutable post-create.
+                    properties:
+                      bandwidthMbps:
+                        description: BandwidthMbps maps to the configurator `network_bandwidth`
+                          axis.
+                        type: integer
+                      cpu:
+                        minimum: 1
+                        type: integer
+                      cpuFrequencyTier:
+                        description: CPUFrequencyTier is the upstream `cpu_frequency`
+                          filter (e.g. "3.3").
+                        type: string
+                      diskGB:
+                        minimum: 1
+                        type: integer
+                      diskType:
+                        description: DiskType is the upstream configurator `disk_type`
+                          (e.g. "nvme").
+                        type: string
+                      enableLocalNetwork:
+                        description: EnableLocalNetwork maps to the `is_allowed_local_network`
+                          filter.
+                        type: boolean
+                      gpu:
+                        description: GPU maps to the configurator `gpu` axis.
+                        type: integer
+                      ramGB:
+                        minimum: 1
+                        type: integer
+                    required:
+                    - cpu
+                    - diskGB
+                    - ramGB
                     type: object
                   sshKeyIDs:
                     items:
@@ -494,7 +535,6 @@ spec:
                 - location
                 - name
                 - os
-                - presetName
                 type: object
               managementPolicies:
                 default:
@@ -571,6 +611,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  lockedConfiguratorID:
+                    description: |-
+                      LockedConfiguratorID is the upstream configurator id resolved at first
+                      successful Create when sized via `resources` (distinct from
+                      lockedPresetID). Drives sizing-variant-switch detection.
+                    format: int64
+                    type: integer
                   lockedOSID:
                     description: |-
                       LockedOSID is the upstream `os_id` resolved at first successful
@@ -699,6 +746,9 @@ spec:
             may be set
           rule: (has(self.spec.forProvider.floatingIPRefs)?1:0) + (has(self.spec.forProvider.floatingIPSelector)?1:0)
             + (has(self.spec.forProvider.floatingIPIDs)?1:0) <= 1
+        - message: exactly one of presetName or resources must be set
+          rule: (has(self.spec.forProvider.presetName)?1:0) + (has(self.spec.forProvider.resources)?1:0)
+            == 1
     served: true
     storage: true
     subresources:

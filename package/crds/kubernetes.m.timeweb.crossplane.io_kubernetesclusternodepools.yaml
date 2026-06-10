@@ -196,13 +196,34 @@ spec:
                     description: |-
                       PresetName is the worker-node preset slug resolved against
                       /api/v1/presets/k8s (type=worker) to the upstream preset_id.
-                      Immutable post-create.
+                      Immutable post-create. Exactly one of presetName/resources (CEL).
                     pattern: ^[a-z0-9][a-z0-9-]*[a-z0-9]$
                     type: string
+                  resources:
+                    description: |-
+                      Resources is the custom-configurator sizing path for the workers
+                      (cpu/ramGB/diskGB + optional gpu) — alternative to presetName.
+                      Immutable post-create.
+                    properties:
+                      cpu:
+                        minimum: 1
+                        type: integer
+                      diskGB:
+                        minimum: 1
+                        type: integer
+                      gpu:
+                        type: integer
+                      ramGB:
+                        minimum: 1
+                        type: integer
+                    required:
+                    - cpu
+                    - diskGB
+                    - ramGB
+                    type: object
                 required:
                 - name
                 - nodeCount
-                - presetName
                 type: object
               managementPolicies:
                 default:
@@ -275,6 +296,12 @@ spec:
                       Delete (which need the cluster_id in the path) never depend on a live
                       ref lookup.
                     type: string
+                  lockedConfiguratorID:
+                    description: |-
+                      LockedConfiguratorID is the upstream configurator id resolved at Create
+                      when sized via `resources` (drives sizing-variant-switch detection).
+                    format: int64
+                    type: integer
                   lockedPresetID:
                     description: LockedPresetID is the upstream worker preset_id resolved
                       at Create.
@@ -355,6 +382,9 @@ spec:
         - message: exactly one of clusterRef, clusterSelector, clusterID must be set
           rule: (has(self.spec.forProvider.clusterRef)?1:0) + (has(self.spec.forProvider.clusterSelector)?1:0)
             + (has(self.spec.forProvider.clusterID)?1:0) == 1
+        - message: exactly one of presetName or resources must be set
+          rule: (has(self.spec.forProvider.presetName)?1:0) + (has(self.spec.forProvider.resources)?1:0)
+            == 1
         - message: autoscaling.maxSize must be >= autoscaling.minSize
           rule: '!has(self.spec.forProvider.autoscaling) || !self.spec.forProvider.autoscaling.enabled
             || self.spec.forProvider.autoscaling.maxSize >= self.spec.forProvider.autoscaling.minSize'

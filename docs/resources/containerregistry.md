@@ -6,7 +6,7 @@ workloads as `imagePullSecrets`.
 
 | Property | Value |
 | -------- | ----- |
-| API group | `containerregistry.m.timeweb.crossplane.io` |
+| API group | `kubernetes.m.timeweb.crossplane.io` |
 | Kind | `ContainerRegistry` |
 | Scope | Namespaced |
 | External-name format | stringified Timeweb registry ID |
@@ -15,7 +15,7 @@ workloads as `imagePullSecrets`.
 ## Manifest
 
 ```yaml
-apiVersion: containerregistry.m.timeweb.crossplane.io/v1alpha1
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
 kind: ContainerRegistry
 metadata:
   name: demo-prod

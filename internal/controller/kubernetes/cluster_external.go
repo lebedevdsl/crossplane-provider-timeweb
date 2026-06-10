@@ -134,15 +134,22 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 		return managed.ExternalCreation{}, errNotCluster
 	}
 
-	presetID, err := e.resolveMasterPreset(ctx, cr.Spec.ForProvider.PresetName)
-	if err != nil {
-		return managed.ExternalCreation{}, err
-	}
 	if err := e.validateVersion(ctx, cr.Spec.ForProvider.K8sVersion); err != nil {
 		return managed.ExternalCreation{}, err
 	}
+	// Sizing: exactly one of resources (custom configurator) or presetName.
+	var presetID, configuratorID int
+	var err error
+	if r := cr.Spec.ForProvider.Resources; r != nil {
+		configuratorID, err = resolveK8sConfigurator(ctx, e.resolver, e.pcRef, r.CPU, r.RAMGB, r.DiskGB, nil)
+	} else {
+		presetID, err = e.resolveMasterPreset(ctx, *cr.Spec.ForProvider.PresetName)
+	}
+	if err != nil {
+		return managed.ExternalCreation{}, err
+	}
 
-	body := buildCreateClusterBody(cr, presetID, e.resolvedNetworkID, e.resolvedProjectID)
+	body := buildCreateClusterBody(cr, presetID, configuratorID, e.resolvedNetworkID, e.resolvedProjectID)
 	resp, err := e.tw.CreateCluster(ctx, body)
 	if err != nil {
 		return managed.ExternalCreation{}, timeweb.ClassifyNetworkError(err)
@@ -170,8 +177,13 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 	if e.resolvedProjectID != nil {
 		cr.Status.AtProvider.ResolvedProjectID = e.resolvedProjectID
 	}
-	lp := int64(presetID)
-	cr.Status.AtProvider.LockedPresetID = &lp
+	if cr.Spec.ForProvider.Resources != nil {
+		cid := int64(configuratorID)
+		cr.Status.AtProvider.LockedConfiguratorID = &cid
+	} else {
+		lp := int64(presetID)
+		cr.Status.AtProvider.LockedPresetID = &lp
+	}
 	cr.Status.SetConditions(xpv2.Creating())
 
 	return managed.ExternalCreation{}, nil
@@ -202,6 +214,13 @@ func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (mana
 	var env clusterEnvelope
 	_ = json.Unmarshal(getBody, &env)
 	observed := env.Cluster
+
+	// Sizing-variant-switch detection (feature 005 FR-004): preset↔resources
+	// is create-time immutable.
+	if (cr.Spec.ForProvider.Resources != nil && cr.Status.AtProvider.LockedPresetID != nil) ||
+		(cr.Spec.ForProvider.Resources == nil && cr.Status.AtProvider.LockedConfiguratorID != nil) {
+		return managed.ExternalUpdate{}, shared.RejectSizingSwitch(cr, e.recorder)
+	}
 
 	// Immutable-field guards (R-7): networkDriver / availabilityZone / preset
 	// / masterNodesCount are create-only.
@@ -330,16 +349,32 @@ func (e *clusterExternal) kubeconfigConnectionDetails(ctx context.Context, id in
 
 // --- Body builder + status writers + helpers --------------------------------
 
-func buildCreateClusterBody(cr *kubernetesv1alpha1.KubernetesCluster, presetID int, networkID string, projectID *int64) twgen.CreateClusterJSONRequestBody {
+func buildCreateClusterBody(cr *kubernetesv1alpha1.KubernetesCluster, presetID, configuratorID int, networkID string, projectID *int64) twgen.CreateClusterJSONRequestBody {
 	fp := cr.Spec.ForProvider
-	pid := presetID
 	az := twgen.ClusterInAvailabilityZone(fp.AvailabilityZone)
 	body := twgen.CreateClusterJSONRequestBody{
 		Name:             fp.Name,
 		K8sVersion:       fp.K8sVersion,
 		NetworkDriver:    twgen.ClusterInNetworkDriver(fp.NetworkDriver),
 		AvailabilityZone: &az,
-		PresetId:         &pid,
+	}
+	if r := fp.Resources; r != nil {
+		// Custom sizing: emit the configuration block (configurator_id + cpu/
+		// ram/disk in upstream MB). XOR with preset_id.
+		body.Configuration = &struct {
+			ConfiguratorId int `json:"configurator_id"` //nolint:revive // mirrors oapi-codegen output
+			Cpu            int `json:"cpu"`             //nolint:revive // mirrors oapi-codegen output
+			Disk           int `json:"disk"`            //nolint:revive // mirrors oapi-codegen output
+			Ram            int `json:"ram"`             //nolint:revive // mirrors oapi-codegen output
+		}{
+			ConfiguratorId: configuratorID,
+			Cpu:            r.CPU,
+			Ram:            r.RAMGB * 1024,
+			Disk:           r.DiskGB * 1024,
+		}
+	} else {
+		pid := presetID
+		body.PresetId = &pid
 	}
 	if fp.Description != nil {
 		body.Description = fp.Description

@@ -7,7 +7,7 @@ never need to look up an opaque preset slug or configurator ID.
 
 | MR kind                                  | Allowed `initialSizeGB` values | Source of truth                                |
 |------------------------------------------|--------------------------------|------------------------------------------------|
-| `containerregistry.m.timeweb.crossplane.io/ContainerRegistry` | `5`, `10`, `25`, `50`, `75`, `100` | Timeweb dashboard → Container Registry → "Фиксированная" tiers |
+| `kubernetes.m.timeweb.crossplane.io/ContainerRegistry` | `5`, `10`, `25`, `50`, `75`, `100` | Timeweb dashboard → Container Registry → "Фиксированная" tiers |
 | `objectstorage.m.timeweb.crossplane.io/S3Bucket`              | `1`, `10`, `100`, `250`            | Timeweb dashboard → S3 Storage → tier picker   |
 
 Both values are also encoded as a CEL `+kubebuilder:validation:Enum=…` on
@@ -18,7 +18,7 @@ the CRD, so applying an out-of-list value is rejected at admission time.
 ### Smallest Container Registry (5 GB)
 
 ```yaml
-apiVersion: containerregistry.m.timeweb.crossplane.io/v1alpha1
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
 kind: ContainerRegistry
 metadata:
   name: cr-team-a

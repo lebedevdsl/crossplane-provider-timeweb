@@ -199,7 +199,7 @@ spec:
                     description: |-
                       PresetName is the master-node preset slug resolved against
                       /api/v1/presets/k8s (type=master) to the upstream preset_id.
-                      Immutable post-create.
+                      Immutable post-create. Exactly one of presetName/resources (CEL).
                     pattern: ^[a-z0-9][a-z0-9-]*[a-z0-9]$
                     type: string
                   projectID:
@@ -282,12 +282,30 @@ spec:
                             type: string
                         type: object
                     type: object
+                  resources:
+                    description: |-
+                      Resources is the custom-configurator sizing path for the master nodes
+                      (cpu/ramGB/diskGB) — alternative to presetName. Immutable post-create.
+                    properties:
+                      cpu:
+                        minimum: 1
+                        type: integer
+                      diskGB:
+                        minimum: 1
+                        type: integer
+                      ramGB:
+                        minimum: 1
+                        type: integer
+                    required:
+                    - cpu
+                    - diskGB
+                    - ramGB
+                    type: object
                 required:
                 - availabilityZone
                 - k8sVersion
                 - name
                 - networkDriver
-                - presetName
                 type: object
               managementPolicies:
                 default:
@@ -364,6 +382,12 @@ spec:
                     description: K8sVersion is the observed cluster version (drives
                       the upgrade diff).
                     type: string
+                  lockedConfiguratorID:
+                    description: |-
+                      LockedConfiguratorID is the upstream configurator id resolved at Create
+                      when sized via `resources` (drives sizing-variant-switch detection).
+                    format: int64
+                    type: integer
                   lockedPresetID:
                     description: LockedPresetID is the upstream master preset_id resolved
                       at Create.
@@ -461,6 +485,9 @@ spec:
         - message: at most one of projectRef, projectSelector, projectID may be set
           rule: (has(self.spec.forProvider.projectRef)?1:0) + (has(self.spec.forProvider.projectSelector)?1:0)
             + (has(self.spec.forProvider.projectID)?1:0) <= 1
+        - message: exactly one of presetName or resources must be set
+          rule: (has(self.spec.forProvider.presetName)?1:0) + (has(self.spec.forProvider.resources)?1:0)
+            == 1
     served: true
     storage: true
     subresources:

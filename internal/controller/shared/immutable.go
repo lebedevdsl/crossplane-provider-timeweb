@@ -29,6 +29,24 @@ import (
 // Callers may inspect with errors.Is to short-circuit reconciliation paths.
 var ErrImmutableFieldChange = errors.New("immutable field change")
 
+// ErrSizingSwitchRequiresRecreate is the sentinel returned by RejectSizingSwitch
+// when an operator flips a live resource between the preset and custom-resources
+// sizing variants (feature 005 FR-004).
+var ErrSizingSwitchRequiresRecreate = errors.New("sizing variant switch requires recreate")
+
+// RejectSizingSwitch sets Synced=False (reason SizingSwitchRequiresRecreate) +
+// a Warning event, and returns ErrSizingSwitchRequiresRecreate, when the
+// operator changes which sizing variant (presetName vs resources) a live
+// resource uses. The variant is create-time immutable; recreate to change it.
+func RejectSizingSwitch(mg resource.Managed, eventRec record.EventRecorder) error {
+	msg := "sizing variant (presetName <-> resources) is immutable; delete and recreate the resource to change it"
+	mg.SetConditions(SyncedFalse(ReasonSizingSwitchRequiresRecreate, msg))
+	if eventRec != nil {
+		eventRec.Event(mg, corev1.EventTypeWarning, string(ReasonSizingSwitchRequiresRecreate), msg)
+	}
+	return ErrSizingSwitchRequiresRecreate
+}
+
 // RejectImmutableChange enforces FR-017 across every controller:
 //
 //   - sets `Synced=False` with reason ImmutableFieldChange on the resource,

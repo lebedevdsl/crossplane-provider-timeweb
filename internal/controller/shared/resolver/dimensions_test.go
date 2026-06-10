@@ -45,8 +45,10 @@ func TestDefaultRegistry_Discoverable(t *testing.T) {
 		{DimKubernetesWorkerPreset, DimensionPreset, true},
 		{DimKubernetesVersion, DimensionEnum, true},
 
+		// Feature 005 — promoted to a live fetcher (custom configurator sizing).
+		{DimServerConfigurator, DimensionConfigurator, true},
+
 		// Forward-compat — still stubbed. See dimensions.go header comment.
-		{DimServerConfigurator, DimensionConfigurator, false},
 		{DimKubernetesNetworkDriver, DimensionEnum, false},
 		{DimAvailabilityZone, DimensionEnum, false},
 	}

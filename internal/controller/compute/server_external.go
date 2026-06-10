@@ -43,6 +43,9 @@ type serverExternal struct {
 	recorder record.EventRecorder
 	resolver resolver.Resolver
 	pcRef    resolver.PCRef
+	// resolved holds the effective upstream IDs from the ref trios, computed
+	// in Connect (resolveRefs) without mutating spec (FR-010).
+	resolved resolvedRefs
 }
 
 // Observe fetches the upstream Server and reports existence + up-to-date.
@@ -89,7 +92,7 @@ func (e *serverExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 	// Resolved-ref status fields are populated here (not only in Create) —
 	// the runtime persists the atProvider written during Observe, whereas
 	// Create's atProvider writes don't survive to the next reconcile.
-	populateResolvedRefs(cr)
+	populateResolvedRefs(cr, e.resolved)
 	setReadyCondition(cr, envelope.Server.Status)
 
 	// Confirm the floating-IP binding set (read-only). Candidates are the
@@ -97,7 +100,7 @@ func (e *serverExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 	// bound — so an IP the operator just removed is still re-checked and
 	// can be detected as drift requiring an unbind in Update.
 	serverID := int(envelope.Server.Id)
-	candidates := append(append([]string{}, cr.Spec.ForProvider.FloatingIPIDs...), cr.Status.AtProvider.BoundFloatingIPs...)
+	candidates := append(append([]string{}, e.resolved.floatingIPIDs...), cr.Status.AtProvider.BoundFloatingIPs...)
 	bound, err := e.observeBoundFloatingIPs(ctx, candidates, serverID)
 	if err != nil {
 		return managed.ExternalObservation{}, err
@@ -105,7 +108,7 @@ func (e *serverExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 	cr.Status.AtProvider.BoundFloatingIPs = bound
 
 	upToDate := isServerUpToDate(cr.Spec.ForProvider, envelope.Server) &&
-		stringSetsEqual(bound, cr.Spec.ForProvider.FloatingIPIDs)
+		stringSetsEqual(bound, e.resolved.floatingIPIDs)
 
 	return managed.ExternalObservation{
 		ResourceExists:    true,
@@ -134,16 +137,24 @@ func (e *serverExternal) Create(ctx context.Context, mg resource.Managed) (manag
 		}
 	}
 
-	presetID, err := e.resolvePreset(ctx, cr.Spec.ForProvider.PresetName)
-	if err != nil {
-		return managed.ExternalCreation{}, err
-	}
 	osID, err := e.resolveOSImage(ctx, cr.Spec.ForProvider.OS)
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
+	// Sizing: exactly one of resources (custom configurator) or presetName
+	// (CEL-enforced). The resources path resolves to a configurator id; the
+	// preset path to a preset id.
+	var presetID, configuratorID float32
+	if cr.Spec.ForProvider.Resources != nil {
+		configuratorID, err = e.resolveConfigurator(ctx, cr.Spec.ForProvider)
+	} else {
+		presetID, err = e.resolvePreset(ctx, *cr.Spec.ForProvider.PresetName)
+	}
+	if err != nil {
+		return managed.ExternalCreation{}, err
+	}
 
-	body := buildCreateServerBody(cr, presetID, osID)
+	body := buildCreateServerBody(cr, presetID, configuratorID, osID, e.resolved)
 	resp, err := e.tw.CreateServer(ctx, body)
 	if err != nil {
 		return managed.ExternalCreation{}, timeweb.ClassifyNetworkError(err)
@@ -166,13 +177,18 @@ func (e *serverExternal) Create(ctx context.Context, mg resource.Managed) (manag
 
 	meta.SetExternalName(cr, shared.EncodeID(int(envelope.Server.Id)))
 	populateServerStatus(cr, envelope.Server)
-	populateResolvedRefs(cr)
+	populateResolvedRefs(cr, e.resolved)
 
-	// Record the locked IDs that drive drift detection on subsequent
-	// reconciles (FR-008).
-	pid := int64(presetID)
+	// Record the locked IDs that drive drift + sizing-switch detection on
+	// subsequent reconciles (FR-008 / feature 005 FR-004).
+	if cr.Spec.ForProvider.Resources != nil {
+		cid := int64(configuratorID)
+		cr.Status.AtProvider.LockedConfiguratorID = &cid
+	} else {
+		pid := int64(presetID)
+		cr.Status.AtProvider.LockedPresetID = &pid
+	}
 	oid := int64(osID)
-	cr.Status.AtProvider.LockedPresetID = &pid
 	cr.Status.AtProvider.LockedOSID = &oid
 
 	cr.Status.SetConditions(xpv2.Creating())
@@ -212,6 +228,15 @@ func (e *serverExternal) Update(ctx context.Context, mg resource.Managed) (manag
 	_ = json.Unmarshal(getBody, &envelope)
 	observed := envelope.Server
 
+	// Sizing-variant-switch detection (feature 005 FR-004): the variant the
+	// resource was created with is locked. Flipping preset↔resources requires
+	// a recreate.
+	switchedToResources := cr.Spec.ForProvider.Resources != nil && cr.Status.AtProvider.LockedPresetID != nil
+	switchedToPreset := cr.Spec.ForProvider.Resources == nil && cr.Status.AtProvider.LockedConfiguratorID != nil
+	if switchedToResources || switchedToPreset {
+		return managed.ExternalUpdate{}, shared.RejectSizingSwitch(cr, e.recorder)
+	}
+
 	// Detect drift on immutable fields per R-5 / FR-009. Drift here
 	// means the operator mutated a locked field — reject loudly.
 	if cr.Status.AtProvider.LockedPresetID != nil && observed.PresetId != nil {
@@ -237,12 +262,12 @@ func (e *serverExternal) Update(ctx context.Context, mg resource.Managed) (manag
 	// name/comment/cloudInit are unchanged. Binding waits for the VM to be
 	// "on"; until then this returns an error so the reconcile retries.
 	serverOn := strings.EqualFold(string(observed.Status), "on")
-	candidates := append(append([]string{}, cr.Spec.ForProvider.FloatingIPIDs...), cr.Status.AtProvider.BoundFloatingIPs...)
+	candidates := append(append([]string{}, e.resolved.floatingIPIDs...), cr.Status.AtProvider.BoundFloatingIPs...)
 	currentlyBound, err := e.observeBoundFloatingIPs(ctx, candidates, id)
 	if err != nil {
 		return managed.ExternalUpdate{}, err
 	}
-	if err := e.reconcileFloatingIPBindings(ctx, id, cr.Spec.ForProvider.FloatingIPIDs, currentlyBound, serverOn); err != nil {
+	if err := e.reconcileFloatingIPBindings(ctx, id, e.resolved.floatingIPIDs, currentlyBound, serverOn); err != nil {
 		return managed.ExternalUpdate{}, err
 	}
 
@@ -345,6 +370,48 @@ func (e *serverExternal) resolvePreset(ctx context.Context, slug string) (float3
 	return float32(po.UpstreamID), nil
 }
 
+// resolveConfigurator turns the operator-typed `resources` block into an
+// upstream configurator id via the in-controller resolver (feature 005).
+// Filters: location (always) + optional diskType/cpuFrequencyTier/
+// enableLocalNetwork. Sizing: cpu, ramMB (ramGB×1024), diskGB, optional
+// bandwidth/gpu.
+func (e *serverExternal) resolveConfigurator(ctx context.Context, fp computev1alpha1.ServerParameters) (float32, error) {
+	r := fp.Resources
+	filters := map[string]any{"location": fp.Location}
+	if r.DiskType != nil {
+		filters["disk_type"] = *r.DiskType
+	}
+	if r.CPUFrequencyTier != nil {
+		filters["cpu_frequency"] = *r.CPUFrequencyTier
+	}
+	if r.EnableLocalNetwork != nil {
+		filters["is_allowed_local_network"] = *r.EnableLocalNetwork
+	}
+	sizing := map[string]int64{
+		"cpu":    int64(r.CPU),
+		"ramMB":  int64(r.RAMGB) * 1024,
+		"diskGB": int64(r.DiskGB),
+	}
+	if r.BandwidthMbps != nil {
+		sizing["bandwidth"] = int64(*r.BandwidthMbps)
+	}
+	if r.GPU != nil {
+		sizing["gpu"] = int64(*r.GPU)
+	}
+	out, err := e.resolver.Resolve(ctx, e.pcRef,
+		resolver.Dimension{Name: resolver.DimServerConfigurator, Kind: resolver.DimensionConfigurator},
+		resolver.ConfiguratorInput{Filters: filters, Sizing: sizing},
+	)
+	if err != nil {
+		return 0, err
+	}
+	co, ok := out.(resolver.ConfiguratorOutput)
+	if !ok {
+		return 0, fmt.Errorf("compute/server: resolver returned %T, want ConfiguratorOutput", out)
+	}
+	return float32(co.UpstreamID), nil
+}
+
 // resolveOSImage turns the operator-typed (image, version) pair into the
 // upstream os_id via the resolver. The `ServerOSImage` dimension is
 // modeled as Preset (slug-keyed) — slug rule is `Slugify(image, version)`,
@@ -403,16 +470,15 @@ func (e *serverExternal) checkNetworkLocationByID(ctx context.Context, vpcID, se
 // into status.atProvider so `kubectl describe` shows what the server was
 // actually wired to. For the networkID import path this records the
 // operator-supplied VPC ID verbatim (US3 / T036).
-func populateResolvedRefs(cr *computev1alpha1.Server) {
-	fp := cr.Spec.ForProvider
-	if fp.NetworkID != nil {
-		cr.Status.AtProvider.ResolvedNetworkID = fp.NetworkID
+func populateResolvedRefs(cr *computev1alpha1.Server, refs resolvedRefs) {
+	if refs.networkID != nil {
+		cr.Status.AtProvider.ResolvedNetworkID = refs.networkID
 	}
-	if fp.ProjectID != nil {
-		cr.Status.AtProvider.ResolvedProjectID = fp.ProjectID
+	if refs.projectID != nil {
+		cr.Status.AtProvider.ResolvedProjectID = refs.projectID
 	}
-	if len(fp.SSHKeyIDs) > 0 {
-		cr.Status.AtProvider.ResolvedSSHKeyIDs = fp.SSHKeyIDs
+	if len(refs.sshKeyIDs) > 0 {
+		cr.Status.AtProvider.ResolvedSSHKeyIDs = refs.sshKeyIDs
 	}
 }
 
@@ -421,12 +487,34 @@ func populateResolvedRefs(cr *computev1alpha1.Server) {
 // buildCreateServerBody assembles the createServer POST body from a
 // resolved Server MR. Caller MUST have resolved presetID + osID + the
 // project / sshKey / network refs (refs.go) before calling this.
-func buildCreateServerBody(cr *computev1alpha1.Server, presetID, osID float32) twgen.CreateServerJSONRequestBody {
+func buildCreateServerBody(cr *computev1alpha1.Server, presetID, configuratorID, osID float32, refs resolvedRefs) twgen.CreateServerJSONRequestBody {
 	fp := cr.Spec.ForProvider
 	body := twgen.CreateServerJSONRequestBody{
-		Name:     fp.Name,
-		PresetId: &presetID,
-		OsId:     &osID,
+		Name: fp.Name,
+		OsId: &osID,
+	}
+	if fp.Resources != nil {
+		// Custom sizing: emit the configuration block (configurator_id + the
+		// requested cpu/ram/disk/gpu in upstream MB units). XOR with preset_id.
+		r := fp.Resources
+		body.Configuration = &struct {
+			ConfiguratorId float32  `json:"configurator_id"` //nolint:revive // mirrors oapi-codegen output
+			Cpu            float32  `json:"cpu"`             //nolint:revive // mirrors oapi-codegen output
+			Disk           float32  `json:"disk"`            //nolint:revive // mirrors oapi-codegen output
+			Gpu            *float32 `json:"gpu,omitempty"`   //nolint:revive // mirrors oapi-codegen output
+			Ram            float32  `json:"ram"`             //nolint:revive // mirrors oapi-codegen output
+		}{
+			ConfiguratorId: configuratorID,
+			Cpu:            float32(r.CPU),
+			Ram:            float32(r.RAMGB * 1024),
+			Disk:           float32(r.DiskGB * 1024),
+		}
+		if r.GPU != nil {
+			g := float32(*r.GPU)
+			body.Configuration.Gpu = &g
+		}
+	} else {
+		body.PresetId = &presetID
 	}
 	if fp.Hostname != nil {
 		body.Hostname = fp.Hostname
@@ -441,18 +529,18 @@ func buildCreateServerBody(cr *computev1alpha1.Server, presetID, osID float32) t
 		az := twgen.AvailabilityZone(*fp.AvailabilityZone)
 		body.AvailabilityZone = &az
 	}
-	if fp.ProjectID != nil {
-		pid := float32(*fp.ProjectID)
+	if refs.projectID != nil {
+		pid := float32(*refs.projectID)
 		body.ProjectId = &pid
 	}
-	if len(fp.SSHKeyIDs) > 0 {
-		ids := make([]float32, 0, len(fp.SSHKeyIDs))
-		for _, k := range fp.SSHKeyIDs {
+	if len(refs.sshKeyIDs) > 0 {
+		ids := make([]float32, 0, len(refs.sshKeyIDs))
+		for _, k := range refs.sshKeyIDs {
 			ids = append(ids, float32(k))
 		}
 		body.SshKeysIds = &ids
 	}
-	if fp.NetworkID != nil {
+	if refs.networkID != nil {
 		// The anonymous struct shape is dictated by oapi-codegen's emit
 		// of the createServer body's `network` field — field names mirror
 		// the upstream JSON keys verbatim and must NOT be renamed.
@@ -462,7 +550,7 @@ func buildCreateServerBody(cr *computev1alpha1.Server, presetID, osID float32) t
 			Ip              *string   `json:"ip,omitempty"`                //nolint:revive // mirrors oapi-codegen output
 			LocalIp         *string   `json:"local_ip,omitempty"`          //nolint:revive // mirrors oapi-codegen output
 			NetworkDriveIds *[]string `json:"network_drive_ids,omitempty"` //nolint:revive // mirrors oapi-codegen output
-		}{Id: fp.NetworkID}
+		}{Id: refs.networkID}
 	}
 	return body
 }

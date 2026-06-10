@@ -201,6 +201,17 @@ TWE_SERVER_PRESET=$(curl -fsS \
   ')
 echo "[e2e]   → $TWE_SERVER_PRESET"
 
+# --- 2a2. Discover a satisfiable custom sizing from /configurator/servers (feat 005) ---
+# The cheapest ru-1 configurator's mins give a guaranteed-valid {cpu,ramGB,diskGB}
+# for the Server custom-sizing bundle (16). ram/disk are MB upstream → /1024 to GB.
+echo "[e2e] discovering a satisfiable ru-1 configurator sizing"
+CFG=$(curl -fsS -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" "${TW_API}/api/v1/configurator/servers" \
+  | jq -er '.server_configurators | map(select(.location=="ru-1")) | .[0].requirements')
+TWE_SRV_CPU=$(echo "$CFG" | jq -er '.cpu_min')
+TWE_SRV_RAMGB=$(echo "$CFG" | jq -er '(.ram_min/1024)|floor')
+TWE_SRV_DISKGB=$(echo "$CFG" | jq -er '(.disk_min/1024)|floor')
+echo "[e2e]   → cpu=$TWE_SRV_CPU ramGB=$TWE_SRV_RAMGB diskGB=$TWE_SRV_DISKGB"
+
 # --- 2b. Discover managed-Kubernetes presets + a k8s version (feature 004) ---
 # /api/v1/presets/k8s is a discriminated list (type=master|worker); the slug is
 # `description_short` (no location — AZ is set at cluster level). Pick the
@@ -237,6 +248,7 @@ TWE_K8S_CLUSTER_NAME="e2e-k8s-$TS"
 
 export TWE_PROJECT_ID TWE_SSH_NAME TWE_S3_NAME TWE_CR_NAME TWE_SERVER_NAME TWE_SERVER_PRESET TWE_NETWORK_NAME
 export TWE_K8S_MASTER_PRESET TWE_K8S_WORKER_PRESET TWE_K8S_VERSION TWE_K8S_CLUSTER_NAME
+export TWE_SRV_CPU TWE_SRV_RAMGB TWE_SRV_DISKGB
 
 echo "[e2e] generated names:"
 echo "[e2e]   SSHKey:        $TWE_SSH_NAME"
@@ -287,7 +299,7 @@ e2e_resources() {
     projects.project.m.timeweb.crossplane.io,\
 sshkeys.sshkey.m.timeweb.crossplane.io,\
 s3buckets.objectstorage.m.timeweb.crossplane.io,\
-containerregistries.containerregistry.m.timeweb.crossplane.io,\
+containerregistries.kubernetes.m.timeweb.crossplane.io,\
 servers.compute.m.timeweb.crossplane.io,\
 networks.network.m.timeweb.crossplane.io,\
 floatingips.network.m.timeweb.crossplane.io \
@@ -333,7 +345,7 @@ cp -R test/e2e/kuttl/. "$TMP_BUNDLE/"
 # Restrict envsubst to the TWE_* allow-list so unrelated `$` literals
 # elsewhere in YAML (e.g. JSONPath expressions in assertions) are not
 # clobbered.
-TWE_VARS='${TWE_PROJECT_ID} ${TWE_SSH_NAME} ${TWE_S3_NAME} ${TWE_CR_NAME} ${TWE_SERVER_NAME} ${TWE_SERVER_PRESET} ${TWE_NETWORK_NAME} ${TWE_IMPORT_VPC_ID} ${TWE_K8S_MASTER_PRESET} ${TWE_K8S_WORKER_PRESET} ${TWE_K8S_VERSION} ${TWE_K8S_CLUSTER_NAME} ${TWE_K8S_ADDON_TYPE} ${TWE_K8S_ADDON_VERSION}'
+TWE_VARS='${TWE_PROJECT_ID} ${TWE_SSH_NAME} ${TWE_S3_NAME} ${TWE_CR_NAME} ${TWE_SERVER_NAME} ${TWE_SERVER_PRESET} ${TWE_NETWORK_NAME} ${TWE_IMPORT_VPC_ID} ${TWE_K8S_MASTER_PRESET} ${TWE_K8S_WORKER_PRESET} ${TWE_K8S_VERSION} ${TWE_K8S_CLUSTER_NAME} ${TWE_K8S_ADDON_TYPE} ${TWE_K8S_ADDON_VERSION} ${TWE_SRV_CPU} ${TWE_SRV_RAMGB} ${TWE_SRV_DISKGB}'
 
 find "$TMP_BUNDLE" -type f \( -name '*.yaml' -o -name '*.yml' \) -print0 \
   | while IFS= read -r -d '' f; do
@@ -387,11 +399,18 @@ echo "[e2e] context safety checks passed: $E2E_KUBECONTEXT → $api_server"
 # --- 7. Run kuttl -----------------------------------------------------------
 
 KUTTL_ARGS=()
-# Optional scoping: KUTTL_TEST="<name>" restricts the run to matching bundle(s)
-# (kuttl --test is a substring filter; repeat for multiple). Handy for iterating
-# on one bundle (e.g. KUTTL_TEST=12-k8s-cluster-lifecycle) without the full suite.
+# Optional scoping: KUTTL_TEST="<name> [<name>...]" restricts the run to the
+# matching bundle(s). kuttl's --test is a regex, and (quirk) only the LAST
+# --test on the command line is honored — so multiple space-separated names are
+# joined into ONE alternation regex rather than emitted as repeated --test flags.
+# Handy for iterating on a subset (e.g. KUTTL_TEST="16-server-custom-sizing
+# 17-k8s-custom-sizing") without the full suite.
 if [ -n "${KUTTL_TEST:-}" ]; then
-  for t in $KUTTL_TEST; do KUTTL_ARGS+=(--test "$t"); done
+  kuttl_re=""
+  for t in $KUTTL_TEST; do
+    kuttl_re="${kuttl_re:+$kuttl_re|}$t"
+  done
+  KUTTL_ARGS+=(--test "($kuttl_re)")
 fi
 if [ "$TWE_MULTI_PC_ENABLED" = "0" ]; then
   # kuttl's --skip-delete + --test (regex filter) wouldn't suppress the

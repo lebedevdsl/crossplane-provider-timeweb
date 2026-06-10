@@ -53,9 +53,14 @@ var ErrTargetNotReady = errors.New("compute/server: referenced MR not yet ready 
 var ErrNetworkLocationMismatch = errors.New("compute/server: referenced Network location does not match Server location")
 
 // resolveRefs walks the four optional reference trios on a Server's
-// `forProvider` (project, sshKey, network — floatingIP is deferred to
-// US4/Phase 6) and populates the corresponding flat `*ID` fields on
-// `forProvider` so the Create body can be built without further lookups.
+// `forProvider` (project, sshKey, network, floatingIP) and RETURNS the
+// effective upstream IDs WITHOUT mutating spec.
+//
+// Feature 005 / FR-010: resolveRefs MUST NOT write resolved values back onto
+// spec.forProvider. The previous version set the flat `*ID` field from the
+// matching `*Ref`, leaving BOTH set — which the `at-most-one` CEL rule then
+// rejected when the runtime persisted the object (external-name / finalizer
+// write). Resolved values now ride on resolvedRefs (carried on the external).
 //
 // Resolution rules per data-model.md §1.1:
 //   - At most one of each trio's `Ref`/`Selector`/`ID` MAY be set (CEL
@@ -64,75 +69,85 @@ var ErrNetworkLocationMismatch = errors.New("compute/server: referenced Network 
 //   - `Ref` set → `client.Get` the target MR by name in the same
 //     namespace; extract `status.atProvider.upstreamID`. Empty upstream
 //     ID → ErrTargetNotReady. Not found → ErrTargetNotFound.
-//   - `Selector` set → for v0.3, we DON'T support selectors yet
-//     (deferred to feature 005). A non-empty selector returns an error
-//     pointing operators at `Ref` or `ID`.
+//   - `Selector` set → not supported yet; returns an error pointing
+//     operators at `Ref` or `ID`.
 //   - All three unset → no-op (optional ref).
-func resolveRefs(ctx context.Context, kube client.Client, cr *computev1alpha1.Server) error {
+type resolvedRefs struct {
+	projectID     *int64
+	sshKeyIDs     []int64
+	networkID     *string
+	floatingIPIDs []string
+}
+
+func resolveRefs(ctx context.Context, kube client.Client, cr *computev1alpha1.Server) (resolvedRefs, error) {
 	ns := cr.GetNamespace()
-	fp := &cr.Spec.ForProvider
+	fp := cr.Spec.ForProvider
+	var r resolvedRefs
 
 	// --- Project ----------------------------------------------------------
-	if fp.ProjectID == nil && fp.ProjectRef != nil {
+	switch {
+	case fp.ProjectID != nil:
+		r.projectID = fp.ProjectID
+	case fp.ProjectRef != nil:
 		pid, err := resolveProjectRef(ctx, kube, ns, fp.ProjectRef)
 		if err != nil {
-			return err
+			return r, err
 		}
-		fp.ProjectID = &pid
-	}
-	if fp.ProjectSelector != nil && fp.ProjectID == nil {
-		return fmt.Errorf("compute/server: forProvider.projectSelector is not implemented in v0.3 — use projectRef or projectID")
+		r.projectID = &pid
+	case fp.ProjectSelector != nil:
+		return r, fmt.Errorf("compute/server: forProvider.projectSelector is not implemented — use projectRef or projectID")
 	}
 
 	// --- SSH keys ---------------------------------------------------------
-	if len(fp.SSHKeyIDs) == 0 && len(fp.SSHKeyRefs) > 0 {
+	switch {
+	case len(fp.SSHKeyIDs) > 0:
+		r.sshKeyIDs = fp.SSHKeyIDs
+	case len(fp.SSHKeyRefs) > 0:
 		ids, err := resolveSSHKeyRefs(ctx, kube, ns, fp.SSHKeyRefs)
 		if err != nil {
-			return err
+			return r, err
 		}
-		fp.SSHKeyIDs = ids
-	}
-	if fp.SSHKeySelector != nil && len(fp.SSHKeyIDs) == 0 {
-		return fmt.Errorf("compute/server: forProvider.sshKeySelector is not implemented in v0.3 — use sshKeyRefs or sshKeyIDs")
+		r.sshKeyIDs = ids
+	case fp.SSHKeySelector != nil:
+		return r, fmt.Errorf("compute/server: forProvider.sshKeySelector is not implemented — use sshKeyRefs or sshKeyIDs")
 	}
 
 	// --- Network ----------------------------------------------------------
-	if fp.NetworkID == nil && fp.NetworkRef != nil {
+	switch {
+	case fp.NetworkID != nil:
+		r.networkID = fp.NetworkID
+	case fp.NetworkRef != nil:
 		vid, loc, err := resolveNetworkRef(ctx, kube, ns, fp.NetworkRef)
 		if err != nil {
-			return err
+			return r, err
 		}
 		// FR-012 pre-flight: a Server may only attach to a Network in the
-		// same location. Catch the mismatch here so the operator sees a
-		// clear message rather than the upstream's raw rejection.
+		// same location.
 		if loc != "" && loc != fp.Location {
-			return fmt.Errorf("%w: Network %q is in %q but Server is in %q",
+			return r, fmt.Errorf("%w: Network %q is in %q but Server is in %q",
 				ErrNetworkLocationMismatch, fp.NetworkRef.Name, loc, fp.Location)
 		}
-		fp.NetworkID = &vid
-	}
-	if fp.NetworkSelector != nil && fp.NetworkID == nil {
-		return fmt.Errorf("compute/server: forProvider.networkSelector is not implemented in v0.3 — use networkRef or networkID")
+		r.networkID = &vid
+	case fp.NetworkSelector != nil:
+		return r, fmt.Errorf("compute/server: forProvider.networkSelector is not implemented — use networkRef or networkID")
 	}
 
 	// --- Floating IPs ------------------------------------------------------
 	// Server-consumes-IP (2026-06-01 reversal): the Server owns bind/unbind.
-	// Resolve floatingIPRefs → flat floatingIPIDs (FloatingIP upstream IDs,
-	// strings) so the bind reconciler (floatingip_bind.go) has the desired
-	// set. A not-ready FloatingIP (empty upstreamID) gates binding via
-	// ErrTargetNotReady; not-found gates via ErrTargetNotFound.
-	if len(fp.FloatingIPIDs) == 0 && len(fp.FloatingIPRefs) > 0 {
+	switch {
+	case len(fp.FloatingIPIDs) > 0:
+		r.floatingIPIDs = fp.FloatingIPIDs
+	case len(fp.FloatingIPRefs) > 0:
 		ids, err := resolveFloatingIPRefs(ctx, kube, ns, fp.FloatingIPRefs)
 		if err != nil {
-			return err
+			return r, err
 		}
-		fp.FloatingIPIDs = ids
-	}
-	if fp.FloatingIPSelector != nil && len(fp.FloatingIPIDs) == 0 {
-		return fmt.Errorf("compute/server: forProvider.floatingIPSelector is not implemented in v0.3 — use floatingIPRefs or floatingIPIDs")
+		r.floatingIPIDs = ids
+	case fp.FloatingIPSelector != nil:
+		return r, fmt.Errorf("compute/server: forProvider.floatingIPSelector is not implemented — use floatingIPRefs or floatingIPIDs")
 	}
 
-	return nil
+	return r, nil
 }
 
 func resolveFloatingIPRefs(ctx context.Context, kube client.Client, ns string, refs []xpv2.Reference) ([]string, error) {

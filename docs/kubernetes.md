@@ -55,6 +55,28 @@ until then). Preset slugs are derived from the catalog `description_short`
 > disambiguator to use — append the upstream id, e.g.
 > `presetName: k8s-promo-1-rub-1999`.
 
+### Custom sizing (configurators)
+
+To sidestep ambiguous preset slugs entirely, size the cluster and/or nodepool
+by `resources` (cpu/ramGB/diskGB) instead of `presetName`:
+
+```yaml
+# KubernetesCluster.spec.forProvider
+    resources: { cpu: 4, ramGB: 8, diskGB: 80 }     # masters; no presetName
+# KubernetesClusterNodepool.spec.forProvider
+    resources: { cpu: 4, ramGB: 16, diskGB: 120 }   # workers; optional gpu
+```
+
+- Exactly one of `presetName` / `resources` per kind (admission-enforced);
+  presets remain supported.
+- `ramGB`/`diskGB` are normalized to the upstream MB units and emitted as the
+  `configuration` block; `status.atProvider.lockedConfiguratorID` records the
+  resolved configurator.
+- Unsatisfiable → `reason=NoConfiguratorAvailable`; flipping the sizing variant
+  on a live resource → `reason=SizingSwitchRequiresRecreate`.
+- Configurator resolution is sizing-only (the upstream validates region/AZ
+  compatibility on create).
+
 ## 2. Scale a worker pool
 
 ```bash

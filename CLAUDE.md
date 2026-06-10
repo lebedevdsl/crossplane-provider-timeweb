@@ -1,9 +1,36 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan at
-`specs/004-k8s-cluster-nodepool/plan.md`.
+`specs/005-custom-sizing-configurators/plan.md`.
 
 Companion artifacts in the same directory:
+- `spec.md` — feature spec (clarified). Three bundled workstreams:
+  (1) **custom configurator sizing** — a `forProvider.resources`
+  (`cpu`/`ramGB`/`diskGB` + optional axes) block, CEL-`exactly-one-of` with
+  `presetName`, resolving to an upstream `configurator_id` via the existing
+  resolver `Configurator` dimension — on `Server` first, then
+  `KubernetesCluster`/`KubernetesClusterNodepool` (removes the ambiguous-preset
+  pain from feat 004; presets stay first-class); (2) **ContainerRegistry hard
+  move** from `containerregistry.m.…` → `kubernetes.m.timeweb.crossplane.io`
+  (mirrors the dashboard's Kubernetes→registries tab; breaking, pre-1.0);
+  (3) **tech-debt pass** — fix the `Server.resolveRefs` spec-mutation/CEL
+  latent bug (same as the feat-004 cluster fix), e2e harness fixes
+  (`e2e.down`, kuttl multi-`--test`, condition-order asserts), and
+  Connect-error `reason=Reconciling` alignment.
+- `research.md` — Phase 0 (R-1 configurator reuse, R-2 axis/unit normalization,
+  R-3 Server resources mapping, R-4 sizing-switch, R-5 K8s `configuration`,
+  R-6 CR group-move strategy, R-7 Server-CEL fix, R-8 e2e fixes, R-9 reason
+  alignment).
+- `data-model.md` — the shared `resources` block + per-kind changes +
+  `lockedConfiguratorID` + the `DimServerConfigurator` stub→real promotion +
+  the relocated ContainerRegistry kinds.
+- `contracts/` — `server-resources-v1alpha1.md`,
+  `kubernetes-resources-v1alpha1.md`, `containerregistry-group-move.md`,
+  `timeweb-configurator-endpoints.md`.
+- `quickstart.md` — custom-sizing walkthrough (Server + K8s) + the CR
+  group-move re-apply.
+
+Earlier features' companion artifacts (for reference):
 - `spec.md` — feature specification with locked clarifications. Adds three
   new MR kinds in API group `kubernetes.m.timeweb.crossplane.io`:
   `KubernetesCluster` (managed control plane), `KubernetesClusterNodepool`

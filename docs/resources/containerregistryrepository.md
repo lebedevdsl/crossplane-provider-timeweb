@@ -4,7 +4,7 @@ A repository (image namespace) inside a parent `ContainerRegistry`.
 
 | Property | Value |
 | -------- | ----- |
-| API group | `containerregistry.m.timeweb.crossplane.io` |
+| API group | `kubernetes.m.timeweb.crossplane.io` |
 | Kind | `ContainerRegistryRepository` |
 | Scope | Namespaced |
 | External-name format | `<parent-registry-name>/<repository-name>` (composite, R-2) |
@@ -29,7 +29,7 @@ resource is **observe-only**:
 ## Manifest
 
 ```yaml
-apiVersion: containerregistry.m.timeweb.crossplane.io/v1alpha1
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
 kind: ContainerRegistryRepository
 metadata:
   name: backend

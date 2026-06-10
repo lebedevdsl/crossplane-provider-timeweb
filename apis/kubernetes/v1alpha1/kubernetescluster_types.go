@@ -21,6 +21,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// KubernetesResources is the custom-configurator sizing block for the master
+// control plane (feature 005): cpu (cores), ramGB, diskGB. The controller
+// resolves these to an upstream configurator and emits the cluster
+// `configuration` block (ram/disk normalized to MB). Immutable post-create.
+type KubernetesResources struct {
+	// +kubebuilder:validation:Minimum=1
+	CPU int `json:"cpu"`
+	// +kubebuilder:validation:Minimum=1
+	RAMGB int `json:"ramGB"`
+	// +kubebuilder:validation:Minimum=1
+	DiskGB int `json:"diskGB"`
+}
+
 // KubernetesClusterParameters is the operator-settable surface for the
 // managed control plane. See spec.md FR-004/FR-005 and
 // contracts/kubernetescluster-v1alpha1.md for the authoritative shape.
@@ -49,9 +62,15 @@ type KubernetesClusterParameters struct {
 
 	// PresetName is the master-node preset slug resolved against
 	// /api/v1/presets/k8s (type=master) to the upstream preset_id.
-	// Immutable post-create.
+	// Immutable post-create. Exactly one of presetName/resources (CEL).
 	// +kubebuilder:validation:Pattern=`^[a-z0-9][a-z0-9-]*[a-z0-9]$`
-	PresetName string `json:"presetName"`
+	// +optional
+	PresetName *string `json:"presetName,omitempty"`
+
+	// Resources is the custom-configurator sizing path for the master nodes
+	// (cpu/ramGB/diskGB) — alternative to presetName. Immutable post-create.
+	// +optional
+	Resources *KubernetesResources `json:"resources,omitempty"`
 
 	// Description is a free-form note. Mutable (PATCH).
 	// +optional
@@ -103,6 +122,11 @@ type KubernetesClusterObservation struct {
 	// +optional
 	LockedPresetID *int64 `json:"lockedPresetID,omitempty"`
 
+	// LockedConfiguratorID is the upstream configurator id resolved at Create
+	// when sized via `resources` (drives sizing-variant-switch detection).
+	// +optional
+	LockedConfiguratorID *int64 `json:"lockedConfiguratorID,omitempty"`
+
 	// ResolvedNetworkID is the upstream private-network ID the cluster
 	// attached to (resolved from networkRef/Selector/ID).
 	// +optional
@@ -145,6 +169,7 @@ type KubernetesClusterStatus struct {
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.networkRef)?1:0) + (has(self.spec.forProvider.networkSelector)?1:0) + (has(self.spec.forProvider.networkID)?1:0) <= 1",message="at most one of networkRef, networkSelector, networkID may be set"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.projectRef)?1:0) + (has(self.spec.forProvider.projectSelector)?1:0) + (has(self.spec.forProvider.projectID)?1:0) <= 1",message="at most one of projectRef, projectSelector, projectID may be set"
+// +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.presetName)?1:0) + (has(self.spec.forProvider.resources)?1:0) == 1",message="exactly one of presetName or resources must be set"
 
 // KubernetesCluster is a Timeweb managed Kubernetes control plane. See
 // contracts/kubernetescluster-v1alpha1.md for the full operator surface.

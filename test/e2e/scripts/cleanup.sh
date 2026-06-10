@@ -27,7 +27,7 @@ e2e_resources() {
     projects.project.m.timeweb.crossplane.io,\
 sshkeys.sshkey.m.timeweb.crossplane.io,\
 s3buckets.objectstorage.m.timeweb.crossplane.io,\
-containerregistries.containerregistry.m.timeweb.crossplane.io \
+containerregistries.kubernetes.m.timeweb.crossplane.io \
     --no-headers 2>/dev/null || true
 }
 
@@ -48,7 +48,7 @@ echo "[e2e.cleanup] deleting lifecycle MRs (managementPolicies=['*'] — upstrea
 $KCTL -n "$E2E_NAMESPACE" delete \
   sshkeys.sshkey.m.timeweb.crossplane.io,\
 s3buckets.objectstorage.m.timeweb.crossplane.io,\
-containerregistries.containerregistry.m.timeweb.crossplane.io \
+containerregistries.kubernetes.m.timeweb.crossplane.io \
   --all --timeout=2m --ignore-not-found=true 2>&1 \
   | sed 's/^/[e2e.cleanup]   /' || true
 

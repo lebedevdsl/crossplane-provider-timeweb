@@ -81,10 +81,23 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	// only status.atProvider (external-name + boundFloatingIPs), and a
 	// dangling ref (e.g. a referenced FloatingIP already deleted) would
 	// otherwise fail Connect and wedge the finalizer forever.
+	var resolved resolvedRefs
 	if cr.GetDeletionTimestamp() == nil {
-		if err := resolveRefs(ctx, c.kube, cr); err != nil {
+		r, err := resolveRefs(ctx, c.kube, cr)
+		if err != nil {
+			// FR-011 dependency gating: an unready/missing referenced MR
+			// (ErrTargetNotReady / ErrTargetNotFound) blocks Connect. The
+			// wrapped message names the dependency so the operator sees a clear
+			// "waiting for X" reason in events. NOTE (research R-9): the
+			// surfaced condition reason is the runtime's generic ReconcileError
+			// — crossplane-runtime overwrites Synced after any Connect error and
+			// exposes no per-error reason hook for this manual-resolution
+			// design, so the reconciling-intent lives in the message, not a
+			// dedicated reason. Aligning the reason would require a custom
+			// reconciler wrapper (deferred as over-engineering for a cosmetic).
 			return nil, fmt.Errorf("compute/server: resolve references: %w", err)
 		}
+		resolved = r
 	}
 
 	return &serverExternal{
@@ -92,6 +105,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		recorder: c.recorder,
 		resolver: res,
 		pcRef:    pcRefFor(cr),
+		resolved: resolved,
 	}, nil
 }
 

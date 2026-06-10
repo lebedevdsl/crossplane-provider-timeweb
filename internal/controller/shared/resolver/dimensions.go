@@ -82,6 +82,7 @@ type CatalogClient interface {
 	GetOsListWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetOsListResponse, error)
 	GetKubernetesPresetsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetKubernetesPresetsResponse, error)
 	GetK8SVersionsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetK8SVersionsResponse, error)
+	GetConfiguratorsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetConfiguratorsResponse, error)
 }
 
 // Dimension names. The first two are live (consumed by S3Bucket /
@@ -133,11 +134,13 @@ func defaultRegistry() map[string]dimensionDef {
 		DimKubernetesWorkerPreset: {kind: DimensionPreset, fetch: fetchK8sWorkerPresets},
 		DimKubernetesVersion:      {kind: DimensionEnum, fetch: fetchK8sVersions},
 
-		// Forward-compat — still stubbed. ServerConfigurator awaits the
-		// custom-configurator path; NetworkDriver + AvailabilityZone are
+		// Feature 005 — promoted to a real fetcher (custom configurator sizing).
+		// Reused by both Server and Kubernetes (cluster/nodepool) custom sizing.
+		DimServerConfigurator: {kind: DimensionConfigurator, fetch: fetchServerConfigurators},
+
+		// Forward-compat — still stubbed. NetworkDriver + AvailabilityZone are
 		// validated by CRD enums on the KubernetesCluster kind instead of a
 		// catalog lookup (feature 004 research R-4).
-		DimServerConfigurator:      {kind: DimensionConfigurator, fetch: fetchUnwired},
 		DimKubernetesNetworkDriver: {kind: DimensionEnum, fetch: fetchUnwired},
 		DimAvailabilityZone:        {kind: DimensionEnum, fetch: fetchUnwired},
 	}
@@ -314,6 +317,51 @@ func fetchServerOSImages(ctx context.Context, c CatalogClient) (any, error) {
 			UpstreamID: id,
 			DescShort:  name,
 			Location:   version,
+		})
+	}
+	return out, nil
+}
+
+// fetchServerConfigurators reads /api/v1/configurator/servers and normalizes
+// each entry into a ConfiguratorEntry for SelectConfigurator. Exact-match
+// Filters: location, disk_type, is_allowed_local_network, cpu_frequency.
+// Capability Bounds keyed by the resolver's canonical axes: cpu (cores),
+// ramMB (MB), diskGB (GB — upstream disk is MB, /1024), bandwidth (Mbps), and
+// gpu when the configurator offers it. Reused for Server + Kubernetes custom
+// sizing (feature 005 R-1/R-2; units confirmed live: ram + disk are MB).
+func fetchServerConfigurators(ctx context.Context, c CatalogClient) (any, error) {
+	resp, err := c.GetConfiguratorsWithResponse(ctx)
+	if err != nil {
+		return nil, classifyUpstream(0, err)
+	}
+	if resp.JSON200 == nil {
+		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+	}
+	out := make([]ConfiguratorEntry, 0, len(resp.JSON200.ServerConfigurators))
+	for _, cfg := range resp.JSON200.ServerConfigurators {
+		r := cfg.Requirements
+		bounds := map[string]CapacityBound{
+			"cpu":       {Min: int64(r.CpuMin), Step: int64(r.CpuStep), Max: int64(r.CpuMax)},
+			"ramMB":     {Min: int64(r.RamMin), Step: int64(r.RamStep), Max: int64(r.RamMax)},
+			"diskGB":    {Min: int64(r.DiskMin) / 1024, Step: int64(r.DiskStep) / 1024, Max: int64(r.DiskMax) / 1024},
+			"bandwidth": {Min: int64(r.NetworkBandwidthMin), Step: int64(r.NetworkBandwidthStep), Max: int64(r.NetworkBandwidthMax)},
+		}
+		if r.GpuMin != nil && r.GpuMax != nil {
+			step := int64(0)
+			if r.GpuStep != nil {
+				step = int64(*r.GpuStep)
+			}
+			bounds["gpu"] = CapacityBound{Min: int64(*r.GpuMin), Step: step, Max: int64(*r.GpuMax)}
+		}
+		out = append(out, ConfiguratorEntry{
+			UpstreamID: int64(cfg.Id),
+			Filters: map[string]any{
+				"location":                 string(cfg.Location),
+				"disk_type":                string(cfg.DiskType),
+				"is_allowed_local_network": cfg.IsAllowedLocalNetwork,
+				"cpu_frequency":            cfg.CpuFrequency,
+			},
+			Bounds: bounds,
 		})
 	}
 	return out, nil

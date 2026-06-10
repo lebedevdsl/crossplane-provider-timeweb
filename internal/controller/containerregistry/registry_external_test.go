@@ -31,7 +31,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	cregv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/containerregistry/v1alpha1"
+	cregv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/kubernetes/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared/resolver"

@@ -21,6 +21,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// KubernetesNodepoolResources is the custom-configurator sizing block for a
+// worker group (feature 005): cpu/ramGB/diskGB + optional gpu. Resolved to an
+// upstream configurator; emitted as the nodegroup `configuration` block
+// (ram/disk normalized to MB). Immutable post-create.
+type KubernetesNodepoolResources struct {
+	// +kubebuilder:validation:Minimum=1
+	CPU int `json:"cpu"`
+	// +kubebuilder:validation:Minimum=1
+	RAMGB int `json:"ramGB"`
+	// +kubebuilder:validation:Minimum=1
+	DiskGB int `json:"diskGB"`
+	// +optional
+	GPU *int `json:"gpu,omitempty"`
+}
+
 // NodepoolAutoscaling configures the upstream cluster-autoscaler for a
 // worker group. When Enabled, the controller does NOT reconcile NodeCount
 // against the observed count (the autoscaler owns it). Upstream requires
@@ -43,9 +58,16 @@ type KubernetesClusterNodepoolParameters struct {
 
 	// PresetName is the worker-node preset slug resolved against
 	// /api/v1/presets/k8s (type=worker) to the upstream preset_id.
-	// Immutable post-create.
+	// Immutable post-create. Exactly one of presetName/resources (CEL).
 	// +kubebuilder:validation:Pattern=`^[a-z0-9][a-z0-9-]*[a-z0-9]$`
-	PresetName string `json:"presetName"`
+	// +optional
+	PresetName *string `json:"presetName,omitempty"`
+
+	// Resources is the custom-configurator sizing path for the workers
+	// (cpu/ramGB/diskGB + optional gpu) — alternative to presetName.
+	// Immutable post-create.
+	// +optional
+	Resources *KubernetesNodepoolResources `json:"resources,omitempty"`
 
 	// NodeCount is the desired worker count. Mutable when autoscaling is
 	// off (scaled via relative add/remove deltas). Ignored when autoscaling
@@ -98,6 +120,11 @@ type KubernetesClusterNodepoolObservation struct {
 	// LockedPresetID is the upstream worker preset_id resolved at Create.
 	// +optional
 	LockedPresetID *int64 `json:"lockedPresetID,omitempty"`
+
+	// LockedConfiguratorID is the upstream configurator id resolved at Create
+	// when sized via `resources` (drives sizing-variant-switch detection).
+	// +optional
+	LockedConfiguratorID *int64 `json:"lockedConfiguratorID,omitempty"`
 }
 
 // KubernetesClusterNodepoolSpec is the desired state.
@@ -123,6 +150,7 @@ type KubernetesClusterNodepoolStatus struct {
 // +kubebuilder:printcolumn:name="OBSERVED",type="integer",JSONPath=".status.atProvider.observedNodeCount"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.clusterRef)?1:0) + (has(self.spec.forProvider.clusterSelector)?1:0) + (has(self.spec.forProvider.clusterID)?1:0) == 1",message="exactly one of clusterRef, clusterSelector, clusterID must be set"
+// +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.presetName)?1:0) + (has(self.spec.forProvider.resources)?1:0) == 1",message="exactly one of presetName or resources must be set"
 // +kubebuilder:validation:XValidation:rule="!has(self.spec.forProvider.autoscaling) || !self.spec.forProvider.autoscaling.enabled || self.spec.forProvider.autoscaling.maxSize >= self.spec.forProvider.autoscaling.minSize",message="autoscaling.maxSize must be >= autoscaling.minSize"
 
 // KubernetesClusterNodepool is one Timeweb managed-Kubernetes worker group.

@@ -39239,11 +39239,13 @@
           },
           "is_ingress": {
             "type": "boolean",
-            "description": "Логическое значение, которое показывает, использовать ли Ingress в кластере"
+            "description": "Логическое значение, которое показывает, использовать ли Ingress в кластере",
+            "deprecated": true
           },
           "is_k8s_dashboard": {
             "type": "boolean",
-            "description": "Логическое значение, которое показывает, использовать ли Kubernetes Dashboard в кластере"
+            "description": "Логическое значение, которое показывает, использовать ли Kubernetes Dashboard в кластере",
+            "deprecated": true
           },
           "preset_id": {
             "type": "integer",
@@ -39372,8 +39374,6 @@
           "description": "Новый кластер кубернетес",
           "k8s_version": "v1.33.1+k0s.0",
           "network_driver": "kuberouter",
-          "is_ingress": true,
-          "is_k8s_dashboard": true,
           "preset_id": 403,
           "configuration": {
             "configurator_id": 57,

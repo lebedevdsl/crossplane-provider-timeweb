@@ -11,16 +11,18 @@ metadata:
       controller (no Upjet / no Terraform-provider lineage). Managed
       resources: namespaced ProviderConfig + cluster-scoped
       ClusterProviderConfig (with the dual-reference fallback documented
-      in the README), Project, SshKey, S3Bucket, ContainerRegistry,
-      ContainerRegistryRepository, Server (cloud VM, compute group),
-      Network (VPC) and FloatingIP (floating IPv4) in the network group,
-      and KubernetesCluster + KubernetesClusterNodepool +
-      KubernetesClusterAddon in the kubernetes group (managed K8s — preset-
-      sized control plane, scalable worker pools, kubeconfig connection
-      Secret, in-place version upgrade). Sizing on the two storage-class
-      MRs (S3Bucket, ContainerRegistry) is via `initialSizeGB` with a
-      CEL-enforced enum tied to Timeweb's published tariff tiers; the
-      Server and the K8s cluster/nodepool are sized via a `presetName` slug
+      in the README), Project, SshKey, S3Bucket, Server (cloud VM, compute
+      group), Network (VPC) and FloatingIP (floating IPv4) in the network
+      group, and KubernetesCluster + KubernetesClusterNodepool +
+      KubernetesClusterAddon + ContainerRegistry + ContainerRegistryRepository
+      in the kubernetes group (managed K8s — preset- or resources-sized
+      control plane, scalable worker pools, kubeconfig connection Secret,
+      in-place version upgrade; ContainerRegistry/Repository moved here from
+      their own group to mirror the dashboard's Kubernetes → registries tab).
+      Sizing on the two storage-class MRs (S3Bucket, ContainerRegistry) is via
+      `initialSizeGB` with a CEL-enforced enum tied to Timeweb's published
+      tariff tiers; the Server and the K8s cluster/nodepool are sized via
+      either a `presetName` slug or a custom `resources` (cpu/ramGB/diskGB)
       resolved by the in-controller catalog resolver. Floating-IP
       bind/unbind is owned by the Server (Server-consumes-IP).
     meta.crossplane.io/readme: |

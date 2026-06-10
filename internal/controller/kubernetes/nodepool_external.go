@@ -131,12 +131,17 @@ func (e *nodepoolExternal) Create(ctx context.Context, mg resource.Managed) (man
 		return managed.ExternalCreation{}, fmt.Errorf("kubernetes/nodepool: parent cluster not resolved: %w", err)
 	}
 
-	presetID, err := e.resolveWorkerPreset(ctx, cr.Spec.ForProvider.PresetName)
+	var presetID, configuratorID int
+	if r := cr.Spec.ForProvider.Resources; r != nil {
+		configuratorID, err = resolveK8sConfigurator(ctx, e.resolver, e.pcRef, r.CPU, r.RAMGB, r.DiskGB, r.GPU)
+	} else {
+		presetID, err = e.resolveWorkerPreset(ctx, *cr.Spec.ForProvider.PresetName)
+	}
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
 
-	body := buildCreateNodeGroupBody(cr, presetID)
+	body := buildCreateNodeGroupBody(cr, presetID, configuratorID)
 	resp, err := e.tw.CreateClusterNodeGroup(ctx, clusterID, body)
 	if err != nil {
 		return managed.ExternalCreation{}, timeweb.ClassifyNetworkError(err)
@@ -159,8 +164,13 @@ func (e *nodepoolExternal) Create(ctx context.Context, mg resource.Managed) (man
 	cid := shared.EncodeID(clusterID)
 	cr.Status.AtProvider.ClusterID = &cid
 	populateNodepoolStatus(cr, env.NodeGroup)
-	lp := int64(presetID)
-	cr.Status.AtProvider.LockedPresetID = &lp
+	if cr.Spec.ForProvider.Resources != nil {
+		cfgid := int64(configuratorID)
+		cr.Status.AtProvider.LockedConfiguratorID = &cfgid
+	} else {
+		lp := int64(presetID)
+		cr.Status.AtProvider.LockedPresetID = &lp
+	}
 	cr.Status.SetConditions(xpv2.Creating())
 
 	return managed.ExternalCreation{}, nil
@@ -197,6 +207,11 @@ func (e *nodepoolExternal) Update(ctx context.Context, mg resource.Managed) (man
 	observed := env.NodeGroup
 
 	// Immutable-field guard: preset is create-only.
+	// Sizing-variant-switch detection (feature 005 FR-004).
+	if (cr.Spec.ForProvider.Resources != nil && cr.Status.AtProvider.LockedPresetID != nil) ||
+		(cr.Spec.ForProvider.Resources == nil && cr.Status.AtProvider.LockedConfiguratorID != nil) {
+		return managed.ExternalUpdate{}, shared.RejectSizingSwitch(cr, e.recorder)
+	}
 	if cr.Status.AtProvider.LockedPresetID != nil && observed.PresetID != 0 &&
 		*cr.Status.AtProvider.LockedPresetID != int64(observed.PresetID) {
 		return managed.ExternalUpdate{}, shared.RejectImmutableChange(cr, e.recorder, "presetName")
@@ -282,13 +297,31 @@ func (e *nodepoolExternal) resolveWorkerPreset(ctx context.Context, slug string)
 	return int(po.UpstreamID), nil
 }
 
-func buildCreateNodeGroupBody(cr *kubernetesv1alpha1.KubernetesClusterNodepool, presetID int) twgen.CreateClusterNodeGroupJSONRequestBody {
+func buildCreateNodeGroupBody(cr *kubernetesv1alpha1.KubernetesClusterNodepool, presetID, configuratorID int) twgen.CreateClusterNodeGroupJSONRequestBody {
 	fp := cr.Spec.ForProvider
-	pid := presetID
 	body := twgen.CreateClusterNodeGroupJSONRequestBody{
 		Name:      fp.Name,
 		NodeCount: fp.NodeCount,
-		PresetId:  &pid,
+	}
+	if r := fp.Resources; r != nil {
+		// Custom sizing: emit the configuration block (configurator_id + cpu/
+		// ram/disk in upstream MB + optional gpu). XOR with preset_id.
+		body.Configuration = &struct {
+			ConfiguratorId int  `json:"configurator_id"` //nolint:revive // mirrors oapi-codegen output
+			Cpu            int  `json:"cpu"`             //nolint:revive // mirrors oapi-codegen output
+			Disk           int  `json:"disk"`            //nolint:revive // mirrors oapi-codegen output
+			Gpu            *int `json:"gpu,omitempty"`   //nolint:revive // mirrors oapi-codegen output
+			Ram            int  `json:"ram"`             //nolint:revive // mirrors oapi-codegen output
+		}{
+			ConfiguratorId: configuratorID,
+			Cpu:            r.CPU,
+			Ram:            r.RAMGB * 1024,
+			Disk:           r.DiskGB * 1024,
+			Gpu:            r.GPU,
+		}
+	} else {
+		pid := presetID
+		body.PresetId = &pid
 	}
 	if len(fp.Labels) > 0 {
 		labels := make([]twgen.SetLabels, 0, len(fp.Labels))

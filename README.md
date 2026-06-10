@@ -12,8 +12,8 @@ resources as Kubernetes managed resources.
 | `Project`                     | `project.m.timeweb.crossplane.io`      | Logical grouping container. Observe-only import flow.    |
 | `SshKey`                      | `sshkey.m.timeweb.crossplane.io`       | Account-level SSH public keys.                           |
 | `S3Bucket`                    | `objectstorage.m.timeweb.crossplane.io`| S3-compatible object storage; size via `initialSizeGB`.  |
-| `ContainerRegistry`           | `containerregistry.m.timeweb.crossplane.io` | Docker registry; size via `initialSizeGB`.          |
-| `ContainerRegistryRepository` | `containerregistry.m.timeweb.crossplane.io` | Observe-only view of repositories within a registry.|
+| `ContainerRegistry`           | `kubernetes.m.timeweb.crossplane.io` | Docker registry; size via `initialSizeGB`.          |
+| `ContainerRegistryRepository` | `kubernetes.m.timeweb.crossplane.io` | Observe-only view of repositories within a registry.|
 | `Server`                      | `compute.m.timeweb.crossplane.io`      | Cloud server (VM). Sized via `presetName`; OS via `os.{image,version}`. Refs `Network`, `Project`, `SshKey`, `FloatingIP`. |
 | `Network`                     | `network.m.timeweb.crossplane.io`      | VPC (private network). `subnetCIDR` + `location`.        |
 | `FloatingIP`                  | `network.m.timeweb.crossplane.io`      | Floating IPv4. Pure allocation; bound **from a Server** via `floatingIPRefs`. |
