@@ -2386,6 +2386,9 @@ type ServersConfigurator struct {
 		// RamStep Размер шага оперативной памяти.
 		RamStep float32 `json:"ram_step"`
 	} `json:"requirements"`
+
+	// Tags Теги конфигуратора (present in live payloads though absent from the published swagger; used to partition the K8s catalog into master vs worker families, e.g. k8s_master_configurator / k8s_configurator_general).
+	Tags *[]string `json:"tags,omitempty"`
 }
 
 // ServersConfiguratorDiskType Тип диска.
@@ -3905,6 +3908,9 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// GetK8sConfigurators request
+	GetK8sConfigurators(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetConfigurators request
 	GetConfigurators(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -4396,6 +4402,18 @@ type ClientInterface interface {
 
 	// GetVPCServices request
 	GetVPCServices(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) GetK8sConfigurators(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetK8sConfiguratorsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) GetConfigurators(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -6556,6 +6574,33 @@ func (c *Client) GetVPCServices(ctx context.Context, vpcId VpcId, reqEditors ...
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewGetK8sConfiguratorsRequest generates requests for GetK8sConfigurators
+func NewGetK8sConfiguratorsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/configurator/k8s")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewGetConfiguratorsRequest generates requests for GetConfigurators
@@ -11976,6 +12021,9 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// GetK8sConfiguratorsWithResponse request
+	GetK8sConfiguratorsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetK8sConfiguratorsResponse, error)
+
 	// GetConfiguratorsWithResponse request
 	GetConfiguratorsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetConfiguratorsResponse, error)
 
@@ -12467,6 +12515,41 @@ type ClientWithResponsesInterface interface {
 
 	// GetVPCServicesWithResponse request
 	GetVPCServicesWithResponse(ctx context.Context, vpcId VpcId, reqEditors ...RequestEditorFn) (*GetVPCServicesResponse, error)
+}
+
+type GetK8sConfiguratorsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		K8sConfigurators []ServersConfigurator `json:"k8s_configurators"`
+
+		// Meta Вспомогательная информация о возвращаемой сущности.
+		Meta Meta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetK8sConfiguratorsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetK8sConfiguratorsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetConfiguratorsResponse struct {
@@ -16842,6 +16925,15 @@ func (r GetVPCServicesResponse) StatusCode() int {
 	return 0
 }
 
+// GetK8sConfiguratorsWithResponse request returning *GetK8sConfiguratorsResponse
+func (c *ClientWithResponses) GetK8sConfiguratorsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetK8sConfiguratorsResponse, error) {
+	rsp, err := c.GetK8sConfigurators(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetK8sConfiguratorsResponse(rsp)
+}
+
 // GetConfiguratorsWithResponse request returning *GetConfiguratorsResponse
 func (c *ClientWithResponses) GetConfiguratorsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetConfiguratorsResponse, error) {
 	rsp, err := c.GetConfigurators(ctx, reqEditors...)
@@ -18412,6 +18504,75 @@ func (c *ClientWithResponses) GetVPCServicesWithResponse(ctx context.Context, vp
 		return nil, err
 	}
 	return ParseGetVPCServicesResponse(rsp)
+}
+
+// ParseGetK8sConfiguratorsResponse parses an HTTP response from a GetK8sConfiguratorsWithResponse call
+func ParseGetK8sConfiguratorsResponse(rsp *http.Response) (*GetK8sConfiguratorsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetK8sConfiguratorsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			K8sConfigurators []ServersConfigurator `json:"k8s_configurators"`
+
+			// Meta Вспомогательная информация о возвращаемой сущности.
+			Meta Meta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetConfiguratorsResponse parses an HTTP response from a GetConfiguratorsWithResponse call

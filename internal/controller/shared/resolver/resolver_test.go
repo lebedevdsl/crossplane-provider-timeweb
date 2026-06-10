@@ -52,6 +52,10 @@ type fakeCatalog struct {
 	configuratorsErr   error
 	configuratorsCalls int32
 
+	k8sConfigurators      *twgen.GetK8sConfiguratorsResponse
+	k8sConfiguratorsErr   error
+	k8sConfiguratorsCalls int32
+
 	// gate, if set, blocks the fetcher until closed — used to exercise
 	// singleflight coalescing.
 	gate chan struct{}
@@ -103,6 +107,14 @@ func (f *fakeCatalog) GetConfiguratorsWithResponse(_ context.Context, _ ...twgen
 		<-f.gate
 	}
 	return f.configurators, f.configuratorsErr
+}
+
+func (f *fakeCatalog) GetK8sConfiguratorsWithResponse(_ context.Context, _ ...twgen.RequestEditorFn) (*twgen.GetK8sConfiguratorsResponse, error) {
+	atomic.AddInt32(&f.k8sConfiguratorsCalls, 1)
+	if f.gate != nil {
+		<-f.gate
+	}
+	return f.k8sConfigurators, f.k8sConfiguratorsErr
 }
 
 // helpers to build the typed JSON200 payloads -------------------------------
@@ -316,6 +328,107 @@ func TestResolver_ServerConfigurator_NoneAvailable(t *testing.T) {
 		t.Errorf("err=%v, want ErrNoConfiguratorAvailable", err)
 	}
 }
+
+// mkK8sConfiguratorsResp builds a /api/v1/configurator/k8s response — same
+// entry shape as the server catalog but under the `k8s_configurators` key.
+func mkK8sConfiguratorsResp(t *testing.T, itemsJSON string) *twgen.GetK8sConfiguratorsResponse {
+	t.Helper()
+	resp := &twgen.GetK8sConfiguratorsResponse{HTTPResponse: &http.Response{StatusCode: 200}}
+	body := `{"k8s_configurators":` + itemsJSON + `}`
+	if err := json.Unmarshal([]byte(body), &resp.JSON200); err != nil {
+		t.Fatalf("build k8s configurators resp: %v", err)
+	}
+	return resp
+}
+
+// TestResolver_K8sConfigurator_MasterWorkerSplitAndLocation locks the
+// T028-canary follow-up findings: (1) the k8s dims resolve against
+// /configurator/k8s and never touch /configurator/servers (whose ids the k8s
+// create endpoint rejects with 400 configurator_not_found); (2) the catalog
+// is tag-partitioned — the master dim must only see `k8s_master_configurator`
+// entries and the worker dim only the rest (a cross-family id makes the
+// upstream ignore availability_zone and strand the cluster in ams-1); (3) the
+// location filter picks the AZ-region-matched entry.
+func TestResolver_K8sConfigurator_MasterWorkerSplitAndLocation(t *testing.T) {
+	fake := &fakeCatalog{
+		configurators:    mkConfiguratorsResp(t, twoConfiguratorsJSON), // server ids 11/22
+		k8sConfigurators: mkK8sConfiguratorsResp(t, k8sConfiguratorsJSON),
+	}
+	r := New(fake, Options{TTL: 5 * time.Minute, Now: time.Now})
+	pc := PCRef{Name: "default"}
+
+	// Worker sizing in ru-3 → the ru-3 general entry (59), even though the
+	// ru-3 master entry (89) and the ru-1 worker entry (57) also satisfy
+	// looser subsets of the input.
+	out, err := r.Resolve(context.Background(), pc,
+		Dimension{Name: DimKubernetesWorkerConfigurator, Kind: DimensionConfigurator},
+		ConfiguratorInput{Filters: map[string]any{"location": "ru-3"}, Sizing: map[string]int64{"cpu": 2, "ramMB": 2048, "diskGB": 40}})
+	if err != nil {
+		t.Fatalf("worker resolve: %v", err)
+	}
+	if co := out.(ConfiguratorOutput); co.UpstreamID != 59 {
+		t.Fatalf("worker resolve: id=%d, want ru-3 worker entry 59", co.UpstreamID)
+	}
+
+	// Master sizing in ru-3 → the ru-3 master entry (89). The worker entries
+	// must be invisible to the master dim even though their bounds satisfy
+	// the sizing.
+	out, err = r.Resolve(context.Background(), pc,
+		Dimension{Name: DimKubernetesMasterConfigurator, Kind: DimensionConfigurator},
+		ConfiguratorInput{Filters: map[string]any{"location": "ru-3"}, Sizing: map[string]int64{"cpu": 4, "ramMB": 8192, "diskGB": 60}})
+	if err != nil {
+		t.Fatalf("master resolve: %v", err)
+	}
+	if co := out.(ConfiguratorOutput); co.UpstreamID != 89 {
+		t.Fatalf("master resolve: id=%d, want ru-3 master entry 89", co.UpstreamID)
+	}
+
+	if got := atomic.LoadInt32(&fake.configuratorsCalls); got != 0 {
+		t.Errorf("server catalog touched %d times; k8s sizing must not read /configurator/servers", got)
+	}
+}
+
+// TestResolver_K8sConfigurator_LocationMismatchRejected locks the
+// reject-before-create behavior: a sizing satisfiable in another location but
+// not in the requested one fails with ErrNoConfiguratorAvailable (no upstream
+// create is ever attempted with a region-mismatched id).
+func TestResolver_K8sConfigurator_LocationMismatchRejected(t *testing.T) {
+	fake := &fakeCatalog{k8sConfigurators: mkK8sConfiguratorsResp(t, k8sConfiguratorsJSON)}
+	r := New(fake, Options{TTL: 5 * time.Minute, Now: time.Now})
+	// 30GB disk is fine for the ru-1 worker entry (57, disk_min 30720) but
+	// below the ru-3 entry's 40GB minimum → ru-3 resolution must reject.
+	_, err := r.Resolve(context.Background(), PCRef{Name: "default"},
+		Dimension{Name: DimKubernetesWorkerConfigurator, Kind: DimensionConfigurator},
+		ConfiguratorInput{Filters: map[string]any{"location": "ru-3"}, Sizing: map[string]int64{"cpu": 2, "ramMB": 2048, "diskGB": 30}},
+	)
+	if !errors.Is(err, ErrNoConfiguratorAvailable) {
+		t.Errorf("err=%v, want ErrNoConfiguratorAvailable", err)
+	}
+}
+
+// k8s configurator fixtures shaped after the live /configurator/k8s payload:
+// worker-family entries 57 (ru-1) / 59 (ru-3, higher disk_min) and
+// master-family entries 87 (ru-1) / 89 (ru-3) tagged k8s_master_configurator.
+// Ids are disjoint from the server catalog's 11/22 so cross-catalog leakage
+// is detectable.
+const k8sConfiguratorsJSON = `[
+ {"id":57,"location":"ru-1","disk_type":"nvme","is_allowed_local_network":true,"cpu_frequency":"3.3","tags":["k8s_configurator_general"],
+  "requirements":{"cpu_min":2,"cpu_step":1,"cpu_max":32,"ram_min":2048,"ram_step":1024,"ram_max":262144,
+   "disk_min":30720,"disk_step":5120,"disk_max":1228800,"network_bandwidth_min":1000,"network_bandwidth_step":100,"network_bandwidth_max":1000,
+   "gpu_min":null,"gpu_max":null,"gpu_step":null}},
+ {"id":59,"location":"ru-3","disk_type":"nvme","is_allowed_local_network":true,"cpu_frequency":"3.3","tags":["k8s_configurator_general"],
+  "requirements":{"cpu_min":2,"cpu_step":1,"cpu_max":32,"ram_min":2048,"ram_step":1024,"ram_max":262144,
+   "disk_min":40960,"disk_step":5120,"disk_max":1228800,"network_bandwidth_min":1000,"network_bandwidth_step":100,"network_bandwidth_max":1000,
+   "gpu_min":null,"gpu_max":null,"gpu_step":null}},
+ {"id":87,"location":"ru-1","disk_type":"nvme","is_allowed_local_network":true,"cpu_frequency":"3.3","tags":["k8s_master_configurator"],
+  "requirements":{"cpu_min":4,"cpu_step":1,"cpu_max":16,"ram_min":8192,"ram_step":1024,"ram_max":65536,
+   "disk_min":61440,"disk_step":5120,"disk_max":512000,"network_bandwidth_min":1000,"network_bandwidth_step":100,"network_bandwidth_max":1000,
+   "gpu_min":null,"gpu_max":null,"gpu_step":null}},
+ {"id":89,"location":"ru-3","disk_type":"nvme","is_allowed_local_network":true,"cpu_frequency":"3.3","tags":["k8s_master_configurator"],
+  "requirements":{"cpu_min":4,"cpu_step":1,"cpu_max":16,"ram_min":8192,"ram_step":1024,"ram_max":65536,
+   "disk_min":61440,"disk_step":5120,"disk_max":512000,"network_bandwidth_min":1000,"network_bandwidth_step":100,"network_bandwidth_max":1000,
+   "gpu_min":null,"gpu_max":null,"gpu_step":null}}
+]`
 
 func TestResolver_Cache_HitsAcrossCalls(t *testing.T) {
 	fake := &fakeCatalog{regPresets: mkRegResp([]struct {

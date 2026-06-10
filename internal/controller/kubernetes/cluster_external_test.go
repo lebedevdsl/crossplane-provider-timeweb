@@ -44,9 +44,13 @@ type fakeResolver struct {
 	masterPresets  map[string]int64
 	workerPresets  map[string]int64
 	versions       map[string]bool
-	configuratorID int64 // returned for DimServerConfigurator
+	configuratorID int64 // returned for the configurator dims
 	noConfigurator bool  // if true, ConfiguratorInput → ErrNoConfiguratorAvailable
 	resolveErr     error
+	// Recorded by the configurator dims so tests can assert the
+	// role-family + location-first contract (T028 canary follow-up).
+	gotConfiguratorDim      string
+	gotConfiguratorLocation string
 }
 
 func (f *fakeResolver) Resolve(_ context.Context, _ resolver.PCRef, dim resolver.Dimension, input resolver.ResolveInput) (resolver.ResolveOutput, error) {
@@ -77,10 +81,20 @@ func (f *fakeResolver) Resolve(_ context.Context, _ resolver.PCRef, dim resolver
 			return nil, resolver.ErrDimensionValueNotFound
 		}
 		return resolver.EnumOutput{Valid: true}, nil
-	case resolver.DimServerConfigurator:
-		if _, ok := input.(resolver.ConfiguratorInput); !ok {
+	case resolver.DimKubernetesMasterConfigurator, resolver.DimKubernetesWorkerConfigurator:
+		in, ok := input.(resolver.ConfiguratorInput)
+		if !ok {
 			return nil, resolver.ErrInvalidInput
 		}
+		loc, _ := in.Filters["location"].(string)
+		if loc == "" {
+			// Location-first is mandatory: a location-less resolution can pick
+			// a configurator from the wrong region, which the upstream
+			// "honors" by stranding the cluster in ams-1.
+			return nil, errors.New("fakeResolver: configurator resolution without a location filter")
+		}
+		f.gotConfiguratorDim = dim.Name
+		f.gotConfiguratorLocation = loc
 		if f.noConfigurator {
 			return nil, resolver.ErrNoConfiguratorAvailable
 		}
@@ -432,6 +446,15 @@ func TestClusterCustomSizing(t *testing.T) {
 		}
 		if body.Configuration.Ram != 4096 || body.Configuration.Disk != 40960 || body.Configuration.Cpu != 2 {
 			t.Errorf("config cpu/ram/disk = %d/%d/%d, want 2/4096/40960", body.Configuration.Cpu, body.Configuration.Ram, body.Configuration.Disk)
+		}
+		// Role-family + location-first contract: the cluster's master
+		// configuration resolves via the MASTER dim, filtered by the
+		// AZ-derived location (msk-1 → ru-3).
+		if r.gotConfiguratorDim != resolver.DimKubernetesMasterConfigurator {
+			t.Errorf("resolved dim=%q, want DimKubernetesMasterConfigurator", r.gotConfiguratorDim)
+		}
+		if r.gotConfiguratorLocation != "ru-3" {
+			t.Errorf("resolved location=%q, want ru-3 (msk-1)", r.gotConfiguratorLocation)
 		}
 	})
 

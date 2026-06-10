@@ -202,15 +202,62 @@ TWE_SERVER_PRESET=$(curl -fsS \
 echo "[e2e]   → $TWE_SERVER_PRESET"
 
 # --- 2a2. Discover a satisfiable custom sizing from /configurator/servers (feat 005) ---
-# The cheapest ru-1 configurator's mins give a guaranteed-valid {cpu,ramGB,diskGB}
-# for the Server custom-sizing bundle (16). ram/disk are MB upstream → /1024 to GB.
+# The Server CRD takes ramGB/diskGB; the resolver validates ramGB*1024 (MB) and
+# diskGB against the configurator's {min,step,max}, requiring exact step
+# alignment FROM min. The only request guaranteed step-aligned is the min
+# itself — so pick the first ru-1 configurator whose ram_min/disk_min are
+# GB-aligned (min/1024 then maps back to exactly min; offset 0 is always
+# aligned). A flooring division on a non-aligned min would request BELOW min
+# and doom bundle 16 to NoConfiguratorAvailable.
 echo "[e2e] discovering a satisfiable ru-1 configurator sizing"
 CFG=$(curl -fsS -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" "${TW_API}/api/v1/configurator/servers" \
-  | jq -er '.server_configurators | map(select(.location=="ru-1")) | .[0].requirements')
+  | jq -er '
+      .server_configurators
+      | map(select(.location=="ru-1"
+            and .requirements.ram_min >= 1024 and .requirements.ram_min % 1024 == 0
+            and .requirements.disk_min >= 1024 and .requirements.disk_min % 1024 == 0))
+      | .[0].requirements') || {
+  echo "ERROR: no ru-1 configurator with GB-aligned ram_min/disk_min — cannot derive a satisfiable {cpu,ramGB,diskGB} for bundle 16." >&2
+  exit 1
+}
 TWE_SRV_CPU=$(echo "$CFG" | jq -er '.cpu_min')
-TWE_SRV_RAMGB=$(echo "$CFG" | jq -er '(.ram_min/1024)|floor')
-TWE_SRV_DISKGB=$(echo "$CFG" | jq -er '(.disk_min/1024)|floor')
+TWE_SRV_RAMGB=$(echo "$CFG" | jq -er '.ram_min/1024')
+TWE_SRV_DISKGB=$(echo "$CFG" | jq -er '.disk_min/1024')
 echo "[e2e]   → cpu=$TWE_SRV_CPU ramGB=$TWE_SRV_RAMGB diskGB=$TWE_SRV_DISKGB"
+
+# --- 2a3. Discover satisfiable K8s sizings from /configurator/k8s (feat 005) ---
+# K8s custom sizing resolves against its OWN catalog — /api/v1/configurator/k8s
+# (undocumented upstream; the k8s create endpoint rejects server-catalog ids
+# with 400 configurator_not_found). The catalog is tag-partitioned: the
+# cluster's master `configuration` needs a `k8s_master_configurator` entry,
+# worker groups need a non-master one — a cross-family id makes the upstream
+# IGNORE availability_zone and strand the cluster in ams-1 (failed). Bundle 17
+# pins the cluster to AZ msk-1 → location ru-3 (Moscow; spb-3↔ru-1,
+# ams-1↔nl-1, fra-1↔de-1), so both sizings come from the ru-3 entries of
+# their families. Same GB-aligned-mins rule as 2a2.
+echo "[e2e] discovering satisfiable ru-3 (msk-1) K8s master+worker configurator sizings"
+K8S_CATALOG=$(curl -fsS -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" "${TW_API}/api/v1/configurator/k8s")
+k8sSizingByRole() {
+  # $1 = "master" | "worker" — selects the tag family; emits "cpu ramGB diskGB".
+  echo "$K8S_CATALOG" | jq -er --arg role "$1" '
+      .k8s_configurators
+      | map(select(.location=="ru-3"
+            and ((.tags | index("k8s_master_configurator")) != null) == ($role == "master")
+            and .requirements.ram_min >= 1024 and .requirements.ram_min % 1024 == 0
+            and .requirements.disk_min >= 1024 and .requirements.disk_min % 1024 == 0))
+      | .[0].requirements
+      | "\(.cpu_min) \(.ram_min/1024) \(.disk_min/1024)"'
+}
+read -r TWE_K8S_MASTER_CPU TWE_K8S_MASTER_RAMGB TWE_K8S_MASTER_DISKGB <<<"$(k8sSizingByRole master)" || {
+  echo "ERROR: no ru-3 MASTER K8s configurator with GB-aligned mins — cannot size bundle 17's cluster." >&2
+  exit 1
+}
+read -r TWE_K8S_WORKER_CPU TWE_K8S_WORKER_RAMGB TWE_K8S_WORKER_DISKGB <<<"$(k8sSizingByRole worker)" || {
+  echo "ERROR: no ru-3 WORKER K8s configurator with GB-aligned mins — cannot size bundle 17's nodepool." >&2
+  exit 1
+}
+echo "[e2e]   → master cpu=$TWE_K8S_MASTER_CPU ramGB=$TWE_K8S_MASTER_RAMGB diskGB=$TWE_K8S_MASTER_DISKGB"
+echo "[e2e]   → worker cpu=$TWE_K8S_WORKER_CPU ramGB=$TWE_K8S_WORKER_RAMGB diskGB=$TWE_K8S_WORKER_DISKGB"
 
 # --- 2b. Discover managed-Kubernetes presets + a k8s version (feature 004) ---
 # /api/v1/presets/k8s is a discriminated list (type=master|worker); the slug is
@@ -249,6 +296,8 @@ TWE_K8S_CLUSTER_NAME="e2e-k8s-$TS"
 export TWE_PROJECT_ID TWE_SSH_NAME TWE_S3_NAME TWE_CR_NAME TWE_SERVER_NAME TWE_SERVER_PRESET TWE_NETWORK_NAME
 export TWE_K8S_MASTER_PRESET TWE_K8S_WORKER_PRESET TWE_K8S_VERSION TWE_K8S_CLUSTER_NAME
 export TWE_SRV_CPU TWE_SRV_RAMGB TWE_SRV_DISKGB
+export TWE_K8S_MASTER_CPU TWE_K8S_MASTER_RAMGB TWE_K8S_MASTER_DISKGB
+export TWE_K8S_WORKER_CPU TWE_K8S_WORKER_RAMGB TWE_K8S_WORKER_DISKGB
 
 echo "[e2e] generated names:"
 echo "[e2e]   SSHKey:        $TWE_SSH_NAME"
@@ -345,7 +394,7 @@ cp -R test/e2e/kuttl/. "$TMP_BUNDLE/"
 # Restrict envsubst to the TWE_* allow-list so unrelated `$` literals
 # elsewhere in YAML (e.g. JSONPath expressions in assertions) are not
 # clobbered.
-TWE_VARS='${TWE_PROJECT_ID} ${TWE_SSH_NAME} ${TWE_S3_NAME} ${TWE_CR_NAME} ${TWE_SERVER_NAME} ${TWE_SERVER_PRESET} ${TWE_NETWORK_NAME} ${TWE_IMPORT_VPC_ID} ${TWE_K8S_MASTER_PRESET} ${TWE_K8S_WORKER_PRESET} ${TWE_K8S_VERSION} ${TWE_K8S_CLUSTER_NAME} ${TWE_K8S_ADDON_TYPE} ${TWE_K8S_ADDON_VERSION} ${TWE_SRV_CPU} ${TWE_SRV_RAMGB} ${TWE_SRV_DISKGB}'
+TWE_VARS='${TWE_PROJECT_ID} ${TWE_SSH_NAME} ${TWE_S3_NAME} ${TWE_CR_NAME} ${TWE_SERVER_NAME} ${TWE_SERVER_PRESET} ${TWE_NETWORK_NAME} ${TWE_IMPORT_VPC_ID} ${TWE_K8S_MASTER_PRESET} ${TWE_K8S_WORKER_PRESET} ${TWE_K8S_VERSION} ${TWE_K8S_CLUSTER_NAME} ${TWE_K8S_ADDON_TYPE} ${TWE_K8S_ADDON_VERSION} ${TWE_SRV_CPU} ${TWE_SRV_RAMGB} ${TWE_SRV_DISKGB} ${TWE_K8S_MASTER_CPU} ${TWE_K8S_MASTER_RAMGB} ${TWE_K8S_MASTER_DISKGB} ${TWE_K8S_WORKER_CPU} ${TWE_K8S_WORKER_RAMGB} ${TWE_K8S_WORKER_DISKGB}'
 
 find "$TMP_BUNDLE" -type f \( -name '*.yaml' -o -name '*.yml' \) -print0 \
   | while IFS= read -r -d '' f; do

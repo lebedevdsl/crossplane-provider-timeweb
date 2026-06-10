@@ -52,8 +52,10 @@ type Resources struct {
 | Dimension | Before | After |
 |---|---|---|
 | `DimServerConfigurator` | `{kind: Configurator, fetch: fetchUnwired}` | `{kind: Configurator, fetch: fetchServerConfigurators}` over `GetConfiguratorsWithResponse` |
+| `DimKubernetesMasterConfigurator` | (did not exist) | `{kind: Configurator, fetch: fetchK8sMasterConfigurators}` over `GetK8sConfiguratorsWithResponse` (undocumented `/api/v1/configurator/k8s`, hand-patched into the spec), tag-filtered to `k8s_master_configurator` |
+| `DimKubernetesWorkerConfigurator` | (did not exist) | same endpoint, tag-filtered to the non-master families (`k8s_configurator_general`/`_dedicated_cpu`/`_gpu_*`) |
 
-`fetchServerConfigurators` → `[]ConfiguratorEntry`: `Filters{location, disk_type, is_allowed_local_network, cpu_frequency}`, `Bounds{cpu, ramMB, diskGB, bandwidth, gpu}` (from `requirements.*_{min,step,max}`, units normalized per R-2). `TestDefaultRegistry_Discoverable` flips `DimServerConfigurator` to `wiredUpstream: true`. Reused by both Server and K8s controllers (R-5; probe whether K8s needs a distinct catalog).
+All fetchers normalize through a shared `configuratorEntries` helper → `[]ConfiguratorEntry`: `Filters{location, disk_type, is_allowed_local_network, cpu_frequency}`, `Bounds{cpu, ramMB, diskGB, bandwidth, gpu}` (from `requirements.*_{min,step,max}`, units normalized per R-2). `TestDefaultRegistry_Discoverable` locks all three as `wiredUpstream: true`. R-5's probe outcome: the catalogs are **separate** (the k8s create endpoint 400-rejects server-catalog ids) and the k8s one is **role-partitioned per location** — cluster resolves via the master dim, nodepool via the worker dim, both location-first from the cluster's AZ (`azLocation`); see research R-5 live findings for the ams-1 stranding a mismatched id causes.
 
 ## 4. Conditions / reasons (all already in `shared/conditions.go`)
 

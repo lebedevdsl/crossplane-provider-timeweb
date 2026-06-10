@@ -125,6 +125,26 @@ type KubernetesClusterNodepoolObservation struct {
 	// when sized via `resources` (drives sizing-variant-switch detection).
 	// +optional
 	LockedConfiguratorID *int64 `json:"lockedConfiguratorID,omitempty"`
+
+	// Nodes lists the group's actual worker nodes (mirrors the dashboard's
+	// per-group node table). Readiness is derived from these statuses — the
+	// group-level node count alone is echoed before any VM exists.
+	// +optional
+	Nodes []NodepoolNode `json:"nodes,omitempty"`
+}
+
+// NodepoolNode is one worker node of the group as reported upstream.
+type NodepoolNode struct {
+	// ID is the upstream node id.
+	ID int64 `json:"id"`
+	// Status is the raw upstream node state (e.g. installing, active).
+	Status string `json:"status,omitempty"`
+	// IP is the node's local network IP.
+	// +optional
+	IP *string `json:"ip,omitempty"`
+	// CreatedAt is the upstream node creation timestamp.
+	// +optional
+	CreatedAt *string `json:"createdAt,omitempty"`
 }
 
 // KubernetesClusterNodepoolSpec is the desired state.

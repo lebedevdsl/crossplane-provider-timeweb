@@ -74,8 +74,32 @@ by `resources` (cpu/ramGB/diskGB) instead of `presetName`:
   resolved configurator.
 - Unsatisfiable → `reason=NoConfiguratorAvailable`; flipping the sizing variant
   on a live resource → `reason=SizingSwitchRequiresRecreate`.
-- Configurator resolution is sizing-only (the upstream validates region/AZ
-  compatibility on create).
+- Configurator resolution is **location-first and role-aware**: the cluster's
+  sizing resolves against the master-family configurators of the region your
+  `availabilityZone` maps to, and a nodepool resolves against the
+  worker-family configurators of its parent cluster's region (the upstream
+  does not validate this pairing itself — a mismatched id strands the cluster
+  in AMS-1 and it fails to provision, so the provider never sends one).
+- The K8s catalog's bounds are tighter than the cloud-server one, and master
+  nodes have higher minimums than workers (e.g. Moscow: masters from 4 CPU /
+  8 GB RAM / 60 GB disk, workers from 2 CPU / 2 GB RAM / 40 GB disk) — a
+  sizing that works for a `Server`, or for a nodepool, may yield
+  `NoConfiguratorAvailable` for a cluster. The error names the location and
+  the bound that rejected it.
+- A cluster whose upstream provisioning dies is surfaced as
+  `Ready=False, reason=UpstreamFailed` (it will not recover on its own —
+  delete and recreate).
+
+### Worker node networking
+
+Worker nodes come up with **public IPs by default** — that is the upstream
+behavior and this provider does not change it. There is no per-nodepool
+public-IP toggle in the Timeweb API. For private-only nodes, the cluster's
+network must sit behind a Timeweb **Router** providing NAT egress (the
+dashboard's router → private networks → NAT flow). The Router product is not
+yet modeled by this provider — planned as its own kind in a future feature;
+until then, private-only setups are arranged in the dashboard and the cluster
+is attached to the routed network via `networkRef`/`networkID`.
 
 ## 2. Scale a worker pool
 

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
@@ -49,6 +50,21 @@ type nodeGroupEnvelope struct {
 	NodeGroup nodeGroupBody `json:"node_group"`
 }
 
+// groupNodeBody is the per-node slice of NodeOut the readiness gate and
+// status.atProvider.nodes need. The group object itself only echoes the
+// REQUESTED node_count (immediately, before any VM exists), so Ready must be
+// derived from the actual nodes.
+type groupNodeBody struct {
+	ID        int     `json:"id"`
+	Status    string  `json:"status"`
+	NodeIP    *string `json:"node_ip"`
+	CreatedAt *string `json:"created_at"`
+}
+
+type groupNodesEnvelope struct {
+	Nodes []groupNodeBody `json:"nodes"`
+}
+
 // nodepoolExternal implements managed.ExternalClient for KubernetesClusterNodepool.
 type nodepoolExternal struct {
 	tw       twgen.ClientInterface
@@ -69,6 +85,29 @@ func (e *nodepoolExternal) clusterID(cr *kubernetesv1alpha1.KubernetesClusterNod
 		s = *cr.Status.AtProvider.ClusterID
 	}
 	return shared.DecodeID(s)
+}
+
+// parentClusterLocation GETs the parent cluster upstream and maps its
+// availability zone to the configurator catalog location (azToLocation).
+// Used only on the custom-sizing Create path.
+func (e *nodepoolExternal) parentClusterLocation(ctx context.Context, clusterID int) (string, error) {
+	resp, err := e.tw.GetCluster(ctx, clusterID)
+	if err != nil {
+		return "", timeweb.ClassifyNetworkError(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if err := timeweb.Classify(resp); err != nil {
+		return "", fmt.Errorf("kubernetes/nodepool: get parent cluster %d: %w", clusterID, err)
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return "", fmt.Errorf("kubernetes/nodepool: read parent cluster body: %w", err)
+	}
+	var env clusterEnvelope
+	if err := json.Unmarshal(body, &env); err != nil {
+		return "", fmt.Errorf("kubernetes/nodepool: decode parent cluster body: %w", err)
+	}
+	return azToLocation(env.Cluster.AvailabilityZone)
 }
 
 // Observe fetches the upstream worker group and reports existence + up-to-date.
@@ -111,7 +150,12 @@ func (e *nodepoolExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 
 	populateNodepoolStatus(cr, env.NodeGroup)
 	upToDate := isNodepoolUpToDate(cr.Spec.ForProvider, env.NodeGroup)
-	setNodepoolReadyCondition(cr, upToDate)
+	nodes, err := e.observeGroupNodes(ctx, clusterID, groupID)
+	if err != nil {
+		return managed.ExternalObservation{}, err
+	}
+	publishNodeList(cr, nodes)
+	setNodepoolReadyCondition(cr, upToDate, env.NodeGroup.NodeCount, nodes)
 
 	return managed.ExternalObservation{
 		ResourceExists:   true,
@@ -133,7 +177,16 @@ func (e *nodepoolExternal) Create(ctx context.Context, mg resource.Managed) (man
 
 	var presetID, configuratorID int
 	if r := cr.Spec.ForProvider.Resources; r != nil {
-		configuratorID, err = resolveK8sConfigurator(ctx, e.resolver, e.pcRef, r.CPU, r.RAMGB, r.DiskGB, r.GPU)
+		// Worker-family configurator, location-matched to the PARENT
+		// cluster's availability zone (nodepools carry no AZ of their own).
+		// The AZ is read from the upstream cluster rather than the clusterRef
+		// MR so the flat clusterID escape hatch resolves identically.
+		var location string
+		location, err = e.parentClusterLocation(ctx, clusterID)
+		if err == nil {
+			configuratorID, err = resolveK8sConfigurator(ctx, e.resolver, e.pcRef,
+				resolver.DimKubernetesWorkerConfigurator, location, r.CPU, r.RAMGB, r.DiskGB, r.GPU)
+		}
 	} else {
 		presetID, err = e.resolveWorkerPreset(ctx, *cr.Spec.ForProvider.PresetName)
 	}
@@ -366,13 +419,82 @@ func isNodepoolUpToDate(spec kubernetesv1alpha1.KubernetesClusterNodepoolParamet
 	return spec.NodeCount == g.NodeCount
 }
 
-// setNodepoolReadyCondition reports Available once the observed count matches
-// the desired count (or autoscaling is on); Scaling while a delta converges.
-func setNodepoolReadyCondition(cr *kubernetesv1alpha1.KubernetesClusterNodepool, upToDate bool) {
-	if upToDate {
-		cr.Status.SetConditions(xpv2.Available())
+// observeGroupNodes lists the group's actual nodes. The group object's
+// node_count is the REQUESTED count, echoed before any VM exists — readiness
+// must come from the per-node statuses.
+func (e *nodepoolExternal) observeGroupNodes(ctx context.Context, clusterID, groupID int) ([]groupNodeBody, error) {
+	resp, err := e.tw.GetClusterNodesFromGroup(ctx, clusterID, groupID, nil)
+	if err != nil {
+		return nil, timeweb.ClassifyNetworkError(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if err := timeweb.Classify(resp); err != nil {
+		return nil, fmt.Errorf("kubernetes/nodepool: list group nodes: %w", err)
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return nil, fmt.Errorf("kubernetes/nodepool: read group nodes body: %w", err)
+	}
+	var env groupNodesEnvelope
+	if err := json.Unmarshal(body, &env); err != nil {
+		return nil, fmt.Errorf("kubernetes/nodepool: decode group nodes body: %w", err)
+	}
+	return env.Nodes, nil
+}
+
+// publishNodeList mirrors the dashboard's per-group node table into
+// status.atProvider.nodes (id, raw state, local IP, created-at).
+func publishNodeList(cr *kubernetesv1alpha1.KubernetesClusterNodepool, nodes []groupNodeBody) {
+	out := make([]kubernetesv1alpha1.NodepoolNode, 0, len(nodes))
+	for _, n := range nodes {
+		out = append(out, kubernetesv1alpha1.NodepoolNode{
+			ID:        int64(n.ID),
+			Status:    n.Status,
+			IP:        n.NodeIP,
+			CreatedAt: n.CreatedAt,
+		})
+	}
+	cr.Status.AtProvider.Nodes = out
+}
+
+// nodeIsActive applies the same upstream-state heuristic as the cluster's
+// Ready mapping (vocabulary confirmed at live-probe time).
+func nodeIsActive(status string) bool {
+	s := strings.ToLower(status)
+	return strings.Contains(s, "active") || strings.Contains(s, "started") ||
+		strings.Contains(s, "running") || strings.Contains(s, "ready") || s == "on"
+}
+
+// setNodepoolReadyCondition reports Available only when the declared node
+// count has converged AND every declared node actually exists upstream in an
+// active state. The group's node_count alone is NOT a readiness signal — the
+// API echoes the requested count within a second of create, long before any
+// worker VM boots (caught by the T028 canary: Ready=True one second after
+// create). A node in a failed/error state surfaces ReasonUpstreamFailed.
+func setNodepoolReadyCondition(cr *kubernetesv1alpha1.KubernetesClusterNodepool, upToDate bool, declared int, nodes []groupNodeBody) {
+	for _, n := range nodes {
+		s := strings.ToLower(n.Status)
+		if strings.Contains(s, "error") || strings.Contains(s, "fail") {
+			cr.Status.SetConditions(shared.ReadyFalse(shared.ReasonUpstreamFailed,
+				fmt.Sprintf("worker node %d state is %q: provisioning failed and will not recover on its own — check the Timeweb panel; scale or recreate the nodepool", n.ID, n.Status)))
+			return
+		}
+	}
+	if !upToDate {
+		cr.Status.SetConditions(shared.ReadyFalse(shared.ReasonReconciling,
+			"worker node count is converging to the desired value"))
 		return
 	}
-	cr.Status.SetConditions(shared.ReadyFalse(shared.ReasonReconciling,
-		"worker node count is converging to the desired value"))
+	active := 0
+	for _, n := range nodes {
+		if nodeIsActive(n.Status) {
+			active++
+		}
+	}
+	if active < declared {
+		cr.Status.SetConditions(shared.ReadyFalse(xpv2.ReasonCreating,
+			fmt.Sprintf("%d/%d worker nodes provisioned (%d listed)", active, declared, len(nodes))))
+		return
+	}
+	cr.Status.SetConditions(xpv2.Available())
 }

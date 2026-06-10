@@ -51,6 +51,12 @@ const (
 	// to start it. Not a controller failure (Synced stays true); the server
 	// cannot reach the running state until the account is topped up.
 	ReasonPaymentRequired xpv2.ConditionReason = "PaymentRequired"
+	// ReasonUpstreamFailed surfaces a terminal upstream resource state
+	// (`failed` / `*error*`) — e.g. a K8s cluster whose provisioning died
+	// ("Ошибка при запуске" in the panel). Not a controller failure (Synced
+	// stays true); the resource will not progress without operator action
+	// (typically delete + recreate with a corrected spec).
+	ReasonUpstreamFailed xpv2.ConditionReason = "UpstreamFailed"
 	// Feature-002 resolver / sizing-lock vocabulary (FR-006, FR-007, FR-010,
 	// FR-013, FR-017). Mapped from the typed sentinel errors in
 	// `internal/controller/shared/resolver`.

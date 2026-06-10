@@ -1,10 +1,15 @@
 # Contract — Timeweb configurator endpoints touched by feature 005
 
-**Source of truth**: `docs/openapi-timeweb.json` (tag `Облачные серверы` — already in the allowlist; no codegen change needed).
+**Source of truth**: `docs/openapi-timeweb.json`. The server endpoint ships under tag `Облачные серверы` (already in the allowlist). The K8s endpoint is **absent from the published swagger** — probed live 2026-06-10 and hand-patched into `docs/openapi-timeweb.json` under tag `Kubernetes` so codegen covers it.
 
 | Endpoint | Method | Used by |
 |---|---|---|
-| `/api/v1/configurator/servers` | `GET` | `DimServerConfigurator` fetcher (`GetConfiguratorsWithResponse`) — Server + K8s custom sizing |
+| `/api/v1/configurator/servers` | `GET` | `DimServerConfigurator` fetcher (`GetConfiguratorsWithResponse`) — Server custom sizing |
+| `/api/v1/configurator/k8s` (undocumented) | `GET` | `DimKubernetesMasterConfigurator` + `DimKubernetesWorkerConfigurator` fetchers (`GetK8sConfiguratorsWithResponse`) — KubernetesCluster + Nodepool custom sizing |
+
+The two catalogs are **separate**: ids are disjoint, and `POST /api/v1/k8s/clusters` rejects server-catalog ids with `400 configurator_not_found` (observed in the T028 live canary). The K8s envelope key is `k8s_configurators`; item shape is identical to `servers-configurator` below plus a `tags` array (also absent from the published swagger; hand-patched in).
+
+**Role + location contract (T028 follow-up repros)**: the k8s catalog is tag-partitioned into a master family (`k8s_master_configurator` — for the cluster's `configuration`) and worker families (everything else — for node-group `configuration`), one entry per location. The upstream does NOT validate the pairing: a wrong-family or wrong-location id makes it silently ignore `availability_zone` and strand the cluster in ams-1 (failed). Resolution therefore always filters `{location}` first (AZ↔location: spb-3↔ru-1, msk-1↔ru-3, ams-1↔nl-1, fra-1↔de-1; `azLocation` in the kubernetes controller), and nodepools derive the location from the parent cluster's AZ — an unsatisfiable sizing in the parent's region is rejected before any upstream call (`NoConfiguratorAvailable`). Also observed: `configuration` + `network_id` create can return HTTP 500 **and still create the cluster** — treat a 500 from this endpoint as possibly-created.
 
 ## `servers-configurator` item shape
 
@@ -28,4 +33,4 @@ requirements:
 - **KubernetesCluster** (`ClusterIn`): set `configuration {configurator_id, cpu, ram, disk}` (ram/disk in upstream MB) instead of `preset_id`.
 - **KubernetesClusterNodepool** (`NodeGroupIn`): set `configuration {configurator_id, cpu, ram, disk, gpu}` instead of `preset_id`.
 
-**Probe at impl** (per `project_timeweb_underscore_envelopes`): exact upstream units of `requirements.ram_*`/`disk_*`, and whether K8s `configuration.configurator_id` accepts ids from `/api/v1/configurator/servers` or needs a dedicated K8s configurator list.
+**Probe results** (per `project_timeweb_underscore_envelopes`): `requirements.ram_*`/`disk_*` are MB on both catalogs. K8s `configuration.configurator_id` does **NOT** accept ids from `/api/v1/configurator/servers` — it needs the dedicated `/api/v1/configurator/k8s` list (400 `configurator_not_found` otherwise).

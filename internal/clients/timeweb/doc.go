@@ -31,3 +31,4 @@ limitations under the License.
 package timeweb
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+//counterfeiter:generate -o fake.go -fake-name FakeClient ./generated ClientInterface

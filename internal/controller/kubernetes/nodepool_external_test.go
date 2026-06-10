@@ -24,6 +24,7 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	corev1 "k8s.io/api/core/v1"
 
 	kubernetesv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/kubernetes/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
@@ -56,6 +57,15 @@ func nodepoolE(fake *timeweb.FakeClient) *nodepoolExternal {
 
 const nodeGroupJSON = `{"node_group":{"id":42,"name":"workers","preset_id":9,"node_count":2}}`
 
+// Per-node payloads for the readiness gate (the group's node_count is the
+// REQUESTED count, echoed before any VM exists).
+const (
+	groupNodesActiveJSON     = `{"nodes":[{"id":1,"status":"active"},{"id":2,"status":"active"}]}`
+	groupNodesInstallingJSON = `{"nodes":[{"id":1,"status":"active"},{"id":2,"status":"installing"}]}`
+	groupNodesFailedJSON     = `{"nodes":[{"id":1,"status":"active"},{"id":2,"status":"failed"}]}`
+	groupNodesEmptyJSON      = `{"nodes":[]}`
+)
+
 func TestNodepoolObserve(t *testing.T) {
 	ctx := context.Background()
 
@@ -69,6 +79,7 @@ func TestNodepoolObserve(t *testing.T) {
 	t.Run("Success_UpToDate", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesActiveJSON), nil)
 		cr := newNodepool(true, 2)
 		obs, err := nodepoolE(fake).Observe(ctx, cr)
 		if err != nil {
@@ -80,11 +91,62 @@ func TestNodepoolObserve(t *testing.T) {
 		if cr.Status.AtProvider.ObservedNodeCount == nil || *cr.Status.AtProvider.ObservedNodeCount != 2 {
 			t.Errorf("ObservedNodeCount=%v, want 2", cr.Status.AtProvider.ObservedNodeCount)
 		}
+		if cr.GetCondition(xpv2.TypeReady).Status != corev1.ConditionTrue {
+			t.Errorf("Ready=%v, want True (all nodes active)", cr.GetCondition(xpv2.TypeReady).Status)
+		}
+	})
+
+	t.Run("NodesStillProvisioning_NotReady", func(t *testing.T) {
+		// T028 canary regression: the group echoes node_count immediately, so
+		// Ready must wait for the actual nodes to reach an active state.
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesInstallingJSON), nil)
+		cr := newNodepool(true, 2)
+		obs, err := nodepoolE(fake).Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if !obs.ResourceExists || !obs.ResourceUpToDate {
+			t.Errorf("obs=%+v, want exists+upToDate (count converged, nodes still booting)", obs)
+		}
+		cond := cr.GetCondition(xpv2.TypeReady)
+		if cond.Status != corev1.ConditionFalse || cond.Reason != xpv2.ReasonCreating {
+			t.Errorf("Ready=%v/%v, want False/Creating while nodes provision", cond.Status, cond.Reason)
+		}
+	})
+
+	t.Run("NoNodesYet_NotReady", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesEmptyJSON), nil)
+		cr := newNodepool(true, 2)
+		if _, err := nodepoolE(fake).Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if cr.GetCondition(xpv2.TypeReady).Status != corev1.ConditionFalse {
+			t.Error("Ready=True with zero listed nodes — the one-second-Ready bug")
+		}
+	})
+
+	t.Run("NodeFailed_UpstreamFailed", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesFailedJSON), nil)
+		cr := newNodepool(true, 2)
+		if _, err := nodepoolE(fake).Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		cond := cr.GetCondition(xpv2.TypeReady)
+		if cond.Status != corev1.ConditionFalse || cond.Reason != shared.ReasonUpstreamFailed {
+			t.Errorf("Ready=%v/%v, want False/UpstreamFailed for a failed node", cond.Status, cond.Reason)
+		}
 	})
 
 	t.Run("ScaleDrift_NotUpToDate", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesActiveJSON), nil)
 		obs, err := nodepoolE(fake).Observe(ctx, newNodepool(true, 4)) // desired 4, observed 2
 		if err != nil {
 			t.Fatalf("Observe: %v", err)
@@ -108,6 +170,15 @@ func TestNodepoolObserve(t *testing.T) {
 		fake.GetClusterNodeGroupReturns(httpResp(http.StatusInternalServerError, ""), nil)
 		if _, err := nodepoolE(fake).Observe(ctx, newNodepool(true, 2)); err == nil {
 			t.Fatal("want error on 5xx")
+		}
+	})
+
+	t.Run("Transient_NodesListServerError", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusInternalServerError, ""), nil)
+		if _, err := nodepoolE(fake).Observe(ctx, newNodepool(true, 2)); err == nil {
+			t.Fatal("want error on nodes-list 5xx")
 		}
 	})
 }
@@ -261,6 +332,9 @@ func TestNodepoolCustomSizing(t *testing.T) {
 
 	t.Run("Create_Resources_SetsConfiguration", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
+		// The custom-sizing path GETs the parent cluster to derive the
+		// configurator location from its availability zone (msk-1 → ru-3).
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
 		fake.CreateClusterNodeGroupReturns(httpResp(http.StatusCreated, nodeGroupJSON), nil)
 		r := okResolver()
 		r.configuratorID = 22
@@ -282,6 +356,34 @@ func TestNodepoolCustomSizing(t *testing.T) {
 		}
 		if body.Configuration.Ram != 4096 {
 			t.Errorf("config ram=%d MB, want 4096", body.Configuration.Ram)
+		}
+		// Role-family + location-first contract: worker dim, parent's
+		// AZ-derived location.
+		if r.gotConfiguratorDim != resolver.DimKubernetesWorkerConfigurator {
+			t.Errorf("resolved dim=%q, want DimKubernetesWorkerConfigurator", r.gotConfiguratorDim)
+		}
+		if r.gotConfiguratorLocation != "ru-3" {
+			t.Errorf("resolved location=%q, want ru-3 (parent cluster in msk-1)", r.gotConfiguratorLocation)
+		}
+	})
+
+	t.Run("Create_NoWorkerConfiguratorInParentRegion", func(t *testing.T) {
+		// Reject-before-create: a sizing with no worker configurator in the
+		// parent cluster's region surfaces ErrNoConfiguratorAvailable and the
+		// upstream node-group create is never attempted (no region-mismatched
+		// configurator id can reach the API).
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
+		r := okResolver()
+		r.noConfigurator = true
+		cr := newNodepool(false, 2)
+		cr.Spec.ForProvider.PresetName = nil
+		cr.Spec.ForProvider.Resources = &kubernetesv1alpha1.KubernetesNodepoolResources{CPU: 2, RAMGB: 4, DiskGB: 30}
+		if _, err := mkE(fake, r).Create(ctx, cr); !errors.Is(err, resolver.ErrNoConfiguratorAvailable) {
+			t.Errorf("err=%v, want ErrNoConfiguratorAvailable", err)
+		}
+		if fake.CreateClusterNodeGroupCallCount() != 0 {
+			t.Error("node-group create attempted despite unresolvable configurator")
 		}
 	})
 

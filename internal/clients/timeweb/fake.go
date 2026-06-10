@@ -1315,6 +1315,20 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	GetK8sConfiguratorsStub        func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)
+	getK8sConfiguratorsMutex       sync.RWMutex
+	getK8sConfiguratorsArgsForCall []struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}
+	getK8sConfiguratorsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getK8sConfiguratorsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	GetKeyStub        func(context.Context, generated.SshKeyId, ...generated.RequestEditorFn) (*http.Response, error)
 	getKeyMutex       sync.RWMutex
 	getKeyArgsForCall []struct {
@@ -8397,6 +8411,71 @@ func (fake *FakeClient) GetK8SVersionsReturnsOnCall(i int, result1 *http.Respons
 	}{result1, result2}
 }
 
+func (fake *FakeClient) GetK8sConfigurators(arg1 context.Context, arg2 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getK8sConfiguratorsMutex.Lock()
+	ret, specificReturn := fake.getK8sConfiguratorsReturnsOnCall[len(fake.getK8sConfiguratorsArgsForCall)]
+	fake.getK8sConfiguratorsArgsForCall = append(fake.getK8sConfiguratorsArgsForCall, struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}{arg1, arg2})
+	stub := fake.GetK8sConfiguratorsStub
+	fakeReturns := fake.getK8sConfiguratorsReturns
+	fake.recordInvocation("GetK8sConfigurators", []interface{}{arg1, arg2})
+	fake.getK8sConfiguratorsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetK8sConfiguratorsCallCount() int {
+	fake.getK8sConfiguratorsMutex.RLock()
+	defer fake.getK8sConfiguratorsMutex.RUnlock()
+	return len(fake.getK8sConfiguratorsArgsForCall)
+}
+
+func (fake *FakeClient) GetK8sConfiguratorsCalls(stub func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getK8sConfiguratorsMutex.Lock()
+	defer fake.getK8sConfiguratorsMutex.Unlock()
+	fake.GetK8sConfiguratorsStub = stub
+}
+
+func (fake *FakeClient) GetK8sConfiguratorsArgsForCall(i int) (context.Context, []generated.RequestEditorFn) {
+	fake.getK8sConfiguratorsMutex.RLock()
+	defer fake.getK8sConfiguratorsMutex.RUnlock()
+	argsForCall := fake.getK8sConfiguratorsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeClient) GetK8sConfiguratorsReturns(result1 *http.Response, result2 error) {
+	fake.getK8sConfiguratorsMutex.Lock()
+	defer fake.getK8sConfiguratorsMutex.Unlock()
+	fake.GetK8sConfiguratorsStub = nil
+	fake.getK8sConfiguratorsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetK8sConfiguratorsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getK8sConfiguratorsMutex.Lock()
+	defer fake.getK8sConfiguratorsMutex.Unlock()
+	fake.GetK8sConfiguratorsStub = nil
+	if fake.getK8sConfiguratorsReturnsOnCall == nil {
+		fake.getK8sConfiguratorsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getK8sConfiguratorsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) GetKey(arg1 context.Context, arg2 generated.SshKeyId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.getKeyMutex.Lock()
 	ret, specificReturn := fake.getKeyReturnsOnCall[len(fake.getKeyArgsForCall)]
@@ -15054,6 +15133,8 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.getK8SNetworkDriversMutex.RUnlock()
 	fake.getK8SVersionsMutex.RLock()
 	defer fake.getK8SVersionsMutex.RUnlock()
+	fake.getK8sConfiguratorsMutex.RLock()
+	defer fake.getK8sConfiguratorsMutex.RUnlock()
 	fake.getKeyMutex.RLock()
 	defer fake.getKeyMutex.RUnlock()
 	fake.getKeysMutex.RLock()

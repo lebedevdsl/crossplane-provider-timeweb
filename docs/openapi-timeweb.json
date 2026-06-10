@@ -34584,6 +34584,78 @@
           ]
         }
       }
+    },
+    "/api/v1/configurator/k8s": {
+      "get": {
+        "summary": "Получение списка конфигураторов Kubernetes",
+        "description": "UNDOCUMENTED upstream endpoint (absent from the published swagger; probed live 2026-06-10, feature 005). Returns the Kubernetes-specific configurator catalog under the `k8s_configurators` key. Entry shape is identical to `servers-configurator`, but the IDs and bounds form a SEPARATE catalog: `POST /api/v1/k8s/clusters` rejects server-configurator ids with `400 configurator_not_found`.",
+        "operationId": "getK8sConfigurators",
+        "responses": {
+          "200": {
+            "description": "Объект JSON c ключом `k8s_configurators`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "meta": {
+                          "$ref": "#/components/schemas/meta"
+                        },
+                        "k8s_configurators": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/servers-configurator"
+                          }
+                        }
+                      },
+                      "required": [
+                        "meta",
+                        "k8s_configurators"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "response_id": {
+                          "$ref": "#/components/schemas/response_id"
+                        }
+                      },
+                      "required": [
+                        "response_id"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "tags": [
+          "Kubernetes"
+        ],
+        "x-tags-i18n": {
+          "eng": [
+            "Kubernetes"
+          ]
+        }
+      }
     }
   },
   "components": {
@@ -41640,6 +41712,13 @@
               "gpu_max",
               "gpu_step"
             ]
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Теги конфигуратора (present in live payloads though absent from the published swagger; used to partition the K8s catalog into master vs worker families, e.g. k8s_master_configurator / k8s_configurator_general)."
           }
         },
         "required": [

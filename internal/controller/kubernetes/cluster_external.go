@@ -141,7 +141,15 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 	var presetID, configuratorID int
 	var err error
 	if r := cr.Spec.ForProvider.Resources; r != nil {
-		configuratorID, err = resolveK8sConfigurator(ctx, e.resolver, e.pcRef, r.CPU, r.RAMGB, r.DiskGB, nil)
+		// Master-family configurator, location-matched to the cluster's AZ —
+		// a wrong family/location id makes the upstream ignore the AZ and
+		// strand the cluster in ams-1 (see azLocation).
+		var location string
+		location, err = azToLocation(cr.Spec.ForProvider.AvailabilityZone)
+		if err == nil {
+			configuratorID, err = resolveK8sConfigurator(ctx, e.resolver, e.pcRef,
+				resolver.DimKubernetesMasterConfigurator, location, r.CPU, r.RAMGB, r.DiskGB, nil)
+		}
 	} else {
 		presetID, err = e.resolveMasterPreset(ctx, *cr.Spec.ForProvider.PresetName)
 	}
@@ -438,8 +446,13 @@ func setClusterReadyCondition(cr *kubernetesv1alpha1.KubernetesCluster, state st
 	case strings.Contains(s, "active") || strings.Contains(s, "started") || strings.Contains(s, "running") || s == "on":
 		cr.Status.SetConditions(xpv2.Available())
 		return true
-	case strings.Contains(s, "error") || strings.Contains(s, "failed"):
-		cr.Status.SetConditions(xpv2.Unavailable())
+	case strings.Contains(s, "error") || strings.Contains(s, "fail"):
+		// Terminal upstream provisioning failure ("Ошибка при запуске" in the
+		// panel). Surface it loudly instead of an eternal generic
+		// Ready=False: the cluster will not progress without operator action.
+		cr.Status.SetConditions(shared.ReadyFalse(shared.ReasonUpstreamFailed,
+			fmt.Sprintf("upstream cluster state is %q: provisioning failed and will not recover on its own — "+
+				"delete and recreate the KubernetesCluster (check the availability zone / sizing pairing and the Timeweb panel for details)", state)))
 		return false
 	default:
 		cr.Status.SetConditions(xpv2.Creating())

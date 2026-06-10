@@ -1,8 +1,12 @@
 # Step 1 — managed-Kubernetes CUSTOM SIZING (feature 005 US2).
 # Cluster + nodepool sized via `resources` (cpu/ramGB/diskGB) instead of a
-# preset slug — no ambiguous-preset-id problem. Sizing values are the cheapest
-# ru-1 configurator's mins, discovered at runtime ($TWE_SRV_*). Env-gated like
-# the other K8s bundles (skipped unless K8s e2e is enabled).
+# preset slug — no ambiguous-preset-id problem. Sizing values are the ru-3
+# (msk-1) mins per ROLE FAMILY ($TWE_K8S_MASTER_* / $TWE_K8S_WORKER_*),
+# discovered at runtime from the K8s-specific catalog /api/v1/configurator/k8s
+# — NOT the server catalog, whose ids the k8s create endpoint rejects, and
+# split master/worker because a cross-family configurator id makes the
+# upstream ignore the availability zone (cluster strands in ams-1 and fails).
+# Env-gated like the other K8s bundles (skipped unless K8s e2e is enabled).
 apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
 kind: KubernetesCluster
 metadata:
@@ -21,9 +25,9 @@ spec:
     availabilityZone: msk-1
     masterNodesCount: 1
     resources:
-      cpu: ${TWE_SRV_CPU}
-      ramGB: ${TWE_SRV_RAMGB}
-      diskGB: ${TWE_SRV_DISKGB}
+      cpu: ${TWE_K8S_MASTER_CPU}
+      ramGB: ${TWE_K8S_MASTER_RAMGB}
+      diskGB: ${TWE_K8S_MASTER_DISKGB}
 ---
 apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
 kind: KubernetesClusterNodepool
@@ -40,6 +44,6 @@ spec:
       name: e2e-k8s-custom
     nodeCount: 1
     resources:
-      cpu: ${TWE_SRV_CPU}
-      ramGB: ${TWE_SRV_RAMGB}
-      diskGB: ${TWE_SRV_DISKGB}
+      cpu: ${TWE_K8S_WORKER_CPU}
+      ramGB: ${TWE_K8S_WORKER_RAMGB}
+      diskGB: ${TWE_K8S_WORKER_DISKGB}

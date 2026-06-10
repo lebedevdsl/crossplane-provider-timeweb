@@ -48,12 +48,26 @@ limitations under the License.
 //	  k8s_version       → DimKubernetesVersion         (enum)
 //	  availability_zone → DimAvailabilityZone          (enum; derived from preset list)
 //	  network_driver    → DimKubernetesNetworkDriver   (enum)
-//	  preset_id         → DimKubernetesMasterPreset    (preset; XOR with `configuration`)
-//	  configuration     → DimServerConfigurator        (configurator; XOR with `preset_id`)
+//	  preset_id         → DimKubernetesMasterPreset          (preset; XOR with `configuration`)
+//	  configuration     → DimKubernetesMasterConfigurator    (configurator; XOR with `preset_id`)
 //
 //	POST /api/v1/k8s/clusters/{cluster_id}/groups (createClusterNodeGroup):
-//	  preset_id         → DimKubernetesWorkerPreset    (preset; XOR with `configuration`)
-//	  configuration     → DimServerConfigurator        (configurator; XOR with `preset_id`)
+//	  preset_id         → DimKubernetesWorkerPreset          (preset; XOR with `configuration`)
+//	  configuration     → DimKubernetesWorkerConfigurator    (configurator; XOR with `preset_id`)
+//
+// K8s `configuration.configurator_id` ids come from `/api/v1/configurator/k8s`
+// (UNDOCUMENTED upstream; probed live 2026-06-10) — a catalog SEPARATE from
+// `/api/v1/configurator/servers`. The create-cluster endpoint rejects
+// server-catalog ids with `400 configurator_not_found` (observed in the T028
+// canary). The k8s catalog is further partitioned by TAG into a master family
+// (`k8s_master_configurator`) and worker families (`k8s_configurator_general`
+// / `_dedicated_cpu` / `_gpu_*`), one entry per location. Sending a
+// worker-family id as the cluster's master `configuration` makes the upstream
+// silently IGNORE `availability_zone`, place the cluster in ams-1, and fail
+// provisioning (T028 canary follow-up, verified by curl repros: the same
+// request with the location+role-matched master id is honored). Hence the
+// master/worker dimension split, and resolution always filters by location
+// (derived from the cluster's availability zone) FIRST.
 //
 // The six K8s dimensions are registered (with stub fetchers returning
 // ErrDimensionFetcherUnwired) in defaultRegistry below so the table
@@ -83,6 +97,7 @@ type CatalogClient interface {
 	GetKubernetesPresetsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetKubernetesPresetsResponse, error)
 	GetK8SVersionsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetK8SVersionsResponse, error)
 	GetConfiguratorsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetConfiguratorsResponse, error)
+	GetK8sConfiguratorsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetK8sConfiguratorsResponse, error)
 }
 
 // Dimension names. The first two are live (consumed by S3Bucket /
@@ -98,16 +113,17 @@ const (
 	DimServerPreset            = "ServerPreset"  // feature 003
 	DimServerOSImage           = "ServerOSImage" // feature 003
 
-	// Forward-compat (K8s) dimensions — see header comment. The
-	// ServerConfigurator dimension stays at fetchUnwired until the
-	// custom-configurator path lands (out of v0.3 scope per spec
-	// clarification).
-	DimServerConfigurator      = "ServerConfigurator"
-	DimKubernetesMasterPreset  = "KubernetesMasterPreset"
-	DimKubernetesWorkerPreset  = "KubernetesWorkerPreset"
-	DimKubernetesVersion       = "KubernetesVersion"
-	DimKubernetesNetworkDriver = "KubernetesNetworkDriver"
-	DimAvailabilityZone        = "AvailabilityZone"
+	// Configurator dimensions (feature 005) + K8s dimensions (feature 004) —
+	// all live except NetworkDriver/AvailabilityZone, which are CRD enums
+	// (see the registry below and the header comment).
+	DimServerConfigurator           = "ServerConfigurator"
+	DimKubernetesMasterConfigurator = "KubernetesMasterConfigurator"
+	DimKubernetesWorkerConfigurator = "KubernetesWorkerConfigurator"
+	DimKubernetesMasterPreset       = "KubernetesMasterPreset"
+	DimKubernetesWorkerPreset       = "KubernetesWorkerPreset"
+	DimKubernetesVersion            = "KubernetesVersion"
+	DimKubernetesNetworkDriver      = "KubernetesNetworkDriver"
+	DimAvailabilityZone             = "AvailabilityZone"
 )
 
 // dimensionDef is the per-dimension entry in the registry.
@@ -134,9 +150,15 @@ func defaultRegistry() map[string]dimensionDef {
 		DimKubernetesWorkerPreset: {kind: DimensionPreset, fetch: fetchK8sWorkerPresets},
 		DimKubernetesVersion:      {kind: DimensionEnum, fetch: fetchK8sVersions},
 
-		// Feature 005 — promoted to a real fetcher (custom configurator sizing).
-		// Reused by both Server and Kubernetes (cluster/nodepool) custom sizing.
-		DimServerConfigurator: {kind: DimensionConfigurator, fetch: fetchServerConfigurators},
+		// Feature 005 — promoted to real fetchers (custom configurator sizing).
+		// The two catalogs are SEPARATE upstream (see header comment): Server
+		// sizing resolves against /configurator/servers; K8s cluster/nodepool
+		// sizing against the undocumented /configurator/k8s, tag-partitioned
+		// into master (cluster `configuration`) and worker (node-group
+		// `configuration`) families.
+		DimServerConfigurator:           {kind: DimensionConfigurator, fetch: fetchServerConfigurators},
+		DimKubernetesMasterConfigurator: {kind: DimensionConfigurator, fetch: fetchK8sMasterConfigurators},
+		DimKubernetesWorkerConfigurator: {kind: DimensionConfigurator, fetch: fetchK8sWorkerConfigurators},
 
 		// Forward-compat — still stubbed. NetworkDriver + AvailabilityZone are
 		// validated by CRD enums on the KubernetesCluster kind instead of a
@@ -337,8 +359,63 @@ func fetchServerConfigurators(ctx context.Context, c CatalogClient) (any, error)
 	if resp.JSON200 == nil {
 		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
 	}
-	out := make([]ConfiguratorEntry, 0, len(resp.JSON200.ServerConfigurators))
-	for _, cfg := range resp.JSON200.ServerConfigurators {
+	return configuratorEntries(resp.JSON200.ServerConfigurators), nil
+}
+
+// k8sMasterConfiguratorTag marks the master-family entries in the
+// /configurator/k8s catalog; everything else (general / dedicated_cpu /
+// gpu_*) is a worker-group family.
+const k8sMasterConfiguratorTag = "k8s_master_configurator"
+
+// fetchK8sMasterConfigurators / fetchK8sWorkerConfigurators read the
+// UNDOCUMENTED /api/v1/configurator/k8s — the catalog `POST
+// /api/v1/k8s/clusters` (and the node-group create) validate
+// `configuration.configurator_id` against. Entry shape is identical to the
+// server catalog (same `servers-configurator` schema), but the ids are
+// disjoint (the k8s create endpoint rejects server-catalog ids with `400
+// configurator_not_found`), and the catalog is tag-partitioned into a master
+// family and worker families — see the header comment for the failure mode a
+// cross-family id triggers.
+func fetchK8sMasterConfigurators(ctx context.Context, c CatalogClient) (any, error) {
+	return fetchK8sConfiguratorsByRole(ctx, c, true)
+}
+
+func fetchK8sWorkerConfigurators(ctx context.Context, c CatalogClient) (any, error) {
+	return fetchK8sConfiguratorsByRole(ctx, c, false)
+}
+
+func fetchK8sConfiguratorsByRole(ctx context.Context, c CatalogClient, master bool) (any, error) {
+	resp, err := c.GetK8sConfiguratorsWithResponse(ctx)
+	if err != nil {
+		return nil, classifyUpstream(0, err)
+	}
+	if resp.JSON200 == nil {
+		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+	}
+	role := make([]twgen.ServersConfigurator, 0, len(resp.JSON200.K8sConfigurators))
+	for _, cfg := range resp.JSON200.K8sConfigurators {
+		isMaster := false
+		if cfg.Tags != nil {
+			for _, tag := range *cfg.Tags {
+				if tag == k8sMasterConfiguratorTag {
+					isMaster = true
+					break
+				}
+			}
+		}
+		if isMaster == master {
+			role = append(role, cfg)
+		}
+	}
+	return configuratorEntries(role), nil
+}
+
+// configuratorEntries normalizes upstream configurator payloads (shared by
+// the server + k8s catalogs) into ConfiguratorEntry values for
+// SelectConfigurator.
+func configuratorEntries(cfgs []twgen.ServersConfigurator) []ConfiguratorEntry {
+	out := make([]ConfiguratorEntry, 0, len(cfgs))
+	for _, cfg := range cfgs {
 		r := cfg.Requirements
 		bounds := map[string]CapacityBound{
 			"cpu":       {Min: int64(r.CpuMin), Step: int64(r.CpuStep), Max: int64(r.CpuMax)},
@@ -364,7 +441,7 @@ func fetchServerConfigurators(ctx context.Context, c CatalogClient) (any, error)
 			Bounds: bounds,
 		})
 	}
-	return out, nil
+	return out
 }
 
 // fetchUnwired is the placeholder fetcher for forward-compat K8s/Server

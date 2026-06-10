@@ -307,6 +307,33 @@ spec:
                       at Create.
                     format: int64
                     type: integer
+                  nodes:
+                    description: |-
+                      Nodes lists the group's actual worker nodes (mirrors the dashboard's
+                      per-group node table). Readiness is derived from these statuses — the
+                      group-level node count alone is echoed before any VM exists.
+                    items:
+                      description: NodepoolNode is one worker node of the group as
+                        reported upstream.
+                      properties:
+                        createdAt:
+                          description: CreatedAt is the upstream node creation timestamp.
+                          type: string
+                        id:
+                          description: ID is the upstream node id.
+                          format: int64
+                          type: integer
+                        ip:
+                          description: IP is the node's local network IP.
+                          type: string
+                        status:
+                          description: Status is the raw upstream node state (e.g.
+                            installing, active).
+                          type: string
+                      required:
+                      - id
+                      type: object
+                    type: array
                   observedNodeCount:
                     description: ObservedNodeCount is the upstream node count.
                     type: integer
