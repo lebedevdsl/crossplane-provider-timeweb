@@ -28,12 +28,14 @@ type NetworkParameters struct {
 	// Immutable post-create.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=255
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="name is immutable"
 	Name string `json:"name"`
 
 	// SubnetCIDR is the IPv4 CIDR allocated to the VPC. Upstream
 	// validates the exact constraints (RFC1918 ranges, /24 minimum);
 	// CRD-level regex check is structural only. Immutable post-create.
 	// +kubebuilder:validation:Pattern=`^([0-9]{1,3}\.){3}[0-9]{1,3}\/([0-9]|[1-2][0-9]|3[0-2])$`
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="subnetCIDR is immutable"
 	SubnetCIDR string `json:"subnetCIDR"`
 
 	// Location is the region the VPC lives in. Same enum as Server.
@@ -65,6 +67,10 @@ type NetworkObservation struct {
 	// kubectl-describe parity.
 	// +optional
 	AssignedCIDR *string `json:"assignedCIDR,omitempty"`
+
+	// State is the upstream VPC status string (e.g. "active", "deleting").
+	// +optional
+	State *string `json:"state,omitempty"`
 }
 
 // NetworkSpec is the desired state.
@@ -84,9 +90,10 @@ type NetworkStatus struct {
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,timeweb}
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
-// +kubebuilder:printcolumn:name="CIDR",type="string",JSONPath=".spec.forProvider.subnetCIDR"
 // +kubebuilder:printcolumn:name="LOCATION",type="string",JSONPath=".spec.forProvider.location"
-// +kubebuilder:printcolumn:name="UPSTREAM-ID",type="string",JSONPath=".status.atProvider.upstreamID"
+// +kubebuilder:printcolumn:name="CIDR",type="string",JSONPath=".spec.forProvider.subnetCIDR"
+// +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.state"
+// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Network is a Timeweb VPC (private network). Created via the v2

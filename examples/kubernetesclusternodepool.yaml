@@ -1,0 +1,46 @@
+# Example KubernetesClusterNodepool managed resource.
+#
+# A node pool is one Timeweb managed-Kubernetes worker group, attached to a
+# parent KubernetesCluster via `clusterRef`.
+#
+# IMMUTABLE FIELDS: name, presetName (or resources), clusterRef, publicIP,
+#   autohealing, autoscaling.enabled.
+# Mutable: nodeCount (when autoscaling is off).
+#
+# See docs/kubernetes.md for scaling, private-cluster config, and troubleshooting.
+---
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesClusterNodepool
+metadata:
+  name: demo-workers
+  namespace: timeweb-prod
+spec:
+  forProvider:
+    # Name of the worker group. Immutable post-create.
+    name: workers
+    # REQUIRED — parent KubernetesCluster in the same namespace.
+    clusterRef:
+      name: demo
+    # Worker-node preset slug (type=worker from /api/v1/presets/k8s).
+    # An unknown slug surfaces Synced=False, reason=PresetNotFound.
+    # IMMUTABLE. Exactly one of presetName / resources.
+    presetName: k8s-worker-1-2
+    # Desired number of worker nodes. Mutable (add/remove via relative deltas).
+    # Ignored when autoscaling is enabled.
+    nodeCount: 2
+    # Optional: give workers public IP addresses (default: true — public).
+    # Set false for private nodes behind a NAT router. Immutable post-create.
+    # publicIP: false
+    # Optional: autoscaling (min/max ≥ 2). Immutable post-create.
+    # autoscaling:
+    #   enabled: true
+    #   minSize: 2
+    #   maxSize: 6
+    # Optional: auto-recover failed nodes. Immutable post-create.
+    # autohealing: true
+    # Optional: Kubernetes node labels (immutable post-create).
+    # labels:
+    #   role: worker
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default

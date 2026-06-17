@@ -25,20 +25,18 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
+    - jsonPath: .spec.forProvider.location
+      name: LOCATION
+      type: string
     - jsonPath: .status.atProvider.ip
       name: IP
       type: string
-    - jsonPath: .status.atProvider.observedBoundTo.resourceType
-      name: BOUND-RES
-      type: string
-    - jsonPath: .status.atProvider.observedBoundTo.resourceID
+    - jsonPath: .status.atProvider.observedBoundSummary
       name: BOUND-TO
-      type: integer
-    - jsonPath: .status.atProvider.observedBoundTo.resourceUUID
-      name: BOUND-UUID
       type: string
-    - jsonPath: .spec.forProvider.location
-      name: LOCATION
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: ID
+      priority: 1
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
@@ -117,6 +115,9 @@ spec:
                     - us-4
                     - pl-1
                     type: string
+                    x-kubernetes-validations:
+                    - message: location is immutable
+                      rule: self == oldSelf
                 required:
                 - isDDoSGuard
                 - location
@@ -192,6 +193,14 @@ spec:
                 properties:
                   ip:
                     description: IP is the assigned IPv4 address.
+                    type: string
+                  observedBoundSummary:
+                    description: |-
+                      ObservedBoundSummary is a computed display field combining the
+                      upstream resourceType + id/uuid into a single string
+                      (e.g. "server/42" or "router/abc-uuid"). Populated by Observe;
+                      nil when the IP is unbound. Drives the BOUND-TO printcolumn
+                      without requiring a multi-path JSONPath expression.
                     type: string
                   observedBoundTo:
                     description: |-

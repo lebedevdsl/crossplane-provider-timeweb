@@ -1,0 +1,31 @@
+# Example Network (VPC) managed resource for the Timeweb Crossplane provider.
+#
+# A Network is a Timeweb VPC (private network). Resources like Server and
+# KubernetesCluster can be attached to it via `networkRef`.
+#
+# IMMUTABLE FIELDS: name, subnetCIDR, location, availabilityZone.
+# Mutable: description.
+#
+# See docs/servers.md §"Attaching a private network" for usage.
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: team-a-net
+  namespace: timeweb-prod
+spec:
+  forProvider:
+    # IMMUTABLE — name shown in the Timeweb dashboard.
+    name: team-a-net
+    # IMMUTABLE — IPv4 CIDR for the VPC (RFC1918, /24 minimum).
+    subnetCIDR: 10.30.0.0/24
+    # REQUIRED — region where the VPC lives. Same region as any attached Server.
+    # API codes: ru-1, ru-2, ru-3, nl-1, de-1, kz-1, us-4, pl-1
+    location: ru-1
+    # Optional: free-form note. Mutable.
+    description: "Team A shared private network"
+    # Optional: finer placement within the region. Immutable post-create.
+    # availabilityZone: spb-3
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default

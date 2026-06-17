@@ -14,6 +14,9 @@ GO              ?= go
 # project's own Go toolchain (per Clarifications 2026-05-18). No host install
 # required — `hack/tools.go` pins the version through `go.mod`.
 GOLANGCI_LINT   ?= $(GO) run github.com/golangci/golangci-lint/v2/cmd/golangci-lint
+# govulncheck is likewise invoked via `go run` (pinned in hack/tools.go) so it
+# is always built against the project's own Go toolchain — no host install.
+GOVULNCHECK     ?= $(GO) run golang.org/x/vuln/cmd/govulncheck
 DOCKER          ?= docker
 CROSSPLANE      ?= crossplane
 COSIGN          ?= cosign
@@ -108,6 +111,16 @@ generate-crds: ## Regenerate DeepCopy methods and CRD YAML manifests.
 .PHONY: lint
 lint: ## Run golangci-lint over the entire module (built from source via go run).
 	$(GOLANGCI_LINT) run --timeout=5m --config=hack/.golangci.yml
+
+.PHONY: vuln
+vuln: ## Scan dependencies + reachable code against the Go vulnerability DB.
+	$(GOVULNCHECK) ./...
+
+.PHONY: validate-examples
+validate-examples: generate-crds ## Validate examples/ against the generated CRD schemas (crossplane-native).
+	@# Uses the host `crossplane` CLI (same binary as xpkg.build). First run
+	@# downloads the Crossplane base schemas into ~/.crossplane/cache.
+	$(CROSSPLANE) beta validate $(CRDS_DIR) examples/
 
 .PHONY: test
 test: ## Run unit tests with race detector and coverage.

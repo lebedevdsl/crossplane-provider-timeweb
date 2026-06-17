@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
+	"k8s.io/client-go/tools/record"
 
 	networkv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/network/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
@@ -30,11 +31,13 @@ import (
 )
 
 func newFloatingIP(created bool) *networkv1alpha1.FloatingIP {
+	az := "spb-1"
 	f := &networkv1alpha1.FloatingIP{
 		Spec: networkv1alpha1.FloatingIPSpec{
 			ForProvider: networkv1alpha1.FloatingIPParameters{
-				Location:    "ru-1", // → default AZ spb-1
-				IsDDoSGuard: false,
+				Location:         "ru-1",
+				AvailabilityZone: &az, // explicit zone — ru-1 is multi-AZ, must pin a zone
+				IsDDoSGuard:      false,
 			},
 		},
 	}
@@ -179,12 +182,26 @@ func TestFloatingIPCreate(t *testing.T) {
 		}
 	})
 
-	t.Run("NoDefaultAZ_Errors", func(t *testing.T) {
+	t.Run("NoDefaultAZ_MultiAZ_Errors", func(t *testing.T) {
+		// ru-1 has 5 zones; omitting availabilityZone must be an error asking
+		// the operator to specify explicitly (T002 / research.md R-1 multi-AZ rule).
 		fake := &timeweb.FakeClient{}
 		cr := newFloatingIP(false)
-		cr.Spec.ForProvider.Location = "us-4" // no default AZ in the map
+		cr.Spec.ForProvider.Location = "ru-1"
+		cr.Spec.ForProvider.AvailabilityZone = nil // omit AZ to trigger multi-AZ error
 		if _, err := fe(fake).Create(ctx, cr); err == nil || !strings.Contains(err.Error(), "availabilityZone") {
-			t.Errorf("err = %v, want no-default-AZ error", err)
+			t.Errorf("err = %v, want multi-AZ error mentioning availabilityZone", err)
+		}
+	})
+
+	t.Run("NoDefaultAZ_Unknown_Errors", func(t *testing.T) {
+		// A completely unknown location should also produce an error.
+		fake := &timeweb.FakeClient{}
+		cr := newFloatingIP(false)
+		cr.Spec.ForProvider.Location = "xx-99" // not in any table
+		cr.Spec.ForProvider.AvailabilityZone = nil
+		if _, err := fe(fake).Create(ctx, cr); err == nil {
+			t.Error("err = nil, want error for unknown location")
 		}
 	})
 
@@ -306,4 +323,78 @@ func TestFloatingIPDelete(t *testing.T) {
 			t.Error("err = nil, want terminal on 403")
 		}
 	})
+}
+
+// TestFloatingIPObserveEventTransition verifies T020: an Event is emitted when
+// Ready transitions (Unknown → Available on first successful Observe).
+func TestFloatingIPObserveEventTransition(t *testing.T) {
+	ctx := context.Background()
+	fake := &timeweb.FakeClient{}
+	fake.GetFloatingIpReturns(httpResp(http.StatusOK, sampleFIPJSON(false)), nil)
+	cr := newFloatingIP(true)
+	rec := record.NewFakeRecorder(4)
+	ext := &floatingIPExternal{tw: fake, recorder: rec}
+	if _, err := ext.Observe(ctx, cr); err != nil {
+		t.Fatalf("Observe: %v", err)
+	}
+	select {
+	case ev := <-rec.Events:
+		if !strings.Contains(ev, "Available") {
+			t.Errorf("event = %q, want Available", ev)
+		}
+	default:
+		t.Error("no event recorded for Ready transition on first Observe")
+	}
+}
+
+// TestFloatingIPObserveSteadyStateNoEvent verifies T020: no duplicate Event on
+// steady-state reconcile (condition unchanged).
+func TestFloatingIPObserveSteadyStateNoEvent(t *testing.T) {
+	ctx := context.Background()
+	fake := &timeweb.FakeClient{}
+	fake.GetFloatingIpReturns(httpResp(http.StatusOK, sampleFIPJSON(false)), nil)
+	cr := newFloatingIP(true)
+	rec := record.NewFakeRecorder(4)
+	ext := &floatingIPExternal{tw: fake, recorder: rec}
+
+	// First Observe — transitions to Available.
+	if _, err := ext.Observe(ctx, cr); err != nil {
+		t.Fatalf("Observe #1: %v", err)
+	}
+	for len(rec.Events) > 0 {
+		<-rec.Events
+	}
+
+	// Second Observe — same condition, no event.
+	fake.GetFloatingIpReturns(httpResp(http.StatusOK, sampleFIPJSON(false)), nil)
+	if _, err := ext.Observe(ctx, cr); err != nil {
+		t.Fatalf("Observe #2: %v", err)
+	}
+	select {
+	case ev := <-rec.Events:
+		t.Errorf("unexpected event on steady-state reconcile: %q", ev)
+	default:
+		// Good — no duplicate.
+	}
+}
+
+// TestFloatingIPCreateEventFired verifies T020: Creating event on Create.
+func TestFloatingIPCreateEventFired(t *testing.T) {
+	ctx := context.Background()
+	fake := &timeweb.FakeClient{}
+	fake.CreateFloatingIpReturns(httpResp(http.StatusCreated, sampleFIPJSON(false)), nil)
+	cr := newFloatingIP(false)
+	rec := record.NewFakeRecorder(4)
+	ext := &floatingIPExternal{tw: fake, recorder: rec}
+	if _, err := ext.Create(ctx, cr); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	select {
+	case ev := <-rec.Events:
+		if !strings.Contains(ev, "Creating") {
+			t.Errorf("event = %q, want Creating", ev)
+		}
+	default:
+		t.Error("no event recorded for Creating transition on Create")
+	}
 }

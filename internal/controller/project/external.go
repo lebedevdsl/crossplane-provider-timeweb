@@ -34,6 +34,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"k8s.io/client-go/tools/record"
 
 	projectv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/project/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
@@ -51,7 +52,8 @@ var errNotProject = errors.New("managed resource is not a Project")
 // four Constitution III sub-tests (Success, NotFound, TransientError,
 // TerminalError) against each method.
 type external struct {
-	tw generated.ClientInterface
+	tw       generated.ClientInterface
+	recorder record.EventRecorder
 }
 
 // Observe asks Timeweb whether the project exists, populates status, and
@@ -95,7 +97,9 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	populateStatus(cr, envelope.Project)
-	cr.Status.SetConditions(xpv2.Available())
+	avail := xpv2.Available()
+	shared.RecordConditionChange(e.recorder, cr, avail)
+	cr.Status.SetConditions(avail)
 
 	upToDate := isUpToDate(cr.Spec.ForProvider, envelope.Project)
 	return managed.ExternalObservation{
@@ -135,7 +139,9 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	meta.SetExternalName(cr, shared.EncodeID(int(envelope.Project.Id)))
 	populateStatus(cr, envelope.Project)
-	cr.Status.SetConditions(xpv2.Creating())
+	creating := xpv2.Creating()
+	shared.RecordConditionChange(e.recorder, cr, creating)
+	cr.Status.SetConditions(creating)
 	return managed.ExternalCreation{}, nil
 }
 
@@ -216,37 +222,11 @@ func isUpToDate(spec projectv1alpha1.ProjectParameters, p generated.Project) boo
 	if spec.Name != p.Name {
 		return false
 	}
-	if !ptrEqString(spec.Description, p.Description) {
+	if !shared.PtrEqString(spec.Description, p.Description) {
 		return false
 	}
-	if !ptrEqStringPtr(spec.AvatarID, p.AvatarId) {
+	if !shared.PtrEqStringPtr(spec.AvatarID, p.AvatarId) {
 		return false
 	}
 	return true
-}
-
-func ptrEqString(p *string, s string) bool {
-	if p == nil {
-		return s == ""
-	}
-	return *p == s
-}
-
-func ptrEqStringPtr(a, b *string) bool {
-	if a == nil && b == nil {
-		return true
-	}
-	if a == nil || b == nil {
-		// Treat a nil and empty-string as equivalent.
-		left := ""
-		if a != nil {
-			left = *a
-		}
-		right := ""
-		if b != nil {
-			right = *b
-		}
-		return left == right
-	}
-	return *a == *b
 }

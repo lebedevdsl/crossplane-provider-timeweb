@@ -25,14 +25,18 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
-    - jsonPath: .spec.forProvider.subnetCIDR
-      name: CIDR
-      type: string
     - jsonPath: .spec.forProvider.location
       name: LOCATION
       type: string
-    - jsonPath: .status.atProvider.upstreamID
-      name: UPSTREAM-ID
+    - jsonPath: .spec.forProvider.subnetCIDR
+      name: CIDR
+      type: string
+    - jsonPath: .status.atProvider.state
+      name: STATE
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: ID
+      priority: 1
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
@@ -102,6 +106,9 @@ spec:
                     maxLength: 255
                     minLength: 1
                     type: string
+                    x-kubernetes-validations:
+                    - message: name is immutable
+                      rule: self == oldSelf
                   subnetCIDR:
                     description: |-
                       SubnetCIDR is the IPv4 CIDR allocated to the VPC. Upstream
@@ -109,6 +116,9 @@ spec:
                       CRD-level regex check is structural only. Immutable post-create.
                     pattern: ^([0-9]{1,3}\.){3}[0-9]{1,3}\/([0-9]|[1-2][0-9]|3[0-2])$
                     type: string
+                    x-kubernetes-validations:
+                    - message: subnetCIDR is immutable
+                      rule: self == oldSelf
                 required:
                 - location
                 - name
@@ -182,6 +192,10 @@ spec:
                     description: |-
                       AssignedCIDR mirrors the upstream resource's observed CIDR for
                       kubectl-describe parity.
+                    type: string
+                  state:
+                    description: State is the upstream VPC status string (e.g. "active",
+                      "deleting").
                     type: string
                   upstreamID:
                     description: UpstreamID is the Timeweb VPC ID (string per /api/v2/vpcs).

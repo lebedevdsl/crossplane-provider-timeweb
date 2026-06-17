@@ -115,8 +115,8 @@ func TestNodepoolObserve(t *testing.T) {
 			t.Errorf("obs=%+v, want exists+upToDate (count converged, nodes still booting)", obs)
 		}
 		cond := cr.GetCondition(xpv2.TypeReady)
-		if cond.Status != corev1.ConditionFalse || cond.Reason != xpv2.ReasonCreating {
-			t.Errorf("Ready=%v/%v, want False/Creating while nodes provision", cond.Status, cond.Reason)
+		if cond.Status != corev1.ConditionFalse || cond.Reason != shared.ReasonReconciling {
+			t.Errorf("Ready=%v/%v, want False/Reconciling while nodes provision", cond.Status, cond.Reason)
 		}
 	})
 

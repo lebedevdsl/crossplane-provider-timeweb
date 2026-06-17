@@ -183,6 +183,23 @@ func TestRegistryObserve(t *testing.T) {
 		}
 	})
 
+	t.Run("PopulatesEndpoint", func(t *testing.T) {
+		// T019: Endpoint status mirror populated from registry name.
+		fakeTW := &timeweb.FakeClient{}
+		fakeTW.GetRegistryReturns(httpResp(http.StatusOK, sampleRegistryJSON), nil)
+		e := newExternal(fakeTW, nil)
+		cr := newRegistry(1047, 5)
+		if _, err := e.Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if cr.Status.AtProvider.Endpoint == nil {
+			t.Fatal("Endpoint = nil, want populated")
+		}
+		if *cr.Status.AtProvider.Endpoint != "demo-prod.registry.twcstorage.ru" {
+			t.Errorf("Endpoint = %q, want demo-prod.registry.twcstorage.ru", *cr.Status.AtProvider.Endpoint)
+		}
+	})
+
 	t.Run("CredentialsFallback_EndpointOnly", func(t *testing.T) {
 		// When the controller can't derive credentials (e.g. apiToken
 		// stripped — the future-state path after Timeweb ships a real

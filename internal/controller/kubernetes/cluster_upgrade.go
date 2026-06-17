@@ -28,6 +28,7 @@ import (
 	kubernetesv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/kubernetes/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
 	twgen "github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb/generated"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared"
 )
 
 // reasonUpgrading is the Ready=False reason surfaced while an in-place k8s
@@ -38,25 +39,63 @@ const reasonUpgrading xpv2.ConditionReason = "Upgrading"
 // older version than observed; downgrades are not supported.
 var errVersionDowngrade = errors.New("kubernetes/cluster: k8s version downgrade is not supported")
 
+// errVersionLateral is returned when the desired version is the same numeric
+// triple as observed but differs in build metadata (e.g. +k0s.0 vs +k0s.1) —
+// a lateral/build-only change that is neither an upgrade nor a downgrade. The
+// operator must use the exact catalog version string.
+var errVersionLateral = errors.New("kubernetes/cluster: lateral version change (same semver, different build metadata) is not supported — use the exact catalog version string")
+
 // reconcileVersion performs the forward-only in-place upgrade (FR-012). It
 // returns (handled=true) when it issued an upgrade PATCH. A no-diff is a
-// no-op; a non-catalog or downgrade target is rejected without any upstream
-// call. The target is re-validated against the version catalog each call, so
-// re-invocation during a multi-minute upgrade is safe (same-version PATCH is
-// idempotent upstream).
+// no-op; a non-catalog, downgrade, or lateral target is rejected without any
+// upstream call. The target is re-validated against the version catalog each
+// call, so re-invocation during a multi-minute upgrade is safe (same-version
+// PATCH is idempotent upstream).
 func (e *clusterExternal) reconcileVersion(ctx context.Context, cr *kubernetesv1alpha1.KubernetesCluster, id int, observedVersion string) (bool, error) {
 	desired := cr.Spec.ForProvider.K8sVersion
 	if observedVersion == "" || desired == observedVersion {
 		return false, nil
 	}
 
-	// Target MUST be a catalog-valid version (surfaces ErrDimensionValueNotFound).
-	if err := e.validateVersion(ctx, desired); err != nil {
+	// T021: Reject a zero/unparseable desired version before any catalog
+	// lookup. splitVersion returns an empty/all-zero slice for garbage input;
+	// leading-zero strings ("0", "0.0.0") are also rejected here because they
+	// would pass versionNewer as a "downgrade" from any real version.
+	if desiredParsed := splitVersion(desired); len(desiredParsed) == 0 || allZero(desiredParsed) {
+		err := fmt.Errorf("kubernetes/cluster: desired k8sVersion %q could not be parsed — use the exact catalog version string", desired)
+		cond := shared.SyncedFalse(shared.ReasonDimensionValueNotFound, err.Error())
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
 		return false, err
 	}
-	// Forward-only.
+
+	// T021: Classify lateral (same numeric triple, different build metadata)
+	// vs downgrade vs upgrade — before calling the catalog so we don't waste
+	// a round trip on a change that is immediately rejected.
 	if !versionNewer(desired, observedVersion) {
-		return false, fmt.Errorf("%w: from %q to %q", errVersionDowngrade, observedVersion, desired)
+		if versionNewer(observedVersion, desired) {
+			// True downgrade (observed is strictly newer).
+			err := fmt.Errorf("%w: from %q to %q", errVersionDowngrade, observedVersion, desired)
+			cond := shared.SyncedFalse(shared.ReasonImmutableFieldChange, err.Error())
+			shared.RecordConditionChange(e.recorder, cr, cond)
+			cr.Status.SetConditions(cond)
+			return false, err
+		}
+		// Same numeric triple but strings differ (build metadata changed, e.g.
+		// +k0s.0 vs +k0s.1): lateral change.
+		err := fmt.Errorf("%w: from %q to %q", errVersionLateral, observedVersion, desired)
+		cond := shared.SyncedFalse(shared.ReasonImmutableFieldChange, err.Error())
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
+		return false, err
+	}
+
+	// Target MUST be a catalog-valid version (surfaces ErrDimensionValueNotFound).
+	if err := e.validateVersion(ctx, desired); err != nil {
+		cond := shared.MapResolverErrorToCondition(err)
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
+		return false, err
 	}
 
 	body := twgen.UpdateClusterVersionJSONRequestBody{K8sVersion: &desired}
@@ -68,13 +107,26 @@ func (e *clusterExternal) reconcileVersion(ctx context.Context, cr *kubernetesv1
 	if err := timeweb.Classify(resp); err != nil {
 		return false, err
 	}
-	cr.Status.SetConditions(xpv2.Condition{
+	cond := xpv2.Condition{
 		Type:    xpv2.TypeReady,
 		Status:  "False",
 		Reason:  reasonUpgrading,
 		Message: fmt.Sprintf("upgrading Kubernetes version from %q to %q", observedVersion, desired),
-	})
+	}
+	shared.RecordConditionChange(e.recorder, cr, cond)
+	cr.Status.SetConditions(cond)
 	return true, nil
+}
+
+// allZero reports whether all elements of the slice are 0 (used to reject
+// an unparseable version that splitVersion turns into all-zero components).
+func allZero(v []int) bool {
+	for _, x := range v {
+		if x != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // versionNewer reports whether version a is strictly newer than b. It handles

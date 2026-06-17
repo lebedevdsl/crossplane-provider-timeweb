@@ -1,7 +1,17 @@
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan at
-`specs/006-router-private-cluster/plan.md`.
+Current feature: **007-maintenance-round** — read the plan at
+`specs/007-maintenance-round/plan.md`. A cross-cutting maintenance round (no new
+kinds): placement / location↔AZ unification + full region coverage, preset-slug
+simplification + location-scoped not-found errors, printcolumn rationalization,
+observability (gate Ready on real state, shared reason vocabulary, transition-only
+Events, status mirrors), and ~25 correlated Sonnet+Opus+devops review findings.
+Companion artifacts in `specs/007-maintenance-round/`: spec.md (US1–US5 + the
+Maintenance Backlog), research.md, data-model.md, contracts/, quickstart.md.
+The deferred `extra-annotations` feature (dataplane delete-guards) is seeded in
+`specs/_next-extra-annotations.preface.md`.
+
+Feature 006 (Router + private cluster + automatic NAT convergence) is
+COMPLETE/merged — its companion context below remains useful reference:
 
 Companion artifacts in the same directory:
 - `spec.md` — feature spec (clarified; 3 Q&A + live-probe findings baked into

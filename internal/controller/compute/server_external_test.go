@@ -70,7 +70,7 @@ func TestSetReadyCondition(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.state, func(t *testing.T) {
 			cr := &computev1alpha1.Server{}
-			setReadyCondition(cr, twgen.VdsStatus(tc.state))
+			setReadyCondition(nil, cr, twgen.VdsStatus(tc.state))
 			c := cr.Status.GetCondition(xpv2.TypeReady)
 			if string(c.Status) != tc.wantStatus {
 				t.Errorf("Ready status = %q, want %q", c.Status, tc.wantStatus)
@@ -868,6 +868,76 @@ func TestServerCustomSizing(t *testing.T) {
 		cr.Status.AtProvider.LockedPresetID = &pid // but locked as preset
 		if _, err := (&serverExternal{tw: fake, resolver: okRes}).Update(ctx, cr); !errors.Is(err, shared.ErrSizingSwitchRequiresRecreate) {
 			t.Errorf("err=%v, want ErrSizingSwitchRequiresRecreate", err)
+		}
+	})
+}
+
+// sampleServerInstallingJSON replaces the "on" status with "installing" to
+// simulate a VM that is not yet ready to accept floating-IP bindings.
+var sampleServerInstallingJSON = strings.NewReplacer(
+	`"status":"on"`, `"status":"installing"`,
+).Replace(sampleServerJSON)
+
+func TestDeferredBind(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Update_ServerNotOn_NoBind_NoError", func(t *testing.T) {
+		// T031: when the server is still installing, floating-IP bind is
+		// deferred as a benign no-op — Update must return nil, not an error.
+		fake := &timeweb.FakeClient{}
+		fake.GetServerReturns(httpResp(http.StatusOK, sampleServerInstallingJSON), nil)
+		fake.GetFloatingIpReturns(httpResp(http.StatusOK, fipJSON("fip-a", 0)), nil) // unbound
+		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
+		cr := lockedServer()
+		cr.Spec.ForProvider.FloatingIPIDs = []string{"fip-a"}
+		e.resolved.floatingIPIDs = cr.Spec.ForProvider.FloatingIPIDs
+		if _, err := e.Update(ctx, cr); err != nil {
+			t.Errorf("Update while server installing: got error %v, want nil (benign requeue)", err)
+		}
+		if fake.BindFloatingIpCallCount() != 0 {
+			t.Errorf("BindFloatingIp called %d times, want 0 (server not on)", fake.BindFloatingIpCallCount())
+		}
+	})
+}
+
+func TestCreate_ResolverError_SetsCondition(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("PresetNotFound_ConditionSet", func(t *testing.T) {
+		// T018: resolver errors must be mapped to typed conditions on the MR.
+		fake := &timeweb.FakeClient{}
+		e := &serverExternal{
+			tw: fake,
+			resolver: &fakeResolver{
+				osByID: map[string]int64{"ubuntu-24-04": 47},
+				// no preset entries → ErrPresetNotFound
+			},
+		}
+		cr := newServer(0)
+		if _, err := e.Create(ctx, cr); err == nil {
+			t.Fatal("Create: want error, got nil")
+		}
+		c := cr.Status.GetCondition(xpv2.TypeSynced)
+		if c.Reason != shared.ReasonPresetNotFound {
+			t.Errorf("Synced reason = %q, want %q", c.Reason, shared.ReasonPresetNotFound)
+		}
+	})
+
+	t.Run("OSImageNotFound_ConditionSet", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		e := &serverExternal{
+			tw:       fake,
+			resolver: &fakeResolver{
+				// no OS entries → ErrPresetNotFound on OS slug
+			},
+		}
+		cr := newServer(0)
+		if _, err := e.Create(ctx, cr); err == nil {
+			t.Fatal("Create: want error, got nil")
+		}
+		c := cr.Status.GetCondition(xpv2.TypeSynced)
+		if c.Reason != shared.ReasonPresetNotFound {
+			t.Errorf("Synced reason = %q, want %q (OS resolver)", c.Reason, shared.ReasonPresetNotFound)
 		}
 	})
 }

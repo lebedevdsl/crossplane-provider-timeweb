@@ -24,6 +24,7 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	corev1 "k8s.io/api/core/v1"
 
 	kubernetesv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/kubernetes/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
@@ -97,6 +98,77 @@ func TestAddonObserve(t *testing.T) {
 		fake.GetKubernetesAddonsReturns(httpResp(http.StatusInternalServerError, ""), nil)
 		if _, err := addonE(fake).Observe(ctx, newAddon(true)); err == nil {
 			t.Fatal("want error on 5xx")
+		}
+	})
+
+	t.Run("InstalledVersion_Populated", func(t *testing.T) {
+		// T019: InstalledVersion must be mirrored from the upstream addon.
+		fake := &timeweb.FakeClient{}
+		fake.GetKubernetesAddonsReturns(httpResp(http.StatusOK, addonsListJSON), nil)
+		cr := newAddon(true)
+		if _, err := addonE(fake).Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if cr.Status.AtProvider.InstalledVersion == nil || *cr.Status.AtProvider.InstalledVersion != "1.0.0" {
+			t.Errorf("InstalledVersion=%v, want 1.0.0", cr.Status.AtProvider.InstalledVersion)
+		}
+	})
+
+	t.Run("FailedAddon_UpstreamFailed", func(t *testing.T) {
+		// T017/T021: a failed/error addon status surfaces ReasonUpstreamFailed,
+		// not the generic Creating.
+		fake := &timeweb.FakeClient{}
+		fake.GetKubernetesAddonsReturns(httpResp(http.StatusOK,
+			`{"addons":[{"id":7,"type":"ingress-nginx","status":"failed","version":"1.0.0"}]}`), nil)
+		cr := newAddon(true)
+		if _, err := addonE(fake).Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		cond := cr.GetCondition(xpv2.TypeReady)
+		if cond.Status != corev1.ConditionFalse || cond.Reason != shared.ReasonUpstreamFailed {
+			t.Errorf("Ready=%v/%v, want False/UpstreamFailed for a failed addon", cond.Status, cond.Reason)
+		}
+	})
+
+	t.Run("MidInstall_NotFoundInList_TreatedAsStillInstalling", func(t *testing.T) {
+		// T021: when the addon was previously observed as "installing" and then
+		// temporarily disappears from the addon list (the upstream may not list
+		// it immediately during install), the controller must NOT report
+		// ResourceExists: false (which would trigger a spurious re-Create).
+		fake := &timeweb.FakeClient{}
+		fake.GetKubernetesAddonsReturns(httpResp(http.StatusOK, `{"addons":[]}`), nil)
+		cr := newAddon(true)
+		// Simulate that we previously observed it as "installing".
+		installing := "installing"
+		cr.Status.AtProvider.Status = &installing
+		obs, err := addonE(fake).Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if !obs.ResourceExists {
+			t.Error("ResourceExists=false for a mid-install addon — would trigger duplicate Create")
+		}
+		cond := cr.GetCondition(xpv2.TypeReady)
+		if cond.Status != corev1.ConditionFalse {
+			t.Errorf("Ready=%v, want False while addon is mid-install", cond.Status)
+		}
+	})
+
+	t.Run("MidInstall_FalseStatus_ReportsNotExists", func(t *testing.T) {
+		// If the previously-observed status is NOT installing (e.g. it was
+		// "installed" and now disappeared), report not-exists so the user can
+		// debug.
+		fake := &timeweb.FakeClient{}
+		fake.GetKubernetesAddonsReturns(httpResp(http.StatusOK, `{"addons":[]}`), nil)
+		cr := newAddon(true)
+		installed := "installed"
+		cr.Status.AtProvider.Status = &installed
+		obs, err := addonE(fake).Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if obs.ResourceExists {
+			t.Error("ResourceExists=true but addon was previously installed and is now gone")
 		}
 	})
 }

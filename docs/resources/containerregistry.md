@@ -24,11 +24,14 @@ spec:
   forProvider:
     name: demo-prod
     description: "Production registry"
-    presetRef:
-      name: cr-starter-5gb-1939
+    # Pick the tier by disk size. Valid values: 5, 10, 25, 50, 75, 100 (GB).
+    initialSizeGB: 5
+    # Optional: narrow preset resolution when the account has multiple regions.
+    # location: ru-1
   writeConnectionSecretToRef:
     name: demo-prod-pull
   providerConfigRef:
+    kind: ProviderConfig
     name: default
 ```
 
@@ -40,9 +43,8 @@ spec:
 | ----- | ---- | -------- | ------- | ----- |
 | `name` | string | yes | **no** | 3–48 chars, lowercase alphanumeric + hyphen. Immutable. |
 | `description` | string | no | yes | Free-form note. |
-| `presetRef.name` | string | one of `presetRef`/`configuration` | within-axis | References a `ContainerRegistryPreset` by Kubernetes name. The controller resolves to the numeric `preset_id` at create time. Switching axes is immutable. |
-| `configuration.id` | integer | one of `presetRef`/`configuration` | within-axis | Custom configurator ID. |
-| `configuration.diskGB` | integer | when `configuration` is set | within-axis | Disk capacity (GB). |
+| `initialSizeGB` | integer | yes | no | Tariff tier by disk size. Valid values: 5, 10, 25, 50, 75, 100. Immutable post-create — delete + recreate to change. |
+| `location` | string | no | no | Region code (e.g. `ru-1`). Narrows preset resolution when the account has multiple regions. |
 | `projectID` | integer | no | yes | Assign to a Timeweb project. |
 
 ### `status.atProvider`
@@ -50,8 +52,7 @@ spec:
 | Field | Type | Notes |
 | ----- | ---- | ----- |
 | `id` | integer | Timeweb registry ID. |
-| `presetID` | integer | Resolved preset_id snapshot. |
-| `configuratorID` | integer | Resolved configurator_id snapshot. |
+| `lockedPresetID` | integer | Resolved preset_id recorded at first successful create; survives upstream catalog rotations. |
 | `projectID` | integer | Project assignment. |
 | `diskStats.sizeGB` | integer | Tariff disk capacity. |
 | `diskStats.usedGB` | integer | Used disk. |
@@ -101,13 +102,13 @@ operators can either:
 
 | Condition | True meaning | False reasons |
 | --------- | ------------ | -------------- |
-| `Synced` | Reconciliation reached upstream cleanly. | `ImmutableFieldChange`, `PresetReferenceNotFound`, `APIError`, `RateLimited`. |
+| `Synced` | Reconciliation reached upstream cleanly. | `ImmutableFieldChange`, `PresetNotFound`, `APIError`, `RateLimited`. |
 | `Ready` | Registry exists upstream AND credentials are usable. | `CredentialsPending`, `RegistryNotFound`, `Reconciling`. |
 
 ## Immutable-field handling (FR-017)
 
-`name` and the sizing axis (preset ↔ configuration) are immutable. Editing
-either triggers reject-and-surface:
+`name` and `initialSizeGB` (the tariff tier) are immutable. Editing either
+triggers reject-and-surface:
 
 1. Controller detects the diff against the live upstream.
 2. `Synced=False, reason=ImmutableFieldChange` with a message naming the field.
@@ -119,6 +120,6 @@ either triggers reject-and-surface:
 | Operation | Upstream call | Notes |
 | --------- | ------------- | ----- |
 | Observe | `GET /api/v1/container-registry/{id}` + `GET /api/v1/storages/users` | The latter is used for the connection Secret. |
-| Create | `POST /api/v1/container-registry` | Resolves `presetRef` → `preset_id` first. |
+| Create | `POST /api/v1/container-registry` | Resolves `initialSizeGB` → `preset_id` first. |
 | Update | `PATCH /api/v1/container-registry/{id}` | Mutable subset only. |
 | Delete | `DELETE /api/v1/container-registry/{id}` | 404 treated as success. |

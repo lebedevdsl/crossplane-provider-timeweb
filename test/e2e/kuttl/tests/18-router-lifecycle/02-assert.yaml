@@ -16,8 +16,11 @@ status:
   atProvider:
     networks:
       - dhcpEnabled: false
+  # Condition order is fixed when each type is first added and never reordered,
+  # so the Router keeps the [Synced, Ready] order established on its first
+  # (ref-resolution-failing) reconcile — see 01-assert.yaml.
   conditions:
-  - type: Ready
-    status: "True"
   - type: Synced
+    status: "True"
+  - type: Ready
     status: "True"

@@ -1,0 +1,35 @@
+# Example FloatingIP managed resource for the Timeweb Crossplane provider.
+#
+# A FloatingIP is a pure allocation — it allocates a Timeweb floating IPv4
+# address. Binding to a Server is driven by the Server's `floatingIPRefs`,
+# NOT by this resource. See docs/servers.md §"Pinning a public IPv4".
+#
+# IMMUTABLE FIELDS: location, availabilityZone, isDDoSGuard.
+# Mutable: comment.
+#
+# The allocated IP is published to the connection Secret as `ip` + `upstreamID`.
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: FloatingIP
+metadata:
+  name: web-01-ip
+  namespace: timeweb-prod
+spec:
+  forProvider:
+    # REQUIRED — region to allocate the IP in. Must match the Server's location.
+    # API codes: ru-1, ru-2, ru-3, nl-1, de-1, kz-1, us-4, pl-1
+    location: ru-1
+    # Optional: finer zone. When omitted the controller fills a per-location
+    # default (e.g. ru-1 → spb-3). Pin explicitly to guarantee same-zone as the
+    # Server (Timeweb rejects cross-zone binds).
+    # availabilityZone: spb-3
+    # Optional: toggle DDoS protection. IMMUTABLE post-create.
+    isDDoSGuard: false
+    # Optional: free-form note. Mutable.
+    # comment: "egress IP for web-01"
+  # The allocated IP address and upstream ID are published here.
+  writeConnectionSecretToRef:
+    name: web-01-ip-secret
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default

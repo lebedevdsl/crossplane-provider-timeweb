@@ -178,14 +178,16 @@ TWE_PROJECT_ID=$(curl -fsS \
   | jq -er '.projects | sort_by(.id) | .[0].id | tostring')
 echo "[e2e]   → $TWE_PROJECT_ID"
 
-# --- 2b. Discover the cheapest msk-1 cloud-server preset slug ---------------
+# --- 2b. Discover the cheapest ru-1 cloud-server preset slug ---------------
 #
-# The Server controller resolves operator-supplied `presetName` (e.g.
-# `premium-2-2-40-msk-1`) against /api/v1/presets/servers. The slug shape
-# is `<description_short>-<location>` (lowercased, periods → hyphens).
+# Feature 007 (US2): the Server controller now accepts a bare short slug (e.g.
+# `ssd-15`) in addition to the long `<short>-<location>` form. We discover the
+# bare form so e2e bundles exercise that path. The long form still works
+# (back-compat) but is no longer needed here since `location: ru-1` is set
+# in the manifest and the resolver scopes matching to that region.
 # Picking the cheapest per spec SC-001 + the e2e canary cost cap.
 
-echo "[e2e] discovering cheapest ru-1 cloud-server preset slug"
+echo "[e2e] discovering cheapest ru-1 cloud-server preset slug (bare form)"
 TWE_SERVER_PRESET=$(curl -fsS \
   -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
   "${TW_API}/api/v1/presets/servers" \
@@ -193,13 +195,12 @@ TWE_SERVER_PRESET=$(curl -fsS \
       .server_presets
       | map(select(.location == "ru-1"))
       | sort_by(.price)
-      | .[0]
-      | (.description_short + "-" + .location)
+      | .[0].description_short
       | ascii_downcase
       | gsub("[^a-z0-9-]+"; "-")
       | gsub("^-+|-+$"; "")
   ')
-echo "[e2e]   → $TWE_SERVER_PRESET"
+echo "[e2e]   → $TWE_SERVER_PRESET (bare form; resolver will scope to ru-1 from the manifest location field)"
 
 # --- 2a2. Discover a satisfiable custom sizing from /configurator/servers (feat 005) ---
 # The Server CRD takes ramGB/diskGB; the resolver validates ramGB*1024 (MB) and

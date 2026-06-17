@@ -28,6 +28,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
@@ -95,7 +96,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	populateStatus(cr, bucket)
-	cr.Status.SetConditions(xpv2.Available())
+	setBucketReadyCondition(e.recorder, cr, bucket.Status)
 
 	return managed.ExternalObservation{
 		ResourceExists:    true,
@@ -265,7 +266,9 @@ func (e *external) resolvePresetID(ctx context.Context, cr *objectstoragev1alpha
 		},
 	)
 	if err != nil {
-		mapResolverErrorToCondition(cr, err)
+		cond := shared.MapResolverErrorToCondition(err)
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
 		return 0, err
 	}
 	po, ok := out.(resolver.PresetOutput)
@@ -273,21 +276,6 @@ func (e *external) resolvePresetID(ctx context.Context, cr *objectstoragev1alpha
 		return 0, fmt.Errorf("s3bucket: resolver returned unexpected output type %T", out)
 	}
 	return int(po.UpstreamID), nil
-}
-
-// mapResolverErrorToCondition translates resolver-typed sentinels to the
-// operator-facing conditions on the S3Bucket MR.
-func mapResolverErrorToCondition(cr *objectstoragev1alpha1.S3Bucket, err error) {
-	switch {
-	case errors.Is(err, resolver.ErrPresetNotFound):
-		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonPresetNotFound, err.Error()))
-	case errors.Is(err, resolver.ErrPresetAmbiguous):
-		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonPresetAmbiguous, err.Error()))
-	case errors.Is(err, resolver.ErrCatalogUnauthorized):
-		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonCatalogUnauthorized, err.Error()))
-	case errors.Is(err, resolver.ErrCatalogTransient):
-		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonCatalogTransient, err.Error()))
-	}
 }
 
 // decodeBucket unmarshals the `{"bucket": ...}` envelope.
@@ -337,13 +325,31 @@ func isUpToDate(spec objectstoragev1alpha1.S3BucketParameters, b generated.Bucke
 	if spec.Type != string(b.Type) {
 		return false
 	}
-	if !ptrEqString(spec.Description, b.Description) {
+	if !shared.PtrEqString(spec.Description, b.Description) {
 		return false
 	}
 	if spec.ProjectID != nil && *spec.ProjectID != int(b.ProjectId) {
 		return false
 	}
 	return true
+}
+
+// setBucketReadyCondition maps the upstream BucketStatus to the standard
+// Crossplane Ready condition (T017). `quarantined` surfaces as a terminal
+// Ready=False; anything other than `active` is treated as Creating.
+func setBucketReadyCondition(recorder record.EventRecorder, cr *objectstoragev1alpha1.S3Bucket, state generated.BucketStatus) {
+	var cond xpv2.Condition
+	switch strings.ToLower(string(state)) {
+	case "active":
+		cond = xpv2.Available()
+	case "quarantined":
+		cond = shared.ReadyFalse(shared.ReasonBucketQuarantined,
+			"bucket is in quarantine — check Timeweb panel for remediation steps")
+	default:
+		cond = xpv2.Creating()
+	}
+	shared.RecordConditionChange(recorder, cr, cond)
+	cr.Status.SetConditions(cond)
 }
 
 // buildConnection assembles the Opaque connection-Secret keys.
@@ -355,11 +361,4 @@ func buildConnection(_ *objectstoragev1alpha1.S3Bucket, b generated.Bucket) mana
 		connKeyAccessKey: []byte(b.AccessKey),
 		connKeySecretKey: []byte(b.SecretKey),
 	}
-}
-
-func ptrEqString(p *string, s string) bool {
-	if p == nil {
-		return s == ""
-	}
-	return *p == s
 }

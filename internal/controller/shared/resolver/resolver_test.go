@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"sync"
 	"sync/atomic"
@@ -252,7 +253,17 @@ func TestResolver_Preset_Success(t *testing.T) {
 }
 
 func TestResolver_Preset_NotFound(t *testing.T) {
-	fake := &fakeCatalog{regPresets: mkRegResp(nil)}
+	// A non-empty catalog where the requested slug simply doesn't match
+	// any entry. An empty catalog is now treated as transient (see
+	// TestResolver_EmptyCatalog_Transient), so we need at least one entry
+	// to reach the slug-matching stage and get ErrPresetNotFound.
+	fake := &fakeCatalog{regPresets: mkRegResp([]struct {
+		id    int
+		short string
+		loc   string
+	}{
+		{199, "Start", "ru-1"},
+	})}
 	r := New(fake, Options{Now: time.Now})
 
 	_, err := r.Resolve(context.Background(),
@@ -262,6 +273,31 @@ func TestResolver_Preset_NotFound(t *testing.T) {
 	)
 	if !errors.Is(err, ErrPresetNotFound) {
 		t.Errorf("err = %v, want ErrPresetNotFound", err)
+	}
+}
+
+// TestResolver_EmptyCatalog_Transient verifies that a 200 OK response with
+// zero catalog entries is treated as transient (not cached), so the next
+// reconcile re-fetches instead of pinning an empty catalog for a full TTL.
+// This differs from the pre-T033 behavior (which surfaced ErrPresetNotFound)
+// because an empty catalog is more likely a temporarily-empty shard or an
+// account with no presets yet than a permanent "no such preset" condition.
+func TestResolver_EmptyCatalog_Transient(t *testing.T) {
+	fake := &fakeCatalog{regPresets: mkRegResp(nil)}
+	r := New(fake, Options{TTL: 5 * time.Minute, Now: time.Now})
+
+	pc := PCRef{Name: "default"}
+	dim := Dimension{Name: DimContainerRegistryPreset, Kind: DimensionPreset}
+
+	// Each call should re-fetch (not-cached) and return ErrCatalogTransient.
+	for i := 0; i < 3; i++ {
+		_, err := r.Resolve(context.Background(), pc, dim, PresetInput{Slug: "ghost-ru-1"})
+		if !errors.Is(err, ErrCatalogTransient) {
+			t.Fatalf("attempt %d: err = %v, want ErrCatalogTransient", i, err)
+		}
+	}
+	if got := atomic.LoadInt32(&fake.regPresetsCalls); got != 3 {
+		t.Errorf("expected 3 fetches (empty catalog not cached), got %d", got)
 	}
 }
 
@@ -636,6 +672,48 @@ func TestResolver_ConcurrentMissCoalesced(t *testing.T) {
 	}
 }
 
+// TestResolver_Permanent4xx_NotCached verifies that other-4xx HTTP responses
+// (e.g. 400, 404) are treated as permanent hard failures: they are NOT wrapped
+// in ErrCatalogTransient, NOT wrapped in ErrCatalogUnauthorized, and NOT cached
+// (so no sentinel matches, and each reconcile re-fetches rather than pinning a
+// one-off 4xx). This is the T033 classifyUpstream fix: previously the default
+// branch duplicated the 5xx-transient path.
+func TestResolver_Permanent4xx_NotCached(t *testing.T) {
+	for _, status := range []int{400, 404, 409, 422} {
+		status := status
+		t.Run(fmt.Sprintf("HTTP%d", status), func(t *testing.T) {
+			resp := &twgen.GetRegistryPresetsResponse{
+				HTTPResponse: &http.Response{StatusCode: status},
+				Body:         []byte{},
+			}
+			fake := &fakeCatalog{regPresets: resp}
+			r := New(fake, Options{TTL: 5 * time.Minute, Now: time.Now})
+
+			pc := PCRef{Name: "default"}
+			dim := Dimension{Name: DimContainerRegistryPreset, Kind: DimensionPreset}
+
+			// Must not be transient-sentinel.
+			_, err1 := r.Resolve(context.Background(), pc, dim, PresetInput{Slug: "start-ru-1"})
+			if errors.Is(err1, ErrCatalogTransient) {
+				t.Fatalf("HTTP %d: expected non-transient error, got ErrCatalogTransient", status)
+			}
+			// Must not be unauthorized.
+			if errors.Is(err1, ErrCatalogUnauthorized) {
+				t.Fatalf("HTTP %d: expected non-unauthorized error, got ErrCatalogUnauthorized", status)
+			}
+			// Must produce an error at all.
+			if err1 == nil {
+				t.Fatalf("HTTP %d: expected error, got nil", status)
+			}
+			// Must NOT be cached: second call must re-fetch.
+			_, _ = r.Resolve(context.Background(), pc, dim, PresetInput{Slug: "start-ru-1"})
+			if got := atomic.LoadInt32(&fake.regPresetsCalls); got != 2 {
+				t.Errorf("HTTP %d: expected 2 fetches (permanent not cached), got %d", status, got)
+			}
+		})
+	}
+}
+
 func TestResolver_Unauthorized_StickyInCache(t *testing.T) {
 	// Empty body + status 401 in the wrapper → fetcher returns
 	// ErrCatalogUnauthorized via classifyUpstream.
@@ -674,6 +752,100 @@ func TestResolver_Transient_NotCached(t *testing.T) {
 	}
 }
 
+// TestResolver_PresetLocationFilter locks the feature-007 US2 behavior through
+// the full Resolve path: PresetInput.Location narrows the catalog before slug
+// matching, enabling bare-slug resolution and scoping the not-found error.
+func TestResolver_PresetLocationFilter(t *testing.T) {
+	fake := &fakeCatalog{regPresets: mkRegResp([]struct {
+		id    int
+		short string
+		loc   string
+	}{
+		{11, "SSD 15", "ru-1"},
+		{12, "SSD 25", "ru-1"},
+		{21, "SSD 15", "pl-1"},
+		{22, "SSD 25", "pl-1"},
+		{23, "SSD 50", "pl-1"},
+	})}
+	r := New(fake, Options{TTL: 5 * time.Minute, Now: time.Now})
+	pc := PCRef{Name: "default"}
+	dim := Dimension{Name: DimContainerRegistryPreset, Kind: DimensionPreset}
+
+	t.Run("bare slug resolves with Location set", func(t *testing.T) {
+		out, err := r.Resolve(context.Background(), pc, dim,
+			PresetInput{Slug: "ssd-15", Location: "ru-1"})
+		if err != nil {
+			t.Fatalf("err = %v", err)
+		}
+		if po := out.(PresetOutput); po.UpstreamID != 11 {
+			t.Errorf("id = %d, want 11 (ru-1 SSD 15)", po.UpstreamID)
+		}
+	})
+
+	t.Run("long-form slug still resolves back-compat with Location set", func(t *testing.T) {
+		out, err := r.Resolve(context.Background(), pc, dim,
+			PresetInput{Slug: "ssd-15-ru-1", Location: "ru-1"})
+		if err != nil {
+			t.Fatalf("err = %v", err)
+		}
+		if po := out.(PresetOutput); po.UpstreamID != 11 {
+			t.Errorf("id = %d, want 11 (ru-1 SSD 15)", po.UpstreamID)
+		}
+	})
+
+	t.Run("not-found scoped to location with location in error message", func(t *testing.T) {
+		_, err := r.Resolve(context.Background(), pc, dim,
+			PresetInput{Slug: "ssd-99", Location: "ru-1"})
+		if !errors.Is(err, ErrPresetNotFound) {
+			t.Fatalf("err = %v, want ErrPresetNotFound", err)
+		}
+		var pnf *PresetNotFoundError
+		if !errors.As(err, &pnf) {
+			t.Fatalf("should wrap PresetNotFoundError")
+		}
+		if pnf.Location != "ru-1" {
+			t.Errorf("Location = %q, want %q", pnf.Location, "ru-1")
+		}
+		// Only 2 ru-1 entries, not 5 total.
+		if len(pnf.ValidSlugs) != 2 {
+			t.Errorf("expected 2 scoped valid slugs, got %d: %v", len(pnf.ValidSlugs), pnf.ValidSlugs)
+		}
+		// Error string should mention the location.
+		if msg := pnf.Error(); msg == "" {
+			t.Error("empty error message")
+		} else {
+			// The message should mention the location code.
+			for _, want := range []string{"ru-1"} {
+				if !containsStr(msg, want) {
+					t.Errorf("error message %q should mention %q", msg, want)
+				}
+			}
+		}
+	})
+
+	t.Run("zero Location = global behavior (pre-007 compat)", func(t *testing.T) {
+		// Without Location, all 5 entries are visible; "ssd-15" is ambiguous.
+		_, err := r.Resolve(context.Background(), pc, dim,
+			PresetInput{Slug: "ssd-15"})
+		if !errors.Is(err, ErrPresetAmbiguous) {
+			t.Errorf("err = %v, want ErrPresetAmbiguous (ssd-15 exists in ru-1 and pl-1)", err)
+		}
+	})
+}
+
+func containsStr(s, sub string) bool {
+	return len(s) >= len(sub) && (s == sub || len(s) > 0 && containsStrHelper(s, sub))
+}
+
+func containsStrHelper(s, sub string) bool {
+	for i := 0; i <= len(s)-len(sub); i++ {
+		if s[i:i+len(sub)] == sub {
+			return true
+		}
+	}
+	return false
+}
+
 func TestResolver_UnknownDimension(t *testing.T) {
 	r := New(&fakeCatalog{}, Options{})
 	_, err := r.Resolve(context.Background(), PCRef{Name: "default"},
@@ -684,7 +856,16 @@ func TestResolver_UnknownDimension(t *testing.T) {
 }
 
 func TestResolver_MismatchedInputKind(t *testing.T) {
-	fake := &fakeCatalog{regPresets: mkRegResp(nil)}
+	// Non-empty catalog so the fetch succeeds and we reach the input-kind
+	// dispatch code. An empty catalog now returns ErrCatalogTransient before
+	// the type-switch, which would mask the ErrInvalidInput we're testing.
+	fake := &fakeCatalog{regPresets: mkRegResp([]struct {
+		id    int
+		short string
+		loc   string
+	}{
+		{1, "Start", "ru-1"},
+	})}
 	r := New(fake, Options{})
 	_, err := r.Resolve(context.Background(), PCRef{Name: "default"},
 		Dimension{Name: DimContainerRegistryPreset, Kind: DimensionPreset},

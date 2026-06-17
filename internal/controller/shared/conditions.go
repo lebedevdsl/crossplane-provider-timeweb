@@ -67,6 +67,12 @@ const (
 	ReasonCatalogUnauthorized          xpv2.ConditionReason = "CatalogUnauthorized"
 	ReasonCatalogTransient             xpv2.ConditionReason = "CatalogTransient"
 	ReasonDimensionValueNotFound       xpv2.ConditionReason = "DimensionValueNotFound"
+	// ReasonParentNotReady is set on a dependent resource (e.g.
+	// ContainerRegistryRepository) when its parent resource is not yet Ready
+	// or has no external-name. The runtime's Watches() on the parent triggers
+	// an automatic re-reconcile when the parent transitions to Ready=True, so
+	// no error-return / explicit requeue is needed.
+	ReasonParentNotReady xpv2.ConditionReason = "ParentNotReady"
 )
 
 // SyncedFalse returns a Synced=False condition with the supplied reason and
@@ -100,3 +106,8 @@ func ReadyFalse(reason xpv2.ConditionReason, message string) xpv2.Condition {
 func ImmutableMessage(field string) string {
 	return fmt.Sprintf("field %q is immutable; revert the change or delete and recreate the resource", field)
 }
+
+// TODO(007 P3-3): centralize isActiveState/isFailedState per-controller helpers
+// into shared functions here. Deferred: controllers were recently swept with
+// inline state checks and re-churning them now would add noise without value.
+// Revisit in the next maintenance round once more controllers share the pattern.

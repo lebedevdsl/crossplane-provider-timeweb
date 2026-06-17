@@ -31,6 +31,10 @@ network family — `Network` + `FloatingIP` ship today; `Router`, `Balancer`,
 managed-Kubernetes kinds (`KubernetesCluster` + `KubernetesClusterNodepool` +
 `KubernetesClusterAddon` today; future OIDC/maintenance kinds extend it).
 
+**New here?** Start with [`docs/getting-started.md`](./docs/getting-started.md)
+— it walks: API token → Kubernetes Secret → ProviderConfig → first resource →
+`kubectl get` in under 5 minutes.
+
 See [`docs/servers.md`](./docs/servers.md) for the `Server` / `Network` /
 `FloatingIP` operator guide, and [`docs/kubernetes.md`](./docs/kubernetes.md)
 for the managed-Kubernetes guide (cluster + nodepool + addon, scaling, version

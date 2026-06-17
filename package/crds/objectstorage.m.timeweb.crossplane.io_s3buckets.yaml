@@ -32,7 +32,8 @@ spec:
       name: CLASS
       type: string
     - jsonPath: .metadata.annotations.crossplane\.io/external-name
-      name: EXTERNAL-NAME
+      name: ID
+      priority: 1
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
@@ -87,6 +88,11 @@ spec:
                       upstream `preset_id` at reconcile time. Valid values match
                       Timeweb's published S3 storage tiers — bump this enum when the
                       upstream catalog grows.
+
+                      Note: the generated Timeweb client (PresetsStorage.Disk and the
+                      CreateBucket body's size/preset fields) uses *float32 for disk
+                      quantities; the controller converts the resolved preset_id via
+                      float32(presetID) at the call site (see s3bucket/external.go).
                     enum:
                     - 1
                     - 10

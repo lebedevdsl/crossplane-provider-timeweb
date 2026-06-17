@@ -10,7 +10,7 @@
 #
 # See docs/resources/containerregistryrepository.md.
 ---
-apiVersion: containerregistry.m.timeweb.crossplane.io/v1alpha1
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
 kind: ContainerRegistryRepository
 metadata:
   name: backend
@@ -23,4 +23,5 @@ spec:
     # Repository path within the registry (matches what you `docker push` to).
     name: mygroup/backend
   providerConfigRef:
+    kind: ProviderConfig
     name: default

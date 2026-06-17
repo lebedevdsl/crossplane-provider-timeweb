@@ -189,10 +189,10 @@ func fetchK8sWorkerPresets(ctx context.Context, c CatalogClient) (any, error) {
 func fetchK8sPresetsByType(ctx context.Context, c CatalogClient, role string) (any, error) {
 	resp, err := c.GetKubernetesPresetsWithResponse(ctx)
 	if err != nil {
-		return nil, classifyUpstream(0, err)
+		return nil, classifyUpstream(nil, err)
 	}
 	if resp.JSON200 == nil {
-		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+		return nil, classifyUpstream(resp.HTTPResponse, errors.New("upstream returned non-200"))
 	}
 	out := make([]PresetEntry, 0, len(resp.JSON200.K8sPresets))
 	for _, p := range resp.JSON200.K8sPresets {
@@ -237,10 +237,10 @@ func fetchK8sPresetsByType(ctx context.Context, c CatalogClient, role string) (a
 func fetchK8sVersions(ctx context.Context, c CatalogClient) (any, error) {
 	resp, err := c.GetK8SVersionsWithResponse(ctx)
 	if err != nil {
-		return nil, classifyUpstream(0, err)
+		return nil, classifyUpstream(nil, err)
 	}
 	if resp.JSON200 == nil {
-		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+		return nil, classifyUpstream(resp.HTTPResponse, errors.New("upstream returned non-200"))
 	}
 	out := make([]string, 0, len(resp.JSON200.K8sVersions))
 	out = append(out, resp.JSON200.K8sVersions...)
@@ -250,10 +250,10 @@ func fetchK8sVersions(ctx context.Context, c CatalogClient) (any, error) {
 func fetchContainerRegistryPresets(ctx context.Context, c CatalogClient) (any, error) {
 	resp, err := c.GetRegistryPresetsWithResponse(ctx)
 	if err != nil {
-		return nil, classifyUpstream(0, err)
+		return nil, classifyUpstream(nil, err)
 	}
 	if resp.JSON200 == nil {
-		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+		return nil, classifyUpstream(resp.HTTPResponse, errors.New("upstream returned non-200"))
 	}
 	out := make([]PresetEntry, 0, len(resp.JSON200.ContainerRegistryPresets))
 	for _, p := range resp.JSON200.ContainerRegistryPresets {
@@ -274,10 +274,10 @@ func fetchContainerRegistryPresets(ctx context.Context, c CatalogClient) (any, e
 func fetchS3BucketPresets(ctx context.Context, c CatalogClient) (any, error) {
 	resp, err := c.GetStoragesPresetsWithResponse(ctx)
 	if err != nil {
-		return nil, classifyUpstream(0, err)
+		return nil, classifyUpstream(nil, err)
 	}
 	if resp.JSON200 == nil {
-		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+		return nil, classifyUpstream(resp.HTTPResponse, errors.New("upstream returned non-200"))
 	}
 	out := make([]PresetEntry, 0, len(resp.JSON200.StoragesPresets))
 	for _, p := range resp.JSON200.StoragesPresets {
@@ -300,10 +300,10 @@ func fetchS3BucketPresets(ctx context.Context, c CatalogClient) (any, error) {
 func fetchServerPresets(ctx context.Context, c CatalogClient) (any, error) {
 	resp, err := c.GetServersPresetsWithResponse(ctx)
 	if err != nil {
-		return nil, classifyUpstream(0, err)
+		return nil, classifyUpstream(nil, err)
 	}
 	if resp.JSON200 == nil {
-		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+		return nil, classifyUpstream(resp.HTTPResponse, errors.New("upstream returned non-200"))
 	}
 	out := make([]PresetEntry, 0, len(resp.JSON200.ServerPresets))
 	for _, p := range resp.JSON200.ServerPresets {
@@ -325,10 +325,10 @@ func fetchServerPresets(ctx context.Context, c CatalogClient) (any, error) {
 func fetchServerOSImages(ctx context.Context, c CatalogClient) (any, error) {
 	resp, err := c.GetOsListWithResponse(ctx)
 	if err != nil {
-		return nil, classifyUpstream(0, err)
+		return nil, classifyUpstream(nil, err)
 	}
 	if resp.JSON200 == nil {
-		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+		return nil, classifyUpstream(resp.HTTPResponse, errors.New("upstream returned non-200"))
 	}
 	// Each upstream OS entry becomes a Preset entry where DescShort is
 	// the family name (lowercased) and Location is the version. The
@@ -369,10 +369,10 @@ func fetchServerOSImages(ctx context.Context, c CatalogClient) (any, error) {
 func fetchServerConfigurators(ctx context.Context, c CatalogClient) (any, error) {
 	resp, err := c.GetConfiguratorsWithResponse(ctx)
 	if err != nil {
-		return nil, classifyUpstream(0, err)
+		return nil, classifyUpstream(nil, err)
 	}
 	if resp.JSON200 == nil {
-		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+		return nil, classifyUpstream(resp.HTTPResponse, errors.New("upstream returned non-200"))
 	}
 	return configuratorEntries(resp.JSON200.ServerConfigurators), nil
 }
@@ -402,10 +402,10 @@ func fetchK8sWorkerConfigurators(ctx context.Context, c CatalogClient) (any, err
 func fetchK8sConfiguratorsByRole(ctx context.Context, c CatalogClient, master bool) (any, error) {
 	resp, err := c.GetK8sConfiguratorsWithResponse(ctx)
 	if err != nil {
-		return nil, classifyUpstream(0, err)
+		return nil, classifyUpstream(nil, err)
 	}
 	if resp.JSON200 == nil {
-		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+		return nil, classifyUpstream(resp.HTTPResponse, errors.New("upstream returned non-200"))
 	}
 	role := make([]twgen.ServersConfigurator, 0, len(resp.JSON200.K8sConfigurators))
 	for _, cfg := range resp.JSON200.K8sConfigurators {
@@ -475,10 +475,10 @@ func configuratorEntries(cfgs []twgen.ServersConfigurator) []ConfiguratorEntry {
 func fetchRouterPresets(ctx context.Context, c CatalogClient) (any, error) {
 	resp, err := c.GetRouterPresetsWithResponse(ctx)
 	if err != nil {
-		return nil, classifyUpstream(0, err)
+		return nil, classifyUpstream(nil, err)
 	}
 	if resp.JSON200 == nil {
-		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+		return nil, classifyUpstream(resp.HTTPResponse, errors.New("upstream returned non-200"))
 	}
 	out := make([]PresetEntry, 0, len(resp.JSON200.RouterPresets))
 	for _, p := range resp.JSON200.RouterPresets {
@@ -500,22 +500,55 @@ func fetchUnwired(_ context.Context, _ CatalogClient) (any, error) {
 	return nil, ErrDimensionFetcherUnwired
 }
 
-// classifyUpstream collapses transport + HTTP-status outcomes into the
-// resolver's typed sentinel errors. Anything 401/403 → unauthorized.
-// 5xx or unknown → transient. Other 4xx → treated as transient too so
-// the cache doesn't pin a one-off 4xx; the caller's own resolution step
-// returns the typed not-found/ambiguous errors.
-func classifyUpstream(status int, cause error) error {
-	switch {
-	case status == http.StatusUnauthorized || status == http.StatusForbidden:
-		return fmt.Errorf("%w: HTTP %d: %v", ErrCatalogUnauthorized, status, cause)
-	case status >= 500, status == 0:
-		return fmt.Errorf("%w: HTTP %d: %v", ErrCatalogTransient, status, cause)
-	default:
-		return fmt.Errorf("%w: HTTP %d: %v", ErrCatalogTransient, status, cause)
+// upstreamRequestIDHeaders are the candidate header names a Timeweb response
+// may carry a request/trace id under. http.Header.Get canonicalizes casing, so
+// each distinct NAME is listed once. The id is echoed into the catalog error
+// message purely for traceability (so an operator/support ticket can reference
+// the exact failed call). The header name is not in the published spec; if the
+// live API uses a different name, add it here.
+var upstreamRequestIDHeaders = []string{"X-Request-Id", "X-Trace-Id", "X-Correlation-Id", "Request-Id"}
+
+// requestIDFromResponse returns the first non-empty upstream request/trace id
+// header, or "" when the response is nil or carries none.
+func requestIDFromResponse(resp *http.Response) string {
+	if resp == nil {
+		return ""
 	}
+	for _, h := range upstreamRequestIDHeaders {
+		if v := resp.Header.Get(h); v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
-// errIs is a thin wrapper around errors.Is so cache.go avoids importing
-// the errors package directly (keeping its imports minimal).
-func errIs(err, target error) bool { return errors.Is(err, target) }
+// classifyUpstream collapses transport + HTTP-status outcomes into the
+// resolver's typed sentinel errors. The upstream request_id (when present) is
+// folded into the message for support traceability.
+//
+//   - 401/403 → ErrCatalogUnauthorized (sticky in cache until next success)
+//   - 5xx or nil response (transport error) → ErrCatalogTransient (not cached)
+//   - other 4xx (400/404/etc.) → plain error, NOT wrapped in a sentinel, so
+//     the cache does not pin it and the caller surfaces it as a hard resolver
+//     failure (permanent-style: a typo in the catalog URL is not worth retrying)
+func classifyUpstream(resp *http.Response, cause error) error {
+	status := 0
+	if resp != nil {
+		status = resp.StatusCode
+	}
+	rid := ""
+	if id := requestIDFromResponse(resp); id != "" {
+		rid = fmt.Sprintf(" (request_id=%s)", id)
+	}
+	switch {
+	case status == http.StatusUnauthorized || status == http.StatusForbidden:
+		return fmt.Errorf("%w: HTTP %d%s: %w", ErrCatalogUnauthorized, status, rid, cause)
+	case status >= 500, status == 0:
+		return fmt.Errorf("%w: HTTP %d%s: %w", ErrCatalogTransient, status, rid, cause)
+	default:
+		// Other 4xx: permanent catalog failure — return without a sentinel wrapper
+		// so the cache does not memoize it and the reconciler surfaces it as a
+		// hard error rather than looping through the transient-retry path.
+		return fmt.Errorf("catalog HTTP %d%s: %w", status, rid, cause)
+	}
+}

@@ -38,11 +38,13 @@ type KubernetesClusterAddonParameters struct {
 	// available-addons catalog (/api/v1/k8s/clusters/{id}/addons-configs).
 	// Immutable post-create.
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="type is immutable"
 	Type string `json:"type"`
 
 	// Version is the addon version, validated against the catalog.
 	// Immutable post-create.
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="version is immutable"
 	Version string `json:"version"`
 
 	// YAMLConfig overrides the addon configuration; defaults to the catalog
@@ -70,6 +72,12 @@ type KubernetesClusterAddonObservation struct {
 	// Status is the upstream addon status string.
 	// +optional
 	Status *string `json:"status,omitempty"`
+
+	// InstalledVersion is the version string the upstream reports for the
+	// installed addon (may differ from spec.forProvider.version during
+	// upgrades).
+	// +optional
+	InstalledVersion *string `json:"installedVersion,omitempty"`
 }
 
 // KubernetesClusterAddonSpec is the desired state.
@@ -92,6 +100,7 @@ type KubernetesClusterAddonStatus struct {
 // +kubebuilder:printcolumn:name="CLUSTER",type="string",JSONPath=".status.atProvider.clusterID"
 // +kubebuilder:printcolumn:name="TYPE",type="string",JSONPath=".spec.forProvider.type"
 // +kubebuilder:printcolumn:name="VERSION",type="string",JSONPath=".spec.forProvider.version"
+// +kubebuilder:printcolumn:name="INSTALLED-VERSION",type="string",JSONPath=".status.atProvider.installedVersion"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.clusterRef)?1:0) + (has(self.spec.forProvider.clusterSelector)?1:0) + (has(self.spec.forProvider.clusterID)?1:0) == 1",message="exactly one of clusterRef, clusterSelector, clusterID must be set"
 

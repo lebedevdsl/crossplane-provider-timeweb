@@ -59,3 +59,29 @@ func TestImmutableMessage(t *testing.T) {
 		t.Errorf("message %q should describe the rule", msg)
 	}
 }
+
+// TestReasonConstants verifies the string values of the shared reason set so
+// that operator-facing condition reasons remain stable across refactors.
+func TestReasonConstants(t *testing.T) {
+	tests := []struct {
+		constant xpv2.ConditionReason
+		want     string
+	}{
+		{ReasonImmutableFieldChange, "ImmutableFieldChange"},
+		{ReasonPaymentRequired, "PaymentRequired"},
+		{ReasonUpstreamFailed, "UpstreamFailed"},
+		{ReasonPresetNotFound, "PresetNotFound"},
+		{ReasonPresetAmbiguous, "PresetAmbiguous"},
+		{ReasonNoConfiguratorAvailable, "NoConfiguratorAvailable"},
+		{ReasonDimensionValueNotFound, "DimensionValueNotFound"},
+		{ReasonParentNotReady, "ParentNotReady"},
+		{ReasonCatalogUnauthorized, "CatalogUnauthorized"},
+		{ReasonCatalogTransient, "CatalogTransient"},
+		{ReasonAPIError, "APIError"},
+	}
+	for _, tc := range tests {
+		if string(tc.constant) != tc.want {
+			t.Errorf("reason constant value = %q, want %q", tc.constant, tc.want)
+		}
+	}
+}

@@ -86,7 +86,9 @@ func (e *registryExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	}
 
 	populateRegistryStatus(cr, reg)
-	cr.Status.SetConditions(xpv2.Available())
+	avail := xpv2.Available()
+	shared.RecordConditionChange(e.recorder, cr, avail)
+	cr.Status.SetConditions(avail)
 
 	conn, err := e.connectionDetails(ctx, reg)
 	if err != nil && !errors.Is(err, errCredentialsUnavailable) {
@@ -155,7 +157,9 @@ func (e *registryExternal) Create(ctx context.Context, mg resource.Managed) (man
 		pid = int64(reg.PresetId)
 	}
 	cr.Status.AtProvider.LockedPresetID = &pid
-	cr.Status.SetConditions(xpv2.Creating())
+	creating := xpv2.Creating()
+	shared.RecordConditionChange(e.recorder, cr, creating)
+	cr.Status.SetConditions(creating)
 
 	conn, err := e.connectionDetails(ctx, reg)
 	if err != nil && !errors.Is(err, errCredentialsUnavailable) {
@@ -269,7 +273,9 @@ func (e *registryExternal) resolvePresetID(ctx context.Context, cr *cregv1alpha1
 		},
 	)
 	if err != nil {
-		mapResolverErrorToCondition(cr, err)
+		cond := shared.MapResolverErrorToCondition(err)
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
 		return 0, err
 	}
 	po, ok := out.(resolver.PresetOutput)
@@ -277,21 +283,6 @@ func (e *registryExternal) resolvePresetID(ctx context.Context, cr *cregv1alpha1
 		return 0, fmt.Errorf("containerregistry: resolver returned unexpected output type %T", out)
 	}
 	return int(po.UpstreamID), nil
-}
-
-// mapResolverErrorToCondition translates resolver-typed sentinel errors
-// to the operator-facing conditions documented in the MR contract.
-func mapResolverErrorToCondition(cr *cregv1alpha1.ContainerRegistry, err error) {
-	switch {
-	case errors.Is(err, resolver.ErrPresetNotFound):
-		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonPresetNotFound, err.Error()))
-	case errors.Is(err, resolver.ErrPresetAmbiguous):
-		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonPresetAmbiguous, err.Error()))
-	case errors.Is(err, resolver.ErrCatalogUnauthorized):
-		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonCatalogUnauthorized, err.Error()))
-	case errors.Is(err, resolver.ErrCatalogTransient):
-		cr.Status.SetConditions(shared.SyncedFalse(shared.ReasonCatalogTransient, err.Error()))
-	}
 }
 
 // connectionDetails populates the dockerconfigjson Secret payload using
@@ -321,7 +312,8 @@ func decodeRegistry(r io.Reader) (generated.RegistryOut, error) {
 }
 
 // populateRegistryStatus mirrors the upstream into atProvider. LockedPresetID
-// is set on Create and seeded on import.
+// is set on Create and seeded on import. Endpoint is derived from the registry
+// name (T019: RegistryOut has no upstream status field; State is not populated).
 func populateRegistryStatus(cr *cregv1alpha1.ContainerRegistry, r generated.RegistryOut) {
 	id := r.Id
 	projectID := r.ProjectId
@@ -335,6 +327,8 @@ func populateRegistryStatus(cr *cregv1alpha1.ContainerRegistry, r generated.Regi
 	}
 	cr.Status.AtProvider.CreatedAt = &createdAt
 	cr.Status.AtProvider.UpdatedAt = &updatedAt
+	endpoint := registryEndpoint(r.Name)
+	cr.Status.AtProvider.Endpoint = &endpoint
 	if cr.Status.AtProvider.LockedPresetID == nil && r.PresetId != 0 {
 		pid := int64(r.PresetId)
 		cr.Status.AtProvider.LockedPresetID = &pid
@@ -345,18 +339,11 @@ func populateRegistryStatus(cr *cregv1alpha1.ContainerRegistry, r generated.Regi
 // via the immutable-rejection path. Preset switches are detected by the
 // next Update call comparing spec presetName against the resolved upstream.
 func isRegistryUpToDate(spec cregv1alpha1.ContainerRegistryParameters, r generated.RegistryOut) bool {
-	if !ptrEqString(spec.Description, r.Description) {
+	if !shared.PtrEqString(spec.Description, r.Description) {
 		return false
 	}
 	if spec.ProjectID != nil && *spec.ProjectID != r.ProjectId {
 		return false
 	}
 	return true
-}
-
-func ptrEqString(p *string, s string) bool {
-	if p == nil {
-		return s == ""
-	}
-	return *p == s
 }

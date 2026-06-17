@@ -11,7 +11,12 @@ run:
 linters:
   default: none
   enable:
+    - bodyclose
+    - contextcheck
     - errcheck
+    - errorlint
+    - gocritic
+    - gosec
     - govet
     - ineffassign
     - misspell
@@ -50,7 +55,12 @@ linters:
       # Generated code — do not lint.
       - path: internal/clients/timeweb/generated/.*
         linters:
+          - bodyclose
+          - contextcheck
           - errcheck
+          - errorlint
+          - gocritic
+          - gosec
           - govet
           - ineffassign
           - misspell
@@ -60,7 +70,12 @@ linters:
           - unused
       - path: apis/.*/zz_generated.*
         linters:
+          - bodyclose
+          - contextcheck
           - errcheck
+          - errorlint
+          - gocritic
+          - gosec
           - govet
           - ineffassign
           - misspell
@@ -70,7 +85,12 @@ linters:
           - unused
       - path: internal/clients/timeweb/fake\.go
         linters:
+          - bodyclose
+          - contextcheck
           - errcheck
+          - errorlint
+          - gocritic
+          - gosec
           - govet
           - ineffassign
           - misspell
@@ -78,10 +98,16 @@ linters:
           - staticcheck
           - unconvert
           - unused
+      # Test files: relax a few checks that add noise without value in tests.
       - path: _test\.go
         text: "dot-imports"
         linters:
           - revive
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+          - bodyclose
       # Crossplane interface forwarders on every MR type are trivial
       # accessors (GetCondition, SetConditions, GetProviderConfigReference,
       # …) required by `crossplane-runtime`'s ModernManaged contract. The

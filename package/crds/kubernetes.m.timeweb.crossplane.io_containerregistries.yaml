@@ -28,8 +28,12 @@ spec:
     - jsonPath: .spec.forProvider.initialSizeGB
       name: SIZE-GB
       type: integer
+    - jsonPath: .status.atProvider.endpoint
+      name: ENDPOINT
+      type: string
     - jsonPath: .metadata.annotations.crossplane\.io/external-name
-      name: EXTERNAL-NAME
+      name: ID
+      priority: 1
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
@@ -192,6 +196,11 @@ spec:
                       usedGB:
                         type: integer
                     type: object
+                  endpoint:
+                    description: |-
+                      Endpoint is the Docker-pull hostname for this registry
+                      (e.g. "cr.timeweb.cloud/<name>"). Mirrors the upstream `domain_name` field.
+                    type: string
                   id:
                     description: ID is the Timeweb registry ID (also encoded as external-name).
                     type: integer
@@ -205,6 +214,9 @@ spec:
                   projectID:
                     description: ProjectID is the upstream project assignment.
                     type: integer
+                  state:
+                    description: State is the upstream registry status.
+                    type: string
                   updatedAt:
                     description: UpdatedAt is the upstream update timestamp.
                     type: string

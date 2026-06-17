@@ -73,6 +73,9 @@ spec:
                       `ssh-rsa`, `ssh-ed25519`, `ssh-dss`, or `ecdsa-sha2-*`.
                     pattern: '^(ssh-rsa|ssh-ed25519|ssh-dss|ecdsa-sha2-[a-z0-9-]+) '
                     type: string
+                    x-kubernetes-validations:
+                    - message: body is immutable
+                      rule: self == oldSelf
                   isDefault:
                     default: false
                     description: IsDefault marks the SSH key as the default for new
@@ -84,6 +87,9 @@ spec:
                     maxLength: 255
                     minLength: 1
                     type: string
+                    x-kubernetes-validations:
+                    - message: name is immutable
+                      rule: self == oldSelf
                 required:
                 - body
                 - name

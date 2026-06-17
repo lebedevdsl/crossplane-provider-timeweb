@@ -42,8 +42,14 @@ metadata:
   name: e2e-router
   namespace: timeweb-e2e
 status:
+  # kuttl matches conditions positionally. The Router resolves a FloatingIP
+  # reference in Connect, so its first reconciles fail (egress IP not Ready
+  # yet) → ReconcileError sets Synced first; Ready (Creating→Available) lands
+  # after. Emission order is therefore [Synced, Ready] — same as every other
+  # ref-having kind (Server bundle 09/10, Cluster-with-network bundle 14,
+  # Nodepool bundle 13). This ordering was the 006 bundle-18 "hang" root cause.
   conditions:
-  - type: Ready
-    status: "True"
   - type: Synced
+    status: "True"
+  - type: Ready
     status: "True"

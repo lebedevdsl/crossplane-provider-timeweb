@@ -50,6 +50,7 @@ spec:
     name: e2e
   forProvider:
     name: "${TWE_PRIV_ROUTER_NAME}"
+    location: ru-3
     availabilityZone: msk-1
     presetName: "${TWE_ROUTER_PRESET}"
     networks:
@@ -75,6 +76,7 @@ spec:
     name: "${TWE_PRIV_CLUSTER_NAME}"
     k8sVersion: "${TWE_K8S_VERSION}"
     networkDriver: cilium
+    location: ru-3
     availabilityZone: msk-1
     masterNodesCount: 1
     networkRef:

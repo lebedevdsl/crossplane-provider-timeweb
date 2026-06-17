@@ -35,6 +35,7 @@ type FloatingIPParameters struct {
 	// Location codes are upstream Timeweb API values — see
 	// `apis/compute/v1alpha1/server_types.go` for the full mapping.
 	// +kubebuilder:validation:Enum=ru-1;ru-2;ru-3;nl-1;de-1;kz-1;us-4;pl-1
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="location is immutable"
 	Location string `json:"location"`
 
 	// Comment is a free-form description. Mutable post-create.
@@ -75,6 +76,14 @@ type FloatingIPObservation struct {
 	// just mirrors what upstream reports.
 	// +optional
 	ObservedBoundTo *FloatingIPBindingObservation `json:"observedBoundTo,omitempty"`
+
+	// ObservedBoundSummary is a computed display field combining the
+	// upstream resourceType + id/uuid into a single string
+	// (e.g. "server/42" or "router/abc-uuid"). Populated by Observe;
+	// nil when the IP is unbound. Drives the BOUND-TO printcolumn
+	// without requiring a multi-path JSONPath expression.
+	// +optional
+	ObservedBoundSummary *string `json:"observedBoundSummary,omitempty"`
 }
 
 // FloatingIPBindingObservation mirrors the upstream `bound_to` shape.
@@ -110,11 +119,10 @@ type FloatingIPStatus struct {
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,timeweb}
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
-// +kubebuilder:printcolumn:name="IP",type="string",JSONPath=".status.atProvider.ip"
-// +kubebuilder:printcolumn:name="BOUND-RES",type="string",JSONPath=".status.atProvider.observedBoundTo.resourceType"
-// +kubebuilder:printcolumn:name="BOUND-TO",type="integer",JSONPath=".status.atProvider.observedBoundTo.resourceID"
-// +kubebuilder:printcolumn:name="BOUND-UUID",type="string",JSONPath=".status.atProvider.observedBoundTo.resourceUUID"
 // +kubebuilder:printcolumn:name="LOCATION",type="string",JSONPath=".spec.forProvider.location"
+// +kubebuilder:printcolumn:name="IP",type="string",JSONPath=".status.atProvider.ip"
+// +kubebuilder:printcolumn:name="BOUND-TO",type="string",JSONPath=".status.atProvider.observedBoundSummary"
+// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
 // FloatingIP is a Timeweb floating IPv4 address — pure allocation. The

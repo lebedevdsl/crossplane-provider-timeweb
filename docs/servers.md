@@ -34,7 +34,7 @@ spec:
     name: web-01-conn                  # publishes publicIP / publicIPv6 / privateIP / hostname / upstreamID
   forProvider:
     name: web-01
-    presetName: ssd-15-ru-1           # resolved against /api/v1/presets/servers
+    presetName: ssd-15                # resolved against /api/v1/presets/servers, filtered to location
     location: ru-1
     os:
       image: ubuntu                   # matched (case-insensitive) against /api/v1/os/servers
@@ -43,9 +43,10 @@ spec:
     - name: dev-key
 ```
 
-- `presetName` is the `<description_short>-<location>` slug resolved by the
-  in-controller catalog resolver. A bad slug surfaces `Synced=False,
-  reason=PresetNotFound` with the list of valid slugs your token can see.
+- `presetName` accepts the bare short form (`ssd-15`) or the long
+  `<short>-<location>` form (`ssd-15-ru-1`) — both resolve the same way.
+  A bad slug surfaces `Synced=False, reason=PresetNotFound` with the list
+  of valid slugs for your declared `location`.
 - `os.image` + `os.version` are matched against `/api/v1/os/servers`.
 - The Server moves `installing → starting → on`; `Ready=True` flips at `on`
   (typically ≤10 min for the smallest preset).

@@ -1,0 +1,36 @@
+# Example KubernetesClusterAddon managed resource.
+#
+# A KubernetesClusterAddon installs one addon into a parent KubernetesCluster.
+# `type` + `version` are validated against the cluster's available-addons
+# catalog (/api/v1/k8s/clusters/{id}/addons-configs). Deleting the MR removes
+# the addon; the cluster stays Ready=True.
+#
+# IMMUTABLE FIELDS: type, version, clusterRef.
+# Mutable: yamlConfig (addon configuration override).
+#
+# See docs/kubernetes.md §5 for install instructions.
+---
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesClusterAddon
+metadata:
+  name: demo-ingress
+  namespace: timeweb-prod
+spec:
+  forProvider:
+    # REQUIRED — parent KubernetesCluster in the same namespace.
+    clusterRef:
+      name: demo
+    # REQUIRED — addon type from the cluster's addons-configs catalog.
+    # Examples: ingress, cert-manager, metrics-server. Immutable post-create.
+    type: ingress
+    # REQUIRED — addon version from the catalog. Immutable post-create.
+    version: "1.11.1"
+    # Optional: YAML config override (defaults to the catalog's yaml_config).
+    # yamlConfig: |
+    #   controller:
+    #     replicaCount: 2
+    # Optional: upstream config_type; defaults sensibly when unset.
+    # configType: "default"
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default

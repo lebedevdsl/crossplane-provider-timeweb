@@ -128,7 +128,7 @@ func clusterWithRefs(networkRef, projectRef string) *kubernetesv1alpha1.Kubernet
 	c := &kubernetesv1alpha1.KubernetesCluster{
 		ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "demo"},
 		Spec: kubernetesv1alpha1.KubernetesClusterSpec{ForProvider: kubernetesv1alpha1.KubernetesClusterParameters{
-			Name: "demo", K8sVersion: "1.31.2", NetworkDriver: "cilium", AvailabilityZone: "msk-1", PresetName: strPtr("p"),
+			Name: "demo", K8sVersion: "1.31.2", NetworkDriver: "cilium", Location: "ru-3", AvailabilityZone: strPtr("msk-1"), PresetName: strPtr("p"),
 		}},
 	}
 	if networkRef != "" {

@@ -4,11 +4,12 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: 120
 ---
-# The Network reaches Synced=True then Ready=True. Conditions land in the
-# [Synced, Ready] order because the controller appends Synced=True
-# (ReconcileSuccess) on the first successful reconcile and the external
-# client only calls Available() from inside Observe on the next pass —
-# same dynamic as the Server bundle (09) and the Project bundle (02).
+# Network has no cross-resource reference, so its first reconcile reaches the
+# Create path: Creating() sets Ready=False first, then ReconcileSuccess appends
+# Synced. kuttl matches conditions positionally, so the order here is
+# [Ready, Synced]. (Contrast: ref-having kinds — Server 09/10, Cluster-with-
+# network 14, Router 18 — fail Connect first and emit [Synced, Ready]; the
+# Observe-only Project 02 also emits [Synced, Ready].)
 apiVersion: network.m.timeweb.crossplane.io/v1alpha1
 kind: Network
 metadata:

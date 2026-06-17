@@ -22,4 +22,5 @@ spec:
     # MUTABLE — mark as the account's default for new servers.
     isDefault: false
   providerConfigRef:
+    kind: ProviderConfig
     name: default

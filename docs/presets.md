@@ -106,7 +106,7 @@ Docker login uses:
 
 | Field    | Value                                |
 |----------|--------------------------------------|
-| Registry | `<registry-name>.registry.twcstorage.ru` |
+| Registry | `<registry-name>.cr.twcstorage.ru` |
 | Username | `<registry-name>`                    |
 | Password | Your Timeweb API token               |
 

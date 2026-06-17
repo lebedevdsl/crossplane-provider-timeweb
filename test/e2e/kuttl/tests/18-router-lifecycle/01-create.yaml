@@ -49,6 +49,7 @@ spec:
     name: e2e
   forProvider:
     name: "${TWE_ROUTER_NAME}"
+    location: ru-3
     availabilityZone: msk-1
     presetName: "${TWE_ROUTER_PRESET}"
     networks:

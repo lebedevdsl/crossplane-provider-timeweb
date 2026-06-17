@@ -121,7 +121,8 @@ func newCluster(created bool) *kubernetesv1alpha1.KubernetesCluster {
 				Name:             "demo",
 				K8sVersion:       "1.31.2",
 				NetworkDriver:    "cilium",
-				AvailabilityZone: "msk-1",
+				Location:         "ru-3",
+				AvailabilityZone: strPtr("msk-1"),
 				PresetName:       strPtr("start-master"),
 			},
 		},
@@ -377,6 +378,46 @@ func TestClusterCreate(t *testing.T) {
 		}
 	})
 
+	t.Run("AdoptionGuard_AZMismatch_ProceedsToPOST", func(t *testing.T) {
+		// T032: when the upstream cluster with our name is in a DIFFERENT AZ,
+		// the adoption guard must NOT adopt it — names are not globally unique.
+		// The spec AZ is msk-1 (from newCluster); the upstream one is ams-1.
+		fake := &timeweb.FakeClient{}
+		fake.GetClustersReturns(httpResp(http.StatusOK,
+			`{"clusters":[{"id":99,"name":"demo","availability_zone":"ams-1"}]}`), nil)
+		fake.CreateClusterReturns(httpResp(http.StatusCreated, clusterActiveJSON), nil)
+		cr := newCluster(false)
+		meta.AddAnnotations(cr, map[string]string{meta.AnnotationKeyExternalCreateFailed: "2026-06-11T00:00:00Z"})
+		if _, err := clusterE(fake, okResolver()).Create(ctx, cr); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if got := meta.GetExternalName(cr); got != "777" {
+			t.Errorf("external-name=%q after create, want 777 (POSTed, not adopted)", got)
+		}
+		if fake.CreateClusterCallCount() != 1 {
+			t.Errorf("CreateCluster called %d times, want 1 (AZ-filtered out, POST falls through)", fake.CreateClusterCallCount())
+		}
+	})
+
+	t.Run("AdoptionGuard_AZAndNameMatch_Adopts", func(t *testing.T) {
+		// T032: one cluster matches both name AND AZ → adopt it.
+		fake := &timeweb.FakeClient{}
+		fake.GetClustersReturns(httpResp(http.StatusOK,
+			// Two clusters same name: one in ams-1 (filtered), one in msk-1 (matches spec).
+			`{"clusters":[{"id":99,"name":"demo","availability_zone":"ams-1"},{"id":1094189,"name":"demo","availability_zone":"msk-1"}]}`), nil)
+		cr := newCluster(false)
+		meta.AddAnnotations(cr, map[string]string{meta.AnnotationKeyExternalCreateFailed: "2026-06-11T00:00:00Z"})
+		if _, err := clusterE(fake, okResolver()).Create(ctx, cr); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if got := meta.GetExternalName(cr); got != "1094189" {
+			t.Errorf("external-name=%q, want 1094189 (AZ-matched adoption)", got)
+		}
+		if fake.CreateClusterCallCount() != 0 {
+			t.Errorf("CreateCluster called %d times, want 0 (adoption, not a second POST)", fake.CreateClusterCallCount())
+		}
+	})
+
 	t.Run("MasterPresetNotFound", func(t *testing.T) {
 		cr := newCluster(false)
 		cr.Spec.ForProvider.PresetName = strPtr("ghost")
@@ -517,6 +558,44 @@ func TestClusterVersionUpgrade(t *testing.T) {
 			t.Error("UpdateClusterVersion called when version unchanged")
 		}
 	})
+
+	t.Run("LateralChange_Rejected", func(t *testing.T) {
+		// T021: a build-metadata-only change (same numeric triple, different
+		// +k0s.N suffix) is classified as lateral, not upgrade or downgrade.
+		// The observed cluster is on 1.31.2 (from clusterActiveJSON); the spec
+		// changes only the build suffix — same numeric but a different string.
+		// versionNewer(lateral, observed) == false AND versionNewer(observed, lateral)
+		// == false → the new errVersionLateral path fires.
+		fake := &timeweb.FakeClient{}
+		// Observed: v1.31.2+k0s.0 (same numeric as 1.31.2 but with build meta)
+		lateralJSON := strings.Replace(clusterActiveJSON, `"k8s_version":"1.31.2"`, `"k8s_version":"v1.31.2+k0s.0"`, 1)
+		fake.GetClusterReturns(httpResp(http.StatusOK, lateralJSON), nil)
+		cr := newCluster(true)
+		cr.Spec.ForProvider.K8sVersion = "v1.31.2+k0s.1" // same numeric, different build
+		_, err := clusterE(fake, r).Update(ctx, cr)
+		if !errors.Is(err, errVersionLateral) {
+			t.Errorf("err=%v, want errVersionLateral", err)
+		}
+		if fake.UpdateClusterVersionCallCount() != 0 {
+			t.Error("UpdateClusterVersion called on lateral version change")
+		}
+	})
+
+	t.Run("UnparsableVersion_Rejected", func(t *testing.T) {
+		// T021: a zero/unparseable desired version must be rejected before any
+		// catalog lookup; parse failure must NOT be treated as "equal".
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
+		cr := newCluster(true)
+		cr.Spec.ForProvider.K8sVersion = "garbage-version"
+		_, err := clusterE(fake, r).Update(ctx, cr)
+		if err == nil || !strings.Contains(err.Error(), "could not be parsed") {
+			t.Errorf("err=%v, want parse-rejection error", err)
+		}
+		if fake.UpdateClusterVersionCallCount() != 0 {
+			t.Error("UpdateClusterVersion called on garbage version")
+		}
+	})
 }
 
 func TestVersionNewer(t *testing.T) {
@@ -631,6 +710,78 @@ func TestClusterCustomSizing(t *testing.T) {
 		cr.Status.AtProvider.LockedConfiguratorID = &cid // but locked as configurator
 		if _, err := clusterE(fake, okResolver()).Update(ctx, cr); !errors.Is(err, shared.ErrSizingSwitchRequiresRecreate) {
 			t.Errorf("err=%v, want ErrSizingSwitchRequiresRecreate", err)
+		}
+	})
+}
+
+// TestClusterPlacementRegionCoverage verifies that clusters can be created in
+// all previously-unreachable regions (ru-2/nsk-1, pl-1, us-4) and that the
+// location-only / az-only derivation paths work correctly. (US1 T009)
+func TestClusterPlacementRegionCoverage(t *testing.T) {
+	ctx := context.Background()
+
+	cases := []struct {
+		name             string
+		location         string
+		az               *string
+		wantResolvedZone string
+	}{
+		{name: "Ru2_LocationOnly", location: "ru-2", wantResolvedZone: "nsk-1"},
+		{name: "Ru2_WithAZ", location: "ru-2", az: strPtr("nsk-1"), wantResolvedZone: "nsk-1"},
+		{name: "Pl1_LocationOnly", location: "pl-1", wantResolvedZone: "pl-1"},
+		{name: "Us4_LocationOnly", location: "us-4", wantResolvedZone: "us-4"},
+		{name: "AZOnlyBackCompat_nsk1", az: strPtr("nsk-1"), wantResolvedZone: "nsk-1"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := &fakeResolver{
+				masterPresets: map[string]int64{"start-master": 5},
+				versions:      map[string]bool{"1.31.2": true},
+			}
+			fake := &timeweb.FakeClient{}
+			fake.CreateClusterReturns(httpResp(http.StatusCreated, clusterActiveJSON), nil)
+			cr := &kubernetesv1alpha1.KubernetesCluster{
+				Spec: kubernetesv1alpha1.KubernetesClusterSpec{
+					ForProvider: kubernetesv1alpha1.KubernetesClusterParameters{
+						Name:             "region-test",
+						K8sVersion:       "1.31.2",
+						NetworkDriver:    "cilium",
+						Location:         tc.location,
+						AvailabilityZone: tc.az,
+						PresetName:       strPtr("start-master"),
+					},
+				},
+			}
+			_, err := clusterE(fake, r).Create(ctx, cr)
+			if err != nil {
+				t.Fatalf("Create(%s): %v", tc.name, err)
+			}
+			if fake.CreateClusterCallCount() != 1 {
+				t.Fatalf("CreateCluster not called")
+			}
+			_, body, _ := fake.CreateClusterArgsForCall(0)
+			if body.AvailabilityZone == nil || string(*body.AvailabilityZone) != tc.wantResolvedZone {
+				t.Errorf("body.AvailabilityZone = %v, want %q", body.AvailabilityZone, tc.wantResolvedZone)
+			}
+		})
+	}
+
+	t.Run("Ru1_LocationOnly_Errors", func(t *testing.T) {
+		// ru-1 is multi-AZ — location-only must error asking for explicit AZ.
+		cr := &kubernetesv1alpha1.KubernetesCluster{
+			Spec: kubernetesv1alpha1.KubernetesClusterSpec{
+				ForProvider: kubernetesv1alpha1.KubernetesClusterParameters{
+					Name:          "multiaz-test",
+					K8sVersion:    "1.31.2",
+					NetworkDriver: "cilium",
+					Location:      "ru-1",
+					PresetName:    strPtr("start-master"),
+				},
+			},
+		}
+		_, err := clusterE(&timeweb.FakeClient{}, okResolver()).Create(ctx, cr)
+		if err == nil || !strings.Contains(err.Error(), "multiple") {
+			t.Errorf("err=%v, want multi-AZ error mentioning 'multiple'", err)
 		}
 	})
 }

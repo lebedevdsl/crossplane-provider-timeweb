@@ -25,6 +25,7 @@ import (
 	"testing"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"k8s.io/client-go/tools/record"
 
 	objectstoragev1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/objectstorage/v1alpha1"
@@ -175,6 +176,48 @@ func TestObserve(t *testing.T) {
 		var apiErr *timeweb.APIError
 		if !errors.As(err, &apiErr) {
 			t.Fatalf("err = %v, want *APIError", err)
+		}
+	})
+
+	t.Run("QuarantinedBucket_ReadyFalse", func(t *testing.T) {
+		// T017: quarantined bucket must surface Ready=False/ReasonBucketQuarantined,
+		// not Ready=True as with the unconditional Available() it used to set.
+		quarantinedJSON := strings.Replace(sampleBucketJSON, `"status":"active"`, `"status":"quarantined"`, 1)
+		fake := &timeweb.FakeClient{}
+		fake.GetStorageReturns(httpResp(http.StatusOK, quarantinedJSON), nil)
+		e := newExternal(fake, nil)
+		cr := newBucket(42, 1)
+		obs, err := e.Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if !obs.ResourceExists {
+			t.Error("ResourceExists = false, want true")
+		}
+		c := cr.Status.GetCondition(xpv2.TypeReady)
+		if string(c.Status) != "False" || c.Reason != shared.ReasonBucketQuarantined {
+			t.Errorf("Ready = %s/%s, want False/BucketQuarantined", c.Status, c.Reason)
+		}
+	})
+
+	t.Run("ProvisioningBucket_Creating", func(t *testing.T) {
+		// T017: a bucket in a non-terminal provisioning state must report
+		// Ready=False/Creating, not Available.
+		provisioningJSON := strings.Replace(sampleBucketJSON, `"status":"active"`, `"status":"created"`, 1)
+		fake := &timeweb.FakeClient{}
+		fake.GetStorageReturns(httpResp(http.StatusOK, provisioningJSON), nil)
+		e := newExternal(fake, nil)
+		cr := newBucket(42, 1)
+		obs, err := e.Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if !obs.ResourceExists {
+			t.Error("ResourceExists = false, want true")
+		}
+		c := cr.Status.GetCondition(xpv2.TypeReady)
+		if string(c.Status) != "False" || c.Reason != xpv2.ReasonCreating {
+			t.Errorf("Ready = %s/%s, want False/Creating", c.Status, c.Reason)
 		}
 	})
 }

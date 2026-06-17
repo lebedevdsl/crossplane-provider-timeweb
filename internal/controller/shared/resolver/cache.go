@@ -18,6 +18,9 @@ package resolver
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"reflect"
 	"sync"
 	"time"
 
@@ -108,11 +111,22 @@ func (c *cache) getOrFetch(ctx context.Context, key cacheKey, f fetcher) (any, e
 		c.mu.Lock()
 		defer c.mu.Unlock()
 		if ferr != nil {
-			// Cache sticky 401/403; don't cache transient 5xx.
-			if !isTransient(ferr) {
+			// Only cache sticky 401/403 (ErrCatalogUnauthorized). Transient
+			// 5xx errors and permanent other-4xx errors are NOT cached so
+			// subsequent reconciles re-fetch: transient errors may resolve,
+			// and permanent-4xx errors from a misconfigured catalog URL
+			// should surface on every reconcile rather than silently pinning.
+			if errors.Is(ferr, ErrCatalogUnauthorized) {
 				c.entries[key] = &cacheEntry{err: ferr, fetchedAt: c.now()}
 			}
 			return nil, ferr
+		}
+		// An empty catalog (HTTP 200 but zero entries) is treated as transient:
+		// the upstream may still be populating the catalog, or the request hit a
+		// temporarily-empty shard. Return without caching so the next reconcile
+		// re-fetches instead of pinning the empty list for a full TTL.
+		if isEmptySlice(payload) {
+			return nil, fmt.Errorf("%w: catalog returned 0 entries", ErrCatalogTransient)
 		}
 		c.entries[key] = &cacheEntry{payload: payload, fetchedAt: c.now()}
 		return payload, nil
@@ -132,10 +146,13 @@ func (c *cache) expired(e *cacheEntry) bool {
 	return c.now().Sub(e.fetchedAt) >= c.ttl
 }
 
-// isTransient returns true for upstream-transient errors that must NOT be
-// cached. Anything else (including ErrCatalogUnauthorized and the typed
-// resolution errors) is cached so subsequent reconciles see the same
-// failure without re-hammering the upstream until TTL expiry.
-func isTransient(err error) bool {
-	return errIs(err, ErrCatalogTransient)
+// isEmptySlice returns true when payload is a non-nil slice with zero
+// elements. Used to detect a 200-but-empty catalog response that should be
+// treated as transient rather than cached.
+func isEmptySlice(payload any) bool {
+	if payload == nil {
+		return false
+	}
+	v := reflect.ValueOf(payload)
+	return v.Kind() == reflect.Slice && v.Len() == 0
 }

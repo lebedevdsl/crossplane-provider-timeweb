@@ -34,6 +34,9 @@ spec:
     - jsonPath: .spec.forProvider.version
       name: VERSION
       type: string
+    - jsonPath: .status.atProvider.installedVersion
+      name: INSTALLED-VERSION
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
@@ -158,12 +161,18 @@ spec:
                       Immutable post-create.
                     minLength: 1
                     type: string
+                    x-kubernetes-validations:
+                    - message: type is immutable
+                      rule: self == oldSelf
                   version:
                     description: |-
                       Version is the addon version, validated against the catalog.
                       Immutable post-create.
                     minLength: 1
                     type: string
+                    x-kubernetes-validations:
+                    - message: version is immutable
+                      rule: self == oldSelf
                   yamlConfig:
                     description: |-
                       YAMLConfig overrides the addon configuration; defaults to the catalog
@@ -245,6 +254,12 @@ spec:
                       ClusterID is the resolved parent cluster id, persisted so Observe and
                       Delete (which need the cluster_id in the path) never depend on a live
                       ref lookup.
+                    type: string
+                  installedVersion:
+                    description: |-
+                      InstalledVersion is the version string the upstream reports for the
+                      installed addon (may differ from spec.forProvider.version during
+                      upgrades).
                     type: string
                   status:
                     description: Status is the upstream addon status string.

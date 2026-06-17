@@ -5,12 +5,12 @@
 # `envFrom` or `volumeMounts.secretName` to give workloads programmatic
 # access to the bucket.
 #
-# IMMUTABLE FIELDS (FR-017 reject-and-surface):
-#   - name
-#   - sizing axis (switching presetID ↔ configuration)
-# Mutable: type, description, projectID, presetID-within-axis, configuration-within-axis.
+# IMMUTABLE FIELDS: name.
+# Mutable: type, description, projectID, initialSizeGB (within-tier moves
+# reconcile via the preset resolver; the storageClass axis is immutable).
 #
-# See docs/resources/s3bucket.md for the full field reference.
+# See docs/presets.md for the full initialSizeGB + storageClass field reference.
+# See docs/resources/s3bucket.md for lifecycle and conditions.
 ---
 apiVersion: objectstorage.m.timeweb.crossplane.io/v1alpha1
 kind: S3Bucket
@@ -21,15 +21,19 @@ spec:
   forProvider:
     # IMMUTABLE — globally unique bucket name (3-63 chars, lowercase + digits + . -).
     name: demo-images
-    # MUTABLE — access policy.
+    # MUTABLE — access policy: private or public.
     type: public
-    # Mutually exclusive with `configuration`. Within-axis values are mutable.
-    presetID: 100
+    # Pick the tier by disk size. Valid values: 1, 10, 100, 250 (GB).
+    initialSizeGB: 10
+    # Storage class: hot (frequently accessed) or cold (archives). IMMUTABLE.
+    storageClass: hot
     description: "User-uploaded images for example.com"
-    projectID: 12345
+    # Optional project assignment (resolves via ProjectRef or ProjectID).
+    # projectID: 12345
   # Connection Secret destination — keys: endpoint, bucket, region, access_key, secret_key.
   writeConnectionSecretToRef:
     name: demo-images-creds
     # namespace defaults to the MR's namespace if omitted
   providerConfigRef:
+    kind: ProviderConfig
     name: default

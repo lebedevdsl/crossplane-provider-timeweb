@@ -1,0 +1,68 @@
+# ProviderConfig — Timeweb API token setup.
+#
+# Two ProviderConfig kinds ship with this provider:
+#
+#   ProviderConfig          — namespaced; MRs in the same namespace reference it.
+#   ClusterProviderConfig   — cluster-scoped; one PC for the whole cluster.
+#
+# Both share the same `spec` shape. Use `ProviderConfig` when your MRs live in
+# a single namespace (simpler, no cross-namespace Secret refs). Use
+# `ClusterProviderConfig` when multiple namespaces share credentials.
+#
+# Obtain an API token from: Timeweb Cloud panel → Profile → API keys.
+#
+# See the getting-started guide at docs/getting-started.md for the full walkthrough.
+
+# 1. Create the Secret holding the Timeweb API token.
+#    Replace <YOUR_TIMEWEB_API_TOKEN> with the real token value.
+#    kubectl create secret generic timeweb-credentials \
+#      --from-literal=token=<YOUR_TIMEWEB_API_TOKEN> \
+#      --namespace=timeweb-prod
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: timeweb-credentials
+  namespace: timeweb-prod
+type: Opaque
+stringData:
+  # Replace with the actual Timeweb Cloud API token.
+  token: "<YOUR_TIMEWEB_API_TOKEN>"
+---
+# 2. Namespaced ProviderConfig — references the Secret in the same namespace.
+#    MRs in `timeweb-prod` set:
+#      providerConfigRef:
+#        kind: ProviderConfig
+#        name: default
+apiVersion: timeweb.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: default
+  namespace: timeweb-prod
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      # `namespace` may be omitted — the controller defaults it to the PC's namespace.
+      name: timeweb-credentials
+      key: token
+---
+# 3. (Optional) ClusterProviderConfig — cluster-scoped alternative.
+#    `secretRef.namespace` is REQUIRED here (no namespace to default to).
+#    MRs reference it with:
+#      providerConfigRef:
+#        kind: ClusterProviderConfig
+#        name: shared
+#    (or omit `kind:` — crossplane-runtime v2 defaults to ClusterProviderConfig)
+#
+# apiVersion: timeweb.crossplane.io/v1alpha1
+# kind: ClusterProviderConfig
+# metadata:
+#   name: shared
+# spec:
+#   credentials:
+#     source: Secret
+#     secretRef:
+#       namespace: crossplane-system
+#       name: timeweb-credentials
+#       key: token

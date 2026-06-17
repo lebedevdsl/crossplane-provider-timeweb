@@ -1,9 +1,12 @@
 # A Router with one NAT-enabled private network (feature 006).
 #
-# The tier slug (presetName) is resolved against the live per-region catalog;
-# `router-1x1-1gb-ru-3` is the cheapest 1-node Moscow tier (2-node slugs are
-# the HA tiers). The availabilityZone must match the tier's region — a
-# mismatch is rejected before anything is created.
+# The tier slug (presetName) is resolved against the live per-region catalog.
+# Feature 007 accepts both the bare short form (e.g. `router-1x1-1gb`) and the
+# long <short>-<location> form (e.g. `router-1x1-1gb-ru-3`). Both resolve the
+# same when a location / availabilityZone is declared.
+# 2-node slugs (router-2x...) are the HA tiers.
+# The availabilityZone must match the tier's region — a mismatch is rejected
+# before anything is created.
 #
 # NAT is declared per attachment by referencing a FloatingIP: the reference's
 # presence IS the NAT switch (one address serves one network), and the Router
@@ -47,8 +50,11 @@ spec:
     name: default
   forProvider:
     name: edge
+    location: ru-3
     availabilityZone: msk-1
-    presetName: router-1x1-1gb-ru-3
+    # Bare form (feature 007): resolver scopes to availabilityZone → location.
+    # Long form `router-1x1-1gb-ru-3` also still works (back-compat).
+    presetName: router-1x1-1gb
     networks:
       - networkRef:
           name: app-net

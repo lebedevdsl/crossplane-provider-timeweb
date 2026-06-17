@@ -52,7 +52,7 @@ func SetupNetwork(mgr manager.Manager, l logging.Logger, pollInterval time.Durat
 				&apisv1alpha1.ProviderConfigUsage{}),
 			logger:   l.WithValues("controller", name),
 			recorder: recorder,
-			cache:    resolver.NewCache(resolver.Options{}),
+			// Network has no preset/catalog resolution; cache is only needed by Router.
 		}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(recorder)),
@@ -81,7 +81,7 @@ func SetupFloatingIP(mgr manager.Manager, l logging.Logger, pollInterval time.Du
 				&apisv1alpha1.ProviderConfigUsage{}),
 			logger:   l.WithValues("controller", name),
 			recorder: recorder,
-			cache:    resolver.NewCache(resolver.Options{}),
+			// FloatingIP has no preset/catalog resolution; cache is only needed by Router.
 		}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(recorder)),

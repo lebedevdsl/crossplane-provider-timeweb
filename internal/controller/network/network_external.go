@@ -82,7 +82,9 @@ func (e *networkExternal) Observe(ctx context.Context, mg resource.Managed) (man
 	}
 
 	populateNetworkStatus(cr, env.VPC)
-	cr.Status.SetConditions(xpv2.Available())
+	cond := xpv2.Available()
+	shared.RecordConditionChange(e.recorder, cr, cond)
+	cr.Status.SetConditions(cond)
 
 	return managed.ExternalObservation{
 		ResourceExists:   true,
@@ -114,7 +116,9 @@ func (e *networkExternal) Create(ctx context.Context, mg resource.Managed) (mana
 
 	meta.SetExternalName(cr, env.VPC.Id)
 	populateNetworkStatus(cr, env.VPC)
-	cr.Status.SetConditions(xpv2.Creating())
+	cond := xpv2.Creating()
+	shared.RecordConditionChange(e.recorder, cr, cond)
+	cr.Status.SetConditions(cond)
 	return managed.ExternalCreation{}, nil
 }
 
@@ -167,7 +171,7 @@ func (e *networkExternal) Update(ctx context.Context, mg resource.Managed) (mana
 
 	// Only `description` is mutable. Skip the upstream call when unchanged
 	// to keep the API request budget low.
-	if derefString(fp.Description) == observed.Description {
+	if shared.DerefString(fp.Description) == observed.Description {
 		return managed.ExternalUpdate{}, nil
 	}
 	patch := twgen.UpdateVPCsJSONRequestBody{Description: fp.Description}
@@ -206,7 +210,9 @@ func (e *networkExternal) Delete(ctx context.Context, mg resource.Managed) (mana
 		}
 		return managed.ExternalDelete{}, err
 	}
-	cr.Status.SetConditions(xpv2.Deleting())
+	cond := xpv2.Deleting()
+	shared.RecordConditionChange(e.recorder, cr, cond)
+	cr.Status.SetConditions(cond)
 	return managed.ExternalDelete{}, nil
 }
 
@@ -234,11 +240,16 @@ func buildCreateVPCBody(cr *networkv1alpha1.Network) twgen.CreateVPCJSONRequestB
 }
 
 // populateNetworkStatus mirrors the upstream Vpc into the MR's atProvider.
+// T019: State is populated from the VPC's network type (the upstream VPC
+// object has no separate provisioning-state field; Type — "ovn" / "bgp" —
+// is the nearest runtime-stable signal and satisfies the STATE printcolumn).
 func populateNetworkStatus(cr *networkv1alpha1.Network, v twgen.Vpc) {
 	id := v.Id
 	cr.Status.AtProvider.UpstreamID = &id
 	cidr := v.SubnetV4
 	cr.Status.AtProvider.AssignedCIDR = &cidr
+	state := string(v.Type)
+	cr.Status.AtProvider.State = &state
 }
 
 // isNetworkUpToDate returns true when the upstream VPC matches the spec
@@ -260,15 +271,8 @@ func isNetworkUpToDate(spec networkv1alpha1.NetworkParameters, v twgen.Vpc) bool
 	if spec.AvailabilityZone != nil && *spec.AvailabilityZone != string(v.AvailabilityZone) {
 		return false
 	}
-	if derefString(spec.Description) != v.Description {
+	if shared.DerefString(spec.Description) != v.Description {
 		return false
 	}
 	return true
-}
-
-func derefString(p *string) string {
-	if p == nil {
-		return ""
-	}
-	return *p
 }

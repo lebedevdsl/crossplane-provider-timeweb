@@ -156,7 +156,7 @@ func (e *nodepoolExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 		return managed.ExternalObservation{}, err
 	}
 	publishNodeList(cr, nodes)
-	setNodepoolReadyCondition(cr, upToDate, env.NodeGroup.NodeCount, nodes)
+	setNodepoolReadyCondition(cr, upToDate, env.NodeGroup.NodeCount, nodes, e.recorder)
 
 	return managed.ExternalObservation{
 		ResourceExists:   true,
@@ -191,13 +191,23 @@ func (e *nodepoolExternal) Create(ctx context.Context, mg resource.Managed) (man
 	} else {
 		// Preset path is zone-filtered by the parent's AZ — a cross-zone
 		// preset id would make the upstream mis-place (feature 006).
+		// location is derived from the AZ for bare-slug resolution and
+		// scoped not-found errors.
 		var az string
 		az, err = e.parentClusterAZ(ctx, clusterID)
 		if err == nil {
-			presetID, err = e.resolveWorkerPreset(ctx, *cr.Spec.ForProvider.PresetName, az)
+			var loc string
+			loc, err = shared.AZToLocation(az)
+			if err == nil {
+				presetID, err = e.resolveWorkerPreset(ctx, *cr.Spec.ForProvider.PresetName, az, loc)
+			}
 		}
 	}
 	if err != nil {
+		// T018: map resolver sentinel errors to typed Synced=False conditions.
+		cond := shared.MapResolverErrorToCondition(err)
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
 		return managed.ExternalCreation{}, err
 	}
 
@@ -339,12 +349,13 @@ func (*nodepoolExternal) Disconnect(_ context.Context) error { return nil }
 
 // --- helpers ----------------------------------------------------------------
 
-func (e *nodepoolExternal) resolveWorkerPreset(ctx context.Context, slug, zone string) (int, error) {
+func (e *nodepoolExternal) resolveWorkerPreset(ctx context.Context, slug, zone, location string) (int, error) {
 	// Zone-filtered against the PARENT cluster's availability zone — same
 	// hidden-zone-affinity defense as the master preset (feature 006).
+	// location is passed for bare-slug resolution and scoped not-found errors.
 	out, err := e.resolver.Resolve(ctx, e.pcRef,
 		resolver.Dimension{Name: resolver.DimKubernetesWorkerPreset, Kind: resolver.DimensionPreset},
-		resolver.PresetInput{Slug: slug, Zone: zone},
+		resolver.PresetInput{Slug: slug, Zone: zone, Location: location},
 	)
 	if err != nil {
 		return 0, err
@@ -496,18 +507,33 @@ func nodeIsActive(status string) bool {
 // API echoes the requested count within a second of create, long before any
 // worker VM boots (caught by the T028 canary: Ready=True one second after
 // create). A node in a failed/error state surfaces ReasonUpstreamFailed.
-func setNodepoolReadyCondition(cr *kubernetesv1alpha1.KubernetesClusterNodepool, upToDate bool, declared int, nodes []groupNodeBody) {
+// T020: emits transition Events via RecordConditionChange.
+func setNodepoolReadyCondition(cr *kubernetesv1alpha1.KubernetesClusterNodepool, upToDate bool, declared int, nodes []groupNodeBody, recorder record.EventRecorder) {
+	var cond xpv2.Condition
 	for _, n := range nodes {
 		s := strings.ToLower(n.Status)
 		if strings.Contains(s, "error") || strings.Contains(s, "fail") {
-			cr.Status.SetConditions(shared.ReadyFalse(shared.ReasonUpstreamFailed,
-				fmt.Sprintf("worker node %d state is %q: provisioning failed and will not recover on its own — check the Timeweb panel; scale or recreate the nodepool", n.ID, n.Status)))
+			cond = shared.ReadyFalse(shared.ReasonUpstreamFailed,
+				fmt.Sprintf("worker node %d state is %q: provisioning failed and will not recover on its own — check the Timeweb panel; scale or recreate the nodepool", n.ID, n.Status))
+			shared.RecordConditionChange(recorder, cr, cond)
+			cr.Status.SetConditions(cond)
 			return
 		}
 	}
 	if !upToDate {
-		cr.Status.SetConditions(shared.ReadyFalse(shared.ReasonReconciling,
-			"worker node count is converging to the desired value"))
+		cond = shared.ReadyFalse(shared.ReasonReconciling,
+			"worker node count is converging to the desired value")
+		shared.RecordConditionChange(recorder, cr, cond)
+		cr.Status.SetConditions(cond)
+		return
+	}
+	// T034: a nodepool with 0 declared OR 0 actual nodes must NOT report
+	// Available — the "0 < 0 = false" path previously fell through to
+	// Available() silently.
+	if declared == 0 && len(nodes) == 0 {
+		cond = xpv2.Creating()
+		shared.RecordConditionChange(recorder, cr, cond)
+		cr.Status.SetConditions(cond)
 		return
 	}
 	active := 0
@@ -517,9 +543,15 @@ func setNodepoolReadyCondition(cr *kubernetesv1alpha1.KubernetesClusterNodepool,
 		}
 	}
 	if active < declared {
-		cr.Status.SetConditions(shared.ReadyFalse(xpv2.ReasonCreating,
-			fmt.Sprintf("%d/%d worker nodes provisioned (%d listed)", active, declared, len(nodes))))
+		// T021: use shared.ReasonReconciling instead of xpv2.ReasonCreating
+		// to stay consistent with the shared condition-reason vocabulary.
+		cond = shared.ReadyFalse(shared.ReasonReconciling,
+			fmt.Sprintf("%d/%d worker nodes provisioned (%d listed)", active, declared, len(nodes)))
+		shared.RecordConditionChange(recorder, cr, cond)
+		cr.Status.SetConditions(cond)
 		return
 	}
-	cr.Status.SetConditions(xpv2.Available())
+	cond = xpv2.Available()
+	shared.RecordConditionChange(recorder, cr, cond)
+	cr.Status.SetConditions(cond)
 }

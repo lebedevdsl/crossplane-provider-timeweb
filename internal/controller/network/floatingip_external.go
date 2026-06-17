@@ -83,7 +83,9 @@ func (e *floatingIPExternal) Observe(ctx context.Context, mg resource.Managed) (
 	}
 
 	populateFloatingIPStatus(cr, env.IP)
-	cr.Status.SetConditions(xpv2.Available())
+	cond := xpv2.Available()
+	shared.RecordConditionChange(e.recorder, cr, cond)
+	cr.Status.SetConditions(cond)
 
 	return managed.ExternalObservation{
 		ResourceExists:    true,
@@ -124,7 +126,9 @@ func (e *floatingIPExternal) Create(ctx context.Context, mg resource.Managed) (m
 
 	meta.SetExternalName(cr, env.IP.Id)
 	populateFloatingIPStatus(cr, env.IP)
-	cr.Status.SetConditions(xpv2.Creating())
+	cond := xpv2.Creating()
+	shared.RecordConditionChange(e.recorder, cr, cond)
+	cr.Status.SetConditions(cond)
 	return managed.ExternalCreation{ConnectionDetails: floatingIPConnectionDetails(cr)}, nil
 }
 
@@ -179,7 +183,7 @@ func (e *floatingIPExternal) Update(ctx context.Context, mg resource.Managed) (m
 	}
 
 	// Only `comment` is mutable. Skip the upstream call when unchanged.
-	if derefString(fp.Comment) == derefString(observed.Comment) {
+	if shared.DerefString(fp.Comment) == shared.DerefString(observed.Comment) {
 		return managed.ExternalUpdate{}, nil
 	}
 	patch := twgen.UpdateFloatingIPJSONRequestBody{Comment: fp.Comment}
@@ -218,7 +222,9 @@ func (e *floatingIPExternal) Delete(ctx context.Context, mg resource.Managed) (m
 		}
 		return managed.ExternalDelete{}, err
 	}
-	cr.Status.SetConditions(xpv2.Deleting())
+	cond := xpv2.Deleting()
+	shared.RecordConditionChange(e.recorder, cr, cond)
+	cr.Status.SetConditions(cond)
 	return managed.ExternalDelete{}, nil
 }
 
@@ -229,7 +235,8 @@ func (*floatingIPExternal) Disconnect(_ context.Context) error { return nil }
 
 // populateFloatingIPStatus mirrors the upstream FloatingIp into atProvider.
 // observedBoundTo is purely diagnostic — the authoritative binding lives on
-// the consuming Server's status.
+// the consuming Server's status. observedBoundSummary is a compact
+// "<resourceType>/<id-or-uuid>" string for the BOUND-TO printcolumn.
 func populateFloatingIPStatus(cr *networkv1alpha1.FloatingIP, fip twgen.FloatingIp) {
 	id := fip.Id
 	cr.Status.AtProvider.UpstreamID = &id
@@ -237,25 +244,40 @@ func populateFloatingIPStatus(cr *networkv1alpha1.FloatingIP, fip twgen.Floating
 
 	if fip.ResourceType == nil {
 		cr.Status.AtProvider.ObservedBoundTo = nil
+		cr.Status.AtProvider.ObservedBoundSummary = nil
 		return
 	}
 	rt := string(*fip.ResourceType)
 	bound := &networkv1alpha1.FloatingIPBindingObservation{ResourceType: &rt}
+
+	var idStr string
 	if fip.ResourceId != nil {
-		if num, err := fip.ResourceId.AsFloatingIpResourceId0(); err == nil {
+		if uuid, uerr := fip.ResourceId.AsFloatingIpResourceId1(); uerr == nil && uuid != "" {
+			// UUID-keyed bindings (e.g. routers) — prefer UUID.
+			bound.ResourceUUID = &uuid
+			idStr = uuid
+		} else if num, nerr := fip.ResourceId.AsFloatingIpResourceId0(); nerr == nil {
 			rid := int64(num)
 			bound.ResourceID = &rid
-		} else if uuid, uerr := fip.ResourceId.AsFloatingIpResourceId1(); uerr == nil && uuid != "" {
-			// UUID-keyed bindings (e.g. routers) don't fit the int64 id.
-			bound.ResourceUUID = &uuid
+			idStr = fmt.Sprintf("%d", rid)
 		}
 	}
+
 	cr.Status.AtProvider.ObservedBoundTo = bound
+
+	// Populate the compact summary for the BOUND-TO printcolumn.
+	if idStr != "" {
+		summary := rt + "/" + idStr
+		cr.Status.AtProvider.ObservedBoundSummary = &summary
+	} else {
+		// resourceType present but no id — still surface the type.
+		cr.Status.AtProvider.ObservedBoundSummary = &rt
+	}
 }
 
 // isFloatingIPUpToDate compares the only mutable field, `comment`.
 func isFloatingIPUpToDate(spec networkv1alpha1.FloatingIPParameters, fip twgen.FloatingIp) bool {
-	return derefString(spec.Comment) == derefString(fip.Comment)
+	return shared.DerefString(spec.Comment) == shared.DerefString(fip.Comment)
 }
 
 // floatingIPConnectionDetails publishes `ip` + `upstreamID` (T049 / contract).
@@ -270,28 +292,18 @@ func floatingIPConnectionDetails(cr *networkv1alpha1.FloatingIP) managed.Connect
 	return cd
 }
 
-// defaultAZByLocation maps each in-scope location code to its conventional
-// availability-zone code. Used when the operator omits forProvider.availabilityZone
-// (the upstream createFloatingIP body requires one). Only the confidently
-// known mappings are encoded; an unknown location with no explicit AZ errors
-// loudly rather than guessing.
-var defaultAZByLocation = map[string]twgen.AvailabilityZone{
-	"ru-1": twgen.Spb1, // St. Petersburg
-	"ru-2": twgen.Msk1, // Moscow
-	"ru-3": twgen.Spb3,
-	"nl-1": twgen.Ams1, // Amsterdam
-	"de-1": twgen.Fra1, // Frankfurt
-	"kz-1": twgen.Ala1, // Almaty
-}
-
 // availabilityZoneFor resolves the AZ to send on create / compare on update:
-// the operator's explicit value when set, else the per-location default.
+// the operator's explicit value when set, else the per-location default from the
+// shared lookup. The shared.DefaultZoneForLocation call replaces the old inline
+// defaultAZByLocation map, which had ru-2↔ru-3 inverted and was missing us-4
+// and pl-1 (see research.md R-1 and shared/azlocation.go).
 func availabilityZoneFor(fp networkv1alpha1.FloatingIPParameters) (twgen.AvailabilityZone, error) {
 	if fp.AvailabilityZone != nil && *fp.AvailabilityZone != "" {
 		return twgen.AvailabilityZone(*fp.AvailabilityZone), nil
 	}
-	if az, ok := defaultAZByLocation[fp.Location]; ok {
-		return az, nil
+	az, err := shared.DefaultZoneForLocation(fp.Location)
+	if err != nil {
+		return "", fmt.Errorf("network/floatingip: %w", err)
 	}
-	return "", fmt.Errorf("network/floatingip: no default availabilityZone known for location %q — set forProvider.availabilityZone explicitly", fp.Location)
+	return twgen.AvailabilityZone(az), nil
 }

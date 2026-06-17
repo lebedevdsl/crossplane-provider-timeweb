@@ -109,17 +109,27 @@ func (e *routerExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 	// that slipped through (e.g. an adopted router). Recreate is the
 	// operator's call, so the observation still reports exists + up-to-date
 	// and the normal ready mapping must not overwrite the condition.
-	if router.Zone != "" && router.Zone != cr.Spec.ForProvider.AvailabilityZone {
-		cr.Status.SetConditions(shared.ReadyFalse(shared.ReasonUpstreamFailed,
+	_, resolvedZone, resolvedErr := shared.ResolvePlacement(cr.Spec.ForProvider.Location, cr.Spec.ForProvider.AvailabilityZone)
+	if resolvedErr != nil {
+		cond := shared.ReadyFalse(shared.ReasonUpstreamFailed,
+			fmt.Sprintf("invalid placement: %v", resolvedErr))
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
+		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true}, nil
+	}
+	if router.Zone != "" && router.Zone != resolvedZone {
+		cond := shared.ReadyFalse(shared.ReasonUpstreamFailed,
 			fmt.Sprintf("upstream placed the router in zone %q but %q was requested — the upstream derives zone from the tier and mis-places instead of rejecting; delete and recreate",
-				router.Zone, cr.Spec.ForProvider.AvailabilityZone)))
+				router.Zone, resolvedZone))
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
 		return managed.ExternalObservation{
 			ResourceExists:   true,
 			ResourceUpToDate: true,
 		}, nil
 	}
 
-	setRouterReadyCondition(cr, router.Status)
+	e.setRouterReadyCondition(cr, router.Status)
 
 	// Still provisioning: the router is Creating, not drifted. Skip the
 	// up-to-date diff entirely so we don't report (and try to converge) drift
@@ -133,6 +143,11 @@ func (e *routerExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 
 	upToDate, err := e.isRouterUpToDate(ctx, cr, router, nets)
 	if err != nil {
+		// Map resolver errors (preset-not-found, etc.) to typed Synced conditions
+		// so they appear in kubectl describe rather than as generic ReconcileError.
+		cond := shared.MapResolverErrorToCondition(err)
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
 		return managed.ExternalObservation{}, err
 	}
 	return managed.ExternalObservation{
@@ -178,8 +193,15 @@ func (e *routerExternal) Create(ctx context.Context, mg resource.Managed) (manag
 		}
 	}
 
-	tierID, err := e.resolveTier(ctx, cr.Spec.ForProvider.PresetName, cr.Spec.ForProvider.AvailabilityZone)
+	_, createResolvedZone, err := shared.ResolvePlacement(cr.Spec.ForProvider.Location, cr.Spec.ForProvider.AvailabilityZone)
 	if err != nil {
+		return managed.ExternalCreation{}, fmt.Errorf("network/router: %w", err)
+	}
+	tierID, err := e.resolveTier(ctx, cr.Spec.ForProvider.PresetName, createResolvedZone)
+	if err != nil {
+		cond := shared.MapResolverErrorToCondition(err)
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
 		return managed.ExternalCreation{}, err
 	}
 
@@ -198,7 +220,9 @@ func (e *routerExternal) Create(ctx context.Context, mg resource.Managed) (manag
 	}
 
 	meta.SetExternalName(cr, env.Router.Id)
-	cr.Status.SetConditions(xpv2.Creating())
+	cond := xpv2.Creating()
+	shared.RecordConditionChange(e.recorder, cr, cond)
+	cr.Status.SetConditions(cond)
 	return managed.ExternalCreation{}, nil
 }
 
@@ -234,8 +258,15 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 	// Tier drift → reject as immutable (FR-002a fallback until the upstream
 	// resize op is captured, R-4 — this detection point later swaps in the
 	// in-place resize call).
-	tierID, err := e.resolveTier(ctx, cr.Spec.ForProvider.PresetName, cr.Spec.ForProvider.AvailabilityZone)
+	_, updateResolvedZone, err := shared.ResolvePlacement(cr.Spec.ForProvider.Location, cr.Spec.ForProvider.AvailabilityZone)
 	if err != nil {
+		return managed.ExternalUpdate{}, fmt.Errorf("network/router: %w", err)
+	}
+	tierID, err := e.resolveTier(ctx, cr.Spec.ForProvider.PresetName, updateResolvedZone)
+	if err != nil {
+		cond := shared.MapResolverErrorToCondition(err)
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
 		return managed.ExternalUpdate{}, err
 	}
 	if router.PresetId != 0 && tierID != int64(router.PresetId) {
@@ -251,8 +282,8 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 		patch.Name = &name
 		dirty = true
 	}
-	if derefString(cr.Spec.ForProvider.Comment) != derefString(router.Comment) {
-		comment := derefString(cr.Spec.ForProvider.Comment)
+	if shared.DerefString(cr.Spec.ForProvider.Comment) != shared.DerefString(router.Comment) {
+		comment := shared.DerefString(cr.Spec.ForProvider.Comment)
 		patch.Comment = &comment
 		dirty = true
 	}
@@ -261,9 +292,11 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 		if err != nil {
 			return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
 		}
+		// T029: Classify reads the body — must happen before Close.
+		classifyErr := timeweb.Classify(resp)
 		_ = resp.Body.Close()
-		if err := timeweb.Classify(resp); err != nil {
-			return managed.ExternalUpdate{}, err
+		if classifyErr != nil {
+			return managed.ExternalUpdate{}, classifyErr
 		}
 	}
 
@@ -296,9 +329,11 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 		if err != nil {
 			return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
 		}
+		// T029: Classify reads the body — must happen before Close.
+		classifyErr := timeweb.Classify(resp)
 		_ = resp.Body.Close()
-		if err := timeweb.Classify(resp); err != nil {
-			return managed.ExternalUpdate{}, err
+		if classifyErr != nil {
+			return managed.ExternalUpdate{}, classifyErr
 		}
 	}
 
@@ -312,9 +347,11 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 		if err != nil {
 			return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
 		}
+		// T029: Classify reads the body — must happen before Close.
+		classifyErr := timeweb.Classify(resp)
 		_ = resp.Body.Close()
-		if err := timeweb.Classify(resp); err != nil {
-			return managed.ExternalUpdate{}, err
+		if classifyErr != nil {
+			return managed.ExternalUpdate{}, classifyErr
 		}
 	}
 
@@ -331,15 +368,17 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 			if err != nil {
 				return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
 			}
+			// T029: Classify reads the body — must happen before Close.
+			classifyErr := timeweb.Classify(resp)
 			_ = resp.Body.Close()
-			if err := timeweb.Classify(resp); err != nil {
-				return managed.ExternalUpdate{}, err
+			if classifyErr != nil {
+				return managed.ExternalUpdate{}, classifyErr
 			}
 		}
 		// Converge NAT via the official per-network NAT ops. Observe remains
 		// the sole convergence authority (the drift row in isRouterUpToDate
 		// drives re-observation); this only applies the one-pass write.
-		observedNAT := derefString(n.NatIp)
+		observedNAT := shared.DerefString(n.NatIp)
 		switch {
 		case a.NATIP != "" && a.NATIP != observedNAT:
 			// Enable / change NAT to the declared floating-ip address.
@@ -348,9 +387,11 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 			if err != nil {
 				return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
 			}
+			// T029: Classify reads the body — must happen before Close.
+			classifyErr := timeweb.Classify(resp)
 			_ = resp.Body.Close()
-			if err := timeweb.Classify(resp); err != nil {
-				return managed.ExternalUpdate{}, err
+			if classifyErr != nil {
+				return managed.ExternalUpdate{}, classifyErr
 			}
 		case a.NATIP == "" && observedNAT != "":
 			// Disable NAT.
@@ -358,9 +399,11 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 			if err != nil {
 				return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
 			}
+			// T029: Classify reads the body — must happen before Close.
+			classifyErr := timeweb.Classify(resp)
 			_ = resp.Body.Close()
-			if err := timeweb.Classify(resp); err != nil {
-				return managed.ExternalUpdate{}, err
+			if classifyErr != nil {
+				return managed.ExternalUpdate{}, classifyErr
 			}
 		}
 	}
@@ -414,7 +457,9 @@ func (e *routerExternal) Delete(ctx context.Context, mg resource.Managed) (manag
 		}
 		return managed.ExternalDelete{}, err
 	}
-	cr.Status.SetConditions(xpv2.Deleting())
+	cond := xpv2.Deleting()
+	shared.RecordConditionChange(e.recorder, cr, cond)
+	cr.Status.SetConditions(cond)
 	return managed.ExternalDelete{}, nil
 }
 
@@ -479,18 +524,19 @@ func (e *routerExternal) findRoutersByName(ctx context.Context, name string) ([]
 }
 
 // resolveTier resolves the operator's tier slug against the per-location
-// router catalog. The Zone filter is LOCATION-keyed (router tiers carry
-// `location`, not an AZ — see fetchRouterPresets) and is what implements
-// FR-003's zone-vs-tier validation: the upstream derives the router's zone
-// from the tier and mis-places on mismatch instead of rejecting.
-func (e *routerExternal) resolveTier(ctx context.Context, slug, az string) (int64, error) {
-	location, err := shared.AZToLocation(az)
+// router catalog. The resolvedZone parameter is the already-resolved AZ (from
+// ResolvePlacement); this function derives the LOCATION for catalog filtering
+// (router tiers carry `location`, not an AZ — see fetchRouterPresets) and is
+// what implements FR-003's zone-vs-tier validation: the upstream derives the
+// router's zone from the tier and mis-places on mismatch instead of rejecting.
+func (e *routerExternal) resolveTier(ctx context.Context, slug, resolvedZone string) (int64, error) {
+	location, err := shared.AZToLocation(resolvedZone)
 	if err != nil {
 		return 0, fmt.Errorf("network/router: %w", err)
 	}
 	out, err := e.resolver.Resolve(ctx, e.pcRef,
 		resolver.Dimension{Name: resolver.DimRouterPreset, Kind: resolver.DimensionPreset},
-		resolver.PresetInput{Slug: slug, Zone: location},
+		resolver.PresetInput{Slug: slug, Zone: location, Location: location},
 	)
 	if err != nil {
 		return 0, err
@@ -511,7 +557,7 @@ func (e *routerExternal) isRouterUpToDate(ctx context.Context, cr *networkv1alph
 	if fp.Name != r.Name {
 		return false, nil
 	}
-	if derefString(fp.Comment) != derefString(r.Comment) {
+	if shared.DerefString(fp.Comment) != shared.DerefString(r.Comment) {
 		return false, nil
 	}
 
@@ -536,14 +582,18 @@ func (e *routerExternal) isRouterUpToDate(ctx context.Context, cr *networkv1alph
 		// NAT drift: declared resolved address vs observed natIP. Detection
 		// lives here; live convergence is pending the upstream NAT-toggle
 		// capture (Update emits an Event instead of failing).
-		if a.NATIP != derefString(n.NatIp) {
+		if a.NATIP != shared.DerefString(n.NatIp) {
 			return false, nil
 		}
 	}
 
 	// Resolved tier vs the Observe-locked preset id — routes tier edits
 	// through Update where they are rejected as immutable (FR-002a fallback).
-	tierID, err := e.resolveTier(ctx, fp.PresetName, fp.AvailabilityZone)
+	_, upToDateResolvedZone, err := shared.ResolvePlacement(fp.Location, fp.AvailabilityZone)
+	if err != nil {
+		return false, fmt.Errorf("network/router: %w", err)
+	}
+	tierID, err := e.resolveTier(ctx, fp.PresetName, upToDateResolvedZone)
 	if err != nil {
 		return false, err
 	}
@@ -674,20 +724,25 @@ func populateRouterStatus(cr *networkv1alpha1.Router, r twgen.RouterOut, nets []
 // setRouterReadyCondition maps the upstream router status string to the
 // standard Crossplane Ready condition: started → Available; no_paid →
 // PaymentRequired; failed/*error* → UpstreamFailed; else Creating.
-func setRouterReadyCondition(cr *networkv1alpha1.Router, state string) {
+// It emits an Event (via RecordConditionChange) only on a condition transition
+// so steady-state reconciles do not fill the Event ring buffer (T020).
+func (e *routerExternal) setRouterReadyCondition(cr *networkv1alpha1.Router, state string) {
 	s := strings.ToLower(state)
+	var cond xpv2.Condition
 	switch {
 	case s == "no_paid":
-		cr.Status.SetConditions(shared.ReadyFalse(shared.ReasonPaymentRequired,
-			"upstream router state is \"no_paid\": the Timeweb account lacks the funds/quota — top up the account; the router will provision once payment clears"))
+		cond = shared.ReadyFalse(shared.ReasonPaymentRequired,
+			"upstream router state is \"no_paid\": the Timeweb account lacks the funds/quota — top up the account; the router will provision once payment clears")
 	case strings.Contains(s, "started") || strings.Contains(s, "active") || strings.Contains(s, "running"):
-		cr.Status.SetConditions(xpv2.Available())
+		cond = xpv2.Available()
 	case strings.Contains(s, "error") || strings.Contains(s, "fail"):
-		cr.Status.SetConditions(shared.ReadyFalse(shared.ReasonUpstreamFailed,
-			fmt.Sprintf("upstream router state is %q: provisioning failed and will not recover on its own — delete and recreate the Router (check the availabilityZone / tier pairing and the Timeweb panel for details) — if the Timeweb account lacks a full month's balance for all resources this can surface as \"error\"; check the panel/billing before recreating", state)))
+		cond = shared.ReadyFalse(shared.ReasonUpstreamFailed,
+			fmt.Sprintf("upstream router state is %q: provisioning failed and will not recover on its own — delete and recreate the Router (check the availabilityZone / tier pairing and the Timeweb panel for details) — if the Timeweb account lacks a full month's balance for all resources this can surface as \"error\"; check the panel/billing before recreating", state))
 	default:
-		cr.Status.SetConditions(xpv2.Creating())
+		cond = xpv2.Creating()
 	}
+	shared.RecordConditionChange(e.recorder, cr, cond)
+	cr.Status.SetConditions(cond)
 }
 
 // observedDHCPEnabled reads the per-attachment DHCP state from the richer

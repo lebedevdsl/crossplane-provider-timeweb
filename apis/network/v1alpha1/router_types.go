@@ -87,15 +87,24 @@ type RouterParameters struct {
 	// +optional
 	Comment *string `json:"comment,omitempty"`
 
-	// AvailabilityZone pins the router's zone — same vocabulary as
-	// KubernetesCluster. The upstream derives the zone from the size tier
-	// (tiers are per-region), so the provider resolves the tier WITHIN this
-	// zone and rejects mismatches before creating anything: the upstream
-	// mis-places on mismatched pairings instead of rejecting them
-	// (feature-006 finding). Immutable post-create.
-	// +kubebuilder:validation:Enum=spb-3;msk-1;ams-1;fra-1
+	// Location is the Timeweb region code the router is placed in. Required
+	// and immutable post-create. Valid values: ru-1 (St. Petersburg), ru-2
+	// (Novosibirsk), ru-3 (Moscow), nl-1 (Amsterdam), de-1 (Frankfurt),
+	// kz-1 (Almaty), us-4 (USA), pl-1 (Poland). Use the API code (e.g.
+	// "ru-3"), not the dashboard label (e.g. "MSK-1").
+	// +kubebuilder:validation:Enum=ru-1;ru-2;ru-3;nl-1;de-1;kz-1;us-4;pl-1
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="location is immutable"
+	Location string `json:"location"`
+
+	// AvailabilityZone pins the router to a specific AZ within the region.
+	// Optional: when omitted the controller derives it automatically for
+	// single-AZ regions (e.g. ru-3 → msk-1); for multi-AZ regions (ru-1)
+	// it must be set explicitly. Zone membership is validated against the
+	// live location catalog in the controller (not at admission). Immutable
+	// post-create.
+	// +optional
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="availabilityZone is immutable"
-	AvailabilityZone string `json:"availabilityZone"`
+	AvailabilityZone *string `json:"availabilityZone,omitempty"`
 
 	// PresetName selects the size tier by slug, resolved against the live
 	// per-region tier catalog. Slug shape:
@@ -215,10 +224,10 @@ type RouterStatus struct {
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,timeweb}
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
-// +kubebuilder:printcolumn:name="AZ",type="string",JSONPath=".spec.forProvider.availabilityZone"
-// +kubebuilder:printcolumn:name="TIER",type="string",JSONPath=".spec.forProvider.presetName"
+// +kubebuilder:printcolumn:name="LOCATION",type="string",JSONPath=".spec.forProvider.location"
+// +kubebuilder:printcolumn:name="PRESET",type="string",JSONPath=".spec.forProvider.presetName"
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.state"
-// +kubebuilder:printcolumn:name="UPSTREAM-ID",type="string",JSONPath=".status.atProvider.upstreamID"
+// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Router is Timeweb's NAT/DHCP router appliance for private networks. The

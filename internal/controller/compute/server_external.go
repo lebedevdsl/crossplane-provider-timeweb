@@ -87,7 +87,7 @@ func (e *serverExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 	// the runtime persists the atProvider written during Observe, whereas
 	// Create's atProvider writes don't survive to the next reconcile.
 	populateResolvedRefs(cr, e.resolved)
-	setReadyCondition(cr, envelope.Server.Status)
+	setReadyCondition(e.recorder, cr, envelope.Server.Status)
 
 	// Confirm the floating-IP binding set (read-only). Candidates are the
 	// desired refs (resolved in Connect) plus whatever we last recorded as
@@ -133,6 +133,9 @@ func (e *serverExternal) Create(ctx context.Context, mg resource.Managed) (manag
 
 	osID, err := e.resolveOSImage(ctx, cr.Spec.ForProvider.OS)
 	if err != nil {
+		cond := shared.MapResolverErrorToCondition(err)
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
 		return managed.ExternalCreation{}, err
 	}
 	// Sizing: exactly one of resources (custom configurator) or presetName
@@ -142,9 +145,12 @@ func (e *serverExternal) Create(ctx context.Context, mg resource.Managed) (manag
 	if cr.Spec.ForProvider.Resources != nil {
 		configuratorID, err = e.resolveConfigurator(ctx, cr.Spec.ForProvider)
 	} else {
-		presetID, err = e.resolvePreset(ctx, *cr.Spec.ForProvider.PresetName)
+		presetID, err = e.resolvePreset(ctx, *cr.Spec.ForProvider.PresetName, cr.Spec.ForProvider.Location)
 	}
 	if err != nil {
+		cond := shared.MapResolverErrorToCondition(err)
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
 		return managed.ExternalCreation{}, err
 	}
 
@@ -266,7 +272,7 @@ func (e *serverExternal) Update(ctx context.Context, mg resource.Managed) (manag
 	patch := twgen.UpdateServerJSONRequestBody{}
 	dirty := false
 	if cr.Spec.ForProvider.Name != observed.Name {
-		patch.Name = stringPtr(cr.Spec.ForProvider.Name)
+		patch.Name = shared.StringPtr(cr.Spec.ForProvider.Name)
 		dirty = true
 	}
 	if cr.Spec.ForProvider.Comment != nil && *cr.Spec.ForProvider.Comment != observed.Comment {
@@ -345,11 +351,12 @@ func (*serverExternal) Disconnect(_ context.Context) error { return nil }
 // --- Resolver helpers -----------------------------------------------------
 
 // resolvePreset turns the operator-typed slug into the upstream preset_id
-// via the in-controller catalog resolver.
-func (e *serverExternal) resolvePreset(ctx context.Context, slug string) (float32, error) {
+// via the in-controller catalog resolver. location is passed so the resolver
+// can apply bare-slug matching and scope not-found errors to that region.
+func (e *serverExternal) resolvePreset(ctx context.Context, slug, location string) (float32, error) {
 	out, err := e.resolver.Resolve(ctx, e.pcRef,
 		resolver.Dimension{Name: resolver.DimServerPreset, Kind: resolver.DimensionPreset},
-		resolver.PresetInput{Slug: slug},
+		resolver.PresetInput{Slug: slug, Location: location},
 	)
 	if err != nil {
 		return 0, err
@@ -606,18 +613,22 @@ func extractIPs(v twgen.Vds) (pub4, pub6, priv string) {
 // the server exists but the account can't pay for it to start, so we surface
 // Ready=False/reason=PaymentRequired instead of an indefinite Creating spin
 // (per the project_timeweb_no_paid_server_state behavior).
-func setReadyCondition(cr *computev1alpha1.Server, state twgen.VdsStatus) {
+// recorder may be nil (RecordConditionChange is nil-safe).
+func setReadyCondition(recorder record.EventRecorder, cr *computev1alpha1.Server, state twgen.VdsStatus) {
+	var cond xpv2.Condition
 	switch strings.ToLower(string(state)) {
 	case "on":
-		cr.Status.SetConditions(xpv2.Available())
+		cond = xpv2.Available()
 	case "off":
-		cr.Status.SetConditions(xpv2.Unavailable())
+		cond = xpv2.Unavailable()
 	case "no_paid":
-		cr.Status.SetConditions(shared.ReadyFalse(shared.ReasonPaymentRequired,
-			"upstream server state is \"no_paid\": the Timeweb account lacks the funds/quota to start this server — top up the account; the server will start once payment clears"))
+		cond = shared.ReadyFalse(shared.ReasonPaymentRequired,
+			"upstream server state is \"no_paid\": the Timeweb account lacks the funds/quota to start this server — top up the account; the server will start once payment clears")
 	default:
-		cr.Status.SetConditions(xpv2.Creating())
+		cond = xpv2.Creating()
 	}
+	shared.RecordConditionChange(recorder, cr, cond)
+	cr.Status.SetConditions(cond)
 }
 
 // isServerUpToDate compares the mutable subset of forProvider against
@@ -675,5 +686,3 @@ func serverConnectionDetails(cr *computev1alpha1.Server, _ twgen.Vds) managed.Co
 	}
 	return cd
 }
-
-func stringPtr(s string) *string { return &s }

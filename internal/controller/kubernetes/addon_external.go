@@ -85,6 +85,15 @@ func (e *addonExternal) Observe(ctx context.Context, mg resource.Managed) (manag
 	}
 	a, found := findAddon(addons, meta.GetExternalName(cr))
 	if !found {
+		// Mid-install guard: if the addon was previously observed as installing
+		// (the upstream may not list it yet), treat as still-creating rather
+		// than triggering a spurious re-Create that would double-install.
+		if cr.Status.AtProvider.Status != nil && addonIsInstalling(*cr.Status.AtProvider.Status) {
+			cond := xpv2.Creating()
+			shared.RecordConditionChange(e.recorder, cr, cond)
+			cr.Status.SetConditions(cond)
+			return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true}, nil
+		}
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 
@@ -94,11 +103,12 @@ func (e *addonExternal) Observe(ctx context.Context, mg resource.Managed) (manag
 	cr.Status.AtProvider.ClusterID = &cid
 	st := a.Status
 	cr.Status.AtProvider.Status = &st
-	if strings.Contains(strings.ToLower(a.Status), "install") || strings.Contains(strings.ToLower(a.Status), "active") || strings.Contains(strings.ToLower(a.Status), "running") {
-		cr.Status.SetConditions(xpv2.Available())
-	} else {
-		cr.Status.SetConditions(xpv2.Creating())
+	// T019: mirror the upstream installed version.
+	if a.Version != "" {
+		v := a.Version
+		cr.Status.AtProvider.InstalledVersion = &v
 	}
+	setAddonReadyCondition(cr, a.Status, e.recorder)
 
 	// Addons are immutable in v0.x: existence is the only reconciled property.
 	return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true}, nil
@@ -205,6 +215,41 @@ func findAddon(addons []addonOut, addonType string) (addonOut, bool) {
 		}
 	}
 	return addonOut{}, false
+}
+
+// addonIsInstalling reports whether the upstream status string represents an
+// in-progress installation (not yet complete, not failed, not already installed).
+// Used to distinguish "mid-install" from "deleted" when findAddon returns nothing.
+// Deliberately excludes "installed" (the terminal success state) so a post-install
+// disappearance doesn't masquerade as mid-install.
+func addonIsInstalling(status string) bool {
+	s := strings.ToLower(status)
+	if s == "installed" || strings.Contains(s, "active") || strings.Contains(s, "running") {
+		return false
+	}
+	return strings.Contains(s, "install") || strings.Contains(s, "pending") || strings.Contains(s, "creating")
+}
+
+// setAddonReadyCondition maps the upstream addon status to the standard
+// Crossplane Ready condition and emits a transition Event when the state
+// changes. Vocabulary:
+//   - "installed" / "active" / "running" → Available (Ready=True)
+//   - contains "error" or "fail"          → UpstreamFailed (terminal, Ready=False)
+//   - everything else (installing, pending)→ Creating (Ready=False, transient)
+func setAddonReadyCondition(cr *kubernetesv1alpha1.KubernetesClusterAddon, status string, recorder record.EventRecorder) {
+	s := strings.ToLower(status)
+	var cond xpv2.Condition
+	switch {
+	case strings.Contains(s, "error") || strings.Contains(s, "fail"):
+		cond = shared.ReadyFalse(shared.ReasonUpstreamFailed,
+			fmt.Sprintf("upstream addon status is %q: installation failed — delete and recreate the KubernetesClusterAddon", status))
+	case strings.Contains(s, "active") || strings.Contains(s, "running") || s == "installed":
+		cond = xpv2.Available()
+	default:
+		cond = xpv2.Creating()
+	}
+	shared.RecordConditionChange(recorder, cr, cond)
+	cr.Status.SetConditions(cond)
 }
 
 // validateAddonCatalog confirms (type, version) is offered by the cluster's

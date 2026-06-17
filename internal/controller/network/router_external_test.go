@@ -77,7 +77,8 @@ func newRouter(created bool) *networkv1alpha1.Router {
 		Spec: networkv1alpha1.RouterSpec{
 			ForProvider: networkv1alpha1.RouterParameters{
 				Name:             "edge",
-				AvailabilityZone: "msk-1",
+				Location:         "ru-3",
+				AvailabilityZone: strPtr("msk-1"),
 				PresetName:       "router-1x1-1gb-ru-3",
 				Networks: []networkv1alpha1.RouterNetworkAttachment{{
 					NetworkID:     strPtr("network-aaa"),
@@ -693,4 +694,276 @@ func TestRouterDelete(t *testing.T) {
 			t.Errorf("err = %v, want transient on 500", err)
 		}
 	})
+}
+
+// TestRouterT029_ClassifyBeforeClose verifies that the T029 fix is in place:
+// the body of each HTTP response in Update is read by Classify BEFORE Close,
+// so a 403 networks_location_mismatch is correctly returned as a transient
+// error (not swallowed as "unexpected status").
+func TestRouterT029_ClassifyBeforeClose(t *testing.T) {
+	ctx := context.Background()
+
+	// The 403 body that triggers the transient reclassification in Classify.
+	const mismatchBody = `{"error_code":"networks_location_mismatch","message":"vpc not settled yet"}`
+
+	t.Run("AddNetworks_403_IsTransient", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		// Declare an extra network so AddNetworks is triggered.
+		fake.AddNetworksReturns(httpResp(http.StatusForbidden, mismatchBody), nil)
+		e := routerE(fake, okRouterResolver())
+		e.resolvedNetworks = append(e.resolvedNetworks, resolvedAttachment{NetworkID: "network-bbb"})
+		_, err := e.Update(ctx, newRouter(true))
+		if err == nil {
+			t.Fatal("err = nil, want transient error on 403 networks_location_mismatch")
+		}
+		if !errors.Is(err, timeweb.ErrTransient) {
+			t.Errorf("err = %v (%T), want ErrTransient — body was closed before Classify (T029 regression)", err, err)
+		}
+	})
+
+	t.Run("DetachNetwork_403_IsTerminal", func(t *testing.T) {
+		// A 403 with a different error code on detach should be terminal.
+		const forbiddenBody = `{"error_code":"forbidden","message":"access denied"}`
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		// Observed has extra network-bbb; declared only has network-aaa → detach bbb.
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterTwoNetworksJSON), nil)
+		fake.DeleteRouterNetworkReturns(httpResp(http.StatusForbidden, forbiddenBody), nil)
+		_, err := routerE(fake, okRouterResolver()).Update(ctx, newRouter(true))
+		if err == nil {
+			t.Fatal("err = nil, want terminal error on 403 forbidden")
+		}
+		if errors.Is(err, timeweb.ErrTransient) {
+			t.Errorf("err = %v, want terminal (not transient) for non-mismatch 403", err)
+		}
+	})
+
+	t.Run("UpdateRouter_403_IsTerminal", func(t *testing.T) {
+		// A name-drift PATCH that gets a 403 access-denied: should be terminal.
+		const forbiddenBody = `{"error_code":"forbidden","message":"access denied"}`
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.UpdateRouterReturns(httpResp(http.StatusForbidden, forbiddenBody), nil)
+		cr := newRouter(true)
+		cr.Spec.ForProvider.Name = "renamed" // triggers the PATCH
+		_, err := routerE(fake, okRouterResolver()).Update(ctx, cr)
+		if err == nil {
+			t.Fatal("err = nil, want terminal error on 403 forbidden PATCH")
+		}
+		if errors.Is(err, timeweb.ErrTransient) {
+			t.Errorf("err = %v, want terminal (not transient) for access-denied 403 PATCH", err)
+		}
+	})
+}
+
+// TestRouterT018_ResolverErrorMapsToCondition verifies that resolver errors in
+// Create and Update surface as typed Synced conditions, not raw errors.
+func TestRouterT018_ResolverErrorMapsToCondition(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Create_PresetNotFound_SyncedCondition", func(t *testing.T) {
+		res := &fakeRouterResolver{resolveErr: resolver.ErrPresetNotFound}
+		rec := record.NewFakeRecorder(4)
+		e := routerE(&timeweb.FakeClient{}, res)
+		e.recorder = rec
+		cr := newRouter(false)
+		_, err := e.Create(ctx, cr)
+		if err == nil {
+			t.Fatal("err = nil, want ErrPresetNotFound")
+		}
+		c := cr.Status.GetCondition(xpv2.TypeSynced)
+		if c.Reason != shared.ReasonPresetNotFound {
+			t.Errorf("Synced reason = %q, want PresetNotFound (T018)", c.Reason)
+		}
+		select {
+		case ev := <-rec.Events:
+			if !strings.Contains(ev, "PresetNotFound") {
+				t.Errorf("event = %q, want PresetNotFound event", ev)
+			}
+		default:
+			t.Error("no event recorded for resolver error in Create")
+		}
+	})
+
+	t.Run("Update_CatalogTransient_SyncedCondition", func(t *testing.T) {
+		res := &fakeRouterResolver{resolveErr: resolver.ErrCatalogTransient}
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		rec := record.NewFakeRecorder(4)
+		e := routerE(fake, res)
+		e.recorder = rec
+		cr := newRouter(true)
+		_, err := e.Update(ctx, cr)
+		if err == nil {
+			t.Fatal("err = nil, want ErrCatalogTransient")
+		}
+		c := cr.Status.GetCondition(xpv2.TypeSynced)
+		if c.Reason != shared.ReasonCatalogTransient {
+			t.Errorf("Synced reason = %q, want CatalogTransient (T018)", c.Reason)
+		}
+	})
+}
+
+// TestRouterT020_ReadyConditionEvents verifies that setRouterReadyCondition
+// emits Events on condition transitions and suppresses them on steady state.
+func TestRouterT020_ReadyConditionEvents(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("UpstreamFailed_EmitsWarningEvent", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("failed", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		rec := record.NewFakeRecorder(4)
+		e := routerE(fake, okRouterResolver())
+		e.recorder = rec
+		cr := newRouter(true)
+		if _, err := e.Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		c := cr.Status.GetCondition(xpv2.TypeReady)
+		if c.Reason != shared.ReasonUpstreamFailed {
+			t.Errorf("Ready reason = %q, want UpstreamFailed", c.Reason)
+		}
+		select {
+		case ev := <-rec.Events:
+			if !strings.Contains(ev, "UpstreamFailed") {
+				t.Errorf("event = %q, want UpstreamFailed event", ev)
+			}
+			if !strings.Contains(ev, "Warning") {
+				t.Errorf("event = %q, want Warning type", ev)
+			}
+		default:
+			t.Error("no event recorded for UpstreamFailed condition transition")
+		}
+	})
+
+	t.Run("PaymentRequired_EmitsWarningEvent", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("no_paid", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		rec := record.NewFakeRecorder(4)
+		e := routerE(fake, okRouterResolver())
+		e.recorder = rec
+		cr := newRouter(true)
+		if _, err := e.Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		c := cr.Status.GetCondition(xpv2.TypeReady)
+		if c.Reason != shared.ReasonPaymentRequired {
+			t.Errorf("Ready reason = %q, want PaymentRequired", c.Reason)
+		}
+		select {
+		case ev := <-rec.Events:
+			if !strings.Contains(ev, "PaymentRequired") {
+				t.Errorf("event = %q, want PaymentRequired event", ev)
+			}
+		default:
+			t.Error("no event recorded for PaymentRequired condition transition")
+		}
+	})
+
+	t.Run("Available_EmitsNormalEvent", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		rec := record.NewFakeRecorder(4)
+		e := routerE(fake, okRouterResolver())
+		e.recorder = rec
+		cr := newRouter(true)
+		if _, err := e.Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		select {
+		case ev := <-rec.Events:
+			if !strings.Contains(ev, "Available") {
+				t.Errorf("event = %q, want Available event", ev)
+			}
+		default:
+			t.Error("no event for Available transition on first Observe")
+		}
+	})
+
+	t.Run("SteadyState_NoEvent", func(t *testing.T) {
+		// After the first transition event, a second Observe with the same
+		// condition must NOT emit a second event.
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		rec := record.NewFakeRecorder(4)
+		e := routerE(fake, okRouterResolver())
+		e.recorder = rec
+		cr := newRouter(true)
+		// First Observe — transitions to Available.
+		if _, err := e.Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe #1: %v", err)
+		}
+		for len(rec.Events) > 0 {
+			<-rec.Events
+		}
+		// Second Observe — same state, no event.
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		if _, err := e.Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe #2: %v", err)
+		}
+		select {
+		case ev := <-rec.Events:
+			t.Errorf("unexpected event on steady-state reconcile: %q", ev)
+		default:
+			// Good.
+		}
+	})
+}
+
+// TestRouterPlacementRegionCoverage verifies that routers can be created in
+// all previously-unreachable regions (ru-2/nsk-1, pl-1, us-4) and that the
+// location-only / az-only derivation paths work correctly. (US1 T009)
+func TestRouterPlacementRegionCoverage(t *testing.T) {
+	ctx := context.Background()
+
+	cases := []struct {
+		name     string
+		location string
+		az       *string
+		slug     string
+		presetID int64
+	}{
+		{name: "Ru2_LocationOnly", location: "ru-2", slug: "router-ru-2", presetID: 100},
+		{name: "Pl1_LocationOnly", location: "pl-1", slug: "router-pl-1", presetID: 200},
+		{name: "Us4_LocationOnly", location: "us-4", slug: "router-us-4", presetID: 300},
+		{name: "AZOnly_nsk1_BackCompat", az: strPtr("nsk-1"), slug: "router-nsk", presetID: 400},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := &fakeRouterResolver{presets: map[string]int64{tc.slug: tc.presetID}}
+			fake := &timeweb.FakeClient{}
+			fake.CreateRouterReturns(httpResp(http.StatusCreated, `{"router":{"id":"rtr-new","name":"test","status":"starting","zone":"nsk-1","preset_id":100,"ips":[],"parent_services":[]}}`), nil)
+			cr := &networkv1alpha1.Router{
+				Spec: networkv1alpha1.RouterSpec{
+					ForProvider: networkv1alpha1.RouterParameters{
+						Name:             "test",
+						Location:         tc.location,
+						AvailabilityZone: tc.az,
+						PresetName:       tc.slug,
+						Networks: []networkv1alpha1.RouterNetworkAttachment{{
+							NetworkID: strPtr("network-abc"),
+						}},
+					},
+				},
+			}
+			e := routerE(fake, res)
+			e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-abc"}}
+			_, err := e.Create(ctx, cr)
+			if err != nil {
+				t.Fatalf("Create(%s): %v", tc.name, err)
+			}
+			if fake.CreateRouterCallCount() != 1 {
+				t.Fatalf("CreateRouter not called for %s", tc.name)
+			}
+		})
+	}
 }

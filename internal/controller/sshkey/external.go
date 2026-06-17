@@ -81,7 +81,9 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	populateStatus(cr, envelope.SSHKey)
-	cr.Status.SetConditions(xpv2.Available())
+	avail := xpv2.Available()
+	shared.RecordConditionChange(e.recorder, cr, avail)
+	cr.Status.SetConditions(avail)
 
 	upToDate := isUpToDate(cr.Spec.ForProvider, envelope.SSHKey)
 	return managed.ExternalObservation{
@@ -100,7 +102,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	body := generated.CreateKeyJSONRequestBody{
 		Name:      cr.Spec.ForProvider.Name,
 		Body:      cr.Spec.ForProvider.Body,
-		IsDefault: derefBool(cr.Spec.ForProvider.IsDefault),
+		IsDefault: shared.DerefBool(cr.Spec.ForProvider.IsDefault),
 	}
 	resp, err := e.tw.CreateKey(ctx, body)
 	if err != nil {
@@ -120,7 +122,9 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	meta.SetExternalName(cr, shared.EncodeID(int(envelope.SSHKey.Id)))
 	populateStatus(cr, envelope.SSHKey)
-	cr.Status.SetConditions(xpv2.Creating())
+	creating := xpv2.Creating()
+	shared.RecordConditionChange(e.recorder, cr, creating)
+	cr.Status.SetConditions(creating)
 	return managed.ExternalCreation{}, nil
 }
 
@@ -228,7 +232,7 @@ func populateStatus(cr *sshkeyv1alpha1.SSHKey, k generated.SshKey) {
 // them is detected inside Update via FirstImmutableDiff so we can surface
 // FR-017's reject-and-surface flow.
 func isUpToDate(spec sshkeyv1alpha1.SSHKeyParameters, k generated.SshKey) bool {
-	if derefBool(spec.IsDefault) != derefBoolPtr(k.IsDefault) {
+	if shared.DerefBool(spec.IsDefault) != shared.DerefBool(k.IsDefault) {
 		return false
 	}
 	// If name or body differ, the controller will detect and reject inside
@@ -237,18 +241,4 @@ func isUpToDate(spec sshkeyv1alpha1.SSHKeyParameters, k generated.SshKey) bool {
 		return false
 	}
 	return true
-}
-
-func derefBool(p *bool) bool {
-	if p == nil {
-		return false
-	}
-	return *p
-}
-
-func derefBoolPtr(p *bool) bool {
-	if p == nil {
-		return false
-	}
-	return *p
 }

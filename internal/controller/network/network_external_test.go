@@ -25,6 +25,7 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"k8s.io/client-go/tools/record"
 
 	networkv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/network/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
@@ -349,6 +350,100 @@ func TestNetworkDelete(t *testing.T) {
 			t.Error("err = nil, want terminal error on 403")
 		}
 	})
+}
+
+// TestNetworkObserveStateMirror verifies T019: populateNetworkStatus populates
+// the State field from the upstream VPC type.
+func TestNetworkObserveStateMirror(t *testing.T) {
+	ctx := context.Background()
+	fake := &timeweb.FakeClient{}
+	// Use the vpc JSON which has "type":"vpc"
+	fake.GetVPCReturns(httpResp(http.StatusOK, sampleVPCJSON), nil)
+	cr := newNetwork(true)
+	if _, err := e(fake).Observe(ctx, cr); err != nil {
+		t.Fatalf("Observe: %v", err)
+	}
+	if cr.Status.AtProvider.State == nil {
+		t.Fatal("State = nil, want non-nil (T019: status mirror)")
+	}
+	if *cr.Status.AtProvider.State != "vpc" {
+		t.Errorf("State = %q, want vpc (from VPC type field)", *cr.Status.AtProvider.State)
+	}
+}
+
+// TestNetworkObserveEventFired verifies T020: an Event is emitted when Ready
+// transitions from unknown to Available (first successful Observe).
+func TestNetworkObserveEventFired(t *testing.T) {
+	ctx := context.Background()
+	fake := &timeweb.FakeClient{}
+	fake.GetVPCReturns(httpResp(http.StatusOK, sampleVPCJSON), nil)
+	cr := newNetwork(true)
+	rec := record.NewFakeRecorder(4)
+	ext := &networkExternal{tw: fake, recorder: rec}
+	if _, err := ext.Observe(ctx, cr); err != nil {
+		t.Fatalf("Observe: %v", err)
+	}
+	select {
+	case ev := <-rec.Events:
+		if !strings.Contains(ev, "Available") {
+			t.Errorf("event = %q, want Available transition event", ev)
+		}
+	default:
+		t.Error("no event recorded for Ready transition on first Observe")
+	}
+}
+
+// TestNetworkObserveSteadyStateNoEvent verifies T020: no Event is emitted when
+// the condition has not changed (steady-state reconcile).
+func TestNetworkObserveSteadyStateNoEvent(t *testing.T) {
+	ctx := context.Background()
+	fake := &timeweb.FakeClient{}
+	fake.GetVPCReturns(httpResp(http.StatusOK, sampleVPCJSON), nil)
+	cr := newNetwork(true)
+	rec := record.NewFakeRecorder(4)
+	ext := &networkExternal{tw: fake, recorder: rec}
+
+	// First Observe sets Ready=Available.
+	if _, err := ext.Observe(ctx, cr); err != nil {
+		t.Fatalf("Observe #1: %v", err)
+	}
+	// Drain any events from the first transition.
+	for len(rec.Events) > 0 {
+		<-rec.Events
+	}
+
+	// Second Observe — condition already Available; no new event.
+	fake.GetVPCReturns(httpResp(http.StatusOK, sampleVPCJSON), nil)
+	if _, err := ext.Observe(ctx, cr); err != nil {
+		t.Fatalf("Observe #2: %v", err)
+	}
+	select {
+	case ev := <-rec.Events:
+		t.Errorf("unexpected event on steady-state reconcile: %q", ev)
+	default:
+		// Good — no duplicate event.
+	}
+}
+
+// TestNetworkCreateEventFired verifies T020: Creating event on Create.
+func TestNetworkCreateEventFired(t *testing.T) {
+	ctx := context.Background()
+	fake := &timeweb.FakeClient{}
+	fake.CreateVPCReturns(httpResp(http.StatusCreated, sampleVPCJSON), nil)
+	cr := newNetwork(false)
+	rec := record.NewFakeRecorder(4)
+	ext := &networkExternal{tw: fake, recorder: rec}
+	if _, err := ext.Create(ctx, cr); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	select {
+	case ev := <-rec.Events:
+		if !strings.Contains(ev, "Creating") {
+			t.Errorf("event = %q, want Creating transition event", ev)
+		}
+	default:
+		t.Error("no event recorded for Creating transition on Create")
+	}
 }
 
 // e wires a networkExternal around a fake client. recorder is nil — the

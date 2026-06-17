@@ -50,6 +50,11 @@ type S3BucketParameters struct {
 	// upstream `preset_id` at reconcile time. Valid values match
 	// Timeweb's published S3 storage tiers — bump this enum when the
 	// upstream catalog grows.
+	//
+	// Note: the generated Timeweb client (PresetsStorage.Disk and the
+	// CreateBucket body's size/preset fields) uses *float32 for disk
+	// quantities; the controller converts the resolved preset_id via
+	// float32(presetID) at the call site (see s3bucket/external.go).
 	// +kubebuilder:validation:Enum=1;10;100;250
 	InitialSizeGB int64 `json:"initialSizeGB"`
 
@@ -132,7 +137,7 @@ type S3BucketStatus struct {
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="SIZE-GB",type="integer",JSONPath=".spec.forProvider.initialSizeGB"
 // +kubebuilder:printcolumn:name="CLASS",type="string",JSONPath=".spec.forProvider.storageClass"
-// +kubebuilder:printcolumn:name="EXTERNAL-NAME",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
+// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
 // S3Bucket is a Timeweb Cloud S3-compatible object-storage bucket.

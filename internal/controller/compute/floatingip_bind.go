@@ -111,9 +111,11 @@ func (e *serverExternal) reconcileFloatingIPBindings(ctx context.Context, server
 			continue
 		}
 		if !serverOn {
-			// Defer until the server reaches "on"; surfaced as not-up-to-date
-			// so the next reconcile retries.
-			return fmt.Errorf("compute/server: deferring floating-IP bind for %q until server is running", fipID)
+			// Server is still installing — binding is deferred. Return nil so
+			// this reconcile does not churn Synced=False: Observe will keep
+			// reporting ResourceUpToDate=false (desired ≠ bound) and trigger
+			// another Update once the server transitions to "on" (T031).
+			return nil
 		}
 		if err := e.bindFloatingIP(ctx, fipID, serverID); err != nil {
 			return err

@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   reviewable:
-    name: lint + generate-clean + test
+    name: lint + vuln + generate-clean + validate-examples + test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,6 +30,12 @@ jobs:
       - name: Lint (golangci-lint built from source via go run)
         run: make lint
 
+      - name: Vulnerability scan (govulncheck via go run)
+        # Gating. NOTE: this can fail when a NEW advisory lands upstream even
+        # without a code change here — that is the intended early-warning. If
+        # that cadence becomes noisy, add `continue-on-error: true`.
+        run: make vuln
+
       - name: Run code generation
         run: make generate
 
@@ -41,6 +47,18 @@ jobs:
             git diff
             exit 1
           fi
+
+      - name: Install crossplane CLI
+        env:
+          XP_VERSION: v2.1.3
+        run: |
+          curl -fsSL "https://releases.crossplane.io/stable/${XP_VERSION}/bin/linux_amd64/crank" -o /tmp/crossplane
+          chmod +x /tmp/crossplane
+          sudo mv /tmp/crossplane /usr/local/bin/crossplane
+          crossplane --help >/dev/null && echo "crossplane CLI ${XP_VERSION} installed"
+
+      - name: Validate examples against CRD schemas (crossplane beta validate)
+        run: make validate-examples
 
       - name: Run unit tests
         run: go test -race -cover -coverprofile=cover.out ./...

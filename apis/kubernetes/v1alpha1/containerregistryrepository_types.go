@@ -79,6 +79,7 @@ type ContainerRegistryRepositoryStatus struct {
 // +kubebuilder:printcolumn:name="REGISTRY",type="string",JSONPath=".spec.forProvider.registryRef.name"
 // +kubebuilder:printcolumn:name="NAME",type="string",JSONPath=".spec.forProvider.name"
 // +kubebuilder:printcolumn:name="TAGS",type="integer",JSONPath=".status.atProvider.tagCount"
+// +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
 // ContainerRegistryRepository represents a single repository inside a
 // ContainerRegistry. Repositories are created implicitly by `docker push`,

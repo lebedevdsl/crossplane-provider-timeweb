@@ -265,6 +265,7 @@ type ServerStatus struct {
 // +kubebuilder:printcolumn:name="PRESET",type="string",JSONPath=".spec.forProvider.presetName"
 // +kubebuilder:printcolumn:name="PUBLIC-IP",type="string",JSONPath=".status.atProvider.publicIP"
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.state"
+// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.networkRef)?1:0) + (has(self.spec.forProvider.networkSelector)?1:0) + (has(self.spec.forProvider.networkID)?1:0) <= 1",message="at most one of networkRef, networkSelector, networkID may be set"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.projectRef)?1:0) + (has(self.spec.forProvider.projectSelector)?1:0) + (has(self.spec.forProvider.projectID)?1:0) <= 1",message="at most one of projectRef, projectSelector, projectID may be set"

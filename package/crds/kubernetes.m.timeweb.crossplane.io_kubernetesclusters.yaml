@@ -25,17 +25,21 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
+    - jsonPath: .spec.forProvider.location
+      name: LOCATION
+      type: string
     - jsonPath: .status.atProvider.k8sVersion
       name: K8S-VERSION
-      type: string
-    - jsonPath: .spec.forProvider.availabilityZone
-      name: AZ
       type: string
     - jsonPath: .spec.forProvider.presetName
       name: PRESET
       type: string
     - jsonPath: .status.atProvider.state
       name: STATE
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: ID
+      priority: 1
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
@@ -75,14 +79,11 @@ spec:
                 properties:
                   availabilityZone:
                     description: |-
-                      AvailabilityZone is the AZ the control plane lives in. Immutable
-                      post-create. Codes are the upstream API values (NOT dashboard labels).
-                      Sold-out zones are not hard-blocked beyond this set's evolution.
-                    enum:
-                    - spb-3
-                    - msk-1
-                    - ams-1
-                    - fra-1
+                      AvailabilityZone is the AZ the control plane lives in. Optional: when
+                      omitted the controller derives it automatically for single-AZ regions
+                      (e.g. ru-3 → msk-1); for multi-AZ regions (ru-1) it must be set
+                      explicitly. Zone membership is validated against the live location
+                      catalog in the controller (not at admission). Immutable post-create.
                     type: string
                     x-kubernetes-validations:
                     - message: availabilityZone is immutable
@@ -98,6 +99,26 @@ spec:
                       in-place upstream upgrade; downgrade/non-catalog is rejected.
                     minLength: 1
                     type: string
+                  location:
+                    description: |-
+                      Location is the Timeweb region code the cluster is placed in. Required
+                      and immutable post-create. Valid values: ru-1 (St. Petersburg), ru-2
+                      (Novosibirsk), ru-3 (Moscow), nl-1 (Amsterdam), de-1 (Frankfurt),
+                      kz-1 (Almaty), us-4 (USA), pl-1 (Poland). Use the API code (e.g.
+                      "ru-3"), not the dashboard label (e.g. "MSK-1").
+                    enum:
+                    - ru-1
+                    - ru-2
+                    - ru-3
+                    - nl-1
+                    - de-1
+                    - kz-1
+                    - us-4
+                    - pl-1
+                    type: string
+                    x-kubernetes-validations:
+                    - message: location is immutable
+                      rule: self == oldSelf
                   masterNodesCount:
                     default: 1
                     description: |-
@@ -308,8 +329,8 @@ spec:
                     - ramGB
                     type: object
                 required:
-                - availabilityZone
                 - k8sVersion
+                - location
                 - name
                 - networkDriver
                 type: object

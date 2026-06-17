@@ -23,6 +23,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	projectv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/project/v1alpha1"
@@ -34,9 +35,10 @@ import (
 // credential resolution lives in internal/controller/shared so every MR
 // kind gets the same FR-001 behavior. Implements managed.ExternalConnector.
 type connector struct {
-	kube   client.Client
-	usage  resource.ModernTracker
-	logger logging.Logger
+	kube     client.Client
+	usage    resource.ModernTracker
+	logger   logging.Logger
+	recorder record.EventRecorder
 }
 
 // Connect implements managed.ExternalConnector.
@@ -62,7 +64,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	if err != nil {
 		return nil, fmt.Errorf("project: build Timeweb client: %w", err)
 	}
-	return &external{tw: tw.ClientInterface}, nil
+	return &external{tw: tw.ClientInterface, recorder: c.recorder}, nil
 }
 
 // clientLogger adapts crossplane-runtime's logging.Logger to timeweb.Logger.

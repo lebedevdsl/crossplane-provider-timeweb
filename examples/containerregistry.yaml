@@ -4,15 +4,16 @@
 # workloads can reference directly as `imagePullSecrets[].name`. The Secret
 # also carries raw `endpoint`/`username`/`password` keys for non-K8s consumers.
 #
-# IMMUTABLE FIELDS (FR-017 reject-and-surface):
-#   - name
-#   - sizing axis (presetRef ↔ configuration)
-# Mutable: description, projectID, presetRef-within-axis, configuration-within-axis.
+# Sizing: set `initialSizeGB` to one of 5, 10, 25, 50, 75, 100.
+# The controller maps the size (+ optional location) to the upstream preset_id.
 #
-# See docs/resources/containerregistry.md for the full field reference,
-# including the credential-source caveat (R-1).
+# IMMUTABLE FIELDS: name, initialSizeGB (cannot change the tier; delete + recreate).
+# Mutable: description, projectID.
+#
+# See docs/presets.md for the full initialSizeGB field reference.
+# See docs/resources/containerregistry.md for lifecycle and conditions.
 ---
-apiVersion: containerregistry.m.timeweb.crossplane.io/v1alpha1
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
 kind: ContainerRegistry
 metadata:
   name: demo-prod
@@ -22,16 +23,14 @@ spec:
     # IMMUTABLE — 3-48 chars, lowercase alphanumeric + hyphen.
     name: demo-prod
     description: "Production registry for example.com images"
-    # References a ContainerRegistryPreset by Kubernetes name. The controller
-    # resolves it to the upstream numeric preset_id at create time.
-    presetRef:
-      name: cr-starter-5gb-1939
-    # OR use a custom configurator instead of presetRef:
-    # configuration:
-    #   id: 7
-    #   diskGB: 20
+    # Pick the tier by disk size. Valid values: 5, 10, 25, 50, 75, 100 (GB).
+    # IMMUTABLE post-create — changing tiers requires delete + recreate.
+    initialSizeGB: 5
+    # Optional: narrow preset resolution when the account has multiple regions.
+    # location: ru-1
   writeConnectionSecretToRef:
     name: demo-prod-pull
-    # namespace defaults to MR's namespace if omitted
+    # namespace defaults to the MR's namespace if omitted
   providerConfigRef:
+    kind: ProviderConfig
     name: default

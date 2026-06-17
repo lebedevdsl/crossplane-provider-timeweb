@@ -1,0 +1,60 @@
+# Example KubernetesCluster managed resource for the Timeweb Crossplane provider.
+#
+# A KubernetesCluster is a Timeweb managed Kubernetes control plane. The
+# controller publishes the cluster kubeconfig to the connection Secret.
+#
+# IMMUTABLE FIELDS: availabilityZone, presetName (or resources), networkDriver,
+#   masterNodesCount, networkRef, projectRef.
+# Mutable: name, description, k8sVersion (forward-only upgrade).
+#
+# The connection Secret publishes: kubeconfig.
+#
+# IMPORTANT: Always attach an explicit Network (`networkRef`) for production
+# use. Without it, Timeweb auto-creates an orphaned VPC that survives cluster
+# deletion. See docs/kubernetes.md §3.
+#
+# See docs/kubernetes.md for the full operator guide.
+---
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesCluster
+metadata:
+  name: demo
+  namespace: timeweb-prod
+spec:
+  forProvider:
+    # Name as it appears in the Timeweb dashboard. Mutable.
+    name: demo
+    # REQUIRED — EXACT version string from /api/v1/k8s/k8s-versions.
+    # Format: v<major>.<minor>.x+k0s.0  (NOT plain "1.31")
+    k8sVersion: "v1.31.x+k0s.0"
+    # REQUIRED — CNI plugin. Immutable post-create.
+    # Choices: kuberouter, calico, flannel, cilium
+    networkDriver: cilium
+    # REQUIRED — region code. Immutable post-create.
+    # API codes: ru-1, ru-2, ru-3, nl-1, de-1, kz-1, us-4, pl-1
+    location: ru-3
+    # Optional: finer zone within the region. Immutable post-create.
+    # For single-AZ regions (ru-3, nl-1, de-1, kz-1, us-4, pl-1) this is
+    # derived automatically; for multi-AZ regions (ru-1, ru-2) it must be set.
+    # Zone examples: ru-3 → msk-1, ru-1 → spb-3, ru-2 → nsk-1, nl-1 → ams-1
+    availabilityZone: msk-1
+    # Control-plane size preset. Resolved against /api/v1/presets/k8s (type=master).
+    # An unknown slug surfaces Synced=False, reason=PresetNotFound.
+    # IMMUTABLE post-create. Exactly one of presetName / resources.
+    presetName: k8s-system-1-1
+    # Number of master nodes: 1 (default) or 3 (HA). Immutable post-create.
+    masterNodesCount: 1
+    # Optional: private VPC. Immutable post-create. Recommended for production.
+    # networkRef:
+    #   name: team-a-net
+    # Optional: assign to a Timeweb project.
+    # projectRef:
+    #   name: team-a-project
+    # Optional: free-form note. Mutable.
+    # description: "Demo cluster"
+  # The kubeconfig is published here once the cluster is Ready.
+  writeConnectionSecretToRef:
+    name: demo-kubeconfig
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default

@@ -18,6 +18,7 @@ package resolver
 
 import (
 	"context"
+	"errors"
 )
 
 // New returns a Resolver wired to the supplied CatalogClient and the
@@ -83,8 +84,32 @@ func (r *resolverImpl) Resolve(ctx context.Context, pcRef PCRef, dim Dimension, 
 				}
 				entries = zoned
 			}
+			// Location-filter: narrow entries to those matching the
+			// operator's declared region BEFORE slug matching. This
+			// enables bare-slug matching (just `ssd-15` without
+			// `-ru-1` suffix) and scopes the not-found error's valid
+			// list to the operator's location. Zero Location = global
+			// (pre-007 behavior preserved).
+			if in.Location != "" {
+				located := make([]PresetEntry, 0, len(entries))
+				for _, e := range entries {
+					if e.Location == "" || e.Location == in.Location {
+						located = append(located, e)
+					}
+				}
+				entries = located
+			}
 			id, err := MatchPresetSlug(in.Slug, entries, dim.Name)
 			if err != nil {
+				// Stamp the operator's location into PresetNotFoundError so
+				// the condition message reads "for location 'ru-1'" and the
+				// valid-slug list is understood to be location-scoped.
+				if in.Location != "" {
+					var pnf *PresetNotFoundError
+					if errors.As(err, &pnf) {
+						pnf.Location = in.Location
+					}
+				}
 				return nil, err
 			}
 			return PresetOutput{UpstreamID: id}, nil

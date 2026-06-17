@@ -95,6 +95,15 @@ type ContainerRegistryObservation struct {
 	// UpdatedAt is the upstream update timestamp.
 	// +optional
 	UpdatedAt *string `json:"updatedAt,omitempty"`
+
+	// State is the upstream registry status.
+	// +optional
+	State *string `json:"state,omitempty"`
+
+	// Endpoint is the Docker-pull hostname for this registry
+	// (e.g. "cr.timeweb.cloud/<name>"). Mirrors the upstream `domain_name` field.
+	// +optional
+	Endpoint *string `json:"endpoint,omitempty"`
 }
 
 // ContainerRegistrySpec is the desired state.
@@ -115,7 +124,8 @@ type ContainerRegistryStatus struct {
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="SIZE-GB",type="integer",JSONPath=".spec.forProvider.initialSizeGB"
-// +kubebuilder:printcolumn:name="EXTERNAL-NAME",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
+// +kubebuilder:printcolumn:name="ENDPOINT",type="string",JSONPath=".status.atProvider.endpoint"
+// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
 // ContainerRegistry is a Timeweb-hosted Docker registry. The controller

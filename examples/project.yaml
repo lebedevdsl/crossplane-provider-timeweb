@@ -19,4 +19,5 @@ spec:
     description: "Demo environment for example.com"
   # Crossplane standard fields.
   providerConfigRef:
+    kind: ProviderConfig
     name: default

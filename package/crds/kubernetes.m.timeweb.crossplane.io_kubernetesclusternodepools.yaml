@@ -31,12 +31,19 @@ spec:
     - jsonPath: .spec.forProvider.presetName
       name: PRESET
       type: string
+    - jsonPath: .spec.forProvider.publicIP
+      name: PUBLIC-IP
+      type: boolean
     - jsonPath: .spec.forProvider.nodeCount
       name: DESIRED
       type: integer
     - jsonPath: .status.atProvider.observedNodeCount
       name: OBSERVED
       type: integer
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: ID
+      priority: 1
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
@@ -85,10 +92,10 @@ spec:
                       enabled:
                         type: boolean
                       maxSize:
-                        minimum: 2
+                        minimum: 1
                         type: integer
                       minSize:
-                        minimum: 2
+                        minimum: 1
                         type: integer
                     required:
                     - enabled
@@ -184,6 +191,9 @@ spec:
                     description: Name of the worker group. Immutable post-create.
                     minLength: 1
                     type: string
+                    x-kubernetes-validations:
+                    - message: name is immutable
+                      rule: self == oldSelf
                   nodeCount:
                     description: |-
                       NodeCount is the desired worker count. Mutable when autoscaling is
@@ -431,9 +441,11 @@ spec:
           rule: has(self.spec.forProvider.presetName) == has(oldSelf.spec.forProvider.presetName)
         - message: publicIP is immutable (set/unset requires recreate)
           rule: has(self.spec.forProvider.publicIP) == has(oldSelf.spec.forProvider.publicIP)
-        - message: autoscaling.maxSize must be >= autoscaling.minSize
+        - message: 'when autoscaling is enabled: minSize and maxSize must each be
+            >= 2 and maxSize must be >= minSize'
           rule: '!has(self.spec.forProvider.autoscaling) || !self.spec.forProvider.autoscaling.enabled
-            || self.spec.forProvider.autoscaling.maxSize >= self.spec.forProvider.autoscaling.minSize'
+            || (self.spec.forProvider.autoscaling.minSize >= 2 && self.spec.forProvider.autoscaling.maxSize
+            >= 2 && self.spec.forProvider.autoscaling.maxSize >= self.spec.forProvider.autoscaling.minSize)'
     served: true
     storage: true
     subresources:

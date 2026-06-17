@@ -40,7 +40,8 @@ func Setup(mgr manager.Manager, l logging.Logger, pollInterval time.Duration) er
 			kube: mgr.GetClient(),
 			usage: resource.NewProviderConfigUsageTracker(mgr.GetClient(),
 				&apisv1alpha1.ProviderConfigUsage{}),
-			logger: l.WithValues("controller", name),
+			logger:   l.WithValues("controller", name),
+			recorder: mgr.GetEventRecorderFor(name),
 		}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))), //nolint:staticcheck // SA1019 — old events API; same pattern across this provider

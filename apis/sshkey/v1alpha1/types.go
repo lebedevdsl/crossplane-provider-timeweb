@@ -31,11 +31,13 @@ type SSHKeyParameters struct {
 	// Name is the operator-facing display name. 1–255 characters. Immutable.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=255
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="name is immutable"
 	Name string `json:"name"`
 
 	// Body is the OpenSSH-formatted public key. Immutable. Must start with
 	// `ssh-rsa`, `ssh-ed25519`, `ssh-dss`, or `ecdsa-sha2-*`.
 	// +kubebuilder:validation:Pattern=`^(ssh-rsa|ssh-ed25519|ssh-dss|ecdsa-sha2-[a-z0-9-]+) `
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="body is immutable"
 	Body string `json:"body"`
 
 	// IsDefault marks the SSH key as the default for new servers. Mutable.

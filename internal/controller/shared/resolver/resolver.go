@@ -99,9 +99,11 @@ type ResolveOutput any
 
 // PresetInput is the input for DimensionPreset.
 type PresetInput struct {
-	// Slug is the operator-supplied preset slug. `<short>-<location>`,
-	// with the explicit `<short>-<location>-<id>` disambiguator form
-	// also accepted (FR-008).
+	// Slug is the operator-supplied preset slug. Accepted forms:
+	//   - bare short form:        `ssd-15`          (new in feature-007, preferred)
+	//   - long <short>-<location>:`ssd-15-ru-1`     (existing; back-compat)
+	//   - explicit disambiguator: `ssd-15-ru-1-199` (FR-008; back-compat)
+	// All three forms resolve identically when Location is supplied.
 	Slug string
 	// Zone, when non-empty, drops entries whose PresetEntry.Zone is
 	// non-empty and different BEFORE slug matching. Mandatory for
@@ -109,6 +111,13 @@ type PresetInput struct {
 	// a zone-mismatched preset id makes the upstream mis-place the
 	// resource instead of rejecting it (feature-006 finding).
 	Zone string
+	// Location, when non-empty, is the operator's declared region (e.g.
+	// "ru-1"). It narrows the candidate set for slug matching AND scopes
+	// the not-found error's valid-slug list to entries for that region.
+	// Zero value reproduces the pre-007 behavior (global match, global list).
+	// Mirrors ForProvider.Location; callers should pass it whenever the MR
+	// has a location field.
+	Location string
 }
 
 // PresetOutput carries the resolved upstream preset ID.

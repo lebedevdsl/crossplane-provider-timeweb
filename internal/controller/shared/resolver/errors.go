@@ -69,13 +69,22 @@ var (
 
 // PresetNotFoundError wraps ErrPresetNotFound with the operator's slug
 // and a hint list of valid slugs for the failure message.
+// When Location is set the valid list is scoped to that region and
+// rendered in simplified bare form (e.g. "ssd-15, ssd-25, …").
 type PresetNotFoundError struct {
 	Slug        string
 	ValidSlugs  []string // capped to 20 by the caller before construction
 	DimensionID string   // dimension name for diagnostics
+	// Location, when non-empty, is included in the error message to clarify
+	// that the valid-slug list is scoped to that region.
+	Location string
 }
 
 func (e *PresetNotFoundError) Error() string {
+	if e.Location != "" {
+		return fmt.Sprintf("%s: slug %q in dimension %q does not match any upstream entry for location %q (valid: %s)",
+			ErrPresetNotFound.Error(), e.Slug, e.DimensionID, e.Location, joinSample(e.ValidSlugs))
+	}
 	return fmt.Sprintf("%s: slug %q in dimension %q does not match any upstream entry (valid: %s)",
 		ErrPresetNotFound.Error(), e.Slug, e.DimensionID, joinSample(e.ValidSlugs))
 }

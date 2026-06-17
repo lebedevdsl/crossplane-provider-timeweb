@@ -39,12 +39,14 @@ type KubernetesNodepoolResources struct {
 // NodepoolAutoscaling configures the upstream cluster-autoscaler for a
 // worker group. When Enabled, the controller does NOT reconcile NodeCount
 // against the observed count (the autoscaler owns it). Upstream requires
-// MinSize/MaxSize >= 2.
+// MinSize/MaxSize >= 2 when autoscaling is enabled (enforced by a CEL rule
+// on KubernetesClusterNodepool rather than unconditional field minimums so
+// that disabled autoscaling blocks don't trip a spurious validation error).
 type NodepoolAutoscaling struct {
 	Enabled bool `json:"enabled"`
-	// +kubebuilder:validation:Minimum=2
+	// +kubebuilder:validation:Minimum=1
 	MinSize int `json:"minSize"`
-	// +kubebuilder:validation:Minimum=2
+	// +kubebuilder:validation:Minimum=1
 	MaxSize int `json:"maxSize"`
 }
 
@@ -54,6 +56,7 @@ type NodepoolAutoscaling struct {
 type KubernetesClusterNodepoolParameters struct {
 	// Name of the worker group. Immutable post-create.
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="name is immutable"
 	Name string `json:"name"`
 
 	// PresetName is the worker-node preset slug resolved against
@@ -179,14 +182,16 @@ type KubernetesClusterNodepoolStatus struct {
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="CLUSTER",type="string",JSONPath=".status.atProvider.clusterID"
 // +kubebuilder:printcolumn:name="PRESET",type="string",JSONPath=".spec.forProvider.presetName"
+// +kubebuilder:printcolumn:name="PUBLIC-IP",type="boolean",JSONPath=".spec.forProvider.publicIP"
 // +kubebuilder:printcolumn:name="DESIRED",type="integer",JSONPath=".spec.forProvider.nodeCount"
 // +kubebuilder:printcolumn:name="OBSERVED",type="integer",JSONPath=".status.atProvider.observedNodeCount"
+// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.clusterRef)?1:0) + (has(self.spec.forProvider.clusterSelector)?1:0) + (has(self.spec.forProvider.clusterID)?1:0) == 1",message="exactly one of clusterRef, clusterSelector, clusterID must be set"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.presetName)?1:0) + (has(self.spec.forProvider.resources)?1:0) == 1",message="exactly one of presetName or resources must be set"
 // +kubebuilder:validation:XValidation:rule="has(self.spec.forProvider.presetName) == has(oldSelf.spec.forProvider.presetName)",message="switching between presetName and resources requires recreate"
 // +kubebuilder:validation:XValidation:rule="has(self.spec.forProvider.publicIP) == has(oldSelf.spec.forProvider.publicIP)",message="publicIP is immutable (set/unset requires recreate)"
-// +kubebuilder:validation:XValidation:rule="!has(self.spec.forProvider.autoscaling) || !self.spec.forProvider.autoscaling.enabled || self.spec.forProvider.autoscaling.maxSize >= self.spec.forProvider.autoscaling.minSize",message="autoscaling.maxSize must be >= autoscaling.minSize"
+// +kubebuilder:validation:XValidation:rule="!has(self.spec.forProvider.autoscaling) || !self.spec.forProvider.autoscaling.enabled || (self.spec.forProvider.autoscaling.minSize >= 2 && self.spec.forProvider.autoscaling.maxSize >= 2 && self.spec.forProvider.autoscaling.maxSize >= self.spec.forProvider.autoscaling.minSize)",message="when autoscaling is enabled: minSize and maxSize must each be >= 2 and maxSize must be >= minSize"
 
 // KubernetesClusterNodepool is one Timeweb managed-Kubernetes worker group.
 type KubernetesClusterNodepool struct {

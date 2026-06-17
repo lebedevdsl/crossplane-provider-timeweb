@@ -1,0 +1,56 @@
+# Example Server managed resource for the Timeweb Crossplane provider.
+#
+# A Server is a Timeweb cloud VM. Sized via `presetName` (or `resources` for
+# custom configurator sizing). OS via `os.{image, version}`.
+#
+# IMMUTABLE FIELDS: presetName, location, availabilityZone, os, networkRef,
+#   projectRef, sshKeyRefs, floatingIPRefs (the refs are immutable; values may
+#   differ but the selector/ref approach cannot be switched).
+# Mutable: name, hostname, comment, cloudInit.
+#
+# The connection Secret publishes: publicIP, publicIPv6, privateIP, hostname, upstreamID.
+#
+# See docs/servers.md for the full operator guide.
+---
+apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
+kind: Server
+metadata:
+  name: web-01
+  namespace: timeweb-prod
+spec:
+  forProvider:
+    # Name as it appears in the Timeweb dashboard. Mutable.
+    name: web-01
+    # REQUIRED — preset slug resolved against /api/v1/presets/servers.
+    # Feature 007 accepts both the bare short form (e.g. `ssd-15`) and the
+    # long <short>-<location> form (e.g. `ssd-15-ru-1`). Both resolve the same.
+    # An unknown slug surfaces Synced=False, reason=PresetNotFound, listing valid values.
+    presetName: ssd-15
+    # REQUIRED — region. API codes: ru-1, ru-2, ru-3, nl-1, de-1, kz-1, us-4, pl-1
+    location: ru-1
+    # Optional finer placement within the region. Immutable post-create.
+    # availabilityZone: spb-3
+    # REQUIRED — operating system: image family + exact version.
+    os:
+      image: ubuntu   # matched case-insensitively against /api/v1/os/servers
+      version: "24.04"
+    # Optional: SSH keys to inject at first boot. Immutable post-create.
+    # sshKeyRefs:
+    # - name: dev-key     # → SSHKey MR in the same namespace
+    # Optional: attach to a private VPC. Immutable post-create.
+    # networkRef:
+    #   name: team-a-net  # → Network MR in the same namespace
+    # Optional: assign to a Timeweb project.
+    # projectRef:
+    #   name: team-a-project
+    # Optional: bind a FloatingIP. Drives the upstream bind call once VM is on.
+    # floatingIPRefs:
+    # - name: web-01-ip   # → FloatingIP MR in the same namespace
+    # Optional: free-form note. Mutable.
+    # comment: "web frontend 01"
+  # Connection Secret: publishes publicIP, publicIPv6, privateIP, hostname, upstreamID.
+  writeConnectionSecretToRef:
+    name: web-01-conn
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default

@@ -18,10 +18,12 @@ metadata:
   name: e2e-priv-router
   namespace: timeweb-e2e
 status:
+  # Ref-having kinds emit [Synced, Ready] (Connect resolves a reference and
+  # fails first). kuttl matches conditions positionally — see 18-router/01.
   conditions:
-  - type: Ready
-    status: "True"
   - type: Synced
+    status: "True"
+  - type: Ready
     status: "True"
 ---
 apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
@@ -30,10 +32,13 @@ metadata:
   name: e2e-priv-cluster
   namespace: timeweb-e2e
 status:
+  # On the routed network → resolves a network reference in Connect, so
+  # [Synced, Ready] (matches bundle 14 cluster-with-network; standalone
+  # cluster bundle 12 is [Ready, Synced] because it has no ref).
   conditions:
-  - type: Ready
-    status: "True"
   - type: Synced
+    status: "True"
+  - type: Ready
     status: "True"
 ---
 apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
@@ -42,8 +47,10 @@ metadata:
   name: e2e-priv-workers
   namespace: timeweb-e2e
 status:
+  # Nodepool resolves a cluster reference in Connect → [Synced, Ready]
+  # (matches bundle 13 nodepool-scaling).
   conditions:
-  - type: Ready
-    status: "True"
   - type: Synced
+    status: "True"
+  - type: Ready
     status: "True"

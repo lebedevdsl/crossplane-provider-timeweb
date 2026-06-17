@@ -18,6 +18,7 @@ package resolver
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -74,17 +75,22 @@ func SlugWithID(descShort, location string, id int64) string {
 // if `slug` ends with `-<digits>` and the digits parse to one of the
 // entries' upstream IDs, that entry is preferred.
 //
+// With feature-007 Location filtering applied before this call, a bare
+// short slug (e.g. "ssd-15") matches when the entries have been pre-filtered
+// to the operator's location — `<short>` matches `DescShort` directly.
+//
 // Behavior:
 //
 //   - Exactly one match → returns its UpstreamID and nil.
 //   - Multiple matches (slug collision, no explicit ID) → returns
 //     ErrPresetAmbiguous wrapped with the colliding IDs.
 //   - Zero matches → returns ErrPresetNotFound wrapped with the
-//     truncated list of valid slugs.
+//     truncated list of valid slugs (simplified form when entries are
+//     location-filtered).
 func MatchPresetSlug(slug string, entries []PresetEntry, dimensionID string) (int64, error) {
 	slug = normalize(slug)
 
-	// Try the disambiguator form first.
+	// Step 1: Try the disambiguator form first (<base>-<id>).
 	if base, id, ok := splitDisambiguator(slug); ok {
 		for _, e := range entries {
 			if e.UpstreamID == id && Slugify(e.DescShort, e.Location) == base {
@@ -96,6 +102,8 @@ func MatchPresetSlug(slug string, entries []PresetEntry, dimensionID string) (in
 		// than an explicit ID.
 	}
 
+	// Step 2: Full-slug match (<short>-<location>) against the (possibly
+	// location-filtered) entry set. This is the existing back-compat path.
 	var matches []int64
 	for _, e := range entries {
 		if Slugify(e.DescShort, e.Location) == slug {
@@ -103,11 +111,29 @@ func MatchPresetSlug(slug string, entries []PresetEntry, dimensionID string) (in
 		}
 	}
 
+	// Step 3: If the full-slug match found nothing, try bare short-slug
+	// match (<short> without the location suffix). This allows operators to
+	// write just `ssd-15` in a manifest that already carries `location: ru-1`
+	// — the resolver filters to that location before this call, so
+	// normalize(DescShort) uniquely identifies the entry. (feature-007 US2)
+	if len(matches) == 0 {
+		for _, e := range entries {
+			if normalize(e.DescShort) == slug {
+				matches = append(matches, e.UpstreamID)
+			}
+		}
+	}
+
 	switch len(matches) {
 	case 0:
+		// Build the valid-slug list. When entries are location-filtered (the
+		// common post-007 path) use the simplified bare form (just DescShort)
+		// so the not-found hint lists "ssd-15, ssd-25, …" rather than the
+		// verbose "ssd-15-ru-1, ssd-25-ru-1, …". When entries are unfiltered
+		// (Location was not set), fall back to the full-slug form.
 		valid := make([]string, 0, len(entries))
 		for _, e := range entries {
-			if s := Slugify(e.DescShort, e.Location); s != "" {
+			if s := simplifiedSlug(e); s != "" {
 				valid = append(valid, s)
 			}
 		}
@@ -118,7 +144,7 @@ func MatchPresetSlug(slug string, entries []PresetEntry, dimensionID string) (in
 		// Build a suggested disambiguator from the first colliding match.
 		var hint string
 		for _, e := range entries {
-			if Slugify(e.DescShort, e.Location) == slug {
+			if Slugify(e.DescShort, e.Location) == slug || normalize(e.DescShort) == slug {
 				hint = SlugWithID(e.DescShort, e.Location, e.UpstreamID)
 				break
 			}
@@ -130,6 +156,26 @@ func MatchPresetSlug(slug string, entries []PresetEntry, dimensionID string) (in
 			Disambiguate: hint,
 		}
 	}
+}
+
+// simplifiedSlug returns the bare short-form slug for a preset entry when
+// all entries share a single location (location-filtered view) — just
+// normalize(DescShort). For entries without a location it returns the full
+// Slugify form. This heuristic keeps not-found hints readable:
+//
+//	location-filtered: "ssd-15"          (not "ssd-15-ru-1")
+//	unfiltered:        "ssd-15-ru-1"     (full form, as before)
+//
+// The caller (MatchPresetSlug not-found branch) passes the location-filtered
+// slice, so the common path returns the short form automatically.
+func simplifiedSlug(e PresetEntry) string {
+	if e.Location != "" && normalize(e.DescShort) != "" {
+		// When the entry has a location we emit the bare form — the caller
+		// has already filtered to the operator's region, so the location
+		// suffix is redundant in the hint list.
+		return normalize(e.DescShort)
+	}
+	return Slugify(e.DescShort, e.Location)
 }
 
 // normalize lowercases the input and collapses runs of non-[a-z0-9-]
@@ -158,18 +204,26 @@ func normalize(s string) string {
 
 // splitDisambiguator returns the (base, id, true) split if s ends with
 // "-<digits>"; otherwise (s, 0, false).
+//
+// Uses strconv.ParseInt with an 18-digit length guard to replace the
+// previous hand-rolled accumulation that silently overflowed on very long
+// numeric suffixes (e.g. "ssd-15-99999999999999999999" would produce a
+// wrong id instead of falling through to the not-found path).
 func splitDisambiguator(s string) (string, int64, bool) {
 	i := strings.LastIndexByte(s, '-')
 	if i <= 0 || i == len(s)-1 {
 		return s, 0, false
 	}
 	suffix := s[i+1:]
-	var id int64
-	for _, r := range suffix {
-		if r < '0' || r > '9' {
-			return s, 0, false
-		}
-		id = id*10 + int64(r-'0')
+	// Reject non-digit characters and overflow-prone long suffixes up front.
+	if len(suffix) > 18 {
+		return s, 0, false
+	}
+	id, err := strconv.ParseInt(suffix, 10, 64)
+	if err != nil {
+		// suffix is not a pure decimal integer — treat the trailing segment
+		// as part of the slug name, not an explicit disambiguator.
+		return s, 0, false
 	}
 	return s[:i], id, true
 }

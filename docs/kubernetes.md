@@ -3,8 +3,9 @@
 Covers the three `kubernetes.m.timeweb.crossplane.io/v1alpha1` kinds:
 `KubernetesCluster`, `KubernetesClusterNodepool`, `KubernetesClusterAddon`.
 Assumes the provider is installed and a `ProviderConfig` named `default`
-resolves to a valid Timeweb token. All location/AZ codes are **API values**
-(`msk-1`, `spb-3`, `ams-1`, `fra-1`), never dashboard labels.
+resolves to a valid Timeweb token. All location and AZ codes are **API values**
+(region: `ru-1`, `ru-2`, `ru-3`, `nl-1`, `de-1`, `kz-1`, `us-4`, `pl-1`;
+zone: `msk-1`, `spb-3`, `nsk-1`, `ams-1`, `fra-1`, etc.), never dashboard labels.
 
 ## 1. Minimum cluster + worker pool
 
@@ -15,9 +16,10 @@ metadata: { name: demo, namespace: default }
 spec:
   forProvider:
     name: demo
-    k8sVersion: "1.31.2"        # an EXACT entry from /api/v1/k8s/k8s-versions
+    k8sVersion: "v1.31.x+k0s.0"  # an EXACT entry from /api/v1/k8s/k8s-versions
     networkDriver: cilium        # kuberouter | calico | flannel | cilium
-    availabilityZone: msk-1      # spb-3 | msk-1 | ams-1 | fra-1
+    location: ru-3               # REQUIRED region: ru-1, ru-2, ru-3, nl-1, de-1, kz-1, us-4, pl-1
+    availabilityZone: msk-1      # optional finer placement; required for multi-AZ regions (ru-1, ru-2)
     presetName: <smallest-master-slug>
     masterNodesCount: 1          # 3 for an HA control plane (immutable)
   writeConnectionSecretToRef: { name: demo-kubeconfig }
@@ -173,7 +175,7 @@ upstream API and surfaced as `Synced=False, reason=ReconcileError`.
 
 ```bash
 kubectl patch kubernetescluster/demo --type merge \
-  -p '{"spec":{"forProvider":{"k8sVersion":"1.32.0"}}}'   # newer, catalog-valid
+  -p '{"spec":{"forProvider":{"k8sVersion":"v1.32.x+k0s.0"}}}'   # newer, catalog-valid
 ```
 
 A forward bump triggers the in-place upstream upgrade (transient

@@ -25,6 +25,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -68,9 +69,18 @@ func (e *repositoryExternal) Observe(ctx context.Context, mg resource.Managed) (
 	parentExt := meta.GetExternalName(parent)
 	if parentExt == "" {
 		// Parent hasn't been created yet — surface ParentNotReady and wait.
-		cr.Status.SetConditions(shared.ReadyFalse(
-			"ParentNotReady",
-			"parent ContainerRegistry has no external-name yet"))
+		cond := shared.ReadyFalse(shared.ReasonParentNotReady,
+			"parent ContainerRegistry has no external-name yet")
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
+		return managed.ExternalObservation{ResourceExists: false}, nil
+	}
+	if !isParentReady(parent) {
+		// Parent exists but not yet Ready=True — gate repository on it.
+		cond := shared.ReadyFalse(shared.ReasonParentNotReady,
+			"parent ContainerRegistry is not yet Ready")
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 	parentID, err := shared.DecodeID(parentExt)
@@ -85,6 +95,11 @@ func (e *repositoryExternal) Observe(ctx context.Context, mg resource.Managed) (
 	defer func() { _ = resp.Body.Close() }()
 	if err := timeweb.Classify(resp); err != nil {
 		if errors.Is(err, timeweb.ErrNotFound) {
+			// Parent registry gone upstream — set ParentNotReady (T021).
+			cond := shared.ReadyFalse(shared.ReasonParentNotReady,
+				"parent registry not found upstream (404) — registry may have been deleted")
+			shared.RecordConditionChange(e.recorder, cr, cond)
+			cr.Status.SetConditions(cond)
 			return managed.ExternalObservation{ResourceExists: false}, nil
 		}
 		return managed.ExternalObservation{}, err
@@ -131,16 +146,19 @@ func (e *repositoryExternal) Observe(ctx context.Context, mg resource.Managed) (
 	}
 
 	if found {
-		cr.Status.SetConditions(xpv2.Available())
+		avail := xpv2.Available()
+		shared.RecordConditionChange(e.recorder, cr, avail)
+		cr.Status.SetConditions(avail)
 		return managed.ExternalObservation{
 			ResourceExists:   true,
 			ResourceUpToDate: true,
 		}, nil
 	}
 
-	cr.Status.SetConditions(shared.ReadyFalse(
-		shared.ReasonRepositoryNotPushed,
-		"repository not present upstream — `docker push` first"))
+	notPushed := shared.ReadyFalse(shared.ReasonRepositoryNotPushed,
+		"repository not present upstream — `docker push` first")
+	shared.RecordConditionChange(e.recorder, cr, notPushed)
+	cr.Status.SetConditions(notPushed)
 	return managed.ExternalObservation{ResourceExists: false}, nil
 }
 
@@ -187,3 +205,9 @@ func (e *repositoryExternal) Delete(_ context.Context, mg resource.Managed) (man
 
 // Disconnect is a no-op.
 func (*repositoryExternal) Disconnect(_ context.Context) error { return nil }
+
+// isParentReady reports whether a ContainerRegistry MR's Ready condition is True.
+func isParentReady(cr *cregv1alpha1.ContainerRegistry) bool {
+	c := cr.GetCondition(xpv2.TypeReady)
+	return c.Status == corev1.ConditionTrue
+}

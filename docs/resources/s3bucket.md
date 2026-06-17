@@ -25,11 +25,15 @@ spec:
   forProvider:
     name: demo-images
     type: public
-    presetID: 100
+    # Pick the tier by disk size. Valid values: 1, 10, 100, 250 (GB).
+    initialSizeGB: 10
+    # Storage class: hot (frequently accessed) or cold (archives). Immutable.
+    storageClass: hot
     description: "User-uploaded images for example.com"
   writeConnectionSecretToRef:
     name: demo-images-creds
   providerConfigRef:
+    kind: ProviderConfig
     name: default
 ```
 
@@ -41,9 +45,9 @@ spec:
 | ----- | ---- | -------- | ------- | ----- |
 | `name` | string | yes | **no** | Globally unique. 3–63 chars, `^[a-z0-9][a-z0-9.\-]{1,61}[a-z0-9]$`. Immutable upstream. |
 | `type` | enum | yes | yes | `private` or `public`. |
-| `presetID` | integer | one of `presetID`/`configuration` | within-axis only | Tariff plan ID. Mutually exclusive with `configuration`. |
-| `configuration.id` | integer | when `configuration` is set | within-axis only | Custom configurator ID. |
-| `configuration.diskMB` | integer | when `configuration` is set | within-axis only | Disk size in MB. |
+| `initialSizeGB` | integer | yes | no | Tariff tier by disk size. Valid values: 1, 10, 100, 250. Immutable — delete + recreate to change. |
+| `storageClass` | enum | yes | **no** | `hot` (frequent access) or `cold` (archives). Immutable. |
+| `location` | string | no | no | Region code (e.g. `ru-1`). Narrows preset resolution when the account has multiple regions. |
 | `description` | string | no | yes | Free-form comment. |
 | `projectID` | integer | no | yes | Assign bucket to a Timeweb project. |
 
@@ -85,16 +89,15 @@ via `Secret.data` mapping or a one-line `subPath`.
 
 ## Immutable-field handling (FR-017)
 
-Editing `spec.forProvider.name`, or switching between `presetID` and
-`configuration` (the sizing axis), triggers reject-and-surface:
+Editing `spec.forProvider.name`, `initialSizeGB`, or `storageClass` triggers
+reject-and-surface:
 
 1. Controller GETs the upstream bucket, detects the diff.
 2. `Synced` flips to `False` with `reason=ImmutableFieldChange` naming the field.
 3. A Kubernetes Event (type `Warning`, reason `ImmutableFieldChange`) is emitted.
 4. Upstream is NOT modified.
 
-Within-axis changes (different `presetID` value, or different `configuration.id`/
-`configuration.diskMB` while staying on the configurator axis) are mutable.
+To change the tariff tier or storage class, delete and recreate the bucket.
 
 ## Lifecycle
 

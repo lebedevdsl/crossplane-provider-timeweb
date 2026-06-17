@@ -23,11 +23,13 @@ import (
 	"testing"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 
 	cregv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/kubernetes/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared"
 )
 
 func newRepository() *cregv1alpha1.ContainerRegistryRepository {
@@ -58,13 +60,20 @@ const sampleRepositoriesJSON = `{
 
 const sampleEmptyRepositoriesJSON = `{"container_registries_repositories":[]}`
 
+// newRegistryWithReadyTrue creates a ContainerRegistry with Ready=True condition set.
+func newRegistryWithReadyTrue() *cregv1alpha1.ContainerRegistry {
+	r := newRegistryWithExtName()
+	r.Status.SetConditions(xpv2.Available())
+	return r
+}
+
 func TestRepositoryObserve(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Success", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
 		fakeTW.GetRegistryRepositoriesReturns(httpResp(http.StatusOK, sampleRepositoriesJSON), nil)
-		kube := newFakeKube(newRegistryWithExtName()).Build()
+		kube := newFakeKube(newRegistryWithReadyTrue()).Build()
 
 		e := &repositoryExternal{tw: fakeTW, kube: kube, recorder: record.NewFakeRecorder(8)}
 		cr := newRepository()
@@ -86,7 +95,7 @@ func TestRepositoryObserve(t *testing.T) {
 	t.Run("NotFound_RepositoryNotPushed", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
 		fakeTW.GetRegistryRepositoriesReturns(httpResp(http.StatusOK, sampleEmptyRepositoriesJSON), nil)
-		kube := newFakeKube(newRegistryWithExtName()).Build()
+		kube := newFakeKube(newRegistryWithReadyTrue()).Build()
 		e := &repositoryExternal{tw: fakeTW, kube: kube, recorder: record.NewFakeRecorder(8)}
 		obs, err := e.Observe(ctx, newRepository())
 		if err != nil {
@@ -100,7 +109,7 @@ func TestRepositoryObserve(t *testing.T) {
 	t.Run("TransientError", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
 		fakeTW.GetRegistryRepositoriesReturns(httpResp(http.StatusTooManyRequests, ""), nil)
-		kube := newFakeKube(newRegistryWithExtName()).Build()
+		kube := newFakeKube(newRegistryWithReadyTrue()).Build()
 		e := &repositoryExternal{tw: fakeTW, kube: kube, recorder: record.NewFakeRecorder(8)}
 		_, err := e.Observe(ctx, newRepository())
 		if !errors.Is(err, timeweb.ErrTransient) {
@@ -111,7 +120,7 @@ func TestRepositoryObserve(t *testing.T) {
 	t.Run("TerminalError", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
 		fakeTW.GetRegistryRepositoriesReturns(httpResp(http.StatusForbidden, `{"error_code":"forbidden","message":"denied"}`), nil)
-		kube := newFakeKube(newRegistryWithExtName()).Build()
+		kube := newFakeKube(newRegistryWithReadyTrue()).Build()
 		e := &repositoryExternal{tw: fakeTW, kube: kube, recorder: record.NewFakeRecorder(8)}
 		_, err := e.Observe(ctx, newRepository())
 		var apiErr *timeweb.APIError
@@ -127,6 +136,51 @@ func TestRepositoryObserve(t *testing.T) {
 		_, err := e.Observe(ctx, newRepository())
 		if err == nil {
 			t.Error("expected error when parent registry doesn't exist")
+		}
+	})
+
+	t.Run("ParentNotReady_GatesRepository", func(t *testing.T) {
+		// T021: parent registry exists but is not yet Ready=True →
+		// repository must report ParentNotReady, not proceed upstream.
+		fakeTW := &timeweb.FakeClient{}
+		// Parent has external-name but Ready condition is NOT set (default = unknown).
+		kube := newFakeKube(newRegistryWithExtName()).Build()
+		e := &repositoryExternal{tw: fakeTW, kube: kube, recorder: record.NewFakeRecorder(8)}
+		cr := newRepository()
+		obs, err := e.Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if obs.ResourceExists {
+			t.Error("ResourceExists = true, want false (parent not ready)")
+		}
+		c := cr.Status.GetCondition(xpv2.TypeReady)
+		if c.Reason != shared.ReasonParentNotReady {
+			t.Errorf("Ready reason = %q, want %q", c.Reason, shared.ReasonParentNotReady)
+		}
+		if fakeTW.GetRegistryRepositoriesCallCount() != 0 {
+			t.Error("GetRegistryRepositories called despite parent not Ready")
+		}
+	})
+
+	t.Run("Parent404_SetsParentNotReady", func(t *testing.T) {
+		// T021: when the upstream registry list returns 404 (registry gone),
+		// repository must set ParentNotReady, not return a generic error.
+		fakeTW := &timeweb.FakeClient{}
+		fakeTW.GetRegistryRepositoriesReturns(httpResp(http.StatusNotFound, ""), nil)
+		kube := newFakeKube(newRegistryWithReadyTrue()).Build()
+		e := &repositoryExternal{tw: fakeTW, kube: kube, recorder: record.NewFakeRecorder(8)}
+		cr := newRepository()
+		obs, err := e.Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if obs.ResourceExists {
+			t.Error("ResourceExists = true, want false")
+		}
+		c := cr.Status.GetCondition(xpv2.TypeReady)
+		if c.Reason != shared.ReasonParentNotReady {
+			t.Errorf("Ready reason = %q, want %q", c.Reason, shared.ReasonParentNotReady)
 		}
 	})
 }
