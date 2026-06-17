@@ -18,10 +18,8 @@ package kubernetes
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 
@@ -87,10 +85,11 @@ func (e *nodepoolExternal) clusterID(cr *kubernetesv1alpha1.KubernetesClusterNod
 	return shared.DecodeID(s)
 }
 
-// parentClusterLocation GETs the parent cluster upstream and maps its
-// availability zone to the configurator catalog location (azToLocation).
-// Used only on the custom-sizing Create path.
-func (e *nodepoolExternal) parentClusterLocation(ctx context.Context, clusterID int) (string, error) {
+// parentClusterAZ GETs the parent cluster upstream and returns its
+// availability zone. Both Create-path sizing flavors derive placement from
+// it: presets are zone-filtered by the AZ directly, configurators by the
+// AZ-derived catalog location.
+func (e *nodepoolExternal) parentClusterAZ(ctx context.Context, clusterID int) (string, error) {
 	resp, err := e.tw.GetCluster(ctx, clusterID)
 	if err != nil {
 		return "", timeweb.ClassifyNetworkError(err)
@@ -99,15 +98,21 @@ func (e *nodepoolExternal) parentClusterLocation(ctx context.Context, clusterID 
 	if err := timeweb.Classify(resp); err != nil {
 		return "", fmt.Errorf("kubernetes/nodepool: get parent cluster %d: %w", clusterID, err)
 	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return "", fmt.Errorf("kubernetes/nodepool: read parent cluster body: %w", err)
-	}
 	var env clusterEnvelope
-	if err := json.Unmarshal(body, &env); err != nil {
-		return "", fmt.Errorf("kubernetes/nodepool: decode parent cluster body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return "", fmt.Errorf("kubernetes/nodepool: parent cluster: %w", err)
 	}
-	return azToLocation(env.Cluster.AvailabilityZone)
+	return env.Cluster.AvailabilityZone, nil
+}
+
+// parentClusterLocation maps the parent cluster's AZ to the configurator
+// catalog location. Used on the custom-sizing Create path.
+func (e *nodepoolExternal) parentClusterLocation(ctx context.Context, clusterID int) (string, error) {
+	az, err := e.parentClusterAZ(ctx, clusterID)
+	if err != nil {
+		return "", err
+	}
+	return shared.AZToLocation(az)
 }
 
 // Observe fetches the upstream worker group and reports existence + up-to-date.
@@ -139,17 +144,13 @@ func (e *nodepoolExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 		return managed.ExternalObservation{}, err
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("kubernetes/nodepool: read body: %w", err)
-	}
 	var env nodeGroupEnvelope
-	if err := json.Unmarshal(body, &env); err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("kubernetes/nodepool: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return managed.ExternalObservation{}, fmt.Errorf("kubernetes/nodepool: %w", err)
 	}
 
 	populateNodepoolStatus(cr, env.NodeGroup)
-	upToDate := isNodepoolUpToDate(cr.Spec.ForProvider, env.NodeGroup)
+	upToDate := isNodepoolUpToDate(cr.Spec.ForProvider, cr.Status.AtProvider, env.NodeGroup)
 	nodes, err := e.observeGroupNodes(ctx, clusterID, groupID)
 	if err != nil {
 		return managed.ExternalObservation{}, err
@@ -188,7 +189,13 @@ func (e *nodepoolExternal) Create(ctx context.Context, mg resource.Managed) (man
 				resolver.DimKubernetesWorkerConfigurator, location, r.CPU, r.RAMGB, r.DiskGB, r.GPU)
 		}
 	} else {
-		presetID, err = e.resolveWorkerPreset(ctx, *cr.Spec.ForProvider.PresetName)
+		// Preset path is zone-filtered by the parent's AZ — a cross-zone
+		// preset id would make the upstream mis-place (feature 006).
+		var az string
+		az, err = e.parentClusterAZ(ctx, clusterID)
+		if err == nil {
+			presetID, err = e.resolveWorkerPreset(ctx, *cr.Spec.ForProvider.PresetName, az)
+		}
 	}
 	if err != nil {
 		return managed.ExternalCreation{}, err
@@ -204,13 +211,9 @@ func (e *nodepoolExternal) Create(ctx context.Context, mg resource.Managed) (man
 		return managed.ExternalCreation{}, err
 	}
 
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalCreation{}, fmt.Errorf("kubernetes/nodepool: read body: %w", err)
-	}
 	var env nodeGroupEnvelope
-	if err := json.Unmarshal(respBody, &env); err != nil {
-		return managed.ExternalCreation{}, fmt.Errorf("kubernetes/nodepool: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return managed.ExternalCreation{}, fmt.Errorf("kubernetes/nodepool: %w", err)
 	}
 
 	meta.SetExternalName(cr, shared.EncodeID(env.NodeGroup.ID))
@@ -250,13 +253,14 @@ func (e *nodepoolExternal) Update(ctx context.Context, mg resource.Managed) (man
 	if err != nil {
 		return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
 	}
-	getBody, _ := io.ReadAll(io.LimitReader(getResp.Body, 1<<20))
-	_ = getResp.Body.Close()
+	defer func() { _ = getResp.Body.Close() }()
 	if err := timeweb.Classify(getResp); err != nil {
 		return managed.ExternalUpdate{}, err
 	}
 	var env nodeGroupEnvelope
-	_ = json.Unmarshal(getBody, &env)
+	if err := timeweb.DecodeBody(getResp.Body, &env); err != nil {
+		return managed.ExternalUpdate{}, fmt.Errorf("kubernetes/nodepool: %w", err)
+	}
 	observed := env.NodeGroup
 
 	// Immutable-field guard: preset is create-only.
@@ -335,10 +339,12 @@ func (*nodepoolExternal) Disconnect(_ context.Context) error { return nil }
 
 // --- helpers ----------------------------------------------------------------
 
-func (e *nodepoolExternal) resolveWorkerPreset(ctx context.Context, slug string) (int, error) {
+func (e *nodepoolExternal) resolveWorkerPreset(ctx context.Context, slug, zone string) (int, error) {
+	// Zone-filtered against the PARENT cluster's availability zone — same
+	// hidden-zone-affinity defense as the master preset (feature 006).
 	out, err := e.resolver.Resolve(ctx, e.pcRef,
 		resolver.Dimension{Name: resolver.DimKubernetesWorkerPreset, Kind: resolver.DimensionPreset},
-		resolver.PresetInput{Slug: slug},
+		resolver.PresetInput{Slug: slug, Zone: zone},
 	)
 	if err != nil {
 		return 0, err
@@ -355,6 +361,12 @@ func buildCreateNodeGroupBody(cr *kubernetesv1alpha1.KubernetesClusterNodepool, 
 	body := twgen.CreateClusterNodeGroupJSONRequestBody{
 		Name:      fp.Name,
 		NodeCount: fp.NodeCount,
+	}
+	// publicIP nil ⇒ field omitted upstream ⇒ the upstream default (public)
+	// applies, byte-for-byte as before this field existed (SC-006). false is
+	// the private-node half of the feature-006 private-cluster arrangement.
+	if fp.PublicIP != nil {
+		body.PublicIpEnabled = fp.PublicIP
 	}
 	if r := fp.Resources; r != nil {
 		// Custom sizing: emit the configuration block (configurator_id + cpu/
@@ -408,11 +420,28 @@ func populateNodepoolStatus(cr *kubernetesv1alpha1.KubernetesClusterNodepool, g 
 	cr.Status.AtProvider.UpstreamID = &uid
 	count := g.NodeCount
 	cr.Status.AtProvider.ObservedNodeCount = &count
+	// Locked sizing ID comes from the GET, not only from Create: status
+	// written during Create is wiped by the runtime's critical-annotation
+	// refresh (feature 005 finding), so Observe must own this field.
+	// A zero value never overwrites an already-set lock.
+	if g.PresetID != 0 {
+		lp := int64(g.PresetID)
+		cr.Status.AtProvider.LockedPresetID = &lp
+	}
 }
 
 // isNodepoolUpToDate is false while a node-count delta is converging (with
 // autoscaling off). Preset drift is rejected in Update, not flagged here.
-func isNodepoolUpToDate(spec kubernetesv1alpha1.KubernetesClusterNodepoolParameters, g nodeGroupBody) bool {
+// The locked-ID rows route a sizing-variant switch (preset↔resources)
+// through Update so its rejection guard is actually reachable (feature 006
+// T007 — Observe-populated locks make these fire).
+func isNodepoolUpToDate(spec kubernetesv1alpha1.KubernetesClusterNodepoolParameters, status kubernetesv1alpha1.KubernetesClusterNodepoolObservation, g nodeGroupBody) bool {
+	if spec.PresetName != nil && status.LockedConfiguratorID != nil {
+		return false // sizing switch resources→presetName: Update rejects
+	}
+	if spec.Resources != nil && status.LockedPresetID != nil {
+		return false // sizing switch presetName→resources: Update rejects
+	}
 	if spec.Autoscaling != nil && spec.Autoscaling.Enabled {
 		return true
 	}
@@ -431,13 +460,9 @@ func (e *nodepoolExternal) observeGroupNodes(ctx context.Context, clusterID, gro
 	if err := timeweb.Classify(resp); err != nil {
 		return nil, fmt.Errorf("kubernetes/nodepool: list group nodes: %w", err)
 	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return nil, fmt.Errorf("kubernetes/nodepool: read group nodes body: %w", err)
-	}
 	var env groupNodesEnvelope
-	if err := json.Unmarshal(body, &env); err != nil {
-		return nil, fmt.Errorf("kubernetes/nodepool: decode group nodes body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return nil, fmt.Errorf("kubernetes/nodepool: group nodes: %w", err)
 	}
 	return env.Nodes, nil
 }

@@ -150,6 +150,11 @@ func main() {
 		log.Info("unable to register FloatingIP controller", "error", err.Error())
 		os.Exit(1)
 	}
+
+	if err := networkctrl.SetupRouter(mgr, log, pollInterval); err != nil {
+		log.Info("unable to register Router controller", "error", err.Error())
+		os.Exit(1)
+	}
 	if err := kubernetesctrl.SetupCluster(mgr, log, pollInterval); err != nil {
 		log.Info("unable to register KubernetesCluster controller", "error", err.Error())
 		os.Exit(1)

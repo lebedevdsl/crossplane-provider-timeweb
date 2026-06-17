@@ -25,7 +25,6 @@ package s3bucket
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -90,11 +89,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, err
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("s3bucket: read body: %w", err)
-	}
-	bucket, err := decodeBucket(body)
+	bucket, err := decodeBucket(resp.Body)
 	if err != nil {
 		return managed.ExternalObservation{}, err
 	}
@@ -144,8 +139,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, err
 	}
 
-	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	bucket, err := decodeBucket(respBody)
+	bucket, err := decodeBucket(resp.Body)
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
@@ -178,12 +172,11 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if err != nil {
 		return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
 	}
-	getBody, _ := io.ReadAll(io.LimitReader(getResp.Body, 1<<20))
-	_ = getResp.Body.Close()
+	defer func() { _ = getResp.Body.Close() }()
 	if err := timeweb.Classify(getResp); err != nil {
 		return managed.ExternalUpdate{}, err
 	}
-	bucket, err := decodeBucket(getBody)
+	bucket, err := decodeBucket(getResp.Body)
 	if err != nil {
 		return managed.ExternalUpdate{}, err
 	}
@@ -298,12 +291,12 @@ func mapResolverErrorToCondition(cr *objectstoragev1alpha1.S3Bucket, err error) 
 }
 
 // decodeBucket unmarshals the `{"bucket": ...}` envelope.
-func decodeBucket(body []byte) (generated.Bucket, error) {
+func decodeBucket(r io.Reader) (generated.Bucket, error) {
 	var envelope struct {
 		Bucket generated.Bucket `json:"bucket"`
 	}
-	if err := json.Unmarshal(body, &envelope); err != nil {
-		return generated.Bucket{}, fmt.Errorf("s3bucket: decode body: %w", err)
+	if err := timeweb.DecodeBody(r, &envelope); err != nil {
+		return generated.Bucket{}, fmt.Errorf("s3bucket: %w", err)
 	}
 	return envelope.Bucket, nil
 }

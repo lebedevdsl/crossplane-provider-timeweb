@@ -34,6 +34,9 @@ spec:
     - jsonPath: .status.atProvider.observedBoundTo.resourceID
       name: BOUND-TO
       type: integer
+    - jsonPath: .status.atProvider.observedBoundTo.resourceUUID
+      name: BOUND-UUID
+      type: string
     - jsonPath: .spec.forProvider.location
       name: LOCATION
       type: string
@@ -204,7 +207,12 @@ spec:
                         type: integer
                       resourceType:
                         description: 'ResourceType is one of: "server", "balancer",
-                          "database", "network".'
+                          "database", "network", "router".'
+                        type: string
+                      resourceUUID:
+                        description: |-
+                          ResourceUUID is the string id for UUID-keyed bindings, e.g. routers;
+                          the int64 ResourceID can't hold these.
                         type: string
                     type: object
                   upstreamID:

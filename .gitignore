@@ -34,3 +34,6 @@ test/live/runs/*.log
 # kubeconfig accidentally produced by kind during local development
 kubeconfig
 *.kubeconfig
+
+# e2e diagnostics (events + describes + provider logs, collected per run)
+test/e2e/.diagnostics/

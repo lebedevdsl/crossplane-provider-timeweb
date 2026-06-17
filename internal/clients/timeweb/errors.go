@@ -123,7 +123,20 @@ func Classify(resp *http.Response) error {
 			Reason:     reason,
 		}
 	default:
-		return decodeAPIError(resp)
+		err := decodeAPIError(resp)
+		// 403 networks_location_mismatch is a settle-delay, not a denial:
+		// attaching a seconds-old VPC to a router returns this code even
+		// with matching zones and succeeds ~1 min later once the VPC settles
+		// (feature-006 probe, 2026-06-11). Retry instead of surfacing a
+		// terminal Synced=False.
+		var apiErr *APIError
+		if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusForbidden && apiErr.Code == "networks_location_mismatch" {
+			return &TransientError{
+				StatusCode: apiErr.StatusCode,
+				Reason:     "Forbidden (networks_location_mismatch — newly created VPCs settle in ~1 min): " + apiErr.Message,
+			}
+		}
+		return err
 	}
 }
 
@@ -140,6 +153,12 @@ func ClassifyNetworkError(err error) error {
 func isTransientStatus(code int) bool {
 	switch code {
 	case http.StatusRequestTimeout,
+		// 409 stays transient DELIBERATELY: the upstream returns it during
+		// async cleanup windows — e.g. a router-network detach lingers for a
+		// few seconds and a follow-up write 409s until it completes
+		// (feature-006 probe). A blanket reclassification to terminal would
+		// break that retry path; genuinely-terminal conflicts (duplicate
+		// names, …) are rare and self-describe in the surfaced reason.
 		http.StatusConflict,
 		http.StatusTooEarly,
 		http.StatusTooManyRequests:

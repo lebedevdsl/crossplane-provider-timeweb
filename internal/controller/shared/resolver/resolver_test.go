@@ -56,6 +56,10 @@ type fakeCatalog struct {
 	k8sConfiguratorsErr   error
 	k8sConfiguratorsCalls int32
 
+	routerPresets      *twgen.GetRouterPresetsResponse
+	routerPresetsErr   error
+	routerPresetsCalls int32
+
 	// gate, if set, blocks the fetcher until closed — used to exercise
 	// singleflight coalescing.
 	gate chan struct{}
@@ -115,6 +119,65 @@ func (f *fakeCatalog) GetK8sConfiguratorsWithResponse(_ context.Context, _ ...tw
 		<-f.gate
 	}
 	return f.k8sConfigurators, f.k8sConfiguratorsErr
+}
+
+func (f *fakeCatalog) GetRouterPresetsWithResponse(_ context.Context, _ ...twgen.RequestEditorFn) (*twgen.GetRouterPresetsResponse, error) {
+	atomic.AddInt32(&f.routerPresetsCalls, 1)
+	if f.gate != nil {
+		<-f.gate
+	}
+	return f.routerPresets, f.routerPresetsErr
+}
+
+func mkRouterPresetsResp(items []twgen.RouterPreset) *twgen.GetRouterPresetsResponse {
+	resp := &twgen.GetRouterPresetsResponse{HTTPResponse: &http.Response{StatusCode: 200}}
+	resp.JSON200 = &struct {
+		Meta          twgen.ComponentsSchemasMeta `json:"meta"`
+		ResponseId    twgen.ResponseId            `json:"response_id"` //nolint:revive // mirrors oapi-codegen output
+		RouterPresets []twgen.RouterPreset        `json:"router_presets"`
+	}{RouterPresets: items}
+	return resp
+}
+
+// TestResolver_RouterPreset_SlugAndZone locks the feature-006 router-tier
+// dimension: the synthesized `router-<nodes>x<cpu>-<ram>gb-<location>` slug
+// resolves to the tier id, the Zone filter is keyed by LOCATION (callers
+// pass shared.AZToLocation(az)), and a tier that only exists in another
+// location is an honest PresetNotFound (FR-003 — the upstream derives the
+// router's zone from the tier and mis-places on mismatch).
+func TestResolver_RouterPreset_SlugAndZone(t *testing.T) {
+	// The live ru-3 catalog shape: 2009 (1-node) + 2011 (2-node HA), and a
+	// hypothetical same-shape tier in another location to prove filtering.
+	fake := &fakeCatalog{routerPresets: mkRouterPresetsResp([]twgen.RouterPreset{
+		{Id: 2009, NodeCount: 1, Cpu: 1, Ram: 1, Bandwidth: 1000, Cost: 450, Location: "ru-3", CpuFrequency: "3.3"},
+		{Id: 2011, NodeCount: 2, Cpu: 2, Ram: 1, Bandwidth: 1000, Cost: 1320, Location: "ru-3", CpuFrequency: "3.3"},
+		{Id: 3009, NodeCount: 1, Cpu: 1, Ram: 1, Bandwidth: 1000, Cost: 450, Location: "ru-1", CpuFrequency: "3.3"},
+	})}
+	r := New(fake, Options{TTL: 5 * time.Minute, Now: time.Now})
+	pc := PCRef{Name: "default"}
+	dim := Dimension{Name: DimRouterPreset, Kind: DimensionPreset}
+
+	out, err := r.Resolve(context.Background(), pc, dim, PresetInput{Slug: "router-1x1-1gb-ru-3", Zone: "ru-3"})
+	if err != nil {
+		t.Fatalf("resolve: %v", err)
+	}
+	if po := out.(PresetOutput); po.UpstreamID != 2009 {
+		t.Errorf("id=%d, want 2009", po.UpstreamID)
+	}
+
+	// HA tier resolves by its own slug.
+	out, err = r.Resolve(context.Background(), pc, dim, PresetInput{Slug: "router-2x2-1gb-ru-3", Zone: "ru-3"})
+	if err != nil {
+		t.Fatalf("resolve HA: %v", err)
+	}
+	if po := out.(PresetOutput); po.UpstreamID != 2011 {
+		t.Errorf("HA id=%d, want 2011", po.UpstreamID)
+	}
+
+	// A tier sold only in ru-1 must not resolve for a ru-3 router.
+	if _, err := r.Resolve(context.Background(), pc, dim, PresetInput{Slug: "router-1x1-1gb-ru-1", Zone: "ru-3"}); !errors.Is(err, ErrPresetNotFound) {
+		t.Errorf("cross-location tier: err=%v, want ErrPresetNotFound", err)
+	}
 }
 
 // helpers to build the typed JSON200 payloads -------------------------------
@@ -216,6 +279,79 @@ func mkK8sPresetsResp(items []twgen.K8sPresetItem) *twgen.GetKubernetesPresetsRe
 func k8sPreset(id int, role, short string) twgen.K8sPresetItem {
 	r, s := role, short
 	return twgen.K8sPresetItem{Id: &id, Type: &r, DescriptionShort: &s}
+}
+
+func k8sPresetZoned(id int, role, short, zone string) twgen.K8sPresetItem {
+	p := k8sPreset(id, role, short)
+	z := zone
+	p.AvailabilityZone = &z
+	return p
+}
+
+// TestResolver_PresetZoneFilter locks the feature-006 zone-affinity fix
+// (FR-007a): K8s presets carry a HIDDEN availability_zone, and a
+// zone-mismatched preset id makes the upstream MIS-PLACE the cluster as a
+// half-created zombie instead of rejecting. The resolver must therefore
+// (a) resolve the same slug to the requested zone's preset, and (b) turn a
+// slug satisfiable only in another zone into an honest PresetNotFound —
+// BEFORE anything reaches the create API. Zone-less inputs and zone-less
+// entries stay unconstrained (existing manifests keep working).
+func TestResolver_PresetZoneFilter(t *testing.T) {
+	// Same "K8S Base" slug sold in two zones with different ids — the live
+	// shape that produced the zombies (403 spb-3 vs 1675 msk-1).
+	fake := &fakeCatalog{k8sPresets: mkK8sPresetsResp([]twgen.K8sPresetItem{
+		k8sPresetZoned(403, "master", "K8S Base", "spb-3"),
+		k8sPresetZoned(1675, "master", "K8S Base", "msk-1"),
+		k8sPresetZoned(9, "worker", "K8S 1/2/30", "msk-1"),
+	})}
+	r := New(fake, Options{TTL: 5 * time.Minute, Now: time.Now})
+	pc := PCRef{Name: "default"}
+	dim := Dimension{Name: DimKubernetesMasterPreset, Kind: DimensionPreset}
+
+	// (a) zone steers the ambiguous slug to the matching preset.
+	for zone, want := range map[string]int64{"msk-1": 1675, "spb-3": 403} {
+		out, err := r.Resolve(context.Background(), pc, dim, PresetInput{Slug: "k8s-base", Zone: zone})
+		if err != nil {
+			t.Fatalf("zone %s: %v", zone, err)
+		}
+		if po := out.(PresetOutput); po.UpstreamID != want {
+			t.Errorf("zone %s: id=%d, want %d", zone, po.UpstreamID, want)
+		}
+	}
+
+	// (b) explicit -id disambiguator of the WRONG zone → PresetNotFound
+	// (this is the exact pre-fix zombie input: k8s-base-403 + msk-1).
+	if _, err := r.Resolve(context.Background(), pc, dim, PresetInput{Slug: "k8s-base-403", Zone: "msk-1"}); !errors.Is(err, ErrPresetNotFound) {
+		t.Errorf("cross-zone disambiguated slug: err=%v, want ErrPresetNotFound", err)
+	}
+
+	// (c) no zone on the input → unconstrained (legacy behavior: ambiguous).
+	if _, err := r.Resolve(context.Background(), pc, dim, PresetInput{Slug: "k8s-base"}); !errors.Is(err, ErrPresetAmbiguous) {
+		t.Errorf("zoneless input: err=%v, want ErrPresetAmbiguous (both zones visible)", err)
+	}
+}
+
+// TestResolver_SharedCache_AcrossResolverInstances locks the feature-006
+// cache-lifetime fix: resolvers are built per reconcile (per Connect), so
+// only a Setup-scoped shared cache makes the TTL cache real. Two Resolver
+// instances sharing one Cache must produce exactly one upstream call.
+func TestResolver_SharedCache_AcrossResolverInstances(t *testing.T) {
+	fake := &fakeCatalog{k8sPresets: mkK8sPresetsResp([]twgen.K8sPresetItem{
+		k8sPreset(5, "master", "Start"),
+	})}
+	shared := NewCache(Options{TTL: 5 * time.Minute, Now: time.Now})
+	pc := PCRef{Name: "default"}
+	dim := Dimension{Name: DimKubernetesMasterPreset, Kind: DimensionPreset}
+	for i := 0; i < 3; i++ {
+		// A FRESH resolver each iteration — the per-Connect lifetime.
+		r := New(fake, Options{TTL: 5 * time.Minute, Now: time.Now, SharedCache: shared})
+		if _, err := r.Resolve(context.Background(), pc, dim, PresetInput{Slug: "start"}); err != nil {
+			t.Fatalf("resolve %d: %v", i, err)
+		}
+	}
+	if got := atomic.LoadInt32(&fake.k8sPresetsCalls); got != 1 {
+		t.Errorf("expected 1 upstream call across 3 resolver instances (shared cache), got %d", got)
+	}
 }
 
 // TestResolver_K8sMasterPreset_FiltersRoleAndCaches covers SC-006: the master

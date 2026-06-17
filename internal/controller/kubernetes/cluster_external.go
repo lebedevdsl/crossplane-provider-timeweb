@@ -18,7 +18,6 @@ package kubernetes
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -50,11 +49,16 @@ type clusterBody struct {
 	K8sVersion       string `json:"k8s_version"`
 	NetworkDriver    string `json:"network_driver"`
 	PresetID         int    `json:"preset_id"`
+	ConfiguratorID   int    `json:"configurator_id"`
 	CPU              int    `json:"cpu"`
 	RAM              int    `json:"ram"`
 	Disk             int    `json:"disk"`
 	AvailabilityZone string `json:"availability_zone"`
 	ProjectID        int    `json:"project_id"`
+}
+
+type clustersEnvelope struct {
+	Clusters []clusterBody `json:"clusters"`
 }
 
 type clusterEnvelope struct {
@@ -98,16 +102,29 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 		return managed.ExternalObservation{}, err
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("kubernetes/cluster: read body: %w", err)
-	}
 	var env clusterEnvelope
-	if err := json.Unmarshal(body, &env); err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("kubernetes/cluster: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return managed.ExternalObservation{}, fmt.Errorf("kubernetes/cluster: %w", err)
 	}
 
 	populateClusterStatus(cr, env.Cluster)
+
+	// AZ-echo verification (feature 006 D-4): the upstream "honors" a
+	// zone-mismatched create by silently placing the cluster in a DIFFERENT
+	// zone (ams-1 zombies, reproduced live) instead of rejecting it. Surface
+	// that loudly; the normal ready-mapping must not overwrite it. Recreate
+	// is the operator's call, so the observation still reports exists +
+	// up-to-date.
+	if observed := env.Cluster.AvailabilityZone; observed != "" && observed != cr.Spec.ForProvider.AvailabilityZone {
+		cr.Status.SetConditions(shared.ReadyFalse(shared.ReasonUpstreamFailed,
+			fmt.Sprintf("upstream created the cluster in %q but %q was requested — the upstream mis-places instead of rejecting; delete and recreate",
+				observed, cr.Spec.ForProvider.AvailabilityZone)))
+		return managed.ExternalObservation{
+			ResourceExists:   true,
+			ResourceUpToDate: true,
+		}, nil
+	}
+
 	ready := setClusterReadyCondition(cr, env.Cluster.Status)
 
 	// Publish the kubeconfig connection Secret once the cluster is active.
@@ -121,7 +138,7 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 
 	return managed.ExternalObservation{
 		ResourceExists:    true,
-		ResourceUpToDate:  isClusterUpToDate(cr.Spec.ForProvider, env.Cluster),
+		ResourceUpToDate:  isClusterUpToDate(cr.Spec.ForProvider, cr.Status.AtProvider, env.Cluster),
 		ConnectionDetails: cd,
 	}, nil
 }
@@ -132,6 +149,33 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 	cr, ok := mg.(*kubernetesv1alpha1.KubernetesCluster)
 	if !ok {
 		return managed.ExternalCreation{}, errNotCluster
+	}
+
+	// Error-yet-created adoption guard (feature 006 D-2/FR-007b): Timeweb
+	// can return an error from POST /k8s/clusters yet create the cluster
+	// anyway (reproduced 4×, R-5) — without this guard every requeue after
+	// such a "failed" create would mint another zombie. When a previous
+	// create attempt is known to have ended ambiguously, list-by-name first
+	// and adopt a single upstream match instead of POSTing again.
+	if meta.ExternalCreateIncomplete(cr) || cr.GetAnnotations()[meta.AnnotationKeyExternalCreateFailed] != "" {
+		matches, err := e.findClustersByName(ctx, cr.Spec.ForProvider.Name)
+		if err != nil {
+			return managed.ExternalCreation{}, err
+		}
+		switch len(matches) {
+		case 0:
+			// Nothing upstream carries our name — the earlier failure really
+			// failed. Proceed to POST.
+		case 1:
+			// Adopt: record the external-name and let the next Observe take
+			// over (it populates status + conditions from the GET).
+			meta.SetExternalName(cr, shared.EncodeID(matches[0].ID))
+			return managed.ExternalCreation{}, nil
+		default:
+			return managed.ExternalCreation{}, fmt.Errorf(
+				"kubernetes/cluster: %d upstream clusters named %q — adopt explicitly by setting the external-name annotation",
+				len(matches), cr.Spec.ForProvider.Name)
+		}
 	}
 
 	if err := e.validateVersion(ctx, cr.Spec.ForProvider.K8sVersion); err != nil {
@@ -145,13 +189,14 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 		// a wrong family/location id makes the upstream ignore the AZ and
 		// strand the cluster in ams-1 (see azLocation).
 		var location string
-		location, err = azToLocation(cr.Spec.ForProvider.AvailabilityZone)
+		location, err = shared.AZToLocation(cr.Spec.ForProvider.AvailabilityZone)
 		if err == nil {
 			configuratorID, err = resolveK8sConfigurator(ctx, e.resolver, e.pcRef,
 				resolver.DimKubernetesMasterConfigurator, location, r.CPU, r.RAMGB, r.DiskGB, nil)
 		}
 	} else {
-		presetID, err = e.resolveMasterPreset(ctx, *cr.Spec.ForProvider.PresetName)
+		// Zone-filtered preset path (feature 006 — see resolveMasterPreset).
+		presetID, err = e.resolveMasterPreset(ctx, *cr.Spec.ForProvider.PresetName, cr.Spec.ForProvider.AvailabilityZone)
 	}
 	if err != nil {
 		return managed.ExternalCreation{}, err
@@ -167,13 +212,9 @@ func (e *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 		return managed.ExternalCreation{}, err
 	}
 
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalCreation{}, fmt.Errorf("kubernetes/cluster: read body: %w", err)
-	}
 	var env clusterEnvelope
-	if err := json.Unmarshal(respBody, &env); err != nil {
-		return managed.ExternalCreation{}, fmt.Errorf("kubernetes/cluster: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return managed.ExternalCreation{}, fmt.Errorf("kubernetes/cluster: %w", err)
 	}
 
 	meta.SetExternalName(cr, shared.EncodeID(env.Cluster.ID))
@@ -214,13 +255,14 @@ func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (mana
 	if err != nil {
 		return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
 	}
-	getBody, _ := io.ReadAll(io.LimitReader(getResp.Body, 1<<20))
-	_ = getResp.Body.Close()
+	defer func() { _ = getResp.Body.Close() }()
 	if err := timeweb.Classify(getResp); err != nil {
 		return managed.ExternalUpdate{}, err
 	}
 	var env clusterEnvelope
-	_ = json.Unmarshal(getBody, &env)
+	if err := timeweb.DecodeBody(getResp.Body, &env); err != nil {
+		return managed.ExternalUpdate{}, fmt.Errorf("kubernetes/cluster: %w", err)
+	}
 	observed := env.Cluster
 
 	// Sizing-variant-switch detection (feature 005 FR-004): preset↔resources
@@ -304,12 +346,41 @@ func (e *clusterExternal) Delete(ctx context.Context, mg resource.Managed) (mana
 // Disconnect is a no-op — the timeweb client is HTTP-only.
 func (*clusterExternal) Disconnect(_ context.Context) error { return nil }
 
+// findClustersByName lists the account's upstream clusters and returns the
+// ones whose name matches exactly. Used only by the error-yet-created
+// adoption guard in Create — never on a clean first create.
+func (e *clusterExternal) findClustersByName(ctx context.Context, name string) ([]clusterBody, error) {
+	resp, err := e.tw.GetClusters(ctx, &twgen.GetClustersParams{})
+	if err != nil {
+		return nil, timeweb.ClassifyNetworkError(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if err := timeweb.Classify(resp); err != nil {
+		return nil, err
+	}
+	var env clustersEnvelope
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return nil, fmt.Errorf("kubernetes/cluster: list clusters: %w", err)
+	}
+	var matches []clusterBody
+	for _, c := range env.Clusters {
+		if c.Name == name {
+			matches = append(matches, c)
+		}
+	}
+	return matches, nil
+}
+
 // --- Resolver helpers -------------------------------------------------------
 
-func (e *clusterExternal) resolveMasterPreset(ctx context.Context, slug string) (int, error) {
+func (e *clusterExternal) resolveMasterPreset(ctx context.Context, slug, zone string) (int, error) {
+	// Zone-filtered: K8s presets carry hidden zone affinity, and a
+	// zone-mismatched preset id makes the upstream MIS-PLACE the cluster
+	// as a half-created zombie instead of rejecting it (feature 006,
+	// verified live). The filter turns that into PresetNotFound pre-create.
 	out, err := e.resolver.Resolve(ctx, e.pcRef,
 		resolver.Dimension{Name: resolver.DimKubernetesMasterPreset, Kind: resolver.DimensionPreset},
-		resolver.PresetInput{Slug: slug},
+		resolver.PresetInput{Slug: slug, Zone: zone},
 	)
 	if err != nil {
 		return 0, err
@@ -428,6 +499,18 @@ func populateClusterStatus(cr *kubernetesv1alpha1.KubernetesCluster, c clusterBo
 		pj := int64(c.ProjectID)
 		cr.Status.AtProvider.ResolvedProjectID = &pj
 	}
+	// Locked sizing IDs come from the GET, not only from Create: status
+	// written during Create is wiped by the runtime's critical-annotation
+	// refresh (feature 005 finding), so Observe must own these fields.
+	// Zero values never overwrite an already-set lock.
+	if c.PresetID != 0 {
+		lp := int64(c.PresetID)
+		cr.Status.AtProvider.LockedPresetID = &lp
+	}
+	if c.ConfiguratorID != 0 {
+		cid := int64(c.ConfiguratorID)
+		cr.Status.AtProvider.LockedConfiguratorID = &cid
+	}
 }
 
 // setClusterReadyCondition maps the upstream cluster status string to the
@@ -462,8 +545,16 @@ func setClusterReadyCondition(cr *kubernetesv1alpha1.KubernetesCluster, state st
 
 // isClusterUpToDate compares the mutable subset (name, description) against the
 // upstream observation. k8sVersion (upgrade) is handled in US4; immutable-field
-// drift is rejected in Update.
-func isClusterUpToDate(spec kubernetesv1alpha1.KubernetesClusterParameters, c clusterBody) bool {
+// drift is rejected in Update. The locked-ID rows route a sizing-variant
+// switch (preset↔resources) through Update so its rejection guard is actually
+// reachable (feature 006 T007 — Observe-populated locks make these fire).
+func isClusterUpToDate(spec kubernetesv1alpha1.KubernetesClusterParameters, status kubernetesv1alpha1.KubernetesClusterObservation, c clusterBody) bool {
+	if spec.PresetName != nil && status.LockedConfiguratorID != nil {
+		return false // sizing switch resources→presetName: Update rejects
+	}
+	if spec.Resources != nil && status.LockedPresetID != nil {
+		return false // sizing switch presetName→resources: Update rejects
+	}
 	if spec.Name != c.Name {
 		return false
 	}

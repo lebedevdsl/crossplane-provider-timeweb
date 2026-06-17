@@ -103,6 +103,12 @@ type PresetInput struct {
 	// with the explicit `<short>-<location>-<id>` disambiguator form
 	// also accepted (FR-008).
 	Slug string
+	// Zone, when non-empty, drops entries whose PresetEntry.Zone is
+	// non-empty and different BEFORE slug matching. Mandatory for
+	// dimensions with zone-affine catalogs (K8s presets, router tiers):
+	// a zone-mismatched preset id makes the upstream mis-place the
+	// resource instead of rejecting it (feature-006 finding).
+	Zone string
 }
 
 // PresetOutput carries the resolved upstream preset ID.
@@ -149,7 +155,23 @@ type Options struct {
 	TTL time.Duration
 	// Now is an optional clock override for tests. Defaults to time.Now.
 	Now func() time.Time
+	// SharedCache, when non-nil, is used instead of a fresh per-Resolver
+	// cache. Controllers MUST construct one Cache at Setup scope and pass
+	// it through every Connect-time New call — a Resolver built per
+	// reconcile with its own cache never gets a single hit, defeating the
+	// "≤1 catalog GET per (PCRef, dimension) per TTL" goal (feature-006
+	// foundational fix; the cache key already includes the PCRef, so one
+	// cache per kind-controller is safe across all its MRs and PCs).
+	SharedCache *Cache
 }
+
+// Cache is the exported handle to the (PCRef, dimension)-keyed TTL store,
+// shareable across the per-reconcile Resolver instances of one controller.
+type Cache struct{ c *cache }
+
+// NewCache builds a shareable cache. TTL/Now follow the same defaults and
+// clamping as New.
+func NewCache(opts Options) *Cache { return &Cache{c: newCache(opts)} }
 
 // MinTTL and MaxTTL are the configurable bounds documented in the
 // resolver-internal contract.

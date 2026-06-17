@@ -18,10 +18,8 @@ package containerregistry
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
@@ -91,11 +89,6 @@ func (e *repositoryExternal) Observe(ctx context.Context, mg resource.Managed) (
 		}
 		return managed.ExternalObservation{}, err
 	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("repository: read body: %w", err)
-	}
-
 	// The upstream envelope is `{"container_registries_repositories": [...]}`.
 	var envelope struct {
 		Repositories []struct {
@@ -107,8 +100,8 @@ func (e *repositoryExternal) Observe(ctx context.Context, mg resource.Managed) (
 			} `json:"tags"`
 		} `json:"container_registries_repositories"`
 	}
-	if err := json.Unmarshal(body, &envelope); err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("repository: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &envelope); err != nil {
+		return managed.ExternalObservation{}, fmt.Errorf("repository: %w", err)
 	}
 
 	found := false

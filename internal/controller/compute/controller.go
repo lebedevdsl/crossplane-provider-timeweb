@@ -32,6 +32,7 @@ import (
 
 	computev1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/compute/v1alpha1"
 	apisv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/v1alpha1"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared/resolver"
 )
 
 // Setup registers the Server controller with mgr.
@@ -47,6 +48,7 @@ func Setup(mgr manager.Manager, l logging.Logger, pollInterval time.Duration) er
 				&apisv1alpha1.ProviderConfigUsage{}),
 			logger:   l.WithValues("controller", name),
 			recorder: recorder,
+			cache:    resolver.NewCache(resolver.Options{}),
 		}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(recorder)),

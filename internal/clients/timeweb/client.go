@@ -48,8 +48,11 @@ const DefaultRateLimit = rate.Limit(15)
 // DefaultBurst is the initial token-bucket capacity.
 const DefaultBurst = 30
 
-// DefaultTimeout is the per-request HTTP timeout.
-const DefaultTimeout = 30 * time.Second
+// DefaultTimeout is the per-request HTTP timeout. Set generously because
+// floating-IP allocation in some regions intermittently runs long (tens of
+// seconds); fast endpoints respond in well under a second, so the larger
+// ceiling costs nothing in the common case.
+const DefaultTimeout = 60 * time.Second
 
 // Logger is the minimal logger contract the client needs. It matches the shape
 // of crossplane-runtime/pkg/logging.Logger so callers can pass that directly,

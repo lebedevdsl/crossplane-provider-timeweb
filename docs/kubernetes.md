@@ -90,16 +90,40 @@ by `resources` (cpu/ramGB/diskGB) instead of `presetName`:
   `Ready=False, reason=UpstreamFailed` (it will not recover on its own —
   delete and recreate).
 
-### Worker node networking
+### Worker node networking — private clusters
 
-Worker nodes come up with **public IPs by default** — that is the upstream
-behavior and this provider does not change it. There is no per-nodepool
-public-IP toggle in the Timeweb API. For private-only nodes, the cluster's
-network must sit behind a Timeweb **Router** providing NAT egress (the
-dashboard's router → private networks → NAT flow). The Router product is not
-yet modeled by this provider — planned as its own kind in a future feature;
-until then, private-only setups are arranged in the dashboard and the cluster
-is attached to the routed network via `networkRef`/`networkID`.
+Worker nodes come up with **public IPs by default** (FR-008) — leaving
+`nodepool.spec.forProvider.publicIP` unset preserves that upstream default
+byte-for-byte. For a **private cluster**, set both halves of the arrangement:
+
+```yaml
+# KubernetesCluster: attach the cluster to a router-NAT'd network
+    networkRef: {name: app-net}
+# KubernetesClusterNodepool: no public addresses on the workers
+    publicIP: false
+```
+
+The `publicIP: false` flag is the explicit knob that drops public addressing on
+the workers (it mirrors Azure AKS `enableNodePublicIP` — explicit intent, not
+implicit-by-placement); it is create-time immutable. The default stays public,
+so public-by-default behavior is unchanged.
+
+Public **addressing** (the `publicIP` flag) and outbound **egress** are
+orthogonal: even an address-less node still needs a path to the internet.
+Egress for private workers comes from the `Router` — `app-net` behind a
+NAT-enabled `Router` (see `docs/routers.md`) gives the nodes outbound internet
+via the router's NAT, reached over a **default route through the attachment
+gateway**, while they stay unreachable from outside. The router's
+`status.atProvider.parentServices` names the cluster once bound; deleting the
+Router while it serves the cluster is refused.
+
+Sizing note: K8s presets carry a **hidden zone affinity** (the public docs
+omit it) — this provider resolves `presetName` only among presets of the
+cluster's `availabilityZone`, so a slug that exists only in another zone is
+rejected as `PresetNotFound` instead of letting the upstream mis-place the
+cluster (its actual failure mode: a broken half-created cluster in ams-1).
+The same protection applies to nodepool presets (filtered by the parent
+cluster's zone) and custom-configurator sizing.
 
 ## 2. Scale a worker pool
 

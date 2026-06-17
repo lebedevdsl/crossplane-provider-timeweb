@@ -18,4 +18,11 @@ type K8sPresetItem struct {
 	Disk             *int     `json:"disk,omitempty"`
 	Network          *int     `json:"network,omitempty"`
 	Limit            *int     `json:"limit,omitempty"`
+	// Location / AvailabilityZone are present in live payloads though absent
+	// from the published swagger (verified 2026-06-11, feature 006). A preset
+	// whose zone mismatches the requested cluster AZ makes the upstream
+	// MIS-PLACE the cluster as a broken half-created zombie — the resolver
+	// zone-filters on AvailabilityZone before slug matching.
+	Location         *string `json:"location,omitempty"`
+	AvailabilityZone *string `json:"availability_zone,omitempty"`
 }

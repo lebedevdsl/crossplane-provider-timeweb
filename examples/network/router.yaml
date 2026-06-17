@@ -1,0 +1,58 @@
+# A Router with one NAT-enabled private network (feature 006).
+#
+# The tier slug (presetName) is resolved against the live per-region catalog;
+# `router-1x1-1gb-ru-3` is the cheapest 1-node Moscow tier (2-node slugs are
+# the HA tiers). The availabilityZone must match the tier's region — a
+# mismatch is rejected before anything is created.
+#
+# NAT is declared per attachment by referencing a FloatingIP: the reference's
+# presence IS the NAT switch (one address serves one network), and the Router
+# never orders addresses itself.
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: app-net
+  namespace: default
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default
+  forProvider:
+    name: app-net
+    subnetCIDR: 10.50.0.0/24
+    location: ru-3
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: FloatingIP
+metadata:
+  name: egress-ip
+  namespace: default
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default
+  forProvider:
+    location: ru-3
+    availabilityZone: msk-1
+    isDDoSGuard: false
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Router
+metadata:
+  name: edge
+  namespace: default
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default
+  forProvider:
+    name: edge
+    availabilityZone: msk-1
+    presetName: router-1x1-1gb-ru-3
+    networks:
+      - networkRef:
+          name: app-net
+        natFloatingIP:
+          ref:
+            name: egress-ip
+        dhcp: true

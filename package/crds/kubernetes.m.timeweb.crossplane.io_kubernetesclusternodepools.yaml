@@ -199,6 +199,21 @@ spec:
                       Immutable post-create. Exactly one of presetName/resources (CEL).
                     pattern: ^[a-z0-9][a-z0-9-]*[a-z0-9]$
                     type: string
+                  publicIP:
+                    description: |-
+                      PublicIP controls whether worker nodes get public addresses. Unset
+                      (nil) omits the field upstream and preserves the upstream default —
+                      PUBLIC, exactly as before this field existed (feature-006 FR-008/
+                      SC-006). Set false for private nodes: they then need a NAT-enabled
+                      Router on the cluster's network for outbound internet (see
+                      docs/kubernetes.md, "Worker node networking"). Maps to the upstream
+                      `public_ip_enabled` (present in live payloads though absent from the
+                      published API docs). Create-time immutable until an upstream
+                      update path is verified.
+                    type: boolean
+                    x-kubernetes-validations:
+                    - message: publicIP is immutable
+                      rule: self == oldSelf
                   resources:
                     description: |-
                       Resources is the custom-configurator sizing path for the workers
@@ -412,6 +427,10 @@ spec:
         - message: exactly one of presetName or resources must be set
           rule: (has(self.spec.forProvider.presetName)?1:0) + (has(self.spec.forProvider.resources)?1:0)
             == 1
+        - message: switching between presetName and resources requires recreate
+          rule: has(self.spec.forProvider.presetName) == has(oldSelf.spec.forProvider.presetName)
+        - message: publicIP is immutable (set/unset requires recreate)
+          rule: has(self.spec.forProvider.publicIP) == has(oldSelf.spec.forProvider.publicIP)
         - message: autoscaling.maxSize must be >= autoscaling.minSize
           rule: '!has(self.spec.forProvider.autoscaling) || !self.spec.forProvider.autoscaling.enabled
             || self.spec.forProvider.autoscaling.maxSize >= self.spec.forProvider.autoscaling.minSize'

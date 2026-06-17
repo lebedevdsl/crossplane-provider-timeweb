@@ -29,7 +29,9 @@ import (
 
 	networkv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/network/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
+	twgen "github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb/generated"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared/resolver"
 )
 
 var (
@@ -39,15 +41,18 @@ var (
 )
 
 // connector builds a per-reconcile external client for the network-group
-// kinds. It serves both `Network` and `FloatingIP` — they share the
-// credential-resolution glue and neither needs the catalog resolver (no
-// preset/OS sizing on these kinds). The kind-specific behavior lives in the
-// external types. Implements managed.ExternalConnector.
+// kinds. It serves `Network`, `FloatingIP`, and `Router` — they share the
+// credential-resolution glue; only the Router needs the catalog resolver
+// (tier slugs). The kind-specific behavior lives in the external types.
+// Implements managed.ExternalConnector.
 type connector struct {
 	kube     client.Client
 	usage    resource.ModernTracker
 	logger   logging.Logger
 	recorder record.EventRecorder
+	// cache is the Setup-scoped resolver cache shared across reconciles —
+	// a per-Connect cache never gets a hit (feature-006 foundational fix).
+	cache *resolver.Cache
 }
 
 // Connect implements managed.ExternalConnector for the network-group kinds.
@@ -75,14 +80,43 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, fmt.Errorf("network: build Timeweb client: %w", err)
 	}
 
-	switch mg.(type) {
+	switch cr := mg.(type) {
 	case *networkv1alpha1.Network:
 		return &networkExternal{tw: tw.ClientInterface, recorder: c.recorder}, nil
 	case *networkv1alpha1.FloatingIP:
 		return &floatingIPExternal{tw: tw.ClientInterface, recorder: c.recorder}, nil
+	case *networkv1alpha1.Router:
+		ext := &routerExternal{
+			tw:       tw.ClientInterface,
+			recorder: c.recorder,
+			resolver: resolver.New(&twgen.ClientWithResponses{ClientInterface: tw.ClientInterface}, resolver.Options{SharedCache: c.cache}),
+			pcRef:    pcRefFor(mmg),
+		}
+		// Resolve per-attachment network/NAT refs + the project ref into
+		// values carried on the external (NOT mutated onto spec). Skip on
+		// delete: Delete uses only the external-name + persisted status, and
+		// a dangling ref must not wedge the finalizer.
+		if cr.GetDeletionTimestamp() == nil {
+			nets, pid, err := resolveRouterRefs(ctx, c.kube, cr)
+			if err != nil {
+				return nil, fmt.Errorf("network/router: resolve references: %w", err)
+			}
+			ext.resolvedNetworks = nets
+			ext.resolvedProjectID = pid
+		}
+		return ext, nil
 	default:
 		return nil, errUnknownKind
 	}
+}
+
+// pcRefFor materialises the resolver-side PCRef from the MR's providerConfigRef.
+func pcRefFor(mg resource.ModernManaged) resolver.PCRef {
+	ref := mg.GetProviderConfigReference()
+	if ref == nil {
+		return resolver.PCRef{}
+	}
+	return resolver.PCRef{Kind: ref.Kind, Name: ref.Name, Namespace: mg.GetNamespace()}
 }
 
 // clientLogger adapts crossplane-runtime's logging.Logger to timeweb.Logger.

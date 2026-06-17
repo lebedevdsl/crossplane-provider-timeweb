@@ -18,10 +18,8 @@ package compute
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
 	twgen "github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb/generated"
@@ -67,15 +65,11 @@ func (e *serverExternal) floatingIPBoundServer(ctx context.Context, fipID string
 		}
 		return nil, err
 	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return nil, fmt.Errorf("compute/server: read floating-ip body: %w", err)
-	}
 	var env struct {
 		IP twgen.FloatingIp `json:"ip"`
 	}
-	if err := json.Unmarshal(body, &env); err != nil {
-		return nil, fmt.Errorf("compute/server: decode floating-ip body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return nil, fmt.Errorf("compute/server: floating-ip: %w", err)
 	}
 	if env.IP.ResourceType == nil || string(*env.IP.ResourceType) != string(twgen.FloatingIpResourceTypeServer) {
 		return nil, nil

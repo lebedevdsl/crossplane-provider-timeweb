@@ -1,0 +1,23 @@
+# Day-2 assert: DHCP drift converged (single-element networks array → the
+# positional match is deterministic) and the router stays Ready/Synced after
+# the rename. dhcpEnabled=false proves the per-attachment PATCH actually
+# landed upstream — a 200-no-op would leave it true (probe-verified failure
+# mode this provider re-observes against).
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 300
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Router
+metadata:
+  name: e2e-router
+  namespace: timeweb-e2e
+status:
+  atProvider:
+    networks:
+      - dhcpEnabled: false
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"

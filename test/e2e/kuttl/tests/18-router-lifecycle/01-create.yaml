@@ -1,0 +1,60 @@
+# Step 1 — Router lifecycle (feature 006 US1+US2).
+#
+# FloatingIP + Network + Router with one NAT'd, DHCP-enabled attachment.
+# The tier slug is discovered at runtime ($TWE_ROUTER_PRESET — cheapest ru-3
+# tier from the undocumented /api/v1/presets/routers). The NAT address is
+# declared per attachment by referencing the FloatingIP (its presence IS the
+# NAT switch). Zone msk-1 ↔ tier region ru-3 per the shared azLocation map.
+#
+# NOTE: a freshly created VPC may need ~1 min upstream before the router can
+# attach it (transient networks_location_mismatch — probe-verified); the
+# controller retries, the assert window absorbs it.
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: e2e-router-net
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    name: "${TWE_ROUTER_NET_NAME}"
+    subnetCIDR: 10.38.0.0/24
+    location: ru-3
+    description: "kuttl 18 router-lifecycle"
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: FloatingIP
+metadata:
+  name: e2e-router-egress
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    location: ru-3
+    availabilityZone: msk-1
+    isDDoSGuard: false
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Router
+metadata:
+  name: e2e-router
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    name: "${TWE_ROUTER_NAME}"
+    availabilityZone: msk-1
+    presetName: "${TWE_ROUTER_PRESET}"
+    networks:
+      - networkRef:
+          name: e2e-router-net
+        natFloatingIP:
+          ref:
+            name: e2e-router-egress
+        dhcp: true

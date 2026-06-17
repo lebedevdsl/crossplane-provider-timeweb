@@ -63,6 +63,20 @@ const (
 	ClusterOutNetworkDriverKuberouter ClusterOutNetworkDriver = "kuberouter"
 )
 
+// Defines values for DnatInProtocol.
+const (
+	DnatInProtocolTcp    DnatInProtocol = "tcp"
+	DnatInProtocolTcpUdp DnatInProtocol = "tcp_udp"
+	DnatInProtocolUdp    DnatInProtocol = "udp"
+)
+
+// Defines values for DnatRuleOutProtocol.
+const (
+	DnatRuleOutProtocolTcp    DnatRuleOutProtocol = "tcp"
+	DnatRuleOutProtocolTcpUdp DnatRuleOutProtocol = "tcp_udp"
+	DnatRuleOutProtocolUdp    DnatRuleOutProtocol = "udp"
+)
+
 // Defines values for MasterPresetOutApiType.
 const (
 	Master MasterPresetOutApiType = "master"
@@ -542,9 +556,9 @@ const (
 
 // Defines values for GetServerStatisticsNewParamsKeys.
 const (
-	NetworkRequest  GetServerStatisticsNewParamsKeys = "network.request"
-	NetworkResponse GetServerStatisticsNewParamsKeys = "network.response"
-	SystemCpuUtil   GetServerStatisticsNewParamsKeys = "system.cpu.util"
+	GetServerStatisticsNewParamsKeysNetworkRequest  GetServerStatisticsNewParamsKeys = "network.request"
+	GetServerStatisticsNewParamsKeysNetworkResponse GetServerStatisticsNewParamsKeys = "network.response"
+	GetServerStatisticsNewParamsKeysSystemCpuUtil   GetServerStatisticsNewParamsKeys = "system.cpu.util"
 )
 
 // Defines values for CreateStorageJSONBodyType.
@@ -623,6 +637,84 @@ type AddonsResponse struct {
 
 	// Meta Вспомогательная информация о возвращаемой сущности
 	Meta SchemasMeta `json:"meta"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// AvailableNetwork defines model for AvailableNetwork.
+type AvailableNetwork struct {
+	// AvailabilityZone Зона доступности
+	AvailabilityZone string `json:"availability_zone"`
+
+	// BusyAddress Занятые IP-адреса
+	BusyAddress []string `json:"busy_address"`
+
+	// CreatedAt Дата и время создания
+	CreatedAt time.Time `json:"created_at"`
+
+	// Description Описание сети
+	Description string `json:"description"`
+
+	// Id ID сети
+	Id string `json:"id"`
+
+	// Location Локация
+	Location string `json:"location"`
+
+	// Name Имя сети
+	Name string `json:"name"`
+
+	// PublicIp Публичный IP-адрес
+	PublicIp *string `json:"public_ip"`
+
+	// SubnetV4 Подсеть IPv4
+	SubnetV4 string `json:"subnet_v4"`
+
+	// Type Тип сети
+	Type string `json:"type"`
+}
+
+// AvailableNetworksResponse defines model for AvailableNetworksResponse.
+type AvailableNetworksResponse struct {
+	// AvailableNetworks Доступные сети
+	AvailableNetworks []AvailableNetwork `json:"available_networks"`
+
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta ComponentsSchemasMeta `json:"meta"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// AvailableStaticRoute defines model for AvailableStaticRoute.
+type AvailableStaticRoute struct {
+	// Nexthop IP-адрес следующего узла
+	Nexthop string `json:"nexthop"`
+
+	// ServiceName Имя сервиса
+	ServiceName string `json:"service_name"`
+
+	// ServiceType Тип сервиса
+	ServiceType string `json:"service_type"`
+
+	// Subnets Доступные подсети
+	Subnets *[]struct {
+		// NetworkName Имя сети
+		NetworkName string `json:"network_name"`
+
+		// Subnet Подсеть в формате CIDR
+		Subnet string `json:"subnet"`
+	} `json:"subnets,omitempty"`
+}
+
+// AvailableStaticRoutesResponse defines model for AvailableStaticRoutesResponse.
+type AvailableStaticRoutesResponse struct {
+	// AvailableNetworks Доступные подсети
+	AvailableNetworks []AvailableStaticRoute `json:"available_networks"`
+
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta ComponentsSchemasMeta `json:"meta"`
 
 	// ResponseId ID запроса
 	ResponseId *string `json:"response_id,omitempty"`
@@ -834,6 +926,78 @@ type ClustersResponse struct {
 	ResponseId *string `json:"response_id,omitempty"`
 }
 
+// DnatIn defines model for DnatIn.
+type DnatIn struct {
+	// Local Локальный (приватный) адрес назначения
+	Local struct {
+		// Ip IP-адрес
+		Ip string `json:"ip"`
+
+		// Port Порт или диапазон портов
+		Port *string `json:"port,omitempty"`
+	} `json:"local"`
+
+	// Protocol Протокол
+	Protocol DnatInProtocol `json:"protocol"`
+
+	// Public Публичный адрес
+	Public struct {
+		// Ip IP-адрес
+		Ip string `json:"ip"`
+
+		// Port Порт или диапазон портов
+		Port *string `json:"port,omitempty"`
+	} `json:"public"`
+}
+
+// DnatInProtocol Протокол
+type DnatInProtocol string
+
+// DnatRuleOut defines model for DnatRuleOut.
+type DnatRuleOut struct {
+	// Id ID правила
+	Id string `json:"id"`
+
+	// LocalIp Приватный IP-адрес
+	LocalIp string `json:"local_ip"`
+
+	// LocalPort Внутренний порт или диапазон
+	LocalPort *string `json:"local_port"`
+
+	// Protocol Протокол
+	Protocol DnatRuleOutProtocol `json:"protocol"`
+
+	// PublicIp Публичный IP-адрес
+	PublicIp string `json:"public_ip"`
+
+	// PublicPort Внешний порт или диапазон
+	PublicPort *string `json:"public_port"`
+}
+
+// DnatRuleOutProtocol Протокол
+type DnatRuleOutProtocol string
+
+// DnatRuleResponse defines model for DnatRuleResponse.
+type DnatRuleResponse struct {
+	// DnatRule Правило проброса портов
+	DnatRule DnatRuleOut `json:"dnat_rule"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// DnatRulesResponse defines model for DnatRulesResponse.
+type DnatRulesResponse struct {
+	// DnatRules Правила проброса портов
+	DnatRules []DnatRuleOut `json:"dnat_rules"`
+
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta ComponentsSchemasMeta `json:"meta"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+}
+
 // IncreaseNodes defines model for IncreaseNodes.
 type IncreaseNodes struct {
 	// Count Количество нод
@@ -891,6 +1055,12 @@ type MasterPresetOutApi struct {
 // MasterPresetOutApiType Тип тарифа
 type MasterPresetOutApiType string
 
+// NatIn defines model for NatIn.
+type NatIn struct {
+	// NatIp IP-адрес, на который включается NAT
+	NatIp string `json:"nat_ip"`
+}
+
 // NetworkDriversResponse defines model for NetworkDriversResponse.
 type NetworkDriversResponse struct {
 	// Meta Вспомогательная информация о возвращаемой сущности
@@ -901,6 +1071,84 @@ type NetworkDriversResponse struct {
 
 	// ResponseId ID запроса
 	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// NetworkEdit defines model for NetworkEdit.
+type NetworkEdit struct {
+	// IsDhcpEnabled Включить или выключить DHCP
+	IsDhcpEnabled bool `json:"is_dhcp_enabled"`
+}
+
+// NetworkIn defines model for NetworkIn.
+type NetworkIn struct {
+	// Networks Сети
+	Networks []struct {
+		// Gateway IP-адрес шлюза. При отсутствии подставляется первый свободный IP в подсети
+		Gateway *string `json:"gateway,omitempty"`
+
+		// Id ID локальной сети
+		Id string `json:"id"`
+
+		// IsDhcpEnabled Включен ли DHCP
+		IsDhcpEnabled *bool `json:"is_dhcp_enabled,omitempty"`
+
+		// ReservedIps Зарезервированные IP-адреса. При отсутствии — пустой массив
+		ReservedIps *[]string `json:"reserved_ips,omitempty"`
+	} `json:"networks"`
+}
+
+// NetworkOut defines model for NetworkOut.
+type NetworkOut struct {
+	// BusyAddresses Занятые IP-адреса
+	BusyAddresses []string `json:"busy_addresses"`
+
+	// Dhcp DHCP
+	Dhcp struct {
+		// IsAvailable Доступен ли DHCP
+		IsAvailable bool `json:"is_available"`
+
+		// IsEnabled Включен ли DHCP
+		IsEnabled bool `json:"is_enabled"`
+	} `json:"dhcp"`
+
+	// Gateway Шлюз
+	Gateway *string `json:"gateway"`
+
+	// Id ID сети
+	Id string `json:"id"`
+
+	// Name Имя сети
+	Name string `json:"name"`
+
+	// NatIp IP-адрес NAT
+	NatIp *string `json:"nat_ip"`
+
+	// ReservedIps Зарезервированные IP-адреса
+	ReservedIps []string `json:"reserved_ips"`
+
+	// Subnet Подсеть
+	Subnet string `json:"subnet"`
+}
+
+// NetworkResponse defines model for NetworkResponse.
+type NetworkResponse struct {
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+
+	// RouterNetwork Сеть роутера
+	RouterNetwork NetworkOut `json:"router_network"`
+}
+
+// NetworksResponse defines model for NetworksResponse.
+type NetworksResponse struct {
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta ComponentsSchemasMeta `json:"meta"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+
+	// RouterNetworks Сети роутера
+	RouterNetworks []NetworkOut `json:"router_networks"`
 }
 
 // NodeGroupIn defines model for NodeGroupIn.
@@ -946,6 +1194,9 @@ type NodeGroupIn struct {
 
 	// PresetId ID тарифа воркер-ноды. Нельзя передавать вместе с `configuration`. Локация воркер-нод должна совпадать с локацией кластера
 	PresetId *int `json:"preset_id,omitempty"`
+
+	// PublicIpEnabled Назначать ли публичные IP узлам группы (присутствует в реальных ответах API, отсутствует в опубликованном swagger; hand-patch — feature 006). Управляет публичной адресацией узлов; egress в приватной схеме идёт через NAT роутера.
+	PublicIpEnabled *bool `json:"public_ip_enabled,omitempty"`
 }
 
 // NodeGroupOut defines model for NodeGroupOut.
@@ -1221,6 +1472,244 @@ type ResourcesResponse struct {
 	ResponseId *string `json:"response_id,omitempty"`
 }
 
+// RouterEdit defines model for RouterEdit.
+type RouterEdit struct {
+	// Comment Новое описание роутера
+	Comment *string `json:"comment,omitempty"`
+
+	// Name Новое имя роутера
+	Name *string `json:"name,omitempty"`
+}
+
+// RouterIn defines model for RouterIn.
+type RouterIn struct {
+	// Comment Описание роутера
+	Comment *string `json:"comment,omitempty"`
+
+	// Ips IP-адреса
+	Ips *[]struct {
+		// Ip IP-адрес. Можно передать значение `create_ip` для добавления нового IP-адреса
+		Ip string `json:"ip"`
+
+		// Nat NAT
+		Nat *struct {
+			// Id ID сети NAT
+			Id string `json:"id"`
+		} `json:"nat,omitempty"`
+	} `json:"ips,omitempty"`
+
+	// Name Имя роутера
+	Name string `json:"name"`
+
+	// Networks Подключаемые сети
+	Networks []struct {
+		// Gateway IP-адрес шлюза. При отсутствии подставляется первый свободный IP в подсети
+		Gateway *string `json:"gateway,omitempty"`
+
+		// Id ID локальной сети
+		Id string `json:"id"`
+
+		// IsDhcpEnabled Включен ли DHCP
+		IsDhcpEnabled *bool `json:"is_dhcp_enabled,omitempty"`
+
+		// ReservedIps Зарезервированные IP-адреса. При отсутствии — пустой массив
+		ReservedIps *[]string `json:"reserved_ips,omitempty"`
+	} `json:"networks"`
+
+	// ParentService Родительский сервис
+	ParentService *struct {
+		// Id ID сервиса
+		Id int `json:"id"`
+
+		// Type Тип сервиса
+		Type string `json:"type"`
+	} `json:"parent_service,omitempty"`
+
+	// PresetId ID тарифа
+	PresetId int `json:"preset_id"`
+
+	// ProjectId ID проекта
+	ProjectId *int `json:"project_id,omitempty"`
+}
+
+// RouterNetworkMeta defines model for RouterNetworkMeta.
+type RouterNetworkMeta struct {
+	// Dhcp DHCP
+	Dhcp struct {
+		// IsAvailable Доступен ли DHCP
+		IsAvailable bool `json:"is_available"`
+
+		// IsEnabled Включен ли DHCP
+		IsEnabled bool `json:"is_enabled"`
+	} `json:"dhcp"`
+
+	// Gateway Шлюз
+	Gateway *string `json:"gateway"`
+
+	// Id ID сети
+	Id string `json:"id"`
+
+	// Name Имя сети
+	Name string `json:"name"`
+
+	// NatIp IP-адрес NAT
+	NatIp *string `json:"nat_ip"`
+}
+
+// RouterOut defines model for RouterOut.
+type RouterOut struct {
+	// AccountId ID аккаунта
+	AccountId string `json:"account_id"`
+
+	// AvatarLink Ссылка на аватар роутера
+	AvatarLink *string `json:"avatar_link"`
+
+	// Comment Описание роутера
+	Comment *string `json:"comment"`
+
+	// CreatedAt Дата и время создания роутера в формате ISO8601
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id ID роутера
+	Id string `json:"id"`
+
+	// Ips IP-адреса
+	Ips []struct {
+		// Ip IP-адрес
+		Ip string `json:"ip"`
+
+		// Nat NAT
+		Nat *struct {
+			// Id ID сети NAT
+			Id string `json:"id"`
+		} `json:"nat"`
+	} `json:"ips"`
+
+	// Name Имя роутера
+	Name string `json:"name"`
+
+	// Networks Сети
+	Networks []RouterNetworkMeta `json:"networks"`
+
+	// Nodes Ноды
+	Nodes []struct {
+		// Id ID ноды
+		Id string `json:"id"`
+	} `json:"nodes"`
+
+	// ParentServices Родительские сервисы
+	ParentServices []struct {
+		// Id ID сервиса
+		Id int `json:"id"`
+
+		// Type Тип сервиса
+		Type string `json:"type"`
+	} `json:"parent_services"`
+
+	// Preset Тариф
+	Preset *RouterPreset `json:"preset"`
+
+	// PresetId ID тарифа
+	PresetId int `json:"preset_id"`
+
+	// ProjectId ID проекта
+	ProjectId *int `json:"project_id,omitempty"`
+
+	// Status Статус роутера
+	Status string `json:"status"`
+
+	// Zone Зона доступности
+	Zone string `json:"zone"`
+}
+
+// RouterPreset defines model for RouterPreset.
+type RouterPreset struct {
+	// Bandwidth Пропускная способность
+	Bandwidth int `json:"bandwidth"`
+
+	// Cost Цена в рублях
+	Cost int `json:"cost"`
+
+	// Cpu Количество ядер процессора
+	Cpu int `json:"cpu"`
+
+	// CpuFrequency Частота процессора
+	CpuFrequency string `json:"cpu_frequency"`
+
+	// Id ID тарифа
+	Id int `json:"id"`
+
+	// Location Локация
+	Location string `json:"location"`
+
+	// NodeCount Количество нод
+	NodeCount int `json:"node_count"`
+
+	// Ram Размер ОЗУ в ГБ
+	Ram int `json:"ram"`
+}
+
+// RouterPresetsResponse defines model for RouterPresetsResponse.
+type RouterPresetsResponse struct {
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta ComponentsSchemasMeta `json:"meta"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+
+	// RouterPresets Тарифы роутеров
+	RouterPresets []RouterPreset `json:"router_presets"`
+}
+
+// RouterResponse defines model for RouterResponse.
+type RouterResponse struct {
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+
+	// Router Роутер
+	Router RouterOut `json:"router"`
+}
+
+// RouterStatistic defines model for RouterStatistic.
+type RouterStatistic struct {
+	// List Значения метрики
+	List []struct {
+		// Time Метка времени
+		Time string `json:"time"`
+
+		// Value Значение
+		Value float32 `json:"value"`
+	} `json:"list"`
+	Meta struct {
+		// Amount Количество точек
+		Amount int `json:"amount"`
+	} `json:"meta"`
+
+	// Name Имя метрики
+	Name string `json:"name"`
+}
+
+// RouterStatisticsResponse defines model for RouterStatisticsResponse.
+type RouterStatisticsResponse struct {
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+
+	// Statistics Статистика
+	Statistics []RouterStatistic `json:"statistics"`
+}
+
+// RoutersResponse defines model for RoutersResponse.
+type RoutersResponse struct {
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta ComponentsSchemasMeta `json:"meta"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+
+	// Routers Роутеры
+	Routers []RouterOut `json:"routers"`
+}
+
 // SetLabels Лейбл для группы нод
 type SetLabels struct {
 	// Key Ключ
@@ -1228,6 +1717,48 @@ type SetLabels struct {
 
 	// Value Значение
 	Value string `json:"value"`
+}
+
+// StaticRouteIn defines model for StaticRouteIn.
+type StaticRouteIn struct {
+	// Nexthop IP-адрес следующего узла (IPv4)
+	Nexthop string `json:"nexthop"`
+
+	// Subnet Сеть назначения в формате CIDR
+	Subnet string `json:"subnet"`
+}
+
+// StaticRouteOut defines model for StaticRouteOut.
+type StaticRouteOut struct {
+	// Id ID статического маршрута
+	Id string `json:"id"`
+
+	// Nexthop IP-адрес следующего узла
+	Nexthop string `json:"nexthop"`
+
+	// Subnet Сеть назначения в формате CIDR
+	Subnet string `json:"subnet"`
+}
+
+// StaticRouteResponse defines model for StaticRouteResponse.
+type StaticRouteResponse struct {
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+
+	// StaticRoute Статический маршрут
+	StaticRoute StaticRouteOut `json:"static_route"`
+}
+
+// StaticRoutesResponse defines model for StaticRoutesResponse.
+type StaticRoutesResponse struct {
+	// Meta Вспомогательная информация о возвращаемой сущности
+	Meta ComponentsSchemasMeta `json:"meta"`
+
+	// ResponseId ID запроса
+	ResponseId *string `json:"response_id,omitempty"`
+
+	// StaticRoutes Статические маршруты
+	StaticRoutes []StaticRouteOut `json:"static_routes"`
 }
 
 // WorkerPresetOutApi defines model for WorkerPresetOutApi.
@@ -1613,6 +2144,12 @@ type Clusterk8s struct {
 
 // Clusterk8sStatus Статус кластера.
 type Clusterk8sStatus string
+
+// ComponentsSchemasMeta defines model for components-schemas-Meta.
+type ComponentsSchemasMeta struct {
+	// Total Общее количество сущностей
+	Total int `json:"total"`
+}
 
 // ConfigParameters Параметры базы данных
 type ConfigParameters struct {
@@ -3206,6 +3743,12 @@ type AddServerToProjectJSONBody struct {
 	ResourceId float32 `json:"resource_id"`
 }
 
+// GetRouterStatisticsParams defines parameters for GetRouterStatistics.
+type GetRouterStatisticsParams struct {
+	// NodeId ID ноды
+	NodeId *string `form:"node_id,omitempty" json:"node_id,omitempty"`
+}
+
 // GetServersParams defines parameters for GetServers.
 type GetServersParams struct {
 	// Limit Обозначает количество записей, которое необходимо вернуть.
@@ -3547,6 +4090,30 @@ type AddServerToProjectJSONRequestBody AddServerToProjectJSONBody
 
 // TransferResourceToAnotherProjectJSONRequestBody defines body for TransferResourceToAnotherProject for application/json ContentType.
 type TransferResourceToAnotherProjectJSONRequestBody = ResourceTransfer
+
+// CreateRouterJSONRequestBody defines body for CreateRouter for application/json ContentType.
+type CreateRouterJSONRequestBody = RouterIn
+
+// UpdateRouterJSONRequestBody defines body for UpdateRouter for application/json ContentType.
+type UpdateRouterJSONRequestBody = RouterEdit
+
+// PostDnatJSONRequestBody defines body for PostDnat for application/json ContentType.
+type PostDnatJSONRequestBody = DnatIn
+
+// PatchNetworksJSONRequestBody defines body for PatchNetworks for application/json ContentType.
+type PatchNetworksJSONRequestBody = NetworkIn
+
+// AddNetworksJSONRequestBody defines body for AddNetworks for application/json ContentType.
+type AddNetworksJSONRequestBody = NetworkIn
+
+// PatchNetworkJSONRequestBody defines body for PatchNetwork for application/json ContentType.
+type PatchNetworkJSONRequestBody = NetworkEdit
+
+// UpdateRouterNatJSONRequestBody defines body for UpdateRouterNat for application/json ContentType.
+type UpdateRouterNatJSONRequestBody = NatIn
+
+// PostStaticRouteJSONRequestBody defines body for PostStaticRoute for application/json ContentType.
+type PostStaticRouteJSONRequestBody = StaticRouteIn
 
 // CreateServerJSONRequestBody defines body for CreateServer for application/json ContentType.
 type CreateServerJSONRequestBody = CreateServer
@@ -4060,6 +4627,9 @@ type ClientInterface interface {
 	// GetKubernetesPresets request
 	GetKubernetesPresets(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetRouterPresets request
+	GetRouterPresets(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetServersPresets request
 	GetServersPresets(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -4158,6 +4728,88 @@ type ClientInterface interface {
 	TransferResourceToAnotherProjectWithBody(ctx context.Context, projectId ProjectId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	TransferResourceToAnotherProject(ctx context.Context, projectId ProjectId, body TransferResourceToAnotherProjectJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetRouters request
+	GetRouters(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateRouterWithBody request with any body
+	CreateRouterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateRouter(ctx context.Context, body CreateRouterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetRouterAvailableNetworks request
+	GetRouterAvailableNetworks(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteRouter request
+	DeleteRouter(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetRouter request
+	GetRouter(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateRouterWithBody request with any body
+	UpdateRouterWithBody(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateRouter(ctx context.Context, routerId string, body UpdateRouterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetDnat request
+	GetDnat(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostDnatWithBody request with any body
+	PostDnatWithBody(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostDnat(ctx context.Context, routerId string, body PostDnatJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteDnat request
+	DeleteDnat(ctx context.Context, routerId string, dnatId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetDnatRule request
+	GetDnatRule(ctx context.Context, routerId string, dnatId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNetworks request
+	GetNetworks(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PatchNetworksWithBody request with any body
+	PatchNetworksWithBody(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PatchNetworks(ctx context.Context, routerId string, body PatchNetworksJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddNetworksWithBody request with any body
+	AddNetworksWithBody(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AddNetworks(ctx context.Context, routerId string, body AddNetworksJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteRouterNetwork request
+	DeleteRouterNetwork(ctx context.Context, routerId string, networkName string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PatchNetworkWithBody request with any body
+	PatchNetworkWithBody(ctx context.Context, routerId string, networkName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PatchNetwork(ctx context.Context, routerId string, networkName string, body PatchNetworkJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteRouterNat request
+	DeleteRouterNat(ctx context.Context, routerId string, networkName string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateRouterNatWithBody request with any body
+	UpdateRouterNatWithBody(ctx context.Context, routerId string, networkName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateRouterNat(ctx context.Context, routerId string, networkName string, body UpdateRouterNatJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetStaticRoutes request
+	GetStaticRoutes(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostStaticRouteWithBody request with any body
+	PostStaticRouteWithBody(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostStaticRoute(ctx context.Context, routerId string, body PostStaticRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAvailableStaticRoutes request
+	GetAvailableStaticRoutes(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteStaticRoute request
+	DeleteStaticRoute(ctx context.Context, routerId string, staticRouteId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetRouterStatistics request
+	GetRouterStatistics(ctx context.Context, routerId string, timeFrom string, period string, keys string, params *GetRouterStatisticsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetServers request
 	GetServers(ctx context.Context, params *GetServersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -5064,6 +5716,18 @@ func (c *Client) GetKubernetesPresets(ctx context.Context, reqEditors ...Request
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetRouterPresets(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRouterPresetsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetServersPresets(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetServersPresetsRequest(c.Server)
 	if err != nil {
@@ -5486,6 +6150,366 @@ func (c *Client) TransferResourceToAnotherProjectWithBody(ctx context.Context, p
 
 func (c *Client) TransferResourceToAnotherProject(ctx context.Context, projectId ProjectId, body TransferResourceToAnotherProjectJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewTransferResourceToAnotherProjectRequest(c.Server, projectId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetRouters(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRoutersRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateRouterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRouterRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateRouter(ctx context.Context, body CreateRouterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRouterRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetRouterAvailableNetworks(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRouterAvailableNetworksRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteRouter(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRouterRequest(c.Server, routerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetRouter(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRouterRequest(c.Server, routerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateRouterWithBody(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRouterRequestWithBody(c.Server, routerId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateRouter(ctx context.Context, routerId string, body UpdateRouterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRouterRequest(c.Server, routerId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetDnat(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetDnatRequest(c.Server, routerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostDnatWithBody(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostDnatRequestWithBody(c.Server, routerId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostDnat(ctx context.Context, routerId string, body PostDnatJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostDnatRequest(c.Server, routerId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteDnat(ctx context.Context, routerId string, dnatId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteDnatRequest(c.Server, routerId, dnatId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetDnatRule(ctx context.Context, routerId string, dnatId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetDnatRuleRequest(c.Server, routerId, dnatId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetNetworks(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNetworksRequest(c.Server, routerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchNetworksWithBody(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchNetworksRequestWithBody(c.Server, routerId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchNetworks(ctx context.Context, routerId string, body PatchNetworksJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchNetworksRequest(c.Server, routerId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddNetworksWithBody(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddNetworksRequestWithBody(c.Server, routerId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddNetworks(ctx context.Context, routerId string, body AddNetworksJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddNetworksRequest(c.Server, routerId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteRouterNetwork(ctx context.Context, routerId string, networkName string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRouterNetworkRequest(c.Server, routerId, networkName)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchNetworkWithBody(ctx context.Context, routerId string, networkName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchNetworkRequestWithBody(c.Server, routerId, networkName, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchNetwork(ctx context.Context, routerId string, networkName string, body PatchNetworkJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchNetworkRequest(c.Server, routerId, networkName, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteRouterNat(ctx context.Context, routerId string, networkName string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRouterNatRequest(c.Server, routerId, networkName)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateRouterNatWithBody(ctx context.Context, routerId string, networkName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRouterNatRequestWithBody(c.Server, routerId, networkName, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateRouterNat(ctx context.Context, routerId string, networkName string, body UpdateRouterNatJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRouterNatRequest(c.Server, routerId, networkName, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetStaticRoutes(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetStaticRoutesRequest(c.Server, routerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostStaticRouteWithBody(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostStaticRouteRequestWithBody(c.Server, routerId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostStaticRoute(ctx context.Context, routerId string, body PostStaticRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostStaticRouteRequest(c.Server, routerId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetAvailableStaticRoutes(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAvailableStaticRoutesRequest(c.Server, routerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteStaticRoute(ctx context.Context, routerId string, staticRouteId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteStaticRouteRequest(c.Server, routerId, staticRouteId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetRouterStatistics(ctx context.Context, routerId string, timeFrom string, period string, keys string, params *GetRouterStatisticsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRouterStatisticsRequest(c.Server, routerId, timeFrom, period, keys, params)
 	if err != nil {
 		return nil, err
 	}
@@ -8252,6 +9276,33 @@ func NewGetKubernetesPresetsRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewGetRouterPresetsRequest generates requests for GetRouterPresets
+func NewGetRouterPresetsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/presets/routers")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetServersPresetsRequest generates requests for GetServersPresets
 func NewGetServersPresetsRequest(server string) (*http.Request, error) {
 	var err error
@@ -9213,6 +10264,929 @@ func NewTransferResourceToAnotherProjectRequestWithBody(server string, projectId
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetRoutersRequest generates requests for GetRouters
+func NewGetRoutersRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateRouterRequest calls the generic CreateRouter builder with application/json body
+func NewCreateRouterRequest(server string, body CreateRouterJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateRouterRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateRouterRequestWithBody generates requests for CreateRouter with any type of body
+func NewCreateRouterRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetRouterAvailableNetworksRequest generates requests for GetRouterAvailableNetworks
+func NewGetRouterAvailableNetworksRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/networks/available")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteRouterRequest generates requests for DeleteRouter
+func NewDeleteRouterRequest(server string, routerId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetRouterRequest generates requests for GetRouter
+func NewGetRouterRequest(server string, routerId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateRouterRequest calls the generic UpdateRouter builder with application/json body
+func NewUpdateRouterRequest(server string, routerId string, body UpdateRouterJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateRouterRequestWithBody(server, routerId, "application/json", bodyReader)
+}
+
+// NewUpdateRouterRequestWithBody generates requests for UpdateRouter with any type of body
+func NewUpdateRouterRequestWithBody(server string, routerId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetDnatRequest generates requests for GetDnat
+func NewGetDnatRequest(server string, routerId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/dnat-rules", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostDnatRequest calls the generic PostDnat builder with application/json body
+func NewPostDnatRequest(server string, routerId string, body PostDnatJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostDnatRequestWithBody(server, routerId, "application/json", bodyReader)
+}
+
+// NewPostDnatRequestWithBody generates requests for PostDnat with any type of body
+func NewPostDnatRequestWithBody(server string, routerId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/dnat-rules", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteDnatRequest generates requests for DeleteDnat
+func NewDeleteDnatRequest(server string, routerId string, dnatId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "dnat_id", runtime.ParamLocationPath, dnatId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/dnat-rules/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetDnatRuleRequest generates requests for GetDnatRule
+func NewGetDnatRuleRequest(server string, routerId string, dnatId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "dnat_id", runtime.ParamLocationPath, dnatId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/dnat-rules/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetNetworksRequest generates requests for GetNetworks
+func NewGetNetworksRequest(server string, routerId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/networks", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPatchNetworksRequest calls the generic PatchNetworks builder with application/json body
+func NewPatchNetworksRequest(server string, routerId string, body PatchNetworksJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPatchNetworksRequestWithBody(server, routerId, "application/json", bodyReader)
+}
+
+// NewPatchNetworksRequestWithBody generates requests for PatchNetworks with any type of body
+func NewPatchNetworksRequestWithBody(server string, routerId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/networks", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAddNetworksRequest calls the generic AddNetworks builder with application/json body
+func NewAddNetworksRequest(server string, routerId string, body AddNetworksJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddNetworksRequestWithBody(server, routerId, "application/json", bodyReader)
+}
+
+// NewAddNetworksRequestWithBody generates requests for AddNetworks with any type of body
+func NewAddNetworksRequestWithBody(server string, routerId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/networks", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteRouterNetworkRequest generates requests for DeleteRouterNetwork
+func NewDeleteRouterNetworkRequest(server string, routerId string, networkName string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "network_name", runtime.ParamLocationPath, networkName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/networks/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPatchNetworkRequest calls the generic PatchNetwork builder with application/json body
+func NewPatchNetworkRequest(server string, routerId string, networkName string, body PatchNetworkJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPatchNetworkRequestWithBody(server, routerId, networkName, "application/json", bodyReader)
+}
+
+// NewPatchNetworkRequestWithBody generates requests for PatchNetwork with any type of body
+func NewPatchNetworkRequestWithBody(server string, routerId string, networkName string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "network_name", runtime.ParamLocationPath, networkName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/networks/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteRouterNatRequest generates requests for DeleteRouterNat
+func NewDeleteRouterNatRequest(server string, routerId string, networkName string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "network_name", runtime.ParamLocationPath, networkName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/networks/%s/nat", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateRouterNatRequest calls the generic UpdateRouterNat builder with application/json body
+func NewUpdateRouterNatRequest(server string, routerId string, networkName string, body UpdateRouterNatJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateRouterNatRequestWithBody(server, routerId, networkName, "application/json", bodyReader)
+}
+
+// NewUpdateRouterNatRequestWithBody generates requests for UpdateRouterNat with any type of body
+func NewUpdateRouterNatRequestWithBody(server string, routerId string, networkName string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "network_name", runtime.ParamLocationPath, networkName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/networks/%s/nat", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetStaticRoutesRequest generates requests for GetStaticRoutes
+func NewGetStaticRoutesRequest(server string, routerId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/static-routes", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostStaticRouteRequest calls the generic PostStaticRoute builder with application/json body
+func NewPostStaticRouteRequest(server string, routerId string, body PostStaticRouteJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostStaticRouteRequestWithBody(server, routerId, "application/json", bodyReader)
+}
+
+// NewPostStaticRouteRequestWithBody generates requests for PostStaticRoute with any type of body
+func NewPostStaticRouteRequestWithBody(server string, routerId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/static-routes", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetAvailableStaticRoutesRequest generates requests for GetAvailableStaticRoutes
+func NewGetAvailableStaticRoutesRequest(server string, routerId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/static-routes/available", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteStaticRouteRequest generates requests for DeleteStaticRoute
+func NewDeleteStaticRouteRequest(server string, routerId string, staticRouteId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "static_route_id", runtime.ParamLocationPath, staticRouteId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/static-routes/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetRouterStatisticsRequest generates requests for GetRouterStatistics
+func NewGetRouterStatisticsRequest(server string, routerId string, timeFrom string, period string, keys string, params *GetRouterStatisticsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "router_id", runtime.ParamLocationPath, routerId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "time_from", runtime.ParamLocationPath, timeFrom)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "period", runtime.ParamLocationPath, period)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithLocation("simple", false, "keys", runtime.ParamLocationPath, keys)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/routers/%s/statistics/%s/%s/%s", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.NodeId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "node_id", runtime.ParamLocationQuery, *params.NodeId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -12173,6 +14147,9 @@ type ClientWithResponsesInterface interface {
 	// GetKubernetesPresetsWithResponse request
 	GetKubernetesPresetsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetKubernetesPresetsResponse, error)
 
+	// GetRouterPresetsWithResponse request
+	GetRouterPresetsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetRouterPresetsResponse, error)
+
 	// GetServersPresetsWithResponse request
 	GetServersPresetsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetServersPresetsResponse, error)
 
@@ -12271,6 +14248,88 @@ type ClientWithResponsesInterface interface {
 	TransferResourceToAnotherProjectWithBodyWithResponse(ctx context.Context, projectId ProjectId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TransferResourceToAnotherProjectResponse, error)
 
 	TransferResourceToAnotherProjectWithResponse(ctx context.Context, projectId ProjectId, body TransferResourceToAnotherProjectJSONRequestBody, reqEditors ...RequestEditorFn) (*TransferResourceToAnotherProjectResponse, error)
+
+	// GetRoutersWithResponse request
+	GetRoutersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetRoutersResponse, error)
+
+	// CreateRouterWithBodyWithResponse request with any body
+	CreateRouterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRouterResponse, error)
+
+	CreateRouterWithResponse(ctx context.Context, body CreateRouterJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRouterResponse, error)
+
+	// GetRouterAvailableNetworksWithResponse request
+	GetRouterAvailableNetworksWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetRouterAvailableNetworksResponse, error)
+
+	// DeleteRouterWithResponse request
+	DeleteRouterWithResponse(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*DeleteRouterResponse, error)
+
+	// GetRouterWithResponse request
+	GetRouterWithResponse(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*GetRouterResponse, error)
+
+	// UpdateRouterWithBodyWithResponse request with any body
+	UpdateRouterWithBodyWithResponse(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRouterResponse, error)
+
+	UpdateRouterWithResponse(ctx context.Context, routerId string, body UpdateRouterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRouterResponse, error)
+
+	// GetDnatWithResponse request
+	GetDnatWithResponse(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*GetDnatResponse, error)
+
+	// PostDnatWithBodyWithResponse request with any body
+	PostDnatWithBodyWithResponse(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostDnatResponse, error)
+
+	PostDnatWithResponse(ctx context.Context, routerId string, body PostDnatJSONRequestBody, reqEditors ...RequestEditorFn) (*PostDnatResponse, error)
+
+	// DeleteDnatWithResponse request
+	DeleteDnatWithResponse(ctx context.Context, routerId string, dnatId string, reqEditors ...RequestEditorFn) (*DeleteDnatResponse, error)
+
+	// GetDnatRuleWithResponse request
+	GetDnatRuleWithResponse(ctx context.Context, routerId string, dnatId string, reqEditors ...RequestEditorFn) (*GetDnatRuleResponse, error)
+
+	// GetNetworksWithResponse request
+	GetNetworksWithResponse(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*GetNetworksResponse, error)
+
+	// PatchNetworksWithBodyWithResponse request with any body
+	PatchNetworksWithBodyWithResponse(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchNetworksResponse, error)
+
+	PatchNetworksWithResponse(ctx context.Context, routerId string, body PatchNetworksJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchNetworksResponse, error)
+
+	// AddNetworksWithBodyWithResponse request with any body
+	AddNetworksWithBodyWithResponse(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddNetworksResponse, error)
+
+	AddNetworksWithResponse(ctx context.Context, routerId string, body AddNetworksJSONRequestBody, reqEditors ...RequestEditorFn) (*AddNetworksResponse, error)
+
+	// DeleteRouterNetworkWithResponse request
+	DeleteRouterNetworkWithResponse(ctx context.Context, routerId string, networkName string, reqEditors ...RequestEditorFn) (*DeleteRouterNetworkResponse, error)
+
+	// PatchNetworkWithBodyWithResponse request with any body
+	PatchNetworkWithBodyWithResponse(ctx context.Context, routerId string, networkName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchNetworkResponse, error)
+
+	PatchNetworkWithResponse(ctx context.Context, routerId string, networkName string, body PatchNetworkJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchNetworkResponse, error)
+
+	// DeleteRouterNatWithResponse request
+	DeleteRouterNatWithResponse(ctx context.Context, routerId string, networkName string, reqEditors ...RequestEditorFn) (*DeleteRouterNatResponse, error)
+
+	// UpdateRouterNatWithBodyWithResponse request with any body
+	UpdateRouterNatWithBodyWithResponse(ctx context.Context, routerId string, networkName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRouterNatResponse, error)
+
+	UpdateRouterNatWithResponse(ctx context.Context, routerId string, networkName string, body UpdateRouterNatJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRouterNatResponse, error)
+
+	// GetStaticRoutesWithResponse request
+	GetStaticRoutesWithResponse(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*GetStaticRoutesResponse, error)
+
+	// PostStaticRouteWithBodyWithResponse request with any body
+	PostStaticRouteWithBodyWithResponse(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostStaticRouteResponse, error)
+
+	PostStaticRouteWithResponse(ctx context.Context, routerId string, body PostStaticRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*PostStaticRouteResponse, error)
+
+	// GetAvailableStaticRoutesWithResponse request
+	GetAvailableStaticRoutesWithResponse(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*GetAvailableStaticRoutesResponse, error)
+
+	// DeleteStaticRouteWithResponse request
+	DeleteStaticRouteWithResponse(ctx context.Context, routerId string, staticRouteId string, reqEditors ...RequestEditorFn) (*DeleteStaticRouteResponse, error)
+
+	// GetRouterStatisticsWithResponse request
+	GetRouterStatisticsWithResponse(ctx context.Context, routerId string, timeFrom string, period string, keys string, params *GetRouterStatisticsParams, reqEditors ...RequestEditorFn) (*GetRouterStatisticsResponse, error)
 
 	// GetServersWithResponse request
 	GetServersWithResponse(ctx context.Context, params *GetServersParams, reqEditors ...RequestEditorFn) (*GetServersResponse, error)
@@ -13901,6 +15960,41 @@ func (r GetKubernetesPresetsResponse) StatusCode() int {
 	return 0
 }
 
+type GetRouterPresetsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta ComponentsSchemasMeta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// RouterPresets Тарифы роутеров
+		RouterPresets []RouterPreset `json:"router_presets"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetRouterPresetsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetRouterPresetsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetServersPresetsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -14822,6 +16916,744 @@ func (r TransferResourceToAnotherProjectResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r TransferResourceToAnotherProjectResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetRoutersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta ComponentsSchemasMeta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// Routers Роутеры
+		Routers []RouterOut `json:"routers"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetRoutersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetRoutersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateRouterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// Router Роутер
+		Router RouterOut `json:"router"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateRouterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateRouterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetRouterAvailableNetworksResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// AvailableNetworks Доступные сети
+		AvailableNetworks []AvailableNetwork `json:"available_networks"`
+
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta ComponentsSchemasMeta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetRouterAvailableNetworksResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetRouterAvailableNetworksResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteRouterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteRouterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteRouterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetRouterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// Router Роутер
+		Router RouterOut `json:"router"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetRouterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetRouterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateRouterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// Router Роутер
+		Router RouterOut `json:"router"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateRouterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateRouterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetDnatResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// DnatRules Правила проброса портов
+		DnatRules []DnatRuleOut `json:"dnat_rules"`
+
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta ComponentsSchemasMeta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetDnatResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetDnatResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostDnatResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *struct {
+		// DnatRule Правило проброса портов
+		DnatRule DnatRuleOut `json:"dnat_rule"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r PostDnatResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostDnatResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteDnatResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteDnatResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteDnatResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetDnatRuleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// DnatRule Правило проброса портов
+		DnatRule DnatRuleOut `json:"dnat_rule"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetDnatRuleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetDnatRuleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetNetworksResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta ComponentsSchemasMeta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// RouterNetworks Сети роутера
+		RouterNetworks []NetworkOut `json:"router_networks"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNetworksResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNetworksResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PatchNetworksResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta ComponentsSchemasMeta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// RouterNetworks Сети роутера
+		RouterNetworks []NetworkOut `json:"router_networks"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r PatchNetworksResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PatchNetworksResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AddNetworksResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta ComponentsSchemasMeta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// RouterNetworks Сети роутера
+		RouterNetworks []NetworkOut `json:"router_networks"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r AddNetworksResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddNetworksResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteRouterNetworkResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteRouterNetworkResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteRouterNetworkResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PatchNetworkResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// RouterNetwork Сеть роутера
+		RouterNetwork NetworkOut `json:"router_network"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r PatchNetworkResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PatchNetworkResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteRouterNatResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// Router Роутер
+		Router RouterOut `json:"router"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteRouterNatResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteRouterNatResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateRouterNatResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// Router Роутер
+		Router RouterOut `json:"router"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateRouterNatResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateRouterNatResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetStaticRoutesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta ComponentsSchemasMeta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// StaticRoutes Статические маршруты
+		StaticRoutes []StaticRouteOut `json:"static_routes"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetStaticRoutesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetStaticRoutesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostStaticRouteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// StaticRoute Статический маршрут
+		StaticRoute StaticRouteOut `json:"static_route"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r PostStaticRouteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostStaticRouteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetAvailableStaticRoutesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// AvailableNetworks Доступные подсети
+		AvailableNetworks []AvailableStaticRoute `json:"available_networks"`
+
+		// Meta Вспомогательная информация о возвращаемой сущности
+		Meta ComponentsSchemasMeta `json:"meta"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAvailableStaticRoutesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAvailableStaticRoutesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteStaticRouteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *N400
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON429      *N429
+	JSON500      *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteStaticRouteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteStaticRouteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetRouterStatisticsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+
+		// Statistics Статистика
+		Statistics []RouterStatistic `json:"statistics"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r GetRouterStatisticsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetRouterStatisticsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -17407,6 +20239,15 @@ func (c *ClientWithResponses) GetKubernetesPresetsWithResponse(ctx context.Conte
 	return ParseGetKubernetesPresetsResponse(rsp)
 }
 
+// GetRouterPresetsWithResponse request returning *GetRouterPresetsResponse
+func (c *ClientWithResponses) GetRouterPresetsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetRouterPresetsResponse, error) {
+	rsp, err := c.GetRouterPresets(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetRouterPresetsResponse(rsp)
+}
+
 // GetServersPresetsWithResponse request returning *GetServersPresetsResponse
 func (c *ClientWithResponses) GetServersPresetsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetServersPresetsResponse, error) {
 	rsp, err := c.GetServersPresets(ctx, reqEditors...)
@@ -17720,6 +20561,268 @@ func (c *ClientWithResponses) TransferResourceToAnotherProjectWithResponse(ctx c
 		return nil, err
 	}
 	return ParseTransferResourceToAnotherProjectResponse(rsp)
+}
+
+// GetRoutersWithResponse request returning *GetRoutersResponse
+func (c *ClientWithResponses) GetRoutersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetRoutersResponse, error) {
+	rsp, err := c.GetRouters(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetRoutersResponse(rsp)
+}
+
+// CreateRouterWithBodyWithResponse request with arbitrary body returning *CreateRouterResponse
+func (c *ClientWithResponses) CreateRouterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRouterResponse, error) {
+	rsp, err := c.CreateRouterWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateRouterResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateRouterWithResponse(ctx context.Context, body CreateRouterJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRouterResponse, error) {
+	rsp, err := c.CreateRouter(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateRouterResponse(rsp)
+}
+
+// GetRouterAvailableNetworksWithResponse request returning *GetRouterAvailableNetworksResponse
+func (c *ClientWithResponses) GetRouterAvailableNetworksWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetRouterAvailableNetworksResponse, error) {
+	rsp, err := c.GetRouterAvailableNetworks(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetRouterAvailableNetworksResponse(rsp)
+}
+
+// DeleteRouterWithResponse request returning *DeleteRouterResponse
+func (c *ClientWithResponses) DeleteRouterWithResponse(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*DeleteRouterResponse, error) {
+	rsp, err := c.DeleteRouter(ctx, routerId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteRouterResponse(rsp)
+}
+
+// GetRouterWithResponse request returning *GetRouterResponse
+func (c *ClientWithResponses) GetRouterWithResponse(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*GetRouterResponse, error) {
+	rsp, err := c.GetRouter(ctx, routerId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetRouterResponse(rsp)
+}
+
+// UpdateRouterWithBodyWithResponse request with arbitrary body returning *UpdateRouterResponse
+func (c *ClientWithResponses) UpdateRouterWithBodyWithResponse(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRouterResponse, error) {
+	rsp, err := c.UpdateRouterWithBody(ctx, routerId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateRouterResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateRouterWithResponse(ctx context.Context, routerId string, body UpdateRouterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRouterResponse, error) {
+	rsp, err := c.UpdateRouter(ctx, routerId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateRouterResponse(rsp)
+}
+
+// GetDnatWithResponse request returning *GetDnatResponse
+func (c *ClientWithResponses) GetDnatWithResponse(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*GetDnatResponse, error) {
+	rsp, err := c.GetDnat(ctx, routerId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetDnatResponse(rsp)
+}
+
+// PostDnatWithBodyWithResponse request with arbitrary body returning *PostDnatResponse
+func (c *ClientWithResponses) PostDnatWithBodyWithResponse(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostDnatResponse, error) {
+	rsp, err := c.PostDnatWithBody(ctx, routerId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostDnatResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostDnatWithResponse(ctx context.Context, routerId string, body PostDnatJSONRequestBody, reqEditors ...RequestEditorFn) (*PostDnatResponse, error) {
+	rsp, err := c.PostDnat(ctx, routerId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostDnatResponse(rsp)
+}
+
+// DeleteDnatWithResponse request returning *DeleteDnatResponse
+func (c *ClientWithResponses) DeleteDnatWithResponse(ctx context.Context, routerId string, dnatId string, reqEditors ...RequestEditorFn) (*DeleteDnatResponse, error) {
+	rsp, err := c.DeleteDnat(ctx, routerId, dnatId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteDnatResponse(rsp)
+}
+
+// GetDnatRuleWithResponse request returning *GetDnatRuleResponse
+func (c *ClientWithResponses) GetDnatRuleWithResponse(ctx context.Context, routerId string, dnatId string, reqEditors ...RequestEditorFn) (*GetDnatRuleResponse, error) {
+	rsp, err := c.GetDnatRule(ctx, routerId, dnatId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetDnatRuleResponse(rsp)
+}
+
+// GetNetworksWithResponse request returning *GetNetworksResponse
+func (c *ClientWithResponses) GetNetworksWithResponse(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*GetNetworksResponse, error) {
+	rsp, err := c.GetNetworks(ctx, routerId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNetworksResponse(rsp)
+}
+
+// PatchNetworksWithBodyWithResponse request with arbitrary body returning *PatchNetworksResponse
+func (c *ClientWithResponses) PatchNetworksWithBodyWithResponse(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchNetworksResponse, error) {
+	rsp, err := c.PatchNetworksWithBody(ctx, routerId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchNetworksResponse(rsp)
+}
+
+func (c *ClientWithResponses) PatchNetworksWithResponse(ctx context.Context, routerId string, body PatchNetworksJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchNetworksResponse, error) {
+	rsp, err := c.PatchNetworks(ctx, routerId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchNetworksResponse(rsp)
+}
+
+// AddNetworksWithBodyWithResponse request with arbitrary body returning *AddNetworksResponse
+func (c *ClientWithResponses) AddNetworksWithBodyWithResponse(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddNetworksResponse, error) {
+	rsp, err := c.AddNetworksWithBody(ctx, routerId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddNetworksResponse(rsp)
+}
+
+func (c *ClientWithResponses) AddNetworksWithResponse(ctx context.Context, routerId string, body AddNetworksJSONRequestBody, reqEditors ...RequestEditorFn) (*AddNetworksResponse, error) {
+	rsp, err := c.AddNetworks(ctx, routerId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddNetworksResponse(rsp)
+}
+
+// DeleteRouterNetworkWithResponse request returning *DeleteRouterNetworkResponse
+func (c *ClientWithResponses) DeleteRouterNetworkWithResponse(ctx context.Context, routerId string, networkName string, reqEditors ...RequestEditorFn) (*DeleteRouterNetworkResponse, error) {
+	rsp, err := c.DeleteRouterNetwork(ctx, routerId, networkName, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteRouterNetworkResponse(rsp)
+}
+
+// PatchNetworkWithBodyWithResponse request with arbitrary body returning *PatchNetworkResponse
+func (c *ClientWithResponses) PatchNetworkWithBodyWithResponse(ctx context.Context, routerId string, networkName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchNetworkResponse, error) {
+	rsp, err := c.PatchNetworkWithBody(ctx, routerId, networkName, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchNetworkResponse(rsp)
+}
+
+func (c *ClientWithResponses) PatchNetworkWithResponse(ctx context.Context, routerId string, networkName string, body PatchNetworkJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchNetworkResponse, error) {
+	rsp, err := c.PatchNetwork(ctx, routerId, networkName, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchNetworkResponse(rsp)
+}
+
+// DeleteRouterNatWithResponse request returning *DeleteRouterNatResponse
+func (c *ClientWithResponses) DeleteRouterNatWithResponse(ctx context.Context, routerId string, networkName string, reqEditors ...RequestEditorFn) (*DeleteRouterNatResponse, error) {
+	rsp, err := c.DeleteRouterNat(ctx, routerId, networkName, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteRouterNatResponse(rsp)
+}
+
+// UpdateRouterNatWithBodyWithResponse request with arbitrary body returning *UpdateRouterNatResponse
+func (c *ClientWithResponses) UpdateRouterNatWithBodyWithResponse(ctx context.Context, routerId string, networkName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRouterNatResponse, error) {
+	rsp, err := c.UpdateRouterNatWithBody(ctx, routerId, networkName, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateRouterNatResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateRouterNatWithResponse(ctx context.Context, routerId string, networkName string, body UpdateRouterNatJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRouterNatResponse, error) {
+	rsp, err := c.UpdateRouterNat(ctx, routerId, networkName, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateRouterNatResponse(rsp)
+}
+
+// GetStaticRoutesWithResponse request returning *GetStaticRoutesResponse
+func (c *ClientWithResponses) GetStaticRoutesWithResponse(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*GetStaticRoutesResponse, error) {
+	rsp, err := c.GetStaticRoutes(ctx, routerId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetStaticRoutesResponse(rsp)
+}
+
+// PostStaticRouteWithBodyWithResponse request with arbitrary body returning *PostStaticRouteResponse
+func (c *ClientWithResponses) PostStaticRouteWithBodyWithResponse(ctx context.Context, routerId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostStaticRouteResponse, error) {
+	rsp, err := c.PostStaticRouteWithBody(ctx, routerId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostStaticRouteResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostStaticRouteWithResponse(ctx context.Context, routerId string, body PostStaticRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*PostStaticRouteResponse, error) {
+	rsp, err := c.PostStaticRoute(ctx, routerId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostStaticRouteResponse(rsp)
+}
+
+// GetAvailableStaticRoutesWithResponse request returning *GetAvailableStaticRoutesResponse
+func (c *ClientWithResponses) GetAvailableStaticRoutesWithResponse(ctx context.Context, routerId string, reqEditors ...RequestEditorFn) (*GetAvailableStaticRoutesResponse, error) {
+	rsp, err := c.GetAvailableStaticRoutes(ctx, routerId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAvailableStaticRoutesResponse(rsp)
+}
+
+// DeleteStaticRouteWithResponse request returning *DeleteStaticRouteResponse
+func (c *ClientWithResponses) DeleteStaticRouteWithResponse(ctx context.Context, routerId string, staticRouteId string, reqEditors ...RequestEditorFn) (*DeleteStaticRouteResponse, error) {
+	rsp, err := c.DeleteStaticRoute(ctx, routerId, staticRouteId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteStaticRouteResponse(rsp)
+}
+
+// GetRouterStatisticsWithResponse request returning *GetRouterStatisticsResponse
+func (c *ClientWithResponses) GetRouterStatisticsWithResponse(ctx context.Context, routerId string, timeFrom string, period string, keys string, params *GetRouterStatisticsParams, reqEditors ...RequestEditorFn) (*GetRouterStatisticsResponse, error) {
+	rsp, err := c.GetRouterStatistics(ctx, routerId, timeFrom, period, keys, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetRouterStatisticsResponse(rsp)
 }
 
 // GetServersWithResponse request returning *GetServersResponse
@@ -21324,6 +24427,69 @@ func ParseGetKubernetesPresetsResponse(rsp *http.Response) (*GetKubernetesPreset
 	return response, nil
 }
 
+// ParseGetRouterPresetsResponse parses an HTTP response from a GetRouterPresetsWithResponse call
+func ParseGetRouterPresetsResponse(rsp *http.Response) (*GetRouterPresetsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetRouterPresetsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta ComponentsSchemasMeta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// RouterPresets Тарифы роутеров
+			RouterPresets []RouterPreset `json:"router_presets"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetServersPresetsResponse parses an HTTP response from a GetServersPresetsWithResponse call
 func ParseGetServersPresetsResponse(rsp *http.Response) (*GetServersPresetsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -23176,6 +26342,1564 @@ func ParseTransferResourceToAnotherProjectResponse(rsp *http.Response) (*Transfe
 
 			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
 			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetRoutersResponse parses an HTTP response from a GetRoutersWithResponse call
+func ParseGetRoutersResponse(rsp *http.Response) (*GetRoutersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetRoutersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta ComponentsSchemasMeta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// Routers Роутеры
+			Routers []RouterOut `json:"routers"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateRouterResponse parses an HTTP response from a CreateRouterWithResponse call
+func ParseCreateRouterResponse(rsp *http.Response) (*CreateRouterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateRouterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// Router Роутер
+			Router RouterOut `json:"router"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetRouterAvailableNetworksResponse parses an HTTP response from a GetRouterAvailableNetworksWithResponse call
+func ParseGetRouterAvailableNetworksResponse(rsp *http.Response) (*GetRouterAvailableNetworksResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetRouterAvailableNetworksResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// AvailableNetworks Доступные сети
+			AvailableNetworks []AvailableNetwork `json:"available_networks"`
+
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta ComponentsSchemasMeta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteRouterResponse parses an HTTP response from a DeleteRouterWithResponse call
+func ParseDeleteRouterResponse(rsp *http.Response) (*DeleteRouterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteRouterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetRouterResponse parses an HTTP response from a GetRouterWithResponse call
+func ParseGetRouterResponse(rsp *http.Response) (*GetRouterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetRouterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// Router Роутер
+			Router RouterOut `json:"router"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateRouterResponse parses an HTTP response from a UpdateRouterWithResponse call
+func ParseUpdateRouterResponse(rsp *http.Response) (*UpdateRouterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateRouterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// Router Роутер
+			Router RouterOut `json:"router"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetDnatResponse parses an HTTP response from a GetDnatWithResponse call
+func ParseGetDnatResponse(rsp *http.Response) (*GetDnatResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetDnatResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// DnatRules Правила проброса портов
+			DnatRules []DnatRuleOut `json:"dnat_rules"`
+
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta ComponentsSchemasMeta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostDnatResponse parses an HTTP response from a PostDnatWithResponse call
+func ParsePostDnatResponse(rsp *http.Response) (*PostDnatResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostDnatResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest struct {
+			// DnatRule Правило проброса портов
+			DnatRule DnatRuleOut `json:"dnat_rule"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteDnatResponse parses an HTTP response from a DeleteDnatWithResponse call
+func ParseDeleteDnatResponse(rsp *http.Response) (*DeleteDnatResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteDnatResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetDnatRuleResponse parses an HTTP response from a GetDnatRuleWithResponse call
+func ParseGetDnatRuleResponse(rsp *http.Response) (*GetDnatRuleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetDnatRuleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// DnatRule Правило проброса портов
+			DnatRule DnatRuleOut `json:"dnat_rule"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetNetworksResponse parses an HTTP response from a GetNetworksWithResponse call
+func ParseGetNetworksResponse(rsp *http.Response) (*GetNetworksResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNetworksResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta ComponentsSchemasMeta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// RouterNetworks Сети роутера
+			RouterNetworks []NetworkOut `json:"router_networks"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePatchNetworksResponse parses an HTTP response from a PatchNetworksWithResponse call
+func ParsePatchNetworksResponse(rsp *http.Response) (*PatchNetworksResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PatchNetworksResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta ComponentsSchemasMeta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// RouterNetworks Сети роутера
+			RouterNetworks []NetworkOut `json:"router_networks"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAddNetworksResponse parses an HTTP response from a AddNetworksWithResponse call
+func ParseAddNetworksResponse(rsp *http.Response) (*AddNetworksResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddNetworksResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta ComponentsSchemasMeta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// RouterNetworks Сети роутера
+			RouterNetworks []NetworkOut `json:"router_networks"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteRouterNetworkResponse parses an HTTP response from a DeleteRouterNetworkWithResponse call
+func ParseDeleteRouterNetworkResponse(rsp *http.Response) (*DeleteRouterNetworkResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteRouterNetworkResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePatchNetworkResponse parses an HTTP response from a PatchNetworkWithResponse call
+func ParsePatchNetworkResponse(rsp *http.Response) (*PatchNetworkResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PatchNetworkResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// RouterNetwork Сеть роутера
+			RouterNetwork NetworkOut `json:"router_network"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteRouterNatResponse parses an HTTP response from a DeleteRouterNatWithResponse call
+func ParseDeleteRouterNatResponse(rsp *http.Response) (*DeleteRouterNatResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteRouterNatResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// Router Роутер
+			Router RouterOut `json:"router"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateRouterNatResponse parses an HTTP response from a UpdateRouterNatWithResponse call
+func ParseUpdateRouterNatResponse(rsp *http.Response) (*UpdateRouterNatResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateRouterNatResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// Router Роутер
+			Router RouterOut `json:"router"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetStaticRoutesResponse parses an HTTP response from a GetStaticRoutesWithResponse call
+func ParseGetStaticRoutesResponse(rsp *http.Response) (*GetStaticRoutesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetStaticRoutesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta ComponentsSchemasMeta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// StaticRoutes Статические маршруты
+			StaticRoutes []StaticRouteOut `json:"static_routes"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostStaticRouteResponse parses an HTTP response from a PostStaticRouteWithResponse call
+func ParsePostStaticRouteResponse(rsp *http.Response) (*PostStaticRouteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostStaticRouteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// StaticRoute Статический маршрут
+			StaticRoute StaticRouteOut `json:"static_route"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetAvailableStaticRoutesResponse parses an HTTP response from a GetAvailableStaticRoutesWithResponse call
+func ParseGetAvailableStaticRoutesResponse(rsp *http.Response) (*GetAvailableStaticRoutesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAvailableStaticRoutesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// AvailableNetworks Доступные подсети
+			AvailableNetworks []AvailableStaticRoute `json:"available_networks"`
+
+			// Meta Вспомогательная информация о возвращаемой сущности
+			Meta ComponentsSchemasMeta `json:"meta"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteStaticRouteResponse parses an HTTP response from a DeleteStaticRouteWithResponse call
+func ParseDeleteStaticRouteResponse(rsp *http.Response) (*DeleteStaticRouteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteStaticRouteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetRouterStatisticsResponse parses an HTTP response from a GetRouterStatisticsWithResponse call
+func ParseGetRouterStatisticsResponse(rsp *http.Response) (*GetRouterStatisticsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetRouterStatisticsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+
+			// Statistics Статистика
+			Statistics []RouterStatistic `json:"statistics"`
 		}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err

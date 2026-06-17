@@ -176,6 +176,39 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	AddNetworksStub        func(context.Context, string, generated.AddNetworksJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	addNetworksMutex       sync.RWMutex
+	addNetworksArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 generated.AddNetworksJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	addNetworksReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	addNetworksReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	AddNetworksWithBodyStub        func(context.Context, string, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	addNetworksWithBodyMutex       sync.RWMutex
+	addNetworksWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	addNetworksWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	addNetworksWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	AddServerIPStub        func(context.Context, generated.ServerId, generated.AddServerIPJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
 	addServerIPMutex       sync.RWMutex
 	addServerIPArgsForCall []struct {
@@ -575,6 +608,37 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	CreateRouterStub        func(context.Context, generated.CreateRouterJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	createRouterMutex       sync.RWMutex
+	createRouterArgsForCall []struct {
+		arg1 context.Context
+		arg2 generated.CreateRouterJSONRequestBody
+		arg3 []generated.RequestEditorFn
+	}
+	createRouterReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createRouterReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	CreateRouterWithBodyStub        func(context.Context, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	createRouterWithBodyMutex       sync.RWMutex
+	createRouterWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 io.Reader
+		arg4 []generated.RequestEditorFn
+	}
+	createRouterWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	createRouterWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	CreateServerStub        func(context.Context, generated.CreateServerJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
 	createServerMutex       sync.RWMutex
 	createServerArgsForCall []struct {
@@ -784,6 +848,22 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	DeleteDnatStub        func(context.Context, string, string, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteDnatMutex       sync.RWMutex
+	deleteDnatArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 []generated.RequestEditorFn
+	}
+	deleteDnatReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteDnatReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	DeleteFloatingIPStub        func(context.Context, generated.FloatingIpId, ...generated.RequestEditorFn) (*http.Response, error)
 	deleteFloatingIPMutex       sync.RWMutex
 	deleteFloatingIPArgsForCall []struct {
@@ -876,6 +956,53 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	DeleteRouterStub        func(context.Context, string, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteRouterMutex       sync.RWMutex
+	deleteRouterArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []generated.RequestEditorFn
+	}
+	deleteRouterReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteRouterReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	DeleteRouterNatStub        func(context.Context, string, string, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteRouterNatMutex       sync.RWMutex
+	deleteRouterNatArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 []generated.RequestEditorFn
+	}
+	deleteRouterNatReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteRouterNatReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	DeleteRouterNetworkStub        func(context.Context, string, string, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteRouterNetworkMutex       sync.RWMutex
+	deleteRouterNetworkArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 []generated.RequestEditorFn
+	}
+	deleteRouterNetworkReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteRouterNetworkReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	DeleteServerStub        func(context.Context, generated.ServerId, *generated.DeleteServerParams, ...generated.RequestEditorFn) (*http.Response, error)
 	deleteServerMutex       sync.RWMutex
 	deleteServerArgsForCall []struct {
@@ -955,6 +1082,22 @@ type FakeClient struct {
 		result2 error
 	}
 	deleteServerIPWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	DeleteStaticRouteStub        func(context.Context, string, string, ...generated.RequestEditorFn) (*http.Response, error)
+	deleteStaticRouteMutex       sync.RWMutex
+	deleteStaticRouteArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 []generated.RequestEditorFn
+	}
+	deleteStaticRouteReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	deleteStaticRouteReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -1121,6 +1264,21 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	GetAvailableStaticRoutesStub        func(context.Context, string, ...generated.RequestEditorFn) (*http.Response, error)
+	getAvailableStaticRoutesMutex       sync.RWMutex
+	getAvailableStaticRoutesArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []generated.RequestEditorFn
+	}
+	getAvailableStaticRoutesReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getAvailableStaticRoutesReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	GetClusterStub        func(context.Context, int, ...generated.RequestEditorFn) (*http.Response, error)
 	getClusterMutex       sync.RWMutex
 	getClusterArgsForCall []struct {
@@ -1255,6 +1413,37 @@ type FakeClient struct {
 		result2 error
 	}
 	getConfiguratorsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetDnatStub        func(context.Context, string, ...generated.RequestEditorFn) (*http.Response, error)
+	getDnatMutex       sync.RWMutex
+	getDnatArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []generated.RequestEditorFn
+	}
+	getDnatReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getDnatReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetDnatRuleStub        func(context.Context, string, string, ...generated.RequestEditorFn) (*http.Response, error)
+	getDnatRuleMutex       sync.RWMutex
+	getDnatRuleArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 []generated.RequestEditorFn
+	}
+	getDnatRuleReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getDnatRuleReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -1399,6 +1588,21 @@ type FakeClient struct {
 		result2 error
 	}
 	getKubernetesPresetsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetNetworksStub        func(context.Context, string, ...generated.RequestEditorFn) (*http.Response, error)
+	getNetworksMutex       sync.RWMutex
+	getNetworksArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []generated.RequestEditorFn
+	}
+	getNetworksReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getNetworksReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -1590,6 +1794,82 @@ type FakeClient struct {
 		result2 error
 	}
 	getRegistryRepositoriesReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetRouterStub        func(context.Context, string, ...generated.RequestEditorFn) (*http.Response, error)
+	getRouterMutex       sync.RWMutex
+	getRouterArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []generated.RequestEditorFn
+	}
+	getRouterReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getRouterReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetRouterAvailableNetworksStub        func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)
+	getRouterAvailableNetworksMutex       sync.RWMutex
+	getRouterAvailableNetworksArgsForCall []struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}
+	getRouterAvailableNetworksReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getRouterAvailableNetworksReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetRouterPresetsStub        func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)
+	getRouterPresetsMutex       sync.RWMutex
+	getRouterPresetsArgsForCall []struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}
+	getRouterPresetsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getRouterPresetsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetRouterStatisticsStub        func(context.Context, string, string, string, string, *generated.GetRouterStatisticsParams, ...generated.RequestEditorFn) (*http.Response, error)
+	getRouterStatisticsMutex       sync.RWMutex
+	getRouterStatisticsArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 string
+		arg5 string
+		arg6 *generated.GetRouterStatisticsParams
+		arg7 []generated.RequestEditorFn
+	}
+	getRouterStatisticsReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getRouterStatisticsReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetRoutersStub        func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)
+	getRoutersMutex       sync.RWMutex
+	getRoutersArgsForCall []struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}
+	getRoutersReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getRoutersReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -1793,6 +2073,21 @@ type FakeClient struct {
 		result2 error
 	}
 	getSoftwareReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	GetStaticRoutesStub        func(context.Context, string, ...generated.RequestEditorFn) (*http.Response, error)
+	getStaticRoutesMutex       sync.RWMutex
+	getStaticRoutesArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []generated.RequestEditorFn
+	}
+	getStaticRoutesReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	getStaticRoutesReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -2007,6 +2302,74 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	PatchNetworkStub        func(context.Context, string, string, generated.PatchNetworkJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	patchNetworkMutex       sync.RWMutex
+	patchNetworkArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 generated.PatchNetworkJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}
+	patchNetworkReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	patchNetworkReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	PatchNetworkWithBodyStub        func(context.Context, string, string, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	patchNetworkWithBodyMutex       sync.RWMutex
+	patchNetworkWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}
+	patchNetworkWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	patchNetworkWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	PatchNetworksStub        func(context.Context, string, generated.PatchNetworksJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	patchNetworksMutex       sync.RWMutex
+	patchNetworksArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 generated.PatchNetworksJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	patchNetworksReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	patchNetworksReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	PatchNetworksWithBodyStub        func(context.Context, string, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	patchNetworksWithBodyMutex       sync.RWMutex
+	patchNetworksWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	patchNetworksWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	patchNetworksWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	PerformActionOnBackupStub        func(context.Context, generated.ServerId, generated.DiskId, generated.ServerBackupId, generated.PerformActionOnBackupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
 	performActionOnBackupMutex       sync.RWMutex
 	performActionOnBackupArgsForCall []struct {
@@ -2077,6 +2440,39 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	PostDnatStub        func(context.Context, string, generated.PostDnatJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	postDnatMutex       sync.RWMutex
+	postDnatArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 generated.PostDnatJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	postDnatReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	postDnatReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	PostDnatWithBodyStub        func(context.Context, string, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	postDnatWithBodyMutex       sync.RWMutex
+	postDnatWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	postDnatWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	postDnatWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	PostKubernetesAddonsStub        func(context.Context, int, generated.PostKubernetesAddonsJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
 	postKubernetesAddonsMutex       sync.RWMutex
 	postKubernetesAddonsArgsForCall []struct {
@@ -2142,6 +2538,39 @@ type FakeClient struct {
 		result2 error
 	}
 	postKubernetesAddonsWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	PostStaticRouteStub        func(context.Context, string, generated.PostStaticRouteJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	postStaticRouteMutex       sync.RWMutex
+	postStaticRouteArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 generated.PostStaticRouteJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	postStaticRouteReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	postStaticRouteReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	PostStaticRouteWithBodyStub        func(context.Context, string, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	postStaticRouteWithBodyMutex       sync.RWMutex
+	postStaticRouteWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	postStaticRouteWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	postStaticRouteWithBodyReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -2529,6 +2958,74 @@ type FakeClient struct {
 		result2 error
 	}
 	updateRegistryWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateRouterStub        func(context.Context, string, generated.UpdateRouterJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	updateRouterMutex       sync.RWMutex
+	updateRouterArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 generated.UpdateRouterJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}
+	updateRouterReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateRouterReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateRouterNatStub        func(context.Context, string, string, generated.UpdateRouterNatJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	updateRouterNatMutex       sync.RWMutex
+	updateRouterNatArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 generated.UpdateRouterNatJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}
+	updateRouterNatReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateRouterNatReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateRouterNatWithBodyStub        func(context.Context, string, string, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	updateRouterNatWithBodyMutex       sync.RWMutex
+	updateRouterNatWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}
+	updateRouterNatWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateRouterNatWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateRouterWithBodyStub        func(context.Context, string, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	updateRouterWithBodyMutex       sync.RWMutex
+	updateRouterWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}
+	updateRouterWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateRouterWithBodyReturnsOnCall map[int]struct {
 		result1 *http.Response
 		result2 error
 	}
@@ -3544,6 +4041,141 @@ func (fake *FakeClient) AddKeyToServerWithBodyReturnsOnCall(i int, result1 *http
 		})
 	}
 	fake.addKeyToServerWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) AddNetworks(arg1 context.Context, arg2 string, arg3 generated.AddNetworksJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.addNetworksMutex.Lock()
+	ret, specificReturn := fake.addNetworksReturnsOnCall[len(fake.addNetworksArgsForCall)]
+	fake.addNetworksArgsForCall = append(fake.addNetworksArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 generated.AddNetworksJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.AddNetworksStub
+	fakeReturns := fake.addNetworksReturns
+	fake.recordInvocation("AddNetworks", []interface{}{arg1, arg2, arg3, arg4})
+	fake.addNetworksMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) AddNetworksCallCount() int {
+	fake.addNetworksMutex.RLock()
+	defer fake.addNetworksMutex.RUnlock()
+	return len(fake.addNetworksArgsForCall)
+}
+
+func (fake *FakeClient) AddNetworksCalls(stub func(context.Context, string, generated.AddNetworksJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.addNetworksMutex.Lock()
+	defer fake.addNetworksMutex.Unlock()
+	fake.AddNetworksStub = stub
+}
+
+func (fake *FakeClient) AddNetworksArgsForCall(i int) (context.Context, string, generated.AddNetworksJSONRequestBody, []generated.RequestEditorFn) {
+	fake.addNetworksMutex.RLock()
+	defer fake.addNetworksMutex.RUnlock()
+	argsForCall := fake.addNetworksArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) AddNetworksReturns(result1 *http.Response, result2 error) {
+	fake.addNetworksMutex.Lock()
+	defer fake.addNetworksMutex.Unlock()
+	fake.AddNetworksStub = nil
+	fake.addNetworksReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) AddNetworksReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.addNetworksMutex.Lock()
+	defer fake.addNetworksMutex.Unlock()
+	fake.AddNetworksStub = nil
+	if fake.addNetworksReturnsOnCall == nil {
+		fake.addNetworksReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.addNetworksReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) AddNetworksWithBody(arg1 context.Context, arg2 string, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.addNetworksWithBodyMutex.Lock()
+	ret, specificReturn := fake.addNetworksWithBodyReturnsOnCall[len(fake.addNetworksWithBodyArgsForCall)]
+	fake.addNetworksWithBodyArgsForCall = append(fake.addNetworksWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.AddNetworksWithBodyStub
+	fakeReturns := fake.addNetworksWithBodyReturns
+	fake.recordInvocation("AddNetworksWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.addNetworksWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) AddNetworksWithBodyCallCount() int {
+	fake.addNetworksWithBodyMutex.RLock()
+	defer fake.addNetworksWithBodyMutex.RUnlock()
+	return len(fake.addNetworksWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) AddNetworksWithBodyCalls(stub func(context.Context, string, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.addNetworksWithBodyMutex.Lock()
+	defer fake.addNetworksWithBodyMutex.Unlock()
+	fake.AddNetworksWithBodyStub = stub
+}
+
+func (fake *FakeClient) AddNetworksWithBodyArgsForCall(i int) (context.Context, string, string, io.Reader, []generated.RequestEditorFn) {
+	fake.addNetworksWithBodyMutex.RLock()
+	defer fake.addNetworksWithBodyMutex.RUnlock()
+	argsForCall := fake.addNetworksWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) AddNetworksWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.addNetworksWithBodyMutex.Lock()
+	defer fake.addNetworksWithBodyMutex.Unlock()
+	fake.AddNetworksWithBodyStub = nil
+	fake.addNetworksWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) AddNetworksWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.addNetworksWithBodyMutex.Lock()
+	defer fake.addNetworksWithBodyMutex.Unlock()
+	fake.AddNetworksWithBodyStub = nil
+	if fake.addNetworksWithBodyReturnsOnCall == nil {
+		fake.addNetworksWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.addNetworksWithBodyReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -5223,6 +5855,139 @@ func (fake *FakeClient) CreateRegistryWithBodyReturnsOnCall(i int, result1 *http
 	}{result1, result2}
 }
 
+func (fake *FakeClient) CreateRouter(arg1 context.Context, arg2 generated.CreateRouterJSONRequestBody, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createRouterMutex.Lock()
+	ret, specificReturn := fake.createRouterReturnsOnCall[len(fake.createRouterArgsForCall)]
+	fake.createRouterArgsForCall = append(fake.createRouterArgsForCall, struct {
+		arg1 context.Context
+		arg2 generated.CreateRouterJSONRequestBody
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.CreateRouterStub
+	fakeReturns := fake.createRouterReturns
+	fake.recordInvocation("CreateRouter", []interface{}{arg1, arg2, arg3})
+	fake.createRouterMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateRouterCallCount() int {
+	fake.createRouterMutex.RLock()
+	defer fake.createRouterMutex.RUnlock()
+	return len(fake.createRouterArgsForCall)
+}
+
+func (fake *FakeClient) CreateRouterCalls(stub func(context.Context, generated.CreateRouterJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createRouterMutex.Lock()
+	defer fake.createRouterMutex.Unlock()
+	fake.CreateRouterStub = stub
+}
+
+func (fake *FakeClient) CreateRouterArgsForCall(i int) (context.Context, generated.CreateRouterJSONRequestBody, []generated.RequestEditorFn) {
+	fake.createRouterMutex.RLock()
+	defer fake.createRouterMutex.RUnlock()
+	argsForCall := fake.createRouterArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) CreateRouterReturns(result1 *http.Response, result2 error) {
+	fake.createRouterMutex.Lock()
+	defer fake.createRouterMutex.Unlock()
+	fake.CreateRouterStub = nil
+	fake.createRouterReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateRouterReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createRouterMutex.Lock()
+	defer fake.createRouterMutex.Unlock()
+	fake.CreateRouterStub = nil
+	if fake.createRouterReturnsOnCall == nil {
+		fake.createRouterReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createRouterReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateRouterWithBody(arg1 context.Context, arg2 string, arg3 io.Reader, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.createRouterWithBodyMutex.Lock()
+	ret, specificReturn := fake.createRouterWithBodyReturnsOnCall[len(fake.createRouterWithBodyArgsForCall)]
+	fake.createRouterWithBodyArgsForCall = append(fake.createRouterWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 io.Reader
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.CreateRouterWithBodyStub
+	fakeReturns := fake.createRouterWithBodyReturns
+	fake.recordInvocation("CreateRouterWithBody", []interface{}{arg1, arg2, arg3, arg4})
+	fake.createRouterWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) CreateRouterWithBodyCallCount() int {
+	fake.createRouterWithBodyMutex.RLock()
+	defer fake.createRouterWithBodyMutex.RUnlock()
+	return len(fake.createRouterWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) CreateRouterWithBodyCalls(stub func(context.Context, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.createRouterWithBodyMutex.Lock()
+	defer fake.createRouterWithBodyMutex.Unlock()
+	fake.CreateRouterWithBodyStub = stub
+}
+
+func (fake *FakeClient) CreateRouterWithBodyArgsForCall(i int) (context.Context, string, io.Reader, []generated.RequestEditorFn) {
+	fake.createRouterWithBodyMutex.RLock()
+	defer fake.createRouterWithBodyMutex.RUnlock()
+	argsForCall := fake.createRouterWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) CreateRouterWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.createRouterWithBodyMutex.Lock()
+	defer fake.createRouterWithBodyMutex.Unlock()
+	fake.CreateRouterWithBodyStub = nil
+	fake.createRouterWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) CreateRouterWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.createRouterWithBodyMutex.Lock()
+	defer fake.createRouterWithBodyMutex.Unlock()
+	fake.CreateRouterWithBodyStub = nil
+	if fake.createRouterWithBodyReturnsOnCall == nil {
+		fake.createRouterWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.createRouterWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) CreateServer(arg1 context.Context, arg2 generated.CreateServerJSONRequestBody, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.createServerMutex.Lock()
 	ret, specificReturn := fake.createServerReturnsOnCall[len(fake.createServerArgsForCall)]
@@ -6095,6 +6860,73 @@ func (fake *FakeClient) DeleteClusterNodeGroupReturnsOnCall(i int, result1 *http
 	}{result1, result2}
 }
 
+func (fake *FakeClient) DeleteDnat(arg1 context.Context, arg2 string, arg3 string, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteDnatMutex.Lock()
+	ret, specificReturn := fake.deleteDnatReturnsOnCall[len(fake.deleteDnatArgsForCall)]
+	fake.deleteDnatArgsForCall = append(fake.deleteDnatArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.DeleteDnatStub
+	fakeReturns := fake.deleteDnatReturns
+	fake.recordInvocation("DeleteDnat", []interface{}{arg1, arg2, arg3, arg4})
+	fake.deleteDnatMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteDnatCallCount() int {
+	fake.deleteDnatMutex.RLock()
+	defer fake.deleteDnatMutex.RUnlock()
+	return len(fake.deleteDnatArgsForCall)
+}
+
+func (fake *FakeClient) DeleteDnatCalls(stub func(context.Context, string, string, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteDnatMutex.Lock()
+	defer fake.deleteDnatMutex.Unlock()
+	fake.DeleteDnatStub = stub
+}
+
+func (fake *FakeClient) DeleteDnatArgsForCall(i int) (context.Context, string, string, []generated.RequestEditorFn) {
+	fake.deleteDnatMutex.RLock()
+	defer fake.deleteDnatMutex.RUnlock()
+	argsForCall := fake.deleteDnatArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) DeleteDnatReturns(result1 *http.Response, result2 error) {
+	fake.deleteDnatMutex.Lock()
+	defer fake.deleteDnatMutex.Unlock()
+	fake.DeleteDnatStub = nil
+	fake.deleteDnatReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteDnatReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteDnatMutex.Lock()
+	defer fake.deleteDnatMutex.Unlock()
+	fake.DeleteDnatStub = nil
+	if fake.deleteDnatReturnsOnCall == nil {
+		fake.deleteDnatReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteDnatReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) DeleteFloatingIP(arg1 context.Context, arg2 generated.FloatingIpId, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.deleteFloatingIPMutex.Lock()
 	ret, specificReturn := fake.deleteFloatingIPReturnsOnCall[len(fake.deleteFloatingIPArgsForCall)]
@@ -6493,6 +7325,206 @@ func (fake *FakeClient) DeleteRegistryReturnsOnCall(i int, result1 *http.Respons
 	}{result1, result2}
 }
 
+func (fake *FakeClient) DeleteRouter(arg1 context.Context, arg2 string, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteRouterMutex.Lock()
+	ret, specificReturn := fake.deleteRouterReturnsOnCall[len(fake.deleteRouterArgsForCall)]
+	fake.deleteRouterArgsForCall = append(fake.deleteRouterArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.DeleteRouterStub
+	fakeReturns := fake.deleteRouterReturns
+	fake.recordInvocation("DeleteRouter", []interface{}{arg1, arg2, arg3})
+	fake.deleteRouterMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteRouterCallCount() int {
+	fake.deleteRouterMutex.RLock()
+	defer fake.deleteRouterMutex.RUnlock()
+	return len(fake.deleteRouterArgsForCall)
+}
+
+func (fake *FakeClient) DeleteRouterCalls(stub func(context.Context, string, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteRouterMutex.Lock()
+	defer fake.deleteRouterMutex.Unlock()
+	fake.DeleteRouterStub = stub
+}
+
+func (fake *FakeClient) DeleteRouterArgsForCall(i int) (context.Context, string, []generated.RequestEditorFn) {
+	fake.deleteRouterMutex.RLock()
+	defer fake.deleteRouterMutex.RUnlock()
+	argsForCall := fake.deleteRouterArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) DeleteRouterReturns(result1 *http.Response, result2 error) {
+	fake.deleteRouterMutex.Lock()
+	defer fake.deleteRouterMutex.Unlock()
+	fake.DeleteRouterStub = nil
+	fake.deleteRouterReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteRouterReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteRouterMutex.Lock()
+	defer fake.deleteRouterMutex.Unlock()
+	fake.DeleteRouterStub = nil
+	if fake.deleteRouterReturnsOnCall == nil {
+		fake.deleteRouterReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteRouterReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteRouterNat(arg1 context.Context, arg2 string, arg3 string, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteRouterNatMutex.Lock()
+	ret, specificReturn := fake.deleteRouterNatReturnsOnCall[len(fake.deleteRouterNatArgsForCall)]
+	fake.deleteRouterNatArgsForCall = append(fake.deleteRouterNatArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.DeleteRouterNatStub
+	fakeReturns := fake.deleteRouterNatReturns
+	fake.recordInvocation("DeleteRouterNat", []interface{}{arg1, arg2, arg3, arg4})
+	fake.deleteRouterNatMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteRouterNatCallCount() int {
+	fake.deleteRouterNatMutex.RLock()
+	defer fake.deleteRouterNatMutex.RUnlock()
+	return len(fake.deleteRouterNatArgsForCall)
+}
+
+func (fake *FakeClient) DeleteRouterNatCalls(stub func(context.Context, string, string, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteRouterNatMutex.Lock()
+	defer fake.deleteRouterNatMutex.Unlock()
+	fake.DeleteRouterNatStub = stub
+}
+
+func (fake *FakeClient) DeleteRouterNatArgsForCall(i int) (context.Context, string, string, []generated.RequestEditorFn) {
+	fake.deleteRouterNatMutex.RLock()
+	defer fake.deleteRouterNatMutex.RUnlock()
+	argsForCall := fake.deleteRouterNatArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) DeleteRouterNatReturns(result1 *http.Response, result2 error) {
+	fake.deleteRouterNatMutex.Lock()
+	defer fake.deleteRouterNatMutex.Unlock()
+	fake.DeleteRouterNatStub = nil
+	fake.deleteRouterNatReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteRouterNatReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteRouterNatMutex.Lock()
+	defer fake.deleteRouterNatMutex.Unlock()
+	fake.DeleteRouterNatStub = nil
+	if fake.deleteRouterNatReturnsOnCall == nil {
+		fake.deleteRouterNatReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteRouterNatReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteRouterNetwork(arg1 context.Context, arg2 string, arg3 string, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteRouterNetworkMutex.Lock()
+	ret, specificReturn := fake.deleteRouterNetworkReturnsOnCall[len(fake.deleteRouterNetworkArgsForCall)]
+	fake.deleteRouterNetworkArgsForCall = append(fake.deleteRouterNetworkArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.DeleteRouterNetworkStub
+	fakeReturns := fake.deleteRouterNetworkReturns
+	fake.recordInvocation("DeleteRouterNetwork", []interface{}{arg1, arg2, arg3, arg4})
+	fake.deleteRouterNetworkMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteRouterNetworkCallCount() int {
+	fake.deleteRouterNetworkMutex.RLock()
+	defer fake.deleteRouterNetworkMutex.RUnlock()
+	return len(fake.deleteRouterNetworkArgsForCall)
+}
+
+func (fake *FakeClient) DeleteRouterNetworkCalls(stub func(context.Context, string, string, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteRouterNetworkMutex.Lock()
+	defer fake.deleteRouterNetworkMutex.Unlock()
+	fake.DeleteRouterNetworkStub = stub
+}
+
+func (fake *FakeClient) DeleteRouterNetworkArgsForCall(i int) (context.Context, string, string, []generated.RequestEditorFn) {
+	fake.deleteRouterNetworkMutex.RLock()
+	defer fake.deleteRouterNetworkMutex.RUnlock()
+	argsForCall := fake.deleteRouterNetworkArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) DeleteRouterNetworkReturns(result1 *http.Response, result2 error) {
+	fake.deleteRouterNetworkMutex.Lock()
+	defer fake.deleteRouterNetworkMutex.Unlock()
+	fake.DeleteRouterNetworkStub = nil
+	fake.deleteRouterNetworkReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteRouterNetworkReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteRouterNetworkMutex.Lock()
+	defer fake.deleteRouterNetworkMutex.Unlock()
+	fake.DeleteRouterNetworkStub = nil
+	if fake.deleteRouterNetworkReturnsOnCall == nil {
+		fake.deleteRouterNetworkReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteRouterNetworkReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) DeleteServer(arg1 context.Context, arg2 generated.ServerId, arg3 *generated.DeleteServerParams, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.deleteServerMutex.Lock()
 	ret, specificReturn := fake.deleteServerReturnsOnCall[len(fake.deleteServerArgsForCall)]
@@ -6825,6 +7857,73 @@ func (fake *FakeClient) DeleteServerIPWithBodyReturnsOnCall(i int, result1 *http
 		})
 	}
 	fake.deleteServerIPWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteStaticRoute(arg1 context.Context, arg2 string, arg3 string, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.deleteStaticRouteMutex.Lock()
+	ret, specificReturn := fake.deleteStaticRouteReturnsOnCall[len(fake.deleteStaticRouteArgsForCall)]
+	fake.deleteStaticRouteArgsForCall = append(fake.deleteStaticRouteArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.DeleteStaticRouteStub
+	fakeReturns := fake.deleteStaticRouteReturns
+	fake.recordInvocation("DeleteStaticRoute", []interface{}{arg1, arg2, arg3, arg4})
+	fake.deleteStaticRouteMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) DeleteStaticRouteCallCount() int {
+	fake.deleteStaticRouteMutex.RLock()
+	defer fake.deleteStaticRouteMutex.RUnlock()
+	return len(fake.deleteStaticRouteArgsForCall)
+}
+
+func (fake *FakeClient) DeleteStaticRouteCalls(stub func(context.Context, string, string, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.deleteStaticRouteMutex.Lock()
+	defer fake.deleteStaticRouteMutex.Unlock()
+	fake.DeleteStaticRouteStub = stub
+}
+
+func (fake *FakeClient) DeleteStaticRouteArgsForCall(i int) (context.Context, string, string, []generated.RequestEditorFn) {
+	fake.deleteStaticRouteMutex.RLock()
+	defer fake.deleteStaticRouteMutex.RUnlock()
+	argsForCall := fake.deleteStaticRouteArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) DeleteStaticRouteReturns(result1 *http.Response, result2 error) {
+	fake.deleteStaticRouteMutex.Lock()
+	defer fake.deleteStaticRouteMutex.Unlock()
+	fake.DeleteStaticRouteStub = nil
+	fake.deleteStaticRouteReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) DeleteStaticRouteReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.deleteStaticRouteMutex.Lock()
+	defer fake.deleteStaticRouteMutex.Unlock()
+	fake.DeleteStaticRouteStub = nil
+	if fake.deleteStaticRouteReturnsOnCall == nil {
+		fake.deleteStaticRouteReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.deleteStaticRouteReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -7554,6 +8653,72 @@ func (fake *FakeClient) GetAllProjectResourcesReturnsOnCall(i int, result1 *http
 	}{result1, result2}
 }
 
+func (fake *FakeClient) GetAvailableStaticRoutes(arg1 context.Context, arg2 string, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getAvailableStaticRoutesMutex.Lock()
+	ret, specificReturn := fake.getAvailableStaticRoutesReturnsOnCall[len(fake.getAvailableStaticRoutesArgsForCall)]
+	fake.getAvailableStaticRoutesArgsForCall = append(fake.getAvailableStaticRoutesArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetAvailableStaticRoutesStub
+	fakeReturns := fake.getAvailableStaticRoutesReturns
+	fake.recordInvocation("GetAvailableStaticRoutes", []interface{}{arg1, arg2, arg3})
+	fake.getAvailableStaticRoutesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetAvailableStaticRoutesCallCount() int {
+	fake.getAvailableStaticRoutesMutex.RLock()
+	defer fake.getAvailableStaticRoutesMutex.RUnlock()
+	return len(fake.getAvailableStaticRoutesArgsForCall)
+}
+
+func (fake *FakeClient) GetAvailableStaticRoutesCalls(stub func(context.Context, string, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getAvailableStaticRoutesMutex.Lock()
+	defer fake.getAvailableStaticRoutesMutex.Unlock()
+	fake.GetAvailableStaticRoutesStub = stub
+}
+
+func (fake *FakeClient) GetAvailableStaticRoutesArgsForCall(i int) (context.Context, string, []generated.RequestEditorFn) {
+	fake.getAvailableStaticRoutesMutex.RLock()
+	defer fake.getAvailableStaticRoutesMutex.RUnlock()
+	argsForCall := fake.getAvailableStaticRoutesArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetAvailableStaticRoutesReturns(result1 *http.Response, result2 error) {
+	fake.getAvailableStaticRoutesMutex.Lock()
+	defer fake.getAvailableStaticRoutesMutex.Unlock()
+	fake.GetAvailableStaticRoutesStub = nil
+	fake.getAvailableStaticRoutesReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetAvailableStaticRoutesReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getAvailableStaticRoutesMutex.Lock()
+	defer fake.getAvailableStaticRoutesMutex.Unlock()
+	fake.GetAvailableStaticRoutesStub = nil
+	if fake.getAvailableStaticRoutesReturnsOnCall == nil {
+		fake.getAvailableStaticRoutesReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getAvailableStaticRoutesReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) GetCluster(arg1 context.Context, arg2 int, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.getClusterMutex.Lock()
 	ret, specificReturn := fake.getClusterReturnsOnCall[len(fake.getClusterArgsForCall)]
@@ -8145,6 +9310,139 @@ func (fake *FakeClient) GetConfiguratorsReturnsOnCall(i int, result1 *http.Respo
 		})
 	}
 	fake.getConfiguratorsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetDnat(arg1 context.Context, arg2 string, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getDnatMutex.Lock()
+	ret, specificReturn := fake.getDnatReturnsOnCall[len(fake.getDnatArgsForCall)]
+	fake.getDnatArgsForCall = append(fake.getDnatArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetDnatStub
+	fakeReturns := fake.getDnatReturns
+	fake.recordInvocation("GetDnat", []interface{}{arg1, arg2, arg3})
+	fake.getDnatMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetDnatCallCount() int {
+	fake.getDnatMutex.RLock()
+	defer fake.getDnatMutex.RUnlock()
+	return len(fake.getDnatArgsForCall)
+}
+
+func (fake *FakeClient) GetDnatCalls(stub func(context.Context, string, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getDnatMutex.Lock()
+	defer fake.getDnatMutex.Unlock()
+	fake.GetDnatStub = stub
+}
+
+func (fake *FakeClient) GetDnatArgsForCall(i int) (context.Context, string, []generated.RequestEditorFn) {
+	fake.getDnatMutex.RLock()
+	defer fake.getDnatMutex.RUnlock()
+	argsForCall := fake.getDnatArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetDnatReturns(result1 *http.Response, result2 error) {
+	fake.getDnatMutex.Lock()
+	defer fake.getDnatMutex.Unlock()
+	fake.GetDnatStub = nil
+	fake.getDnatReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetDnatReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getDnatMutex.Lock()
+	defer fake.getDnatMutex.Unlock()
+	fake.GetDnatStub = nil
+	if fake.getDnatReturnsOnCall == nil {
+		fake.getDnatReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getDnatReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetDnatRule(arg1 context.Context, arg2 string, arg3 string, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getDnatRuleMutex.Lock()
+	ret, specificReturn := fake.getDnatRuleReturnsOnCall[len(fake.getDnatRuleArgsForCall)]
+	fake.getDnatRuleArgsForCall = append(fake.getDnatRuleArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.GetDnatRuleStub
+	fakeReturns := fake.getDnatRuleReturns
+	fake.recordInvocation("GetDnatRule", []interface{}{arg1, arg2, arg3, arg4})
+	fake.getDnatRuleMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetDnatRuleCallCount() int {
+	fake.getDnatRuleMutex.RLock()
+	defer fake.getDnatRuleMutex.RUnlock()
+	return len(fake.getDnatRuleArgsForCall)
+}
+
+func (fake *FakeClient) GetDnatRuleCalls(stub func(context.Context, string, string, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getDnatRuleMutex.Lock()
+	defer fake.getDnatRuleMutex.Unlock()
+	fake.GetDnatRuleStub = stub
+}
+
+func (fake *FakeClient) GetDnatRuleArgsForCall(i int) (context.Context, string, string, []generated.RequestEditorFn) {
+	fake.getDnatRuleMutex.RLock()
+	defer fake.getDnatRuleMutex.RUnlock()
+	argsForCall := fake.getDnatRuleArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) GetDnatRuleReturns(result1 *http.Response, result2 error) {
+	fake.getDnatRuleMutex.Lock()
+	defer fake.getDnatRuleMutex.Unlock()
+	fake.GetDnatRuleStub = nil
+	fake.getDnatRuleReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetDnatRuleReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getDnatRuleMutex.Lock()
+	defer fake.getDnatRuleMutex.Unlock()
+	fake.GetDnatRuleStub = nil
+	if fake.getDnatRuleReturnsOnCall == nil {
+		fake.getDnatRuleReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getDnatRuleReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -8799,6 +10097,72 @@ func (fake *FakeClient) GetKubernetesPresetsReturnsOnCall(i int, result1 *http.R
 		})
 	}
 	fake.getKubernetesPresetsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetNetworks(arg1 context.Context, arg2 string, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getNetworksMutex.Lock()
+	ret, specificReturn := fake.getNetworksReturnsOnCall[len(fake.getNetworksArgsForCall)]
+	fake.getNetworksArgsForCall = append(fake.getNetworksArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetNetworksStub
+	fakeReturns := fake.getNetworksReturns
+	fake.recordInvocation("GetNetworks", []interface{}{arg1, arg2, arg3})
+	fake.getNetworksMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetNetworksCallCount() int {
+	fake.getNetworksMutex.RLock()
+	defer fake.getNetworksMutex.RUnlock()
+	return len(fake.getNetworksArgsForCall)
+}
+
+func (fake *FakeClient) GetNetworksCalls(stub func(context.Context, string, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getNetworksMutex.Lock()
+	defer fake.getNetworksMutex.Unlock()
+	fake.GetNetworksStub = stub
+}
+
+func (fake *FakeClient) GetNetworksArgsForCall(i int) (context.Context, string, []generated.RequestEditorFn) {
+	fake.getNetworksMutex.RLock()
+	defer fake.getNetworksMutex.RUnlock()
+	argsForCall := fake.getNetworksArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetNetworksReturns(result1 *http.Response, result2 error) {
+	fake.getNetworksMutex.Lock()
+	defer fake.getNetworksMutex.Unlock()
+	fake.GetNetworksStub = nil
+	fake.getNetworksReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetNetworksReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getNetworksMutex.Lock()
+	defer fake.getNetworksMutex.Unlock()
+	fake.GetNetworksStub = nil
+	if fake.getNetworksReturnsOnCall == nil {
+		fake.getNetworksReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getNetworksReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -9653,6 +11017,337 @@ func (fake *FakeClient) GetRegistryRepositoriesReturnsOnCall(i int, result1 *htt
 		})
 	}
 	fake.getRegistryRepositoriesReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetRouter(arg1 context.Context, arg2 string, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getRouterMutex.Lock()
+	ret, specificReturn := fake.getRouterReturnsOnCall[len(fake.getRouterArgsForCall)]
+	fake.getRouterArgsForCall = append(fake.getRouterArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetRouterStub
+	fakeReturns := fake.getRouterReturns
+	fake.recordInvocation("GetRouter", []interface{}{arg1, arg2, arg3})
+	fake.getRouterMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetRouterCallCount() int {
+	fake.getRouterMutex.RLock()
+	defer fake.getRouterMutex.RUnlock()
+	return len(fake.getRouterArgsForCall)
+}
+
+func (fake *FakeClient) GetRouterCalls(stub func(context.Context, string, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getRouterMutex.Lock()
+	defer fake.getRouterMutex.Unlock()
+	fake.GetRouterStub = stub
+}
+
+func (fake *FakeClient) GetRouterArgsForCall(i int) (context.Context, string, []generated.RequestEditorFn) {
+	fake.getRouterMutex.RLock()
+	defer fake.getRouterMutex.RUnlock()
+	argsForCall := fake.getRouterArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetRouterReturns(result1 *http.Response, result2 error) {
+	fake.getRouterMutex.Lock()
+	defer fake.getRouterMutex.Unlock()
+	fake.GetRouterStub = nil
+	fake.getRouterReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetRouterReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getRouterMutex.Lock()
+	defer fake.getRouterMutex.Unlock()
+	fake.GetRouterStub = nil
+	if fake.getRouterReturnsOnCall == nil {
+		fake.getRouterReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getRouterReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetRouterAvailableNetworks(arg1 context.Context, arg2 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getRouterAvailableNetworksMutex.Lock()
+	ret, specificReturn := fake.getRouterAvailableNetworksReturnsOnCall[len(fake.getRouterAvailableNetworksArgsForCall)]
+	fake.getRouterAvailableNetworksArgsForCall = append(fake.getRouterAvailableNetworksArgsForCall, struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}{arg1, arg2})
+	stub := fake.GetRouterAvailableNetworksStub
+	fakeReturns := fake.getRouterAvailableNetworksReturns
+	fake.recordInvocation("GetRouterAvailableNetworks", []interface{}{arg1, arg2})
+	fake.getRouterAvailableNetworksMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetRouterAvailableNetworksCallCount() int {
+	fake.getRouterAvailableNetworksMutex.RLock()
+	defer fake.getRouterAvailableNetworksMutex.RUnlock()
+	return len(fake.getRouterAvailableNetworksArgsForCall)
+}
+
+func (fake *FakeClient) GetRouterAvailableNetworksCalls(stub func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getRouterAvailableNetworksMutex.Lock()
+	defer fake.getRouterAvailableNetworksMutex.Unlock()
+	fake.GetRouterAvailableNetworksStub = stub
+}
+
+func (fake *FakeClient) GetRouterAvailableNetworksArgsForCall(i int) (context.Context, []generated.RequestEditorFn) {
+	fake.getRouterAvailableNetworksMutex.RLock()
+	defer fake.getRouterAvailableNetworksMutex.RUnlock()
+	argsForCall := fake.getRouterAvailableNetworksArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeClient) GetRouterAvailableNetworksReturns(result1 *http.Response, result2 error) {
+	fake.getRouterAvailableNetworksMutex.Lock()
+	defer fake.getRouterAvailableNetworksMutex.Unlock()
+	fake.GetRouterAvailableNetworksStub = nil
+	fake.getRouterAvailableNetworksReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetRouterAvailableNetworksReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getRouterAvailableNetworksMutex.Lock()
+	defer fake.getRouterAvailableNetworksMutex.Unlock()
+	fake.GetRouterAvailableNetworksStub = nil
+	if fake.getRouterAvailableNetworksReturnsOnCall == nil {
+		fake.getRouterAvailableNetworksReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getRouterAvailableNetworksReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetRouterPresets(arg1 context.Context, arg2 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getRouterPresetsMutex.Lock()
+	ret, specificReturn := fake.getRouterPresetsReturnsOnCall[len(fake.getRouterPresetsArgsForCall)]
+	fake.getRouterPresetsArgsForCall = append(fake.getRouterPresetsArgsForCall, struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}{arg1, arg2})
+	stub := fake.GetRouterPresetsStub
+	fakeReturns := fake.getRouterPresetsReturns
+	fake.recordInvocation("GetRouterPresets", []interface{}{arg1, arg2})
+	fake.getRouterPresetsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetRouterPresetsCallCount() int {
+	fake.getRouterPresetsMutex.RLock()
+	defer fake.getRouterPresetsMutex.RUnlock()
+	return len(fake.getRouterPresetsArgsForCall)
+}
+
+func (fake *FakeClient) GetRouterPresetsCalls(stub func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getRouterPresetsMutex.Lock()
+	defer fake.getRouterPresetsMutex.Unlock()
+	fake.GetRouterPresetsStub = stub
+}
+
+func (fake *FakeClient) GetRouterPresetsArgsForCall(i int) (context.Context, []generated.RequestEditorFn) {
+	fake.getRouterPresetsMutex.RLock()
+	defer fake.getRouterPresetsMutex.RUnlock()
+	argsForCall := fake.getRouterPresetsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeClient) GetRouterPresetsReturns(result1 *http.Response, result2 error) {
+	fake.getRouterPresetsMutex.Lock()
+	defer fake.getRouterPresetsMutex.Unlock()
+	fake.GetRouterPresetsStub = nil
+	fake.getRouterPresetsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetRouterPresetsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getRouterPresetsMutex.Lock()
+	defer fake.getRouterPresetsMutex.Unlock()
+	fake.GetRouterPresetsStub = nil
+	if fake.getRouterPresetsReturnsOnCall == nil {
+		fake.getRouterPresetsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getRouterPresetsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetRouterStatistics(arg1 context.Context, arg2 string, arg3 string, arg4 string, arg5 string, arg6 *generated.GetRouterStatisticsParams, arg7 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getRouterStatisticsMutex.Lock()
+	ret, specificReturn := fake.getRouterStatisticsReturnsOnCall[len(fake.getRouterStatisticsArgsForCall)]
+	fake.getRouterStatisticsArgsForCall = append(fake.getRouterStatisticsArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 string
+		arg5 string
+		arg6 *generated.GetRouterStatisticsParams
+		arg7 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6, arg7})
+	stub := fake.GetRouterStatisticsStub
+	fakeReturns := fake.getRouterStatisticsReturns
+	fake.recordInvocation("GetRouterStatistics", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6, arg7})
+	fake.getRouterStatisticsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6, arg7...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetRouterStatisticsCallCount() int {
+	fake.getRouterStatisticsMutex.RLock()
+	defer fake.getRouterStatisticsMutex.RUnlock()
+	return len(fake.getRouterStatisticsArgsForCall)
+}
+
+func (fake *FakeClient) GetRouterStatisticsCalls(stub func(context.Context, string, string, string, string, *generated.GetRouterStatisticsParams, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getRouterStatisticsMutex.Lock()
+	defer fake.getRouterStatisticsMutex.Unlock()
+	fake.GetRouterStatisticsStub = stub
+}
+
+func (fake *FakeClient) GetRouterStatisticsArgsForCall(i int) (context.Context, string, string, string, string, *generated.GetRouterStatisticsParams, []generated.RequestEditorFn) {
+	fake.getRouterStatisticsMutex.RLock()
+	defer fake.getRouterStatisticsMutex.RUnlock()
+	argsForCall := fake.getRouterStatisticsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6, argsForCall.arg7
+}
+
+func (fake *FakeClient) GetRouterStatisticsReturns(result1 *http.Response, result2 error) {
+	fake.getRouterStatisticsMutex.Lock()
+	defer fake.getRouterStatisticsMutex.Unlock()
+	fake.GetRouterStatisticsStub = nil
+	fake.getRouterStatisticsReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetRouterStatisticsReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getRouterStatisticsMutex.Lock()
+	defer fake.getRouterStatisticsMutex.Unlock()
+	fake.GetRouterStatisticsStub = nil
+	if fake.getRouterStatisticsReturnsOnCall == nil {
+		fake.getRouterStatisticsReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getRouterStatisticsReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetRouters(arg1 context.Context, arg2 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getRoutersMutex.Lock()
+	ret, specificReturn := fake.getRoutersReturnsOnCall[len(fake.getRoutersArgsForCall)]
+	fake.getRoutersArgsForCall = append(fake.getRoutersArgsForCall, struct {
+		arg1 context.Context
+		arg2 []generated.RequestEditorFn
+	}{arg1, arg2})
+	stub := fake.GetRoutersStub
+	fakeReturns := fake.getRoutersReturns
+	fake.recordInvocation("GetRouters", []interface{}{arg1, arg2})
+	fake.getRoutersMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetRoutersCallCount() int {
+	fake.getRoutersMutex.RLock()
+	defer fake.getRoutersMutex.RUnlock()
+	return len(fake.getRoutersArgsForCall)
+}
+
+func (fake *FakeClient) GetRoutersCalls(stub func(context.Context, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getRoutersMutex.Lock()
+	defer fake.getRoutersMutex.Unlock()
+	fake.GetRoutersStub = stub
+}
+
+func (fake *FakeClient) GetRoutersArgsForCall(i int) (context.Context, []generated.RequestEditorFn) {
+	fake.getRoutersMutex.RLock()
+	defer fake.getRoutersMutex.RUnlock()
+	argsForCall := fake.getRoutersArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeClient) GetRoutersReturns(result1 *http.Response, result2 error) {
+	fake.getRoutersMutex.Lock()
+	defer fake.getRoutersMutex.Unlock()
+	fake.GetRoutersStub = nil
+	fake.getRoutersReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetRoutersReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getRoutersMutex.Lock()
+	defer fake.getRoutersMutex.Unlock()
+	fake.GetRoutersStub = nil
+	if fake.getRoutersReturnsOnCall == nil {
+		fake.getRoutersReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getRoutersReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -10519,6 +12214,72 @@ func (fake *FakeClient) GetSoftwareReturnsOnCall(i int, result1 *http.Response, 
 		})
 	}
 	fake.getSoftwareReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetStaticRoutes(arg1 context.Context, arg2 string, arg3 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.getStaticRoutesMutex.Lock()
+	ret, specificReturn := fake.getStaticRoutesReturnsOnCall[len(fake.getStaticRoutesArgsForCall)]
+	fake.getStaticRoutesArgsForCall = append(fake.getStaticRoutesArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []generated.RequestEditorFn
+	}{arg1, arg2, arg3})
+	stub := fake.GetStaticRoutesStub
+	fakeReturns := fake.getStaticRoutesReturns
+	fake.recordInvocation("GetStaticRoutes", []interface{}{arg1, arg2, arg3})
+	fake.getStaticRoutesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetStaticRoutesCallCount() int {
+	fake.getStaticRoutesMutex.RLock()
+	defer fake.getStaticRoutesMutex.RUnlock()
+	return len(fake.getStaticRoutesArgsForCall)
+}
+
+func (fake *FakeClient) GetStaticRoutesCalls(stub func(context.Context, string, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.getStaticRoutesMutex.Lock()
+	defer fake.getStaticRoutesMutex.Unlock()
+	fake.GetStaticRoutesStub = stub
+}
+
+func (fake *FakeClient) GetStaticRoutesArgsForCall(i int) (context.Context, string, []generated.RequestEditorFn) {
+	fake.getStaticRoutesMutex.RLock()
+	defer fake.getStaticRoutesMutex.RUnlock()
+	argsForCall := fake.getStaticRoutesArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetStaticRoutesReturns(result1 *http.Response, result2 error) {
+	fake.getStaticRoutesMutex.Lock()
+	defer fake.getStaticRoutesMutex.Unlock()
+	fake.GetStaticRoutesStub = nil
+	fake.getStaticRoutesReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetStaticRoutesReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.getStaticRoutesMutex.Lock()
+	defer fake.getStaticRoutesMutex.Unlock()
+	fake.GetStaticRoutesStub = nil
+	if fake.getStaticRoutesReturnsOnCall == nil {
+		fake.getStaticRoutesReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.getStaticRoutesReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -11449,6 +13210,278 @@ func (fake *FakeClient) IncreaseCountOfNodesInGroupWithBodyReturnsOnCall(i int, 
 	}{result1, result2}
 }
 
+func (fake *FakeClient) PatchNetwork(arg1 context.Context, arg2 string, arg3 string, arg4 generated.PatchNetworkJSONRequestBody, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.patchNetworkMutex.Lock()
+	ret, specificReturn := fake.patchNetworkReturnsOnCall[len(fake.patchNetworkArgsForCall)]
+	fake.patchNetworkArgsForCall = append(fake.patchNetworkArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 generated.PatchNetworkJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.PatchNetworkStub
+	fakeReturns := fake.patchNetworkReturns
+	fake.recordInvocation("PatchNetwork", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.patchNetworkMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PatchNetworkCallCount() int {
+	fake.patchNetworkMutex.RLock()
+	defer fake.patchNetworkMutex.RUnlock()
+	return len(fake.patchNetworkArgsForCall)
+}
+
+func (fake *FakeClient) PatchNetworkCalls(stub func(context.Context, string, string, generated.PatchNetworkJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.patchNetworkMutex.Lock()
+	defer fake.patchNetworkMutex.Unlock()
+	fake.PatchNetworkStub = stub
+}
+
+func (fake *FakeClient) PatchNetworkArgsForCall(i int) (context.Context, string, string, generated.PatchNetworkJSONRequestBody, []generated.RequestEditorFn) {
+	fake.patchNetworkMutex.RLock()
+	defer fake.patchNetworkMutex.RUnlock()
+	argsForCall := fake.patchNetworkArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) PatchNetworkReturns(result1 *http.Response, result2 error) {
+	fake.patchNetworkMutex.Lock()
+	defer fake.patchNetworkMutex.Unlock()
+	fake.PatchNetworkStub = nil
+	fake.patchNetworkReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PatchNetworkReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.patchNetworkMutex.Lock()
+	defer fake.patchNetworkMutex.Unlock()
+	fake.PatchNetworkStub = nil
+	if fake.patchNetworkReturnsOnCall == nil {
+		fake.patchNetworkReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.patchNetworkReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PatchNetworkWithBody(arg1 context.Context, arg2 string, arg3 string, arg4 string, arg5 io.Reader, arg6 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.patchNetworkWithBodyMutex.Lock()
+	ret, specificReturn := fake.patchNetworkWithBodyReturnsOnCall[len(fake.patchNetworkWithBodyArgsForCall)]
+	fake.patchNetworkWithBodyArgsForCall = append(fake.patchNetworkWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6})
+	stub := fake.PatchNetworkWithBodyStub
+	fakeReturns := fake.patchNetworkWithBodyReturns
+	fake.recordInvocation("PatchNetworkWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6})
+	fake.patchNetworkWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PatchNetworkWithBodyCallCount() int {
+	fake.patchNetworkWithBodyMutex.RLock()
+	defer fake.patchNetworkWithBodyMutex.RUnlock()
+	return len(fake.patchNetworkWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) PatchNetworkWithBodyCalls(stub func(context.Context, string, string, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.patchNetworkWithBodyMutex.Lock()
+	defer fake.patchNetworkWithBodyMutex.Unlock()
+	fake.PatchNetworkWithBodyStub = stub
+}
+
+func (fake *FakeClient) PatchNetworkWithBodyArgsForCall(i int) (context.Context, string, string, string, io.Reader, []generated.RequestEditorFn) {
+	fake.patchNetworkWithBodyMutex.RLock()
+	defer fake.patchNetworkWithBodyMutex.RUnlock()
+	argsForCall := fake.patchNetworkWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6
+}
+
+func (fake *FakeClient) PatchNetworkWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.patchNetworkWithBodyMutex.Lock()
+	defer fake.patchNetworkWithBodyMutex.Unlock()
+	fake.PatchNetworkWithBodyStub = nil
+	fake.patchNetworkWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PatchNetworkWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.patchNetworkWithBodyMutex.Lock()
+	defer fake.patchNetworkWithBodyMutex.Unlock()
+	fake.PatchNetworkWithBodyStub = nil
+	if fake.patchNetworkWithBodyReturnsOnCall == nil {
+		fake.patchNetworkWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.patchNetworkWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PatchNetworks(arg1 context.Context, arg2 string, arg3 generated.PatchNetworksJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.patchNetworksMutex.Lock()
+	ret, specificReturn := fake.patchNetworksReturnsOnCall[len(fake.patchNetworksArgsForCall)]
+	fake.patchNetworksArgsForCall = append(fake.patchNetworksArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 generated.PatchNetworksJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.PatchNetworksStub
+	fakeReturns := fake.patchNetworksReturns
+	fake.recordInvocation("PatchNetworks", []interface{}{arg1, arg2, arg3, arg4})
+	fake.patchNetworksMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PatchNetworksCallCount() int {
+	fake.patchNetworksMutex.RLock()
+	defer fake.patchNetworksMutex.RUnlock()
+	return len(fake.patchNetworksArgsForCall)
+}
+
+func (fake *FakeClient) PatchNetworksCalls(stub func(context.Context, string, generated.PatchNetworksJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.patchNetworksMutex.Lock()
+	defer fake.patchNetworksMutex.Unlock()
+	fake.PatchNetworksStub = stub
+}
+
+func (fake *FakeClient) PatchNetworksArgsForCall(i int) (context.Context, string, generated.PatchNetworksJSONRequestBody, []generated.RequestEditorFn) {
+	fake.patchNetworksMutex.RLock()
+	defer fake.patchNetworksMutex.RUnlock()
+	argsForCall := fake.patchNetworksArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) PatchNetworksReturns(result1 *http.Response, result2 error) {
+	fake.patchNetworksMutex.Lock()
+	defer fake.patchNetworksMutex.Unlock()
+	fake.PatchNetworksStub = nil
+	fake.patchNetworksReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PatchNetworksReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.patchNetworksMutex.Lock()
+	defer fake.patchNetworksMutex.Unlock()
+	fake.PatchNetworksStub = nil
+	if fake.patchNetworksReturnsOnCall == nil {
+		fake.patchNetworksReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.patchNetworksReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PatchNetworksWithBody(arg1 context.Context, arg2 string, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.patchNetworksWithBodyMutex.Lock()
+	ret, specificReturn := fake.patchNetworksWithBodyReturnsOnCall[len(fake.patchNetworksWithBodyArgsForCall)]
+	fake.patchNetworksWithBodyArgsForCall = append(fake.patchNetworksWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.PatchNetworksWithBodyStub
+	fakeReturns := fake.patchNetworksWithBodyReturns
+	fake.recordInvocation("PatchNetworksWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.patchNetworksWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PatchNetworksWithBodyCallCount() int {
+	fake.patchNetworksWithBodyMutex.RLock()
+	defer fake.patchNetworksWithBodyMutex.RUnlock()
+	return len(fake.patchNetworksWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) PatchNetworksWithBodyCalls(stub func(context.Context, string, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.patchNetworksWithBodyMutex.Lock()
+	defer fake.patchNetworksWithBodyMutex.Unlock()
+	fake.PatchNetworksWithBodyStub = stub
+}
+
+func (fake *FakeClient) PatchNetworksWithBodyArgsForCall(i int) (context.Context, string, string, io.Reader, []generated.RequestEditorFn) {
+	fake.patchNetworksWithBodyMutex.RLock()
+	defer fake.patchNetworksWithBodyMutex.RUnlock()
+	argsForCall := fake.patchNetworksWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) PatchNetworksWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.patchNetworksWithBodyMutex.Lock()
+	defer fake.patchNetworksWithBodyMutex.Unlock()
+	fake.PatchNetworksWithBodyStub = nil
+	fake.patchNetworksWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PatchNetworksWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.patchNetworksWithBodyMutex.Lock()
+	defer fake.patchNetworksWithBodyMutex.Unlock()
+	fake.PatchNetworksWithBodyStub = nil
+	if fake.patchNetworksWithBodyReturnsOnCall == nil {
+		fake.patchNetworksWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.patchNetworksWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) PerformActionOnBackup(arg1 context.Context, arg2 generated.ServerId, arg3 generated.DiskId, arg4 generated.ServerBackupId, arg5 generated.PerformActionOnBackupJSONRequestBody, arg6 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.performActionOnBackupMutex.Lock()
 	ret, specificReturn := fake.performActionOnBackupReturnsOnCall[len(fake.performActionOnBackupArgsForCall)]
@@ -11723,6 +13756,141 @@ func (fake *FakeClient) PerformActionOnServerWithBodyReturnsOnCall(i int, result
 	}{result1, result2}
 }
 
+func (fake *FakeClient) PostDnat(arg1 context.Context, arg2 string, arg3 generated.PostDnatJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.postDnatMutex.Lock()
+	ret, specificReturn := fake.postDnatReturnsOnCall[len(fake.postDnatArgsForCall)]
+	fake.postDnatArgsForCall = append(fake.postDnatArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 generated.PostDnatJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.PostDnatStub
+	fakeReturns := fake.postDnatReturns
+	fake.recordInvocation("PostDnat", []interface{}{arg1, arg2, arg3, arg4})
+	fake.postDnatMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PostDnatCallCount() int {
+	fake.postDnatMutex.RLock()
+	defer fake.postDnatMutex.RUnlock()
+	return len(fake.postDnatArgsForCall)
+}
+
+func (fake *FakeClient) PostDnatCalls(stub func(context.Context, string, generated.PostDnatJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.postDnatMutex.Lock()
+	defer fake.postDnatMutex.Unlock()
+	fake.PostDnatStub = stub
+}
+
+func (fake *FakeClient) PostDnatArgsForCall(i int) (context.Context, string, generated.PostDnatJSONRequestBody, []generated.RequestEditorFn) {
+	fake.postDnatMutex.RLock()
+	defer fake.postDnatMutex.RUnlock()
+	argsForCall := fake.postDnatArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) PostDnatReturns(result1 *http.Response, result2 error) {
+	fake.postDnatMutex.Lock()
+	defer fake.postDnatMutex.Unlock()
+	fake.PostDnatStub = nil
+	fake.postDnatReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PostDnatReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.postDnatMutex.Lock()
+	defer fake.postDnatMutex.Unlock()
+	fake.PostDnatStub = nil
+	if fake.postDnatReturnsOnCall == nil {
+		fake.postDnatReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.postDnatReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PostDnatWithBody(arg1 context.Context, arg2 string, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.postDnatWithBodyMutex.Lock()
+	ret, specificReturn := fake.postDnatWithBodyReturnsOnCall[len(fake.postDnatWithBodyArgsForCall)]
+	fake.postDnatWithBodyArgsForCall = append(fake.postDnatWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.PostDnatWithBodyStub
+	fakeReturns := fake.postDnatWithBodyReturns
+	fake.recordInvocation("PostDnatWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.postDnatWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PostDnatWithBodyCallCount() int {
+	fake.postDnatWithBodyMutex.RLock()
+	defer fake.postDnatWithBodyMutex.RUnlock()
+	return len(fake.postDnatWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) PostDnatWithBodyCalls(stub func(context.Context, string, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.postDnatWithBodyMutex.Lock()
+	defer fake.postDnatWithBodyMutex.Unlock()
+	fake.PostDnatWithBodyStub = stub
+}
+
+func (fake *FakeClient) PostDnatWithBodyArgsForCall(i int) (context.Context, string, string, io.Reader, []generated.RequestEditorFn) {
+	fake.postDnatWithBodyMutex.RLock()
+	defer fake.postDnatWithBodyMutex.RUnlock()
+	argsForCall := fake.postDnatWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) PostDnatWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.postDnatWithBodyMutex.Lock()
+	defer fake.postDnatWithBodyMutex.Unlock()
+	fake.PostDnatWithBodyStub = nil
+	fake.postDnatWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PostDnatWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.postDnatWithBodyMutex.Lock()
+	defer fake.postDnatWithBodyMutex.Unlock()
+	fake.PostDnatWithBodyStub = nil
+	if fake.postDnatWithBodyReturnsOnCall == nil {
+		fake.postDnatWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.postDnatWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) PostKubernetesAddons(arg1 context.Context, arg2 int, arg3 generated.PostKubernetesAddonsJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.postKubernetesAddonsMutex.Lock()
 	ret, specificReturn := fake.postKubernetesAddonsReturnsOnCall[len(fake.postKubernetesAddonsArgsForCall)]
@@ -11990,6 +14158,141 @@ func (fake *FakeClient) PostKubernetesAddonsWithBodyReturnsOnCall(i int, result1
 		})
 	}
 	fake.postKubernetesAddonsWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PostStaticRoute(arg1 context.Context, arg2 string, arg3 generated.PostStaticRouteJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.postStaticRouteMutex.Lock()
+	ret, specificReturn := fake.postStaticRouteReturnsOnCall[len(fake.postStaticRouteArgsForCall)]
+	fake.postStaticRouteArgsForCall = append(fake.postStaticRouteArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 generated.PostStaticRouteJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.PostStaticRouteStub
+	fakeReturns := fake.postStaticRouteReturns
+	fake.recordInvocation("PostStaticRoute", []interface{}{arg1, arg2, arg3, arg4})
+	fake.postStaticRouteMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PostStaticRouteCallCount() int {
+	fake.postStaticRouteMutex.RLock()
+	defer fake.postStaticRouteMutex.RUnlock()
+	return len(fake.postStaticRouteArgsForCall)
+}
+
+func (fake *FakeClient) PostStaticRouteCalls(stub func(context.Context, string, generated.PostStaticRouteJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.postStaticRouteMutex.Lock()
+	defer fake.postStaticRouteMutex.Unlock()
+	fake.PostStaticRouteStub = stub
+}
+
+func (fake *FakeClient) PostStaticRouteArgsForCall(i int) (context.Context, string, generated.PostStaticRouteJSONRequestBody, []generated.RequestEditorFn) {
+	fake.postStaticRouteMutex.RLock()
+	defer fake.postStaticRouteMutex.RUnlock()
+	argsForCall := fake.postStaticRouteArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) PostStaticRouteReturns(result1 *http.Response, result2 error) {
+	fake.postStaticRouteMutex.Lock()
+	defer fake.postStaticRouteMutex.Unlock()
+	fake.PostStaticRouteStub = nil
+	fake.postStaticRouteReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PostStaticRouteReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.postStaticRouteMutex.Lock()
+	defer fake.postStaticRouteMutex.Unlock()
+	fake.PostStaticRouteStub = nil
+	if fake.postStaticRouteReturnsOnCall == nil {
+		fake.postStaticRouteReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.postStaticRouteReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PostStaticRouteWithBody(arg1 context.Context, arg2 string, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.postStaticRouteWithBodyMutex.Lock()
+	ret, specificReturn := fake.postStaticRouteWithBodyReturnsOnCall[len(fake.postStaticRouteWithBodyArgsForCall)]
+	fake.postStaticRouteWithBodyArgsForCall = append(fake.postStaticRouteWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.PostStaticRouteWithBodyStub
+	fakeReturns := fake.postStaticRouteWithBodyReturns
+	fake.recordInvocation("PostStaticRouteWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.postStaticRouteWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) PostStaticRouteWithBodyCallCount() int {
+	fake.postStaticRouteWithBodyMutex.RLock()
+	defer fake.postStaticRouteWithBodyMutex.RUnlock()
+	return len(fake.postStaticRouteWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) PostStaticRouteWithBodyCalls(stub func(context.Context, string, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.postStaticRouteWithBodyMutex.Lock()
+	defer fake.postStaticRouteWithBodyMutex.Unlock()
+	fake.PostStaticRouteWithBodyStub = stub
+}
+
+func (fake *FakeClient) PostStaticRouteWithBodyArgsForCall(i int) (context.Context, string, string, io.Reader, []generated.RequestEditorFn) {
+	fake.postStaticRouteWithBodyMutex.RLock()
+	defer fake.postStaticRouteWithBodyMutex.RUnlock()
+	argsForCall := fake.postStaticRouteWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) PostStaticRouteWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.postStaticRouteWithBodyMutex.Lock()
+	defer fake.postStaticRouteWithBodyMutex.Unlock()
+	fake.PostStaticRouteWithBodyStub = nil
+	fake.postStaticRouteWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) PostStaticRouteWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.postStaticRouteWithBodyMutex.Lock()
+	defer fake.postStaticRouteWithBodyMutex.Unlock()
+	fake.PostStaticRouteWithBodyStub = nil
+	if fake.postStaticRouteWithBodyReturnsOnCall == nil {
+		fake.postStaticRouteWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.postStaticRouteWithBodyReturnsOnCall[i] = struct {
 		result1 *http.Response
 		result2 error
 	}{result1, result2}
@@ -13606,6 +15909,278 @@ func (fake *FakeClient) UpdateRegistryWithBodyReturnsOnCall(i int, result1 *http
 	}{result1, result2}
 }
 
+func (fake *FakeClient) UpdateRouter(arg1 context.Context, arg2 string, arg3 generated.UpdateRouterJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateRouterMutex.Lock()
+	ret, specificReturn := fake.updateRouterReturnsOnCall[len(fake.updateRouterArgsForCall)]
+	fake.updateRouterArgsForCall = append(fake.updateRouterArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 generated.UpdateRouterJSONRequestBody
+		arg4 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.UpdateRouterStub
+	fakeReturns := fake.updateRouterReturns
+	fake.recordInvocation("UpdateRouter", []interface{}{arg1, arg2, arg3, arg4})
+	fake.updateRouterMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateRouterCallCount() int {
+	fake.updateRouterMutex.RLock()
+	defer fake.updateRouterMutex.RUnlock()
+	return len(fake.updateRouterArgsForCall)
+}
+
+func (fake *FakeClient) UpdateRouterCalls(stub func(context.Context, string, generated.UpdateRouterJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateRouterMutex.Lock()
+	defer fake.updateRouterMutex.Unlock()
+	fake.UpdateRouterStub = stub
+}
+
+func (fake *FakeClient) UpdateRouterArgsForCall(i int) (context.Context, string, generated.UpdateRouterJSONRequestBody, []generated.RequestEditorFn) {
+	fake.updateRouterMutex.RLock()
+	defer fake.updateRouterMutex.RUnlock()
+	argsForCall := fake.updateRouterArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeClient) UpdateRouterReturns(result1 *http.Response, result2 error) {
+	fake.updateRouterMutex.Lock()
+	defer fake.updateRouterMutex.Unlock()
+	fake.UpdateRouterStub = nil
+	fake.updateRouterReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateRouterReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateRouterMutex.Lock()
+	defer fake.updateRouterMutex.Unlock()
+	fake.UpdateRouterStub = nil
+	if fake.updateRouterReturnsOnCall == nil {
+		fake.updateRouterReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateRouterReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateRouterNat(arg1 context.Context, arg2 string, arg3 string, arg4 generated.UpdateRouterNatJSONRequestBody, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateRouterNatMutex.Lock()
+	ret, specificReturn := fake.updateRouterNatReturnsOnCall[len(fake.updateRouterNatArgsForCall)]
+	fake.updateRouterNatArgsForCall = append(fake.updateRouterNatArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 generated.UpdateRouterNatJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.UpdateRouterNatStub
+	fakeReturns := fake.updateRouterNatReturns
+	fake.recordInvocation("UpdateRouterNat", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.updateRouterNatMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateRouterNatCallCount() int {
+	fake.updateRouterNatMutex.RLock()
+	defer fake.updateRouterNatMutex.RUnlock()
+	return len(fake.updateRouterNatArgsForCall)
+}
+
+func (fake *FakeClient) UpdateRouterNatCalls(stub func(context.Context, string, string, generated.UpdateRouterNatJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateRouterNatMutex.Lock()
+	defer fake.updateRouterNatMutex.Unlock()
+	fake.UpdateRouterNatStub = stub
+}
+
+func (fake *FakeClient) UpdateRouterNatArgsForCall(i int) (context.Context, string, string, generated.UpdateRouterNatJSONRequestBody, []generated.RequestEditorFn) {
+	fake.updateRouterNatMutex.RLock()
+	defer fake.updateRouterNatMutex.RUnlock()
+	argsForCall := fake.updateRouterNatArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) UpdateRouterNatReturns(result1 *http.Response, result2 error) {
+	fake.updateRouterNatMutex.Lock()
+	defer fake.updateRouterNatMutex.Unlock()
+	fake.UpdateRouterNatStub = nil
+	fake.updateRouterNatReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateRouterNatReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateRouterNatMutex.Lock()
+	defer fake.updateRouterNatMutex.Unlock()
+	fake.UpdateRouterNatStub = nil
+	if fake.updateRouterNatReturnsOnCall == nil {
+		fake.updateRouterNatReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateRouterNatReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateRouterNatWithBody(arg1 context.Context, arg2 string, arg3 string, arg4 string, arg5 io.Reader, arg6 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateRouterNatWithBodyMutex.Lock()
+	ret, specificReturn := fake.updateRouterNatWithBodyReturnsOnCall[len(fake.updateRouterNatWithBodyArgsForCall)]
+	fake.updateRouterNatWithBodyArgsForCall = append(fake.updateRouterNatWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6})
+	stub := fake.UpdateRouterNatWithBodyStub
+	fakeReturns := fake.updateRouterNatWithBodyReturns
+	fake.recordInvocation("UpdateRouterNatWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6})
+	fake.updateRouterNatWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateRouterNatWithBodyCallCount() int {
+	fake.updateRouterNatWithBodyMutex.RLock()
+	defer fake.updateRouterNatWithBodyMutex.RUnlock()
+	return len(fake.updateRouterNatWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) UpdateRouterNatWithBodyCalls(stub func(context.Context, string, string, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateRouterNatWithBodyMutex.Lock()
+	defer fake.updateRouterNatWithBodyMutex.Unlock()
+	fake.UpdateRouterNatWithBodyStub = stub
+}
+
+func (fake *FakeClient) UpdateRouterNatWithBodyArgsForCall(i int) (context.Context, string, string, string, io.Reader, []generated.RequestEditorFn) {
+	fake.updateRouterNatWithBodyMutex.RLock()
+	defer fake.updateRouterNatWithBodyMutex.RUnlock()
+	argsForCall := fake.updateRouterNatWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6
+}
+
+func (fake *FakeClient) UpdateRouterNatWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.updateRouterNatWithBodyMutex.Lock()
+	defer fake.updateRouterNatWithBodyMutex.Unlock()
+	fake.UpdateRouterNatWithBodyStub = nil
+	fake.updateRouterNatWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateRouterNatWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateRouterNatWithBodyMutex.Lock()
+	defer fake.updateRouterNatWithBodyMutex.Unlock()
+	fake.UpdateRouterNatWithBodyStub = nil
+	if fake.updateRouterNatWithBodyReturnsOnCall == nil {
+		fake.updateRouterNatWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateRouterNatWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateRouterWithBody(arg1 context.Context, arg2 string, arg3 string, arg4 io.Reader, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateRouterWithBodyMutex.Lock()
+	ret, specificReturn := fake.updateRouterWithBodyReturnsOnCall[len(fake.updateRouterWithBodyArgsForCall)]
+	fake.updateRouterWithBodyArgsForCall = append(fake.updateRouterWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 io.Reader
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.UpdateRouterWithBodyStub
+	fakeReturns := fake.updateRouterWithBodyReturns
+	fake.recordInvocation("UpdateRouterWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.updateRouterWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateRouterWithBodyCallCount() int {
+	fake.updateRouterWithBodyMutex.RLock()
+	defer fake.updateRouterWithBodyMutex.RUnlock()
+	return len(fake.updateRouterWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) UpdateRouterWithBodyCalls(stub func(context.Context, string, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateRouterWithBodyMutex.Lock()
+	defer fake.updateRouterWithBodyMutex.Unlock()
+	fake.UpdateRouterWithBodyStub = stub
+}
+
+func (fake *FakeClient) UpdateRouterWithBodyArgsForCall(i int) (context.Context, string, string, io.Reader, []generated.RequestEditorFn) {
+	fake.updateRouterWithBodyMutex.RLock()
+	defer fake.updateRouterWithBodyMutex.RUnlock()
+	argsForCall := fake.updateRouterWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) UpdateRouterWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.updateRouterWithBodyMutex.Lock()
+	defer fake.updateRouterWithBodyMutex.Unlock()
+	fake.UpdateRouterWithBodyStub = nil
+	fake.updateRouterWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateRouterWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateRouterWithBodyMutex.Lock()
+	defer fake.updateRouterWithBodyMutex.Unlock()
+	fake.UpdateRouterWithBodyStub = nil
+	if fake.updateRouterWithBodyReturnsOnCall == nil {
+		fake.updateRouterWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateRouterWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) UpdateServer(arg1 context.Context, arg2 generated.ServerId, arg3 generated.UpdateServerJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.updateServerMutex.Lock()
 	ret, specificReturn := fake.updateServerReturnsOnCall[len(fake.updateServerArgsForCall)]
@@ -14987,6 +17562,10 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.addKeyToServerMutex.RUnlock()
 	fake.addKeyToServerWithBodyMutex.RLock()
 	defer fake.addKeyToServerWithBodyMutex.RUnlock()
+	fake.addNetworksMutex.RLock()
+	defer fake.addNetworksMutex.RUnlock()
+	fake.addNetworksWithBodyMutex.RLock()
+	defer fake.addNetworksWithBodyMutex.RUnlock()
 	fake.addServerIPMutex.RLock()
 	defer fake.addServerIPMutex.RUnlock()
 	fake.addServerIPWithBodyMutex.RLock()
@@ -15037,6 +17616,10 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.createRegistryMutex.RUnlock()
 	fake.createRegistryWithBodyMutex.RLock()
 	defer fake.createRegistryWithBodyMutex.RUnlock()
+	fake.createRouterMutex.RLock()
+	defer fake.createRouterMutex.RUnlock()
+	fake.createRouterWithBodyMutex.RLock()
+	defer fake.createRouterWithBodyMutex.RUnlock()
 	fake.createServerMutex.RLock()
 	defer fake.createServerMutex.RUnlock()
 	fake.createServerDiskMutex.RLock()
@@ -15063,6 +17646,8 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.deleteClusterNodeMutex.RUnlock()
 	fake.deleteClusterNodeGroupMutex.RLock()
 	defer fake.deleteClusterNodeGroupMutex.RUnlock()
+	fake.deleteDnatMutex.RLock()
+	defer fake.deleteDnatMutex.RUnlock()
 	fake.deleteFloatingIPMutex.RLock()
 	defer fake.deleteFloatingIPMutex.RUnlock()
 	fake.deleteKeyMutex.RLock()
@@ -15075,6 +17660,12 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.deleteProjectMutex.RUnlock()
 	fake.deleteRegistryMutex.RLock()
 	defer fake.deleteRegistryMutex.RUnlock()
+	fake.deleteRouterMutex.RLock()
+	defer fake.deleteRouterMutex.RUnlock()
+	fake.deleteRouterNatMutex.RLock()
+	defer fake.deleteRouterNatMutex.RUnlock()
+	fake.deleteRouterNetworkMutex.RLock()
+	defer fake.deleteRouterNetworkMutex.RUnlock()
 	fake.deleteServerMutex.RLock()
 	defer fake.deleteServerMutex.RUnlock()
 	fake.deleteServerDiskMutex.RLock()
@@ -15085,6 +17676,8 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.deleteServerIPMutex.RUnlock()
 	fake.deleteServerIPWithBodyMutex.RLock()
 	defer fake.deleteServerIPWithBodyMutex.RUnlock()
+	fake.deleteStaticRouteMutex.RLock()
+	defer fake.deleteStaticRouteMutex.RUnlock()
 	fake.deleteStorageMutex.RLock()
 	defer fake.deleteStorageMutex.RUnlock()
 	fake.deleteStorageSubdomainsMutex.RLock()
@@ -15107,6 +17700,8 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.getAccountStoragesMutex.RUnlock()
 	fake.getAllProjectResourcesMutex.RLock()
 	defer fake.getAllProjectResourcesMutex.RUnlock()
+	fake.getAvailableStaticRoutesMutex.RLock()
+	defer fake.getAvailableStaticRoutesMutex.RUnlock()
 	fake.getClusterMutex.RLock()
 	defer fake.getClusterMutex.RUnlock()
 	fake.getClusterKubeconfigMutex.RLock()
@@ -15125,6 +17720,10 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.getClustersMutex.RUnlock()
 	fake.getConfiguratorsMutex.RLock()
 	defer fake.getConfiguratorsMutex.RUnlock()
+	fake.getDnatMutex.RLock()
+	defer fake.getDnatMutex.RUnlock()
+	fake.getDnatRuleMutex.RLock()
+	defer fake.getDnatRuleMutex.RUnlock()
 	fake.getFloatingIpMutex.RLock()
 	defer fake.getFloatingIpMutex.RUnlock()
 	fake.getFloatingIpsMutex.RLock()
@@ -15145,6 +17744,8 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.getKubernetesAddonsConfigMutex.RUnlock()
 	fake.getKubernetesPresetsMutex.RLock()
 	defer fake.getKubernetesPresetsMutex.RUnlock()
+	fake.getNetworksMutex.RLock()
+	defer fake.getNetworksMutex.RUnlock()
 	fake.getOsListMutex.RLock()
 	defer fake.getOsListMutex.RUnlock()
 	fake.getProjectMutex.RLock()
@@ -15171,6 +17772,16 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.getRegistryPresetsMutex.RUnlock()
 	fake.getRegistryRepositoriesMutex.RLock()
 	defer fake.getRegistryRepositoriesMutex.RUnlock()
+	fake.getRouterMutex.RLock()
+	defer fake.getRouterMutex.RUnlock()
+	fake.getRouterAvailableNetworksMutex.RLock()
+	defer fake.getRouterAvailableNetworksMutex.RUnlock()
+	fake.getRouterPresetsMutex.RLock()
+	defer fake.getRouterPresetsMutex.RUnlock()
+	fake.getRouterStatisticsMutex.RLock()
+	defer fake.getRouterStatisticsMutex.RUnlock()
+	fake.getRoutersMutex.RLock()
+	defer fake.getRoutersMutex.RUnlock()
 	fake.getServerMutex.RLock()
 	defer fake.getServerMutex.RUnlock()
 	fake.getServerDiskMutex.RLock()
@@ -15197,6 +17808,8 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.getServersPresetsMutex.RUnlock()
 	fake.getSoftwareMutex.RLock()
 	defer fake.getSoftwareMutex.RUnlock()
+	fake.getStaticRoutesMutex.RLock()
+	defer fake.getStaticRoutesMutex.RUnlock()
 	fake.getStorageMutex.RLock()
 	defer fake.getStorageMutex.RUnlock()
 	fake.getStorageSubdomainsMutex.RLock()
@@ -15225,6 +17838,14 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.increaseCountOfNodesInGroupMutex.RUnlock()
 	fake.increaseCountOfNodesInGroupWithBodyMutex.RLock()
 	defer fake.increaseCountOfNodesInGroupWithBodyMutex.RUnlock()
+	fake.patchNetworkMutex.RLock()
+	defer fake.patchNetworkMutex.RUnlock()
+	fake.patchNetworkWithBodyMutex.RLock()
+	defer fake.patchNetworkWithBodyMutex.RUnlock()
+	fake.patchNetworksMutex.RLock()
+	defer fake.patchNetworksMutex.RUnlock()
+	fake.patchNetworksWithBodyMutex.RLock()
+	defer fake.patchNetworksWithBodyMutex.RUnlock()
 	fake.performActionOnBackupMutex.RLock()
 	defer fake.performActionOnBackupMutex.RUnlock()
 	fake.performActionOnBackupWithBodyMutex.RLock()
@@ -15233,6 +17854,10 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.performActionOnServerMutex.RUnlock()
 	fake.performActionOnServerWithBodyMutex.RLock()
 	defer fake.performActionOnServerWithBodyMutex.RUnlock()
+	fake.postDnatMutex.RLock()
+	defer fake.postDnatMutex.RUnlock()
+	fake.postDnatWithBodyMutex.RLock()
+	defer fake.postDnatWithBodyMutex.RUnlock()
 	fake.postKubernetesAddonsMutex.RLock()
 	defer fake.postKubernetesAddonsMutex.RUnlock()
 	fake.postKubernetesAddonsUpdateMutex.RLock()
@@ -15241,6 +17866,10 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.postKubernetesAddonsUpdateWithBodyMutex.RUnlock()
 	fake.postKubernetesAddonsWithBodyMutex.RLock()
 	defer fake.postKubernetesAddonsWithBodyMutex.RUnlock()
+	fake.postStaticRouteMutex.RLock()
+	defer fake.postStaticRouteMutex.RUnlock()
+	fake.postStaticRouteWithBodyMutex.RLock()
+	defer fake.postStaticRouteWithBodyMutex.RUnlock()
 	fake.rebootServerMutex.RLock()
 	defer fake.rebootServerMutex.RUnlock()
 	fake.rebootServerHardMutex.RLock()
@@ -15289,6 +17918,14 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.updateRegistryMutex.RUnlock()
 	fake.updateRegistryWithBodyMutex.RLock()
 	defer fake.updateRegistryWithBodyMutex.RUnlock()
+	fake.updateRouterMutex.RLock()
+	defer fake.updateRouterMutex.RUnlock()
+	fake.updateRouterNatMutex.RLock()
+	defer fake.updateRouterNatMutex.RUnlock()
+	fake.updateRouterNatWithBodyMutex.RLock()
+	defer fake.updateRouterNatWithBodyMutex.RUnlock()
+	fake.updateRouterWithBodyMutex.RLock()
+	defer fake.updateRouterWithBodyMutex.RUnlock()
 	fake.updateServerMutex.RLock()
 	defer fake.updateServerMutex.RUnlock()
 	fake.updateServerDiskMutex.RLock()

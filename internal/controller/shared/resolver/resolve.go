@@ -26,9 +26,13 @@ import (
 // connect time — but the interface decoupling lets tests substitute a
 // fake.
 func New(client CatalogClient, opts Options) Resolver {
+	c := opts.SharedCache
+	if c == nil {
+		c = NewCache(opts)
+	}
 	return &resolverImpl{
 		client:   client,
-		cache:    newCache(opts),
+		cache:    c.c,
 		registry: defaultRegistry(),
 	}
 }
@@ -66,6 +70,19 @@ func (r *resolverImpl) Resolve(ctx context.Context, pcRef PCRef, dim Dimension, 
 		}
 		switch in := input.(type) {
 		case PresetInput:
+			// Zone-filter BEFORE slug matching: a zone-mismatched preset id
+			// would be silently mis-placed by the upstream, not rejected
+			// (feature-006 finding). Filtering first also makes not-found
+			// hints zone-scoped.
+			if in.Zone != "" {
+				zoned := make([]PresetEntry, 0, len(entries))
+				for _, e := range entries {
+					if e.Zone == "" || e.Zone == in.Zone {
+						zoned = append(zoned, e)
+					}
+				}
+				entries = zoned
+			}
 			id, err := MatchPresetSlug(in.Slug, entries, dim.Name)
 			if err != nil {
 				return nil, err

@@ -106,6 +106,7 @@ type ServerParameters struct {
 	//   us-4 — United States (New York-area)
 	//   pl-1 — Poland (per openapi; not in current live preset response)
 	// +kubebuilder:validation:Enum=ru-1;ru-2;ru-3;nl-1;de-1;kz-1;us-4;pl-1
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="location is immutable"
 	Location string `json:"location"`
 
 	// OS pins the operating system installed at create time.
@@ -269,6 +270,7 @@ type ServerStatus struct {
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.projectRef)?1:0) + (has(self.spec.forProvider.projectSelector)?1:0) + (has(self.spec.forProvider.projectID)?1:0) <= 1",message="at most one of projectRef, projectSelector, projectID may be set"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.floatingIPRefs)?1:0) + (has(self.spec.forProvider.floatingIPSelector)?1:0) + (has(self.spec.forProvider.floatingIPIDs)?1:0) <= 1",message="at most one of floatingIPRefs, floatingIPSelector, floatingIPIDs may be set"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.presetName)?1:0) + (has(self.spec.forProvider.resources)?1:0) == 1",message="exactly one of presetName or resources must be set"
+// +kubebuilder:validation:XValidation:rule="has(self.spec.forProvider.presetName) == has(oldSelf.spec.forProvider.presetName)",message="switching between presetName and resources requires recreate"
 
 // Server is a Timeweb cloud server (VM). Sized via the `presetName`
 // resolver; OS via `os.image + os.version` resolver. See

@@ -723,6 +723,11 @@ func (in *KubernetesClusterNodepoolParameters) DeepCopyInto(out *KubernetesClust
 		*out = new(KubernetesNodepoolResources)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.PublicIP != nil {
+		in, out := &in.PublicIP, &out.PublicIP
+		*out = new(bool)
+		**out = **in
+	}
 	if in.ClusterRef != nil {
 		in, out := &in.ClusterRef, &out.ClusterRef
 		*out = new(v2.Reference)

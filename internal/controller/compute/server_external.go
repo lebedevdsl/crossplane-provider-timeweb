@@ -18,10 +18,8 @@ package compute
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
@@ -77,15 +75,11 @@ func (e *serverExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 		return managed.ExternalObservation{}, err
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("compute/server: read body: %w", err)
-	}
 	var envelope struct {
 		Server twgen.Vds `json:"server"`
 	}
-	if err := json.Unmarshal(body, &envelope); err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("compute/server: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &envelope); err != nil {
+		return managed.ExternalObservation{}, fmt.Errorf("compute/server: %w", err)
 	}
 
 	populateServerStatus(cr, envelope.Server)
@@ -107,7 +101,7 @@ func (e *serverExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 	}
 	cr.Status.AtProvider.BoundFloatingIPs = bound
 
-	upToDate := isServerUpToDate(cr.Spec.ForProvider, envelope.Server) &&
+	upToDate := isServerUpToDate(cr.Spec.ForProvider, cr.Status.AtProvider, envelope.Server) &&
 		stringSetsEqual(bound, e.resolved.floatingIPIDs)
 
 	return managed.ExternalObservation{
@@ -164,15 +158,11 @@ func (e *serverExternal) Create(ctx context.Context, mg resource.Managed) (manag
 		return managed.ExternalCreation{}, err
 	}
 
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalCreation{}, fmt.Errorf("compute/server: read body: %w", err)
-	}
 	var envelope struct {
 		Server twgen.Vds `json:"server"`
 	}
-	if err := json.Unmarshal(respBody, &envelope); err != nil {
-		return managed.ExternalCreation{}, fmt.Errorf("compute/server: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &envelope); err != nil {
+		return managed.ExternalCreation{}, fmt.Errorf("compute/server: %w", err)
 	}
 
 	meta.SetExternalName(cr, shared.EncodeID(int(envelope.Server.Id)))
@@ -217,15 +207,16 @@ func (e *serverExternal) Update(ctx context.Context, mg resource.Managed) (manag
 	if err != nil {
 		return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
 	}
-	getBody, _ := io.ReadAll(io.LimitReader(getResp.Body, 1<<20))
-	_ = getResp.Body.Close()
+	defer func() { _ = getResp.Body.Close() }()
 	if err := timeweb.Classify(getResp); err != nil {
 		return managed.ExternalUpdate{}, err
 	}
 	var envelope struct {
 		Server twgen.Vds `json:"server"`
 	}
-	_ = json.Unmarshal(getBody, &envelope)
+	if err := timeweb.DecodeBody(getResp.Body, &envelope); err != nil {
+		return managed.ExternalUpdate{}, fmt.Errorf("compute/server: %w", err)
+	}
 	observed := envelope.Server
 
 	// Sizing-variant-switch detection (feature 005 FR-004): the variant the
@@ -448,15 +439,11 @@ func (e *serverExternal) checkNetworkLocationByID(ctx context.Context, vpcID, se
 		}
 		return err
 	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return fmt.Errorf("compute/server: read VPC body: %w", err)
-	}
 	var env struct {
 		VPC twgen.Vpc `json:"vpc"`
 	}
-	if err := json.Unmarshal(body, &env); err != nil {
-		return fmt.Errorf("compute/server: decode VPC body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return fmt.Errorf("compute/server: VPC: %w", err)
 	}
 	if loc := string(env.VPC.Location); loc != "" && loc != serverLocation {
 		return fmt.Errorf("%w: VPC %q is in %q but Server is in %q",
@@ -556,13 +543,24 @@ func buildCreateServerBody(cr *computev1alpha1.Server, presetID, configuratorID,
 }
 
 // populateServerStatus mirrors the upstream Vds into the MR's atProvider.
-// Locked IDs are NOT touched here — they're set once at Create time and
-// stay sticky to enable drift detection.
 func populateServerStatus(cr *computev1alpha1.Server, v twgen.Vds) {
 	id := int64(v.Id)
 	cr.Status.AtProvider.UpstreamID = &id
 	state := string(v.Status)
 	cr.Status.AtProvider.State = &state
+
+	// Locked sizing IDs come from the GET, not only from Create: status
+	// written during Create is wiped by the runtime's critical-annotation
+	// refresh (feature 005 finding), so Observe must own these fields.
+	// Zero/absent values never overwrite an already-set lock.
+	if v.PresetId != nil && *v.PresetId != 0 {
+		pid := int64(*v.PresetId)
+		cr.Status.AtProvider.LockedPresetID = &pid
+	}
+	if v.ConfiguratorId != nil && *v.ConfiguratorId != 0 {
+		cid := int64(*v.ConfiguratorId)
+		cr.Status.AtProvider.LockedConfiguratorID = &cid
+	}
 
 	// Walk the networks array and pick the first public IPv4 / IPv6 /
 	// private. Vds.Networks is an array of mixed types; per Type we
@@ -625,8 +623,16 @@ func setReadyCondition(cr *computev1alpha1.Server, state twgen.VdsStatus) {
 // isServerUpToDate compares the mutable subset of forProvider against
 // the upstream observation. Drift on immutable fields is detected in
 // Update, not here — Update is responsible for the RejectImmutable
-// surface (FR-009).
-func isServerUpToDate(spec computev1alpha1.ServerParameters, v twgen.Vds) bool {
+// surface (FR-009). The locked-ID rows route a sizing-variant switch
+// (preset↔resources) through Update so its rejection guard is actually
+// reachable (feature 006 T007 — Observe-populated locks make these fire).
+func isServerUpToDate(spec computev1alpha1.ServerParameters, status computev1alpha1.ServerObservation, v twgen.Vds) bool {
+	if spec.PresetName != nil && status.LockedConfiguratorID != nil {
+		return false // sizing switch resources→presetName: Update rejects
+	}
+	if spec.Resources != nil && status.LockedPresetID != nil {
+		return false // sizing switch presetName→resources: Update rejects
+	}
 	if spec.Name != v.Name {
 		return false
 	}

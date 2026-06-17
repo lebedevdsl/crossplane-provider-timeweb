@@ -76,6 +76,19 @@ type KubernetesClusterNodepoolParameters struct {
 	// +kubebuilder:validation:Maximum=100
 	NodeCount int `json:"nodeCount"`
 
+	// PublicIP controls whether worker nodes get public addresses. Unset
+	// (nil) omits the field upstream and preserves the upstream default —
+	// PUBLIC, exactly as before this field existed (feature-006 FR-008/
+	// SC-006). Set false for private nodes: they then need a NAT-enabled
+	// Router on the cluster's network for outbound internet (see
+	// docs/kubernetes.md, "Worker node networking"). Maps to the upstream
+	// `public_ip_enabled` (present in live payloads though absent from the
+	// published API docs). Create-time immutable until an upstream
+	// update path is verified.
+	// +optional
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="publicIP is immutable"
+	PublicIP *bool `json:"publicIP,omitempty"`
+
 	// ClusterRef / ClusterSelector / ClusterID reference the parent
 	// KubernetesCluster. Exactly one MUST be set. Immutable post-create.
 	// +optional
@@ -171,6 +184,8 @@ type KubernetesClusterNodepoolStatus struct {
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.clusterRef)?1:0) + (has(self.spec.forProvider.clusterSelector)?1:0) + (has(self.spec.forProvider.clusterID)?1:0) == 1",message="exactly one of clusterRef, clusterSelector, clusterID must be set"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.presetName)?1:0) + (has(self.spec.forProvider.resources)?1:0) == 1",message="exactly one of presetName or resources must be set"
+// +kubebuilder:validation:XValidation:rule="has(self.spec.forProvider.presetName) == has(oldSelf.spec.forProvider.presetName)",message="switching between presetName and resources requires recreate"
+// +kubebuilder:validation:XValidation:rule="has(self.spec.forProvider.publicIP) == has(oldSelf.spec.forProvider.publicIP)",message="publicIP is immutable (set/unset requires recreate)"
 // +kubebuilder:validation:XValidation:rule="!has(self.spec.forProvider.autoscaling) || !self.spec.forProvider.autoscaling.enabled || self.spec.forProvider.autoscaling.maxSize >= self.spec.forProvider.autoscaling.minSize",message="autoscaling.maxSize must be >= autoscaling.minSize"
 
 // KubernetesClusterNodepool is one Timeweb managed-Kubernetes worker group.

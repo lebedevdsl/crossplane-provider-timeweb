@@ -27,10 +27,8 @@ package project
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
@@ -89,15 +87,11 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, err
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("project: read body: %w", err)
-	}
 	var envelope struct {
 		Project generated.Project `json:"project"`
 	}
-	if err := json.Unmarshal(body, &envelope); err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("project: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &envelope); err != nil {
+		return managed.ExternalObservation{}, fmt.Errorf("project: %w", err)
 	}
 
 	populateStatus(cr, envelope.Project)
@@ -132,15 +126,11 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, err
 	}
 
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalCreation{}, fmt.Errorf("project: read body: %w", err)
-	}
 	var envelope struct {
 		Project generated.Project `json:"project"`
 	}
-	if err := json.Unmarshal(respBody, &envelope); err != nil {
-		return managed.ExternalCreation{}, fmt.Errorf("project: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &envelope); err != nil {
+		return managed.ExternalCreation{}, fmt.Errorf("project: %w", err)
 	}
 
 	meta.SetExternalName(cr, shared.EncodeID(int(envelope.Project.Id)))

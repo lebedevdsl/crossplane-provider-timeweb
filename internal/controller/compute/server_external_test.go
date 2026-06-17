@@ -354,6 +354,13 @@ const sampleServerJSON = `{
   }
 }`
 
+// sampleServerConfiguratorJSON is the GET echo for a configurator-sized
+// server: preset_id null, configurator_id set (feature 006 T007).
+var sampleServerConfiguratorJSON = strings.NewReplacer(
+	`"preset_id":234`, `"preset_id":null`,
+	`"configurator_id":null`, `"configurator_id":11`,
+).Replace(sampleServerJSON)
+
 // stubManaged ensures the compile-time interface check applies (Server
 // satisfies resource.Managed transitively via the apis/compute package).
 func TestServerImplementsManaged(_ *testing.T) {
@@ -393,6 +400,61 @@ func TestObserve(t *testing.T) {
 		}
 		if string(obs.ConnectionDetails["privateIP"]) != "10.30.0.5" {
 			t.Errorf("privateIP secret = %q, want 10.30.0.5", obs.ConnectionDetails["privateIP"])
+		}
+	})
+
+	t.Run("PopulatesLockedIDsFromGET", func(t *testing.T) {
+		// Locked IDs must be owned by Observe: status written during Create
+		// is wiped by the runtime's critical-annotation refresh (feature 005
+		// finding), so the locks have to be re-derived from the GET echo.
+		fake := &timeweb.FakeClient{}
+		fake.GetServerReturns(httpResp(http.StatusOK, sampleServerJSON), nil) // preset_id 234, configurator_id null
+		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
+		cr := newServer(1234567)
+		if _, err := e.Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if cr.Status.AtProvider.LockedPresetID == nil || *cr.Status.AtProvider.LockedPresetID != 234 {
+			t.Errorf("LockedPresetID=%v, want 234 (from the GET's preset_id)", cr.Status.AtProvider.LockedPresetID)
+		}
+		if cr.Status.AtProvider.LockedConfiguratorID != nil {
+			t.Error("LockedConfiguratorID must stay nil on the preset path")
+		}
+	})
+
+	t.Run("PopulatesLockedConfiguratorIDFromGET", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetServerReturns(httpResp(http.StatusOK, sampleServerConfiguratorJSON), nil)
+		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
+		cr := newServerResources("1234567")
+		cr.Spec.ForProvider.Name = "web-01"
+		if _, err := e.Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if cr.Status.AtProvider.LockedConfiguratorID == nil || *cr.Status.AtProvider.LockedConfiguratorID != 11 {
+			t.Errorf("LockedConfiguratorID=%v, want 11 (from the GET's configurator_id)", cr.Status.AtProvider.LockedConfiguratorID)
+		}
+		if cr.Status.AtProvider.LockedPresetID != nil {
+			t.Error("LockedPresetID must stay nil on the resources path")
+		}
+	})
+
+	t.Run("SizingVariantDrift_NotUpToDate", func(t *testing.T) {
+		// The previously-unreachable-guard regression test (feature 006
+		// T007): a resources-sized spec against a preset-locked upstream must
+		// surface upToDate=false so Update's sizing-switch rejection is
+		// actually reached.
+		fake := &timeweb.FakeClient{}
+		fake.GetServerReturns(httpResp(http.StatusOK, sampleServerJSON), nil) // preset_id 234
+		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
+		cr := newServerResources("1234567")
+		cr.Spec.ForProvider.Name = "web-01" // match upstream so only sizing drifts
+		obs, err := e.Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if obs.ResourceUpToDate {
+			t.Error("ResourceUpToDate=true, want false (resources spec vs locked preset)")
 		}
 	})
 
@@ -752,7 +814,10 @@ func TestServerCustomSizing(t *testing.T) {
 
 	t.Run("Create_Resources_SetsLockedConfiguratorID_AndConfigBody", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.CreateServerReturns(httpResp(http.StatusCreated, sampleServerJSON), nil)
+		// Configurator-flavored echo: a configurator-sized server reports
+		// configurator_id, not preset_id (populateServerStatus now mirrors
+		// locked IDs from every upstream body — feature 006 T007).
+		fake.CreateServerReturns(httpResp(http.StatusCreated, sampleServerConfiguratorJSON), nil)
 		cr := newServerResources("")
 		if _, err := (&serverExternal{tw: fake, resolver: okRes}).Create(ctx, cr); err != nil {
 			t.Fatalf("Create: %v", err)

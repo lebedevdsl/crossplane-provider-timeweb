@@ -79,13 +79,18 @@ type FloatingIPObservation struct {
 
 // FloatingIPBindingObservation mirrors the upstream `bound_to` shape.
 type FloatingIPBindingObservation struct {
-	// ResourceType is one of: "server", "balancer", "database", "network".
+	// ResourceType is one of: "server", "balancer", "database", "network", "router".
 	// +optional
 	ResourceType *string `json:"resourceType,omitempty"`
 
 	// ResourceID is the upstream ID of the resource this IP is bound to.
 	// +optional
 	ResourceID *int64 `json:"resourceID,omitempty"`
+
+	// ResourceUUID is the string id for UUID-keyed bindings, e.g. routers;
+	// the int64 ResourceID can't hold these.
+	// +optional
+	ResourceUUID *string `json:"resourceUUID,omitempty"`
 }
 
 // FloatingIPSpec is the desired state.
@@ -108,6 +113,7 @@ type FloatingIPStatus struct {
 // +kubebuilder:printcolumn:name="IP",type="string",JSONPath=".status.atProvider.ip"
 // +kubebuilder:printcolumn:name="BOUND-RES",type="string",JSONPath=".status.atProvider.observedBoundTo.resourceType"
 // +kubebuilder:printcolumn:name="BOUND-TO",type="integer",JSONPath=".status.atProvider.observedBoundTo.resourceID"
+// +kubebuilder:printcolumn:name="BOUND-UUID",type="string",JSONPath=".status.atProvider.observedBoundTo.resourceUUID"
 // +kubebuilder:printcolumn:name="LOCATION",type="string",JSONPath=".spec.forProvider.location"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 

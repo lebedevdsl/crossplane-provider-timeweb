@@ -84,6 +84,9 @@ spec:
                     - ams-1
                     - fra-1
                     type: string
+                    x-kubernetes-validations:
+                    - message: availabilityZone is immutable
+                      rule: self == oldSelf
                   description:
                     description: Description is a free-form note. Mutable (PATCH).
                     type: string
@@ -116,6 +119,9 @@ spec:
                     - flannel
                     - cilium
                     type: string
+                    x-kubernetes-validations:
+                    - message: networkDriver is immutable
+                      rule: self == oldSelf
                   networkID:
                     type: string
                   networkRef:
@@ -488,6 +494,8 @@ spec:
         - message: exactly one of presetName or resources must be set
           rule: (has(self.spec.forProvider.presetName)?1:0) + (has(self.spec.forProvider.resources)?1:0)
             == 1
+        - message: switching between presetName and resources requires recreate
+          rule: has(self.spec.forProvider.presetName) == has(oldSelf.spec.forProvider.presetName)
     served: true
     storage: true
     subresources:

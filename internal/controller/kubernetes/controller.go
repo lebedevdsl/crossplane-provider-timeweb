@@ -40,6 +40,7 @@ import (
 
 	kubernetesv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/kubernetes/v1alpha1"
 	apisv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/v1alpha1"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared/resolver"
 )
 
 func newConnector(mgr manager.Manager, l logging.Logger, name string) *connector {
@@ -49,6 +50,7 @@ func newConnector(mgr manager.Manager, l logging.Logger, name string) *connector
 			&apisv1alpha1.ProviderConfigUsage{}),
 		logger:   l.WithValues("controller", name),
 		recorder: mgr.GetEventRecorderFor(name), //nolint:staticcheck // SA1019 — same pattern as other controllers in this provider
+		cache:    resolver.NewCache(resolver.Options{}),
 	}
 }
 

@@ -18,7 +18,6 @@ package containerregistry
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -81,11 +80,7 @@ func (e *registryExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 		return managed.ExternalObservation{}, err
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("containerregistry: read body: %w", err)
-	}
-	reg, err := decodeRegistry(body)
+	reg, err := decodeRegistry(resp.Body)
 	if err != nil {
 		return managed.ExternalObservation{}, err
 	}
@@ -149,8 +144,7 @@ func (e *registryExternal) Create(ctx context.Context, mg resource.Managed) (man
 	if err := timeweb.Classify(resp); err != nil {
 		return managed.ExternalCreation{}, err
 	}
-	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	reg, err := decodeRegistry(respBody)
+	reg, err := decodeRegistry(resp.Body)
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
@@ -185,12 +179,11 @@ func (e *registryExternal) Update(ctx context.Context, mg resource.Managed) (man
 	if err != nil {
 		return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
 	}
-	getBody, _ := io.ReadAll(io.LimitReader(getResp.Body, 1<<20))
-	_ = getResp.Body.Close()
+	defer func() { _ = getResp.Body.Close() }()
 	if err := timeweb.Classify(getResp); err != nil {
 		return managed.ExternalUpdate{}, err
 	}
-	reg, err := decodeRegistry(getBody)
+	reg, err := decodeRegistry(getResp.Body)
 	if err != nil {
 		return managed.ExternalUpdate{}, err
 	}
@@ -317,12 +310,12 @@ func (e *registryExternal) connectionDetails(_ context.Context, reg generated.Re
 }
 
 // decodeRegistry unmarshals the `{"container_registry": …}` envelope.
-func decodeRegistry(body []byte) (generated.RegistryOut, error) {
+func decodeRegistry(r io.Reader) (generated.RegistryOut, error) {
 	var envelope struct {
 		ContainerRegistry generated.RegistryOut `json:"container_registry"`
 	}
-	if err := json.Unmarshal(body, &envelope); err != nil {
-		return generated.RegistryOut{}, fmt.Errorf("containerregistry: decode body: %w", err)
+	if err := timeweb.DecodeBody(r, &envelope); err != nil {
+		return generated.RegistryOut{}, fmt.Errorf("containerregistry: %w", err)
 	}
 	return envelope.ContainerRegistry, nil
 }

@@ -57,6 +57,10 @@ func nodepoolE(fake *timeweb.FakeClient) *nodepoolExternal {
 
 const nodeGroupJSON = `{"node_group":{"id":42,"name":"workers","preset_id":9,"node_count":2}}`
 
+// nodeGroupConfiguratorJSON is the echo for a configurator-sized worker
+// group: no preset_id (feature 006 T007).
+const nodeGroupConfiguratorJSON = `{"node_group":{"id":42,"name":"workers","node_count":2}}`
+
 // Per-node payloads for the readiness gate (the group's node_count is the
 // REQUESTED count, echoed before any VM exists).
 const (
@@ -143,6 +147,42 @@ func TestNodepoolObserve(t *testing.T) {
 		}
 	})
 
+	t.Run("PopulatesLockedPresetIDFromGET", func(t *testing.T) {
+		// Locked IDs must be owned by Observe: status written during Create
+		// is wiped by the runtime's critical-annotation refresh (feature 005
+		// finding), so the lock has to be re-derived from the GET echo.
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesActiveJSON), nil)
+		cr := newNodepool(true, 2)
+		if _, err := nodepoolE(fake).Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if cr.Status.AtProvider.LockedPresetID == nil || *cr.Status.AtProvider.LockedPresetID != 9 {
+			t.Errorf("LockedPresetID=%v, want 9 (from the GET's preset_id)", cr.Status.AtProvider.LockedPresetID)
+		}
+	})
+
+	t.Run("SizingVariantDrift_NotUpToDate", func(t *testing.T) {
+		// The previously-unreachable-guard regression test (feature 006
+		// T007): a resources-sized spec against a preset-locked upstream must
+		// surface upToDate=false so Update's sizing-switch rejection is
+		// actually reached.
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil) // preset_id 9
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesActiveJSON), nil)
+		cr := newNodepool(true, 2)
+		cr.Spec.ForProvider.PresetName = nil
+		cr.Spec.ForProvider.Resources = &kubernetesv1alpha1.KubernetesNodepoolResources{CPU: 2, RAMGB: 4, DiskGB: 40}
+		obs, err := nodepoolE(fake).Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if obs.ResourceUpToDate {
+			t.Error("ResourceUpToDate=true, want false (resources spec vs locked preset)")
+		}
+	})
+
 	t.Run("ScaleDrift_NotUpToDate", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
@@ -188,6 +228,8 @@ func TestNodepoolCreate(t *testing.T) {
 
 	t.Run("Success_SetsExternalNameAndClusterID", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
+		// Preset resolution is zone-filtered by the parent cluster's AZ (feature 006).
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
 		fake.CreateClusterNodeGroupReturns(httpResp(http.StatusCreated, nodeGroupJSON), nil)
 		cr := newNodepool(false, 2)
 		if _, err := nodepoolE(fake).Create(ctx, cr); err != nil {
@@ -202,9 +244,11 @@ func TestNodepoolCreate(t *testing.T) {
 	})
 
 	t.Run("WorkerPresetNotFound", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
 		cr := newNodepool(false, 2)
 		cr.Spec.ForProvider.PresetName = strPtr("ghost")
-		_, err := nodepoolE(&timeweb.FakeClient{}).Create(ctx, cr)
+		_, err := nodepoolE(fake).Create(ctx, cr)
 		if !errors.Is(err, resolver.ErrPresetNotFound) {
 			t.Errorf("err=%v, want ErrPresetNotFound", err)
 		}
@@ -212,6 +256,7 @@ func TestNodepoolCreate(t *testing.T) {
 
 	t.Run("Terminal_BadRequest", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
 		fake.CreateClusterNodeGroupReturns(httpResp(http.StatusBadRequest, `{"message":"bad"}`), nil)
 		if _, err := nodepoolE(fake).Create(ctx, newNodepool(false, 2)); err == nil {
 			t.Fatal("want terminal error on 400")
@@ -220,6 +265,7 @@ func TestNodepoolCreate(t *testing.T) {
 
 	t.Run("Transient_NetworkError", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
 		fake.CreateClusterNodeGroupReturns(nil, errors.New("timeout"))
 		if _, err := nodepoolE(fake).Create(ctx, newNodepool(false, 2)); err == nil {
 			t.Fatal("want error on transport failure")
@@ -335,7 +381,9 @@ func TestNodepoolCustomSizing(t *testing.T) {
 		// The custom-sizing path GETs the parent cluster to derive the
 		// configurator location from its availability zone (msk-1 → ru-3).
 		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
-		fake.CreateClusterNodeGroupReturns(httpResp(http.StatusCreated, nodeGroupJSON), nil)
+		// Configurator-flavored echo: no preset_id (populateNodepoolStatus
+		// now mirrors the locked preset from every upstream body).
+		fake.CreateClusterNodeGroupReturns(httpResp(http.StatusCreated, nodeGroupConfiguratorJSON), nil)
 		r := okResolver()
 		r.configuratorID = 22
 		cr := newNodepool(false, 2)
@@ -346,6 +394,9 @@ func TestNodepoolCustomSizing(t *testing.T) {
 		}
 		if cr.Status.AtProvider.LockedConfiguratorID == nil || *cr.Status.AtProvider.LockedConfiguratorID != 22 {
 			t.Errorf("LockedConfiguratorID=%v, want 22", cr.Status.AtProvider.LockedConfiguratorID)
+		}
+		if cr.Status.AtProvider.LockedPresetID != nil {
+			t.Error("LockedPresetID must be nil on the resources path")
 		}
 		_, _, body, _ := fake.CreateClusterNodeGroupArgsForCall(0)
 		if body.Configuration == nil {
@@ -397,4 +448,38 @@ func TestNodepoolCustomSizing(t *testing.T) {
 			t.Errorf("err=%v, want ErrSizingSwitchRequiresRecreate", err)
 		}
 	})
+}
+
+// TestNodepoolPublicIP locks the feature-006 private-node flag mapping:
+// publicIP nil omits the upstream field entirely (SC-006 — manifests written
+// before the field existed produce byte-identical create bodies), while an
+// explicit value is passed through.
+func TestNodepoolPublicIP(t *testing.T) {
+	ctx := context.Background()
+	mk := func(v *bool) *kubernetesv1alpha1.KubernetesClusterNodepool {
+		cr := newNodepool(false, 2)
+		cr.Spec.ForProvider.PublicIP = v
+		return cr
+	}
+	run := func(t *testing.T, v *bool) *bool {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
+		fake.CreateClusterNodeGroupReturns(httpResp(http.StatusCreated, nodeGroupJSON), nil)
+		if _, err := nodepoolE(fake).Create(ctx, mk(v)); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		_, _, body, _ := fake.CreateClusterNodeGroupArgsForCall(0)
+		return body.PublicIpEnabled
+	}
+	if got := run(t, nil); got != nil {
+		t.Errorf("nil publicIP: body field = %v, want omitted (nil)", *got)
+	}
+	f := false
+	if got := run(t, &f); got == nil || *got != false {
+		t.Errorf("publicIP=false: body field = %v, want false (private nodes)", got)
+	}
+	tr := true
+	if got := run(t, &tr); got == nil || *got != true {
+		t.Errorf("publicIP=true: body field = %v, want true", got)
+	}
 }

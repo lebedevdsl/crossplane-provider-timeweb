@@ -54,7 +54,7 @@ generate-client: ## Regenerate the Timeweb HTTP client from docs/openapi-timeweb
 	$(OAPI_CODEGEN) \
 	    -package generated \
 	    -generate types,client,skip-fmt \
-	    -include-tags "Проекты,SSH-ключи,S3-хранилище,Реестр контейнеров,Облачные серверы,VPC,Плавающие IP,Kubernetes" \
+	    -include-tags "Проекты,SSH-ключи,S3-хранилище,Реестр контейнеров,Облачные серверы,VPC,Плавающие IP,Kubernetes,Роутеры" \
 	    -o internal/clients/timeweb/generated/zz_generated_client.go \
 	    docs/openapi-timeweb.json
 	# Patch invalid identifiers produced by anonymous response schemas named

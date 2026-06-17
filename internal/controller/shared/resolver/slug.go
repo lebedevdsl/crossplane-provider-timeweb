@@ -31,6 +31,13 @@ type PresetEntry struct {
 	Location     string // upstream location code (e.g. "ru-1", "pl-1"); "" if not applicable
 	DiskGB       int64  // upstream disk size in GB; 0 if the dimension is not size-keyed
 	StorageClass string // upstream storage class (S3: "hot" | "cold"); "" for non-storage dimensions
+	// Zone is a FILTER-ONLY placement key (availability zone, e.g. "msk-1");
+	// it is NOT part of the slug, so existing slugs keep matching unchanged.
+	// When both PresetInput.Zone and this field are non-empty and differ, the
+	// entry is dropped before slug/size matching — a zone-mismatched preset
+	// makes the upstream MIS-PLACE the resource instead of rejecting it
+	// (feature-006 finding, verified live). "" = unconstrained.
+	Zone string
 }
 
 // Slugify computes the canonical slug for a preset entry per the rule

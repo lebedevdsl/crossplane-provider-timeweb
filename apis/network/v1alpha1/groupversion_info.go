@@ -52,11 +52,17 @@ var (
 	FloatingIPKind = "FloatingIP"
 	// FloatingIPGroupVersionKind is the GVK for FloatingIP.
 	FloatingIPGroupVersionKind = GroupVersion.WithKind(FloatingIPKind)
+
+	// RouterKind is the Kind for Router.
+	RouterKind = "Router"
+	// RouterGroupVersionKind is the GVK for Router.
+	RouterGroupVersionKind = GroupVersion.WithKind(RouterKind)
 )
 
 func init() {
 	SchemeBuilder.Register(
 		&Network{}, &NetworkList{},
 		&FloatingIP{}, &FloatingIPList{},
+		&Router{}, &RouterList{},
 	)
 }

@@ -28,6 +28,7 @@ import (
 
 	cregv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/kubernetes/v1alpha1"
 	apisv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/v1alpha1"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared/resolver"
 )
 
 // SetupOptions configures the Container Registry controllers.
@@ -49,6 +50,7 @@ func SetupRegistry(mgr manager.Manager, l logging.Logger, opts SetupOptions) err
 				&apisv1alpha1.ProviderConfigUsage{}),
 			logger:   l.WithValues("controller", name),
 			recorder: recorder,
+			cache:    resolver.NewCache(resolver.Options{}),
 		}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(recorder)),

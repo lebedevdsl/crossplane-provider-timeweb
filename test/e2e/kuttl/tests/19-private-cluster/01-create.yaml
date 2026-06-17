@@ -1,0 +1,105 @@
+# Step 1 — PRIVATE Kubernetes cluster (feature 006 US3).
+#
+# The full arrangement: Network + FloatingIP + Router (NAT'd attachment) +
+# KubernetesCluster on that network + Nodepool with publicIP: false. Worker
+# nodes get local addresses only; outbound internet egresses via the
+# router's NAT. Default behavior elsewhere is unchanged (publicIP unset ⇒
+# public, as before).
+#
+# Sizing: zone-matched discovery values ($TWE_K8S_MASTER_*/$TWE_K8S_WORKER_*
+# from the msk-1 entries of /configurator/k8s; $TWE_ROUTER_PRESET from
+# /presets/routers ru-3). Env-gated: set TIMEWEB_E2E_PRIVATE=1 (billable,
+# slow — cluster + worker + router).
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: e2e-priv-net
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    name: "${TWE_PRIV_NET_NAME}"
+    subnetCIDR: 10.39.0.0/24
+    location: ru-3
+    description: "kuttl 19 private-cluster"
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: FloatingIP
+metadata:
+  name: e2e-priv-egress
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    location: ru-3
+    availabilityZone: msk-1
+    isDDoSGuard: false
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Router
+metadata:
+  name: e2e-priv-router
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    name: "${TWE_PRIV_ROUTER_NAME}"
+    availabilityZone: msk-1
+    presetName: "${TWE_ROUTER_PRESET}"
+    networks:
+      - networkRef:
+          name: e2e-priv-net
+        natFloatingIP:
+          ref:
+            name: e2e-priv-egress
+        dhcp: true
+---
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesCluster
+metadata:
+  name: e2e-priv-cluster
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  writeConnectionSecretToRef:
+    name: e2e-priv-kubeconfig
+  forProvider:
+    name: "${TWE_PRIV_CLUSTER_NAME}"
+    k8sVersion: "${TWE_K8S_VERSION}"
+    networkDriver: cilium
+    availabilityZone: msk-1
+    masterNodesCount: 1
+    networkRef:
+      name: e2e-priv-net
+    resources:
+      cpu: ${TWE_K8S_MASTER_CPU}
+      ramGB: ${TWE_K8S_MASTER_RAMGB}
+      diskGB: ${TWE_K8S_MASTER_DISKGB}
+---
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesClusterNodepool
+metadata:
+  name: e2e-priv-workers
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    name: workers
+    clusterRef:
+      name: e2e-priv-cluster
+    nodeCount: 1
+    publicIP: false
+    resources:
+      cpu: ${TWE_K8S_WORKER_CPU}
+      ramGB: ${TWE_K8S_WORKER_RAMGB}
+      diskGB: ${TWE_K8S_WORKER_DISKGB}

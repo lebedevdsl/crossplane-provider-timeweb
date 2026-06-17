@@ -134,6 +134,10 @@ func newCluster(created bool) *kubernetesv1alpha1.KubernetesCluster {
 
 const clusterActiveJSON = `{"cluster":{"id":777,"name":"demo","status":"active","k8s_version":"1.31.2","network_driver":"cilium","preset_id":5,"cpu":2,"ram":4096,"disk":40960,"availability_zone":"msk-1","project_id":0}}`
 
+// clusterConfiguratorJSON is the GET echo for a configurator-sized cluster:
+// no preset_id, configurator_id set (verified live, feature 006 T007).
+const clusterConfiguratorJSON = `{"cluster":{"id":777,"name":"demo","status":"active","k8s_version":"1.31.2","network_driver":"cilium","configurator_id":11,"cpu":2,"ram":4096,"disk":40960,"availability_zone":"msk-1","project_id":0}}`
+
 func clusterE(fake *timeweb.FakeClient, r resolver.Resolver) *clusterExternal {
 	return &clusterExternal{tw: fake, resolver: r, pcRef: resolver.PCRef{Name: "default"}}
 }
@@ -195,6 +199,85 @@ func TestClusterObserve(t *testing.T) {
 		}
 	})
 
+	t.Run("PopulatesLockedPresetIDFromGET", func(t *testing.T) {
+		// Locked IDs must be owned by Observe: status written during Create
+		// is wiped by the runtime's critical-annotation refresh (feature 005
+		// finding), so the lock has to be re-derived from the GET echo.
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
+		fake.GetClusterKubeconfigReturns(httpResp(http.StatusOK, "apiVersion: v1\n"), nil)
+		cr := newCluster(true)
+		if _, err := clusterE(fake, okResolver()).Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if cr.Status.AtProvider.LockedPresetID == nil || *cr.Status.AtProvider.LockedPresetID != 5 {
+			t.Errorf("LockedPresetID=%v, want 5 (from the GET's preset_id)", cr.Status.AtProvider.LockedPresetID)
+		}
+		if cr.Status.AtProvider.LockedConfiguratorID != nil {
+			t.Error("LockedConfiguratorID must stay nil on the preset path")
+		}
+	})
+
+	t.Run("PopulatesLockedConfiguratorIDFromGET", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterConfiguratorJSON), nil)
+		fake.GetClusterKubeconfigReturns(httpResp(http.StatusOK, "apiVersion: v1\n"), nil)
+		cr := newCluster(true)
+		cr.Spec.ForProvider.PresetName = nil
+		cr.Spec.ForProvider.Resources = &kubernetesv1alpha1.KubernetesResources{CPU: 2, RAMGB: 4, DiskGB: 40}
+		if _, err := clusterE(fake, okResolver()).Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if cr.Status.AtProvider.LockedConfiguratorID == nil || *cr.Status.AtProvider.LockedConfiguratorID != 11 {
+			t.Errorf("LockedConfiguratorID=%v, want 11 (from the GET's configurator_id)", cr.Status.AtProvider.LockedConfiguratorID)
+		}
+		if cr.Status.AtProvider.LockedPresetID != nil {
+			t.Error("LockedPresetID must stay nil on the resources path")
+		}
+	})
+
+	t.Run("SizingVariantDrift_NotUpToDate", func(t *testing.T) {
+		// The previously-unreachable-guard regression test (feature 006
+		// T007): a preset-sized spec against a configurator-locked upstream
+		// must surface upToDate=false so Update's sizing-switch rejection is
+		// actually reached.
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterConfiguratorJSON), nil)
+		fake.GetClusterKubeconfigReturns(httpResp(http.StatusOK, "apiVersion: v1\n"), nil)
+		cr := newCluster(true) // preset-based spec
+		obs, err := clusterE(fake, okResolver()).Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if obs.ResourceUpToDate {
+			t.Error("ResourceUpToDate=true, want false (presetName spec vs locked configurator)")
+		}
+	})
+
+	t.Run("AZMismatch_UpstreamFailed", func(t *testing.T) {
+		// AZ-echo verification (feature 006 D-4): the upstream mis-places
+		// instead of rejecting; surface UpstreamFailed instead of waiting for
+		// the inevitable provisioning failure.
+		fake := &timeweb.FakeClient{}
+		mismatched := strings.Replace(clusterActiveJSON, `"availability_zone":"msk-1"`, `"availability_zone":"ams-1"`, 1)
+		fake.GetClusterReturns(httpResp(http.StatusOK, mismatched), nil)
+		cr := newCluster(true) // spec wants msk-1
+		obs, err := clusterE(fake, okResolver()).Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if !obs.ResourceExists || !obs.ResourceUpToDate {
+			t.Errorf("obs=%+v, want exists+upToDate (recreate is the operator's call)", obs)
+		}
+		cond := cr.GetCondition(xpv2.TypeReady)
+		if cond.Status != corev1.ConditionFalse || cond.Reason != shared.ReasonUpstreamFailed {
+			t.Errorf("Ready=%v/%v, want False/UpstreamFailed on AZ mismatch", cond.Status, cond.Reason)
+		}
+		if !strings.Contains(cond.Message, `"ams-1"`) || !strings.Contains(cond.Message, `"msk-1"`) {
+			t.Errorf("condition message %q must name both zones", cond.Message)
+		}
+	})
+
 	t.Run("NoPaid_PaymentRequired", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetClusterReturns(httpResp(http.StatusOK, `{"cluster":{"id":777,"name":"demo","status":"no_paid","k8s_version":"1.31.2","network_driver":"cilium","preset_id":5,"availability_zone":"msk-1"}}`), nil)
@@ -223,6 +306,74 @@ func TestClusterCreate(t *testing.T) {
 		}
 		if cr.Status.AtProvider.LockedPresetID == nil || *cr.Status.AtProvider.LockedPresetID != 5 {
 			t.Errorf("LockedPresetID=%v, want 5", cr.Status.AtProvider.LockedPresetID)
+		}
+	})
+
+	t.Run("CleanFirstCreate_DoesNotListAdopt", func(t *testing.T) {
+		// No failed-create marker → straight POST; the adoption guard must
+		// never fire on a clean first create (it could adopt a same-named
+		// cluster the operator owns out-of-band).
+		fake := &timeweb.FakeClient{}
+		fake.CreateClusterReturns(httpResp(http.StatusCreated, clusterActiveJSON), nil)
+		if _, err := clusterE(fake, okResolver()).Create(ctx, newCluster(false)); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if fake.GetClustersCallCount() != 0 {
+			t.Errorf("GetClusters called %d times on a clean first create, want 0", fake.GetClustersCallCount())
+		}
+		if fake.CreateClusterCallCount() != 1 {
+			t.Errorf("CreateCluster called %d times, want 1", fake.CreateClusterCallCount())
+		}
+	})
+
+	t.Run("AdoptsAfterFailedCreate_NoSecondPOST", func(t *testing.T) {
+		// Error-yet-created zombie defense (feature 006 R-5/D-2): the
+		// previous create "failed" upstream-side but the cluster exists —
+		// adopt it by name instead of minting a duplicate.
+		fake := &timeweb.FakeClient{}
+		fake.GetClustersReturns(httpResp(http.StatusOK,
+			`{"clusters":[{"id":1094189,"name":"demo","status":"installing"},{"id":2,"name":"other","status":"active"}]}`), nil)
+		cr := newCluster(false)
+		meta.AddAnnotations(cr, map[string]string{meta.AnnotationKeyExternalCreateFailed: "2026-06-11T00:00:00Z"})
+		if _, err := clusterE(fake, okResolver()).Create(ctx, cr); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if got := meta.GetExternalName(cr); got != "1094189" {
+			t.Errorf("external-name=%q, want 1094189 (adopted)", got)
+		}
+		if fake.CreateClusterCallCount() != 0 {
+			t.Errorf("CreateCluster called %d times, want 0 (adoption, not a second POST)", fake.CreateClusterCallCount())
+		}
+	})
+
+	t.Run("AdoptAmbiguousName_TerminalError", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClustersReturns(httpResp(http.StatusOK,
+			`{"clusters":[{"id":1,"name":"demo"},{"id":2,"name":"demo"}]}`), nil)
+		cr := newCluster(false)
+		meta.AddAnnotations(cr, map[string]string{meta.AnnotationKeyExternalCreateFailed: "2026-06-11T00:00:00Z"})
+		_, err := clusterE(fake, okResolver()).Create(ctx, cr)
+		if err == nil || !strings.Contains(err.Error(), "adopt explicitly") {
+			t.Fatalf("err=%v, want ambiguous-adoption terminal error", err)
+		}
+		if fake.CreateClusterCallCount() != 0 {
+			t.Error("CreateCluster called despite the ambiguous-adoption error")
+		}
+	})
+
+	t.Run("FailedCreate_NoUpstreamMatch_ProceedsToPOST", func(t *testing.T) {
+		// The earlier failure really failed: list-by-name finds nothing, so
+		// the guard falls through to the normal POST.
+		fake := &timeweb.FakeClient{}
+		fake.GetClustersReturns(httpResp(http.StatusOK, `{"clusters":[{"id":2,"name":"other"}]}`), nil)
+		fake.CreateClusterReturns(httpResp(http.StatusCreated, clusterActiveJSON), nil)
+		cr := newCluster(false)
+		meta.AddAnnotations(cr, map[string]string{meta.AnnotationKeyExternalCreateFailed: "2026-06-11T00:00:00Z"})
+		if _, err := clusterE(fake, okResolver()).Create(ctx, cr); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if fake.CreateClusterCallCount() != 1 {
+			t.Errorf("CreateCluster called %d times, want 1", fake.CreateClusterCallCount())
 		}
 	})
 
@@ -422,7 +573,10 @@ func TestClusterCustomSizing(t *testing.T) {
 
 	t.Run("Create_Resources_SetsConfigurationAndLock", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.CreateClusterReturns(httpResp(http.StatusCreated, clusterActiveJSON), nil)
+		// The configurator-flavored echo: a configurator-sized cluster
+		// reports configurator_id, not preset_id (populateClusterStatus now
+		// mirrors locked IDs from every upstream body — feature 006 T007).
+		fake.CreateClusterReturns(httpResp(http.StatusCreated, clusterConfiguratorJSON), nil)
 		r := okResolver()
 		r.configuratorID = 11
 		cr := newCluster(false)

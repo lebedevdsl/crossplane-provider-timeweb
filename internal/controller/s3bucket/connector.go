@@ -38,6 +38,9 @@ type connector struct {
 	usage    resource.ModernTracker
 	logger   logging.Logger
 	recorder record.EventRecorder
+	// cache is the Setup-scoped resolver cache shared across reconciles —
+	// a per-Connect cache never gets a hit (feature-006 foundational fix).
+	cache *resolver.Cache
 }
 
 // Connect implements managed.ExternalConnector.
@@ -65,7 +68,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	return &external{
 		tw:       tw.ClientInterface,
 		recorder: c.recorder,
-		resolver: resolver.New(&twgen.ClientWithResponses{ClientInterface: tw.ClientInterface}, resolver.Options{}),
+		resolver: resolver.New(&twgen.ClientWithResponses{ClientInterface: tw.ClientInterface}, resolver.Options{SharedCache: c.cache}),
 		pcRef: resolver.PCRef{
 			Kind:      cr.GetProviderConfigReference().Kind,
 			Name:      cr.GetProviderConfigReference().Name,

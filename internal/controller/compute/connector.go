@@ -45,6 +45,9 @@ type connector struct {
 	usage    resource.ModernTracker
 	logger   logging.Logger
 	recorder record.EventRecorder
+	// cache is the Setup-scoped resolver cache shared across reconciles —
+	// a per-Connect cache never gets a hit (feature-006 foundational fix).
+	cache *resolver.Cache
 }
 
 // Connect implements managed.ExternalConnector.
@@ -71,7 +74,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, fmt.Errorf("compute/server: build Timeweb client: %w", err)
 	}
 
-	res := resolver.New(&twgen.ClientWithResponses{ClientInterface: tw.ClientInterface}, resolver.Options{})
+	res := resolver.New(&twgen.ClientWithResponses{ClientInterface: tw.ClientInterface}, resolver.Options{SharedCache: c.cache})
 
 	// Resolve the same-namespace cross-resource references the controller
 	// needs at Create time. Network ref blocks Create until target is

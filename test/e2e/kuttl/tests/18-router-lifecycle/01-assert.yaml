@@ -1,0 +1,49 @@
+# Router lifecycle assert: router provisions (10-20 min live-observed — a 1-node
+# tier sat `starting` past 10 min, so the window matches bundle 19's 1800s), the
+# attachment shows a gateway in status (SC-004: NAT/gateway answerable from status
+# alone), and both conditions are True (Synced AND Ready both matter).
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 1800
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: e2e-router-net
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: FloatingIP
+metadata:
+  name: e2e-router-egress
+  namespace: timeweb-e2e
+status:
+  # T011 NAT assert: once convergeNAT activates NAT, the egress FloatingIP becomes
+  # bound to the router as its NAT address — the FIP's resourceType flips to
+  # "router" (the F-5 UUID-keyed binding). This proves NAT converged end-to-end.
+  atProvider:
+    observedBoundTo:
+      resourceType: router
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Router
+metadata:
+  name: e2e-router
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"

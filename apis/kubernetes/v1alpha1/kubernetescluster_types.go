@@ -52,12 +52,14 @@ type KubernetesClusterParameters struct {
 
 	// NetworkDriver is the cluster's CNI. Immutable post-create.
 	// +kubebuilder:validation:Enum=kuberouter;calico;flannel;cilium
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="networkDriver is immutable"
 	NetworkDriver string `json:"networkDriver"`
 
 	// AvailabilityZone is the AZ the control plane lives in. Immutable
 	// post-create. Codes are the upstream API values (NOT dashboard labels).
 	// Sold-out zones are not hard-blocked beyond this set's evolution.
 	// +kubebuilder:validation:Enum=spb-3;msk-1;ams-1;fra-1
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="availabilityZone is immutable"
 	AvailabilityZone string `json:"availabilityZone"`
 
 	// PresetName is the master-node preset slug resolved against
@@ -170,6 +172,7 @@ type KubernetesClusterStatus struct {
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.networkRef)?1:0) + (has(self.spec.forProvider.networkSelector)?1:0) + (has(self.spec.forProvider.networkID)?1:0) <= 1",message="at most one of networkRef, networkSelector, networkID may be set"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.projectRef)?1:0) + (has(self.spec.forProvider.projectSelector)?1:0) + (has(self.spec.forProvider.projectID)?1:0) <= 1",message="at most one of projectRef, projectSelector, projectID may be set"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.presetName)?1:0) + (has(self.spec.forProvider.resources)?1:0) == 1",message="exactly one of presetName or resources must be set"
+// +kubebuilder:validation:XValidation:rule="has(self.spec.forProvider.presetName) == has(oldSelf.spec.forProvider.presetName)",message="switching between presetName and resources requires recreate"
 
 // KubernetesCluster is a Timeweb managed Kubernetes control plane. See
 // contracts/kubernetescluster-v1alpha1.md for the full operator surface.

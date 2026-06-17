@@ -18,10 +18,8 @@ package kubernetes
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 
@@ -191,15 +189,11 @@ func (e *addonExternal) listAddons(ctx context.Context, clusterID int) ([]addonO
 	if err := timeweb.Classify(resp); err != nil {
 		return nil, err
 	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return nil, fmt.Errorf("kubernetes/addon: read body: %w", err)
-	}
 	var env struct {
 		Addons []addonOut `json:"addons"`
 	}
-	if err := json.Unmarshal(body, &env); err != nil {
-		return nil, fmt.Errorf("kubernetes/addon: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return nil, fmt.Errorf("kubernetes/addon: %w", err)
 	}
 	return env.Addons, nil
 }
@@ -225,15 +219,11 @@ func (e *addonExternal) validateAddonCatalog(ctx context.Context, clusterID int,
 	if err := timeweb.Classify(resp); err != nil {
 		return err
 	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return fmt.Errorf("kubernetes/addon: read catalog: %w", err)
-	}
 	var env struct {
 		K8sAddons []addonConfigOut `json:"k8s_addons"`
 	}
-	if err := json.Unmarshal(body, &env); err != nil {
-		return fmt.Errorf("kubernetes/addon: decode catalog: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return fmt.Errorf("kubernetes/addon: catalog: %w", err)
 	}
 	valid := make([]string, 0, len(env.K8sAddons))
 	for _, c := range env.K8sAddons {

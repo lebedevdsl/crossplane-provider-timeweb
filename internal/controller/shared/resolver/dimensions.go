@@ -98,6 +98,7 @@ type CatalogClient interface {
 	GetK8SVersionsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetK8SVersionsResponse, error)
 	GetConfiguratorsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetConfiguratorsResponse, error)
 	GetK8sConfiguratorsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetK8sConfiguratorsResponse, error)
+	GetRouterPresetsWithResponse(ctx context.Context, reqEditors ...twgen.RequestEditorFn) (*twgen.GetRouterPresetsResponse, error)
 }
 
 // Dimension names. The first two are live (consumed by S3Bucket /
@@ -119,6 +120,7 @@ const (
 	DimServerConfigurator           = "ServerConfigurator"
 	DimKubernetesMasterConfigurator = "KubernetesMasterConfigurator"
 	DimKubernetesWorkerConfigurator = "KubernetesWorkerConfigurator"
+	DimRouterPreset                 = "RouterPreset"
 	DimKubernetesMasterPreset       = "KubernetesMasterPreset"
 	DimKubernetesWorkerPreset       = "KubernetesWorkerPreset"
 	DimKubernetesVersion            = "KubernetesVersion"
@@ -159,6 +161,10 @@ func defaultRegistry() map[string]dimensionDef {
 		DimServerConfigurator:           {kind: DimensionConfigurator, fetch: fetchServerConfigurators},
 		DimKubernetesMasterConfigurator: {kind: DimensionConfigurator, fetch: fetchK8sMasterConfigurators},
 		DimKubernetesWorkerConfigurator: {kind: DimensionConfigurator, fetch: fetchK8sWorkerConfigurators},
+
+		// Feature 006 — router size tiers over the undocumented
+		// /api/v1/presets/routers (probed live).
+		DimRouterPreset: {kind: DimensionPreset, fetch: fetchRouterPresets},
 
 		// Forward-compat — still stubbed. NetworkDriver + AvailabilityZone are
 		// validated by CRD enums on the KubernetesCluster kind instead of a
@@ -207,11 +213,20 @@ func fetchK8sPresetsByType(ctx context.Context, c CatalogClient, role string) (a
 			// the other fetchers (Server v0.x selects by slug, not size).
 			diskGB = int64(*p.Disk) / 1024
 		}
+		zone := ""
+		if p.AvailabilityZone != nil {
+			zone = *p.AvailabilityZone
+		}
 		out = append(out, PresetEntry{
 			UpstreamID: id,
 			DescShort:  short,
-			Location:   "", // K8s presets are AZ-set at cluster level; no per-preset location.
-			DiskGB:     diskGB,
+			// Location stays "" so existing zone-less slugs keep matching;
+			// the preset's HIDDEN zone affinity (live-verified field the
+			// published swagger omits — a mismatch makes cluster create
+			// mis-place, feature 006) goes into the filter-only Zone.
+			Location: "",
+			DiskGB:   diskGB,
+			Zone:     zone,
 		})
 	}
 	return out, nil
@@ -442,6 +457,39 @@ func configuratorEntries(cfgs []twgen.ServersConfigurator) []ConfiguratorEntry {
 		})
 	}
 	return out
+}
+
+// fetchRouterPresets reads the UNDOCUMENTED /api/v1/presets/routers (probed
+// live 2026-06-11, feature 006). Router tiers have no upstream display name,
+// so the slug is synthesized from the tier's shape:
+//
+//	router-<node_count>x<cpu>-<ram>gb-<location>   e.g. router-1x1-1gb-ru-3
+//
+// (node_count 2 = the HA tiers; the `-<id>` disambiguator form is accepted
+// as everywhere else.) Zone is the tier's LOCATION code — router-tier
+// resolution is location-keyed, so callers pass shared.AZToLocation(az) as
+// PresetInput.Zone (unlike the K8s preset dims, whose catalogs carry the AZ
+// itself). The Zone filter is what implements FR-003's zone-vs-tier
+// validation: the upstream derives the router's zone from the tier and
+// mis-places on mismatch instead of rejecting.
+func fetchRouterPresets(ctx context.Context, c CatalogClient) (any, error) {
+	resp, err := c.GetRouterPresetsWithResponse(ctx)
+	if err != nil {
+		return nil, classifyUpstream(0, err)
+	}
+	if resp.JSON200 == nil {
+		return nil, classifyUpstream(resp.StatusCode(), errors.New("upstream returned non-200"))
+	}
+	out := make([]PresetEntry, 0, len(resp.JSON200.RouterPresets))
+	for _, p := range resp.JSON200.RouterPresets {
+		out = append(out, PresetEntry{
+			UpstreamID: int64(p.Id),
+			DescShort:  fmt.Sprintf("router-%dx%d-%dgb", p.NodeCount, p.Cpu, p.Ram),
+			Location:   p.Location,
+			Zone:       p.Location,
+		})
+	}
+	return out, nil
 }
 
 // fetchUnwired is the placeholder fetcher for forward-compat K8s/Server

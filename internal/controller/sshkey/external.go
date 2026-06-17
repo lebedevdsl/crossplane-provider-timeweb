@@ -21,10 +21,8 @@ package sshkey
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
@@ -75,15 +73,11 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, err
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("sshkey: read body: %w", err)
-	}
 	var envelope struct {
 		SSHKey generated.SshKey `json:"ssh_key"`
 	}
-	if err := json.Unmarshal(body, &envelope); err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("sshkey: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &envelope); err != nil {
+		return managed.ExternalObservation{}, fmt.Errorf("sshkey: %w", err)
 	}
 
 	populateStatus(cr, envelope.SSHKey)
@@ -117,15 +111,11 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, err
 	}
 
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalCreation{}, fmt.Errorf("sshkey: read body: %w", err)
-	}
 	var envelope struct {
 		SSHKey generated.SshKey `json:"ssh_key"`
 	}
-	if err := json.Unmarshal(respBody, &envelope); err != nil {
-		return managed.ExternalCreation{}, fmt.Errorf("sshkey: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &envelope); err != nil {
+		return managed.ExternalCreation{}, fmt.Errorf("sshkey: %w", err)
 	}
 
 	meta.SetExternalName(cr, shared.EncodeID(int(envelope.SSHKey.Id)))
@@ -151,15 +141,16 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if err != nil {
 		return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
 	}
-	getBody, _ := io.ReadAll(io.LimitReader(getResp.Body, 1<<20))
-	_ = getResp.Body.Close()
+	defer func() { _ = getResp.Body.Close() }()
 	if err := timeweb.Classify(getResp); err != nil {
 		return managed.ExternalUpdate{}, err
 	}
 	var envelope struct {
 		SSHKey generated.SshKey `json:"ssh_key"`
 	}
-	_ = json.Unmarshal(getBody, &envelope)
+	if err := timeweb.DecodeBody(getResp.Body, &envelope); err != nil {
+		return managed.ExternalUpdate{}, fmt.Errorf("sshkey: %w", err)
+	}
 
 	if changed, ok := shared.FirstImmutableDiff([]shared.ImmutableField{
 		{Name: "body", Desired: cr.Spec.ForProvider.Body, Observed: envelope.SSHKey.Body},

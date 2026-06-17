@@ -51,6 +51,11 @@ func sampleFIPJSON(bound bool) string {
 	if bound {
 		boundTo = `"resource_type":"server","resource_id":1234567`
 	}
+	return fipJSON(boundTo)
+}
+
+// fipJSON wraps an arbitrary bound_to fragment in the {ip: FloatingIp} envelope.
+func fipJSON(boundTo string) string {
 	return `{"response_id":"abc","ip":{"id":"fip-abc123","ip":"5.6.7.8","comment":null,` +
 		`"availability_zone":"spb-1","is_ddos_guard":false,"ptr":null,` + boundTo + `}}`
 }
@@ -102,6 +107,27 @@ func TestFloatingIPObserve(t *testing.T) {
 		}
 		if b.ResourceID == nil || *b.ResourceID != 1234567 {
 			t.Errorf("ObservedBoundTo.ResourceID = %v, want 1234567", b.ResourceID)
+		}
+	})
+
+	t.Run("MirrorsRouterBinding_UUID", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		const routerUUID = "11111111-2222-3333-4444-555555555555"
+		fake.GetFloatingIpReturns(httpResp(http.StatusOK,
+			fipJSON(`"resource_type":"router","resource_id":"`+routerUUID+`"`)), nil)
+		cr := newFloatingIP(true)
+		if _, err := fe(fake).Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		b := cr.Status.AtProvider.ObservedBoundTo
+		if b == nil || b.ResourceType == nil || *b.ResourceType != "router" {
+			t.Fatalf("ObservedBoundTo = %+v, want resourceType=router", b)
+		}
+		if b.ResourceID != nil {
+			t.Errorf("ObservedBoundTo.ResourceID = %v, want nil for UUID binding", b.ResourceID)
+		}
+		if b.ResourceUUID == nil || *b.ResourceUUID != routerUUID {
+			t.Errorf("ObservedBoundTo.ResourceUUID = %v, want %s", b.ResourceUUID, routerUUID)
 		}
 	})
 

@@ -53,6 +53,9 @@ func TestDefaultRegistry_Discoverable(t *testing.T) {
 		{DimKubernetesMasterConfigurator, DimensionConfigurator, true},
 		{DimKubernetesWorkerConfigurator, DimensionConfigurator, true},
 
+		// Feature 006 — router size tiers (undocumented /presets/routers).
+		{DimRouterPreset, DimensionPreset, true},
+
 		// Forward-compat — still stubbed. See dimensions.go header comment.
 		{DimKubernetesNetworkDriver, DimensionEnum, false},
 		{DimAvailabilityZone, DimensionEnum, false},

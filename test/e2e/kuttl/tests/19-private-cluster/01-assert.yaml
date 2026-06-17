@@ -1,0 +1,49 @@
+# Private-cluster assert (SC-002 smoke): everything reaches Ready+Synced —
+# router NAT'd, cluster on the routed network, worker pool with
+# publicIP: false actually provisioned (nodepool Ready is gated on real
+# per-node state since feature 005).
+#
+# TODO(T025 live run): once the per-node PUBLIC address field is captured
+# from a live private cluster (NodeOut's field name is undocumented and was
+# not observable before teardown last time), extend the nodepool status
+# node list with it and assert here that no node carries a public address.
+# Until then the live canary verifies it via the panel/API by hand.
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 1800
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Router
+metadata:
+  name: e2e-priv-router
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"
+---
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesCluster
+metadata:
+  name: e2e-priv-cluster
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"
+---
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesClusterNodepool
+metadata:
+  name: e2e-priv-workers
+  namespace: timeweb-e2e
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: Synced
+    status: "True"

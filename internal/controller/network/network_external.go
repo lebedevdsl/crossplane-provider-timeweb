@@ -18,10 +18,8 @@ package network
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
@@ -78,13 +76,9 @@ func (e *networkExternal) Observe(ctx context.Context, mg resource.Managed) (man
 		return managed.ExternalObservation{}, err
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("network/network: read body: %w", err)
-	}
 	var env vpcEnvelope
-	if err := json.Unmarshal(body, &env); err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("network/network: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return managed.ExternalObservation{}, fmt.Errorf("network/network: %w", err)
 	}
 
 	populateNetworkStatus(cr, env.VPC)
@@ -113,13 +107,9 @@ func (e *networkExternal) Create(ctx context.Context, mg resource.Managed) (mana
 		return managed.ExternalCreation{}, err
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalCreation{}, fmt.Errorf("network/network: read body: %w", err)
-	}
 	var env vpcEnvelope
-	if err := json.Unmarshal(body, &env); err != nil {
-		return managed.ExternalCreation{}, fmt.Errorf("network/network: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return managed.ExternalCreation{}, fmt.Errorf("network/network: %w", err)
 	}
 
 	meta.SetExternalName(cr, env.VPC.Id)
@@ -147,13 +137,14 @@ func (e *networkExternal) Update(ctx context.Context, mg resource.Managed) (mana
 	if err != nil {
 		return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
 	}
-	getBody, _ := io.ReadAll(io.LimitReader(getResp.Body, 1<<20))
-	_ = getResp.Body.Close()
+	defer func() { _ = getResp.Body.Close() }()
 	if err := timeweb.Classify(getResp); err != nil {
 		return managed.ExternalUpdate{}, err
 	}
 	var env vpcEnvelope
-	_ = json.Unmarshal(getBody, &env)
+	if err := timeweb.DecodeBody(getResp.Body, &env); err != nil {
+		return managed.ExternalUpdate{}, fmt.Errorf("network/network: %w", err)
+	}
 	observed := env.VPC
 
 	// Immutable-field guard (R-6). Order is stable so the operator-facing

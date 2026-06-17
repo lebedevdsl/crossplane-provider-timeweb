@@ -52,6 +52,9 @@ type registryConnector struct {
 	usage    resource.ModernTracker
 	logger   logging.Logger
 	recorder record.EventRecorder
+	// cache is the Setup-scoped resolver cache shared across reconciles —
+	// a per-Connect cache never gets a hit (feature-006 foundational fix).
+	cache *resolver.Cache
 }
 
 // repositoryConnector builds an `repositoryExternal` per reconcile.
@@ -108,7 +111,7 @@ func (c *registryConnector) Connect(ctx context.Context, mg resource.Managed) (m
 // A future optimization is to hold a long-lived resolver per (PCRef) on
 // the connector struct so the cache survives across reconciles.
 func (c *registryConnector) resolverFor(tw *timeweb.Client) resolver.Resolver {
-	return resolver.New(&twgen.ClientWithResponses{ClientInterface: tw.ClientInterface}, resolver.Options{})
+	return resolver.New(&twgen.ClientWithResponses{ClientInterface: tw.ClientInterface}, resolver.Options{SharedCache: c.cache})
 }
 
 // pcRefFor builds the resolver-side PCRef for the MR's

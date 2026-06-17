@@ -1,0 +1,24 @@
+# Step 2 — day-2 convergence on a live router (US2): flip DHCP off on the
+# attachment and rename the router. Both converge in place (no recreate);
+# the silent-no-op defense means convergence is only reported after Observe
+# verifies the upstream state.
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Router
+metadata:
+  name: e2e-router
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    name: "${TWE_ROUTER_NAME}-renamed"
+    availabilityZone: msk-1
+    presetName: "${TWE_ROUTER_PRESET}"
+    networks:
+      - networkRef:
+          name: e2e-router-net
+        natFloatingIP:
+          ref:
+            name: e2e-router-egress
+        dhcp: false

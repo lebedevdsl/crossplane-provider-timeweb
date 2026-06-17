@@ -18,10 +18,8 @@ package network
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
@@ -79,13 +77,9 @@ func (e *floatingIPExternal) Observe(ctx context.Context, mg resource.Managed) (
 		return managed.ExternalObservation{}, err
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("network/floatingip: read body: %w", err)
-	}
 	var env fipEnvelope
-	if err := json.Unmarshal(body, &env); err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("network/floatingip: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return managed.ExternalObservation{}, fmt.Errorf("network/floatingip: %w", err)
 	}
 
 	populateFloatingIPStatus(cr, env.IP)
@@ -123,13 +117,9 @@ func (e *floatingIPExternal) Create(ctx context.Context, mg resource.Managed) (m
 		return managed.ExternalCreation{}, err
 	}
 
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return managed.ExternalCreation{}, fmt.Errorf("network/floatingip: read body: %w", err)
-	}
 	var env fipEnvelope
-	if err := json.Unmarshal(respBody, &env); err != nil {
-		return managed.ExternalCreation{}, fmt.Errorf("network/floatingip: decode body: %w", err)
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return managed.ExternalCreation{}, fmt.Errorf("network/floatingip: %w", err)
 	}
 
 	meta.SetExternalName(cr, env.IP.Id)
@@ -155,13 +145,14 @@ func (e *floatingIPExternal) Update(ctx context.Context, mg resource.Managed) (m
 	if err != nil {
 		return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
 	}
-	getBody, _ := io.ReadAll(io.LimitReader(getResp.Body, 1<<20))
-	_ = getResp.Body.Close()
+	defer func() { _ = getResp.Body.Close() }()
 	if err := timeweb.Classify(getResp); err != nil {
 		return managed.ExternalUpdate{}, err
 	}
 	var env fipEnvelope
-	_ = json.Unmarshal(getBody, &env)
+	if err := timeweb.DecodeBody(getResp.Body, &env); err != nil {
+		return managed.ExternalUpdate{}, fmt.Errorf("network/floatingip: %w", err)
+	}
 	observed := env.IP
 
 	// Immutable-field guard. availabilityZone compares the resolved value
@@ -254,6 +245,9 @@ func populateFloatingIPStatus(cr *networkv1alpha1.FloatingIP, fip twgen.Floating
 		if num, err := fip.ResourceId.AsFloatingIpResourceId0(); err == nil {
 			rid := int64(num)
 			bound.ResourceID = &rid
+		} else if uuid, uerr := fip.ResourceId.AsFloatingIpResourceId1(); uerr == nil && uuid != "" {
+			// UUID-keyed bindings (e.g. routers) don't fit the int64 id.
+			bound.ResourceUUID = &uuid
 		}
 	}
 	cr.Status.AtProvider.ObservedBoundTo = bound

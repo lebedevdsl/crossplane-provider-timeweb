@@ -47,6 +47,9 @@ type connector struct {
 	usage    resource.ModernTracker
 	logger   logging.Logger
 	recorder record.EventRecorder
+	// cache is the Setup-scoped resolver cache shared across reconciles —
+	// a per-Connect cache never gets a hit (feature-006 foundational fix).
+	cache *resolver.Cache
 }
 
 // Connect implements managed.ExternalConnector for the kubernetes-group kinds.
@@ -71,7 +74,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	if err != nil {
 		return nil, fmt.Errorf("kubernetes: build Timeweb client: %w", err)
 	}
-	res := resolver.New(&twgen.ClientWithResponses{ClientInterface: tw.ClientInterface}, resolver.Options{})
+	res := resolver.New(&twgen.ClientWithResponses{ClientInterface: tw.ClientInterface}, resolver.Options{SharedCache: c.cache})
 
 	switch cr := mg.(type) {
 	case *kubernetesv1alpha1.KubernetesCluster:
