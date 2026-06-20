@@ -1,14 +1,22 @@
 <!-- SPECKIT START -->
-Current feature: **007-maintenance-round** — read the plan at
-`specs/007-maintenance-round/plan.md`. A cross-cutting maintenance round (no new
-kinds): placement / location↔AZ unification + full region coverage, preset-slug
-simplification + location-scoped not-found errors, printcolumn rationalization,
-observability (gate Ready on real state, shared reason vocabulary, transition-only
-Events, status mirrors), and ~25 correlated Sonnet+Opus+devops review findings.
-Companion artifacts in `specs/007-maintenance-round/`: spec.md (US1–US5 + the
-Maintenance Backlog), research.md, data-model.md, contracts/, quickstart.md.
-The deferred `extra-annotations` feature (dataplane delete-guards) is seeded in
-`specs/_next-extra-annotations.preface.md`.
+Current feature: **008-packaging** — read the plan at
+`specs/008-packaging/plan.md`. Packaging + delivery (no MR/CRD change): publish
+the provider as a standard Crossplane OCI package (`.xpkg`) + multi-arch
+controller image to a private **Timeweb CRaaS** registry (closes the missing
+`xpkg push`), and generalize the e2e harness to install the *published* package
+by pull against an operator-set context (`twc-staging`) — dropping the
+`k3d-`-only guard but keeping an explicit-context requirement — so live e2e runs
+from inside Timeweb (the dev network is WAF-blocked from `api.timeweb.cloud`).
+Companion artifacts in `specs/008-packaging/`: spec.md (US1–US3 + FR-001..011),
+research.md (R-1..R-6, Crossplane packaging + CRaaS), data-model.md, contracts/
+(publish-command / provider-install / e2e-env), quickstart.md. Marketplace
+listing is deferred (not yet).
+
+Feature 007 (maintenance round — placement/AZ unification, preset-slug
+simplification, printcolumn rationalization, observability, ~25 review findings,
++ code-quality tooling: bodyclose/gosec/govulncheck/`crossplane beta validate`)
+is COMPLETE/merged. The deferred `extra-annotations` feature (dataplane
+delete-guards) is seeded in `specs/_next-extra-annotations.preface.md`.
 
 Feature 006 (Router + private cluster + automatic NAT convergence) is
 COMPLETE/merged — its companion context below remains useful reference:

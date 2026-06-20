@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: timeweb-credentials
+  namespace: timeweb-e2e
+type: Opaque
+stringData:
+  # Replace with the real Timeweb Cloud API token before applying.
+  token: "<YOUR_TIMEWEB_API_TOKEN>"
+---
+apiVersion: timeweb.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: default
+  namespace: timeweb-e2e
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      name: timeweb-credentials
+      key: token

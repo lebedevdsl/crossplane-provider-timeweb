@@ -27,9 +27,17 @@ BIN_DIR         := bin
 PKG_DIR         := package
 CRDS_DIR        := $(PKG_DIR)/crds
 
-IMAGE_REPO      ?= ghcr.io/lebedevdsl/provider-timeweb
+# Registry ref. Single-maintainer default = the author's Timeweb registry;
+# override IMAGE_REPO for a build-from-repo user (FR-005/FR-011).
+# Embed model: ONE OCI artifact — the multi-arch `.xpkg` bakes in the controller
+# runtime, so `Provider.spec.package` points straight at `IMAGE_REPO:VERSION`.
+IMAGE_REPO      ?= inyan-images.registry.twcstorage.ru/provider-timeweb
 VERSION         ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
-PLATFORMS       ?= linux/amd64,linux/arm64
+# Provider runtime platforms. The controller runs as a Linux container in the
+# cluster, so these are linux/* only (a k8s node never runs a darwin image).
+# Default = the staging node arch; add linux/arm64 for arm clusters. A native
+# darwin/arm64 binary for local runs is `make build`, not the package.
+PLATFORMS       ?= linux/amd64
 
 OAPI_CODEGEN    := $(GO) run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
 CONTROLLER_GEN  := $(GO) run sigs.k8s.io/controller-tools/cmd/controller-gen
@@ -152,27 +160,42 @@ build: ## Build the provider binary for the host platform.
 	    -ldflags="-s -w -X $(MODULE)/internal/version.Version=$(VERSION)" \
 	    -o $(BIN_DIR)/$(BINARY) ./cmd/provider
 
-.PHONY: image
-image: ## Build the multi-arch provider OCI image.
-	$(DOCKER) buildx build \
-	    --platform $(PLATFORMS) \
-	    --build-arg VERSION=$(VERSION) \
-	    --tag $(IMAGE_REPO):$(VERSION) \
-	    --push \
-	    .
-
 .PHONY: xpkg.build
-xpkg.build: generate-crds ## Build the Crossplane provider package (.xpkg).
+xpkg.build: generate-crds ## Build the .xpkg(s) embedding the controller runtime, one per platform.
 	@mkdir -p $(BIN_DIR)
-	$(CROSSPLANE) xpkg build \
-	    --package-root=$(PKG_DIR) \
-	    --examples-root=examples \
-	    --package-file=$(BIN_DIR)/provider-timeweb-$(VERSION).xpkg
+	@# Embed model: bake the runtime into the package — strip the external
+	@# spec.controller block from a staged copy (committed file unchanged).
+	@# Per platform: buildx --load the single-arch runtime, docker save it to a
+	@# tarball, embed it into the .xpkg. (--load/save works with the default
+	@# docker driver; OCI export / multi-arch --push needs a container driver.)
+	@# Examples are NOT bundled (--examples-root) until the leading comment-doc
+	@# headers are fixed; xpkg's parser is stricter than validate-examples.
+	@rm -rf $(BIN_DIR)/pkg-stage && mkdir -p $(BIN_DIR)/pkg-stage && cp -R $(PKG_DIR)/. $(BIN_DIR)/pkg-stage/
+	@sed -i.bak '/^  controller:/,/^    image:/d' $(BIN_DIR)/pkg-stage/crossplane.yaml && rm -f $(BIN_DIR)/pkg-stage/crossplane.yaml.bak
+	@rm -f $(BIN_DIR)/provider-$(VERSION)-*.xpkg
+	@mkdir -p $(BIN_DIR)/no-examples
+	@for p in $$(echo "$(PLATFORMS)" | tr ',' ' '); do \
+	    arch=$${p##*/}; \
+	    echo ">> $$p: build runtime image -> embed into .xpkg"; \
+	    $(DOCKER) buildx build --platform $$p --build-arg VERSION=$(VERSION) \
+	        --load -t provider-timeweb-runtime:$(VERSION) . || exit 1; \
+	    $(DOCKER) save provider-timeweb-runtime:$(VERSION) -o $(BIN_DIR)/runtime-$$arch.tar || exit 1; \
+	    $(CROSSPLANE) xpkg build --package-root=$(BIN_DIR)/pkg-stage \
+	        --examples-root=$(BIN_DIR)/no-examples \
+	        --embed-runtime-image-tarball=$(BIN_DIR)/runtime-$$arch.tar \
+	        --package-file=$(BIN_DIR)/provider-$(VERSION)-$$arch.xpkg || exit 1; \
+	done
+
+.PHONY: xpkg.push
+xpkg.push: xpkg.build ## Push the per-arch .xpkg(s) as one (multi-arch) index to $(IMAGE_REPO):$(VERSION).
+	@files=$$(ls $(BIN_DIR)/provider-$(VERSION)-*.xpkg | paste -sd, -); \
+	echo ">> push $$files -> $(IMAGE_REPO):$(VERSION)"; \
+	$(CROSSPLANE) xpkg push --package-files=$$files $(IMAGE_REPO):$(VERSION)
 
 .PHONY: release
-release: xpkg.build image ## End-to-end release: xpkg + signed multi-arch image.
+release: xpkg.push ## Publish: push the (multi-arch) package, then cosign-sign it.
 	$(COSIGN) sign --yes $(IMAGE_REPO):$(VERSION)
-	@echo "OK released $(VERSION) to $(IMAGE_REPO)."
+	@echo "OK published $(VERSION): package = $(IMAGE_REPO):$(VERSION)   <- Provider.spec.package"
 
 # --------- Housekeeping -----------------------------------------------------
 

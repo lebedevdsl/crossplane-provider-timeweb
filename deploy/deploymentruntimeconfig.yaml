@@ -1,0 +1,23 @@
+# Disable leader election for the (single-replica) provider runtime.
+#
+# Crossplane runs ONE provider replica, so leader election buys nothing — but on
+# a cluster with flaky pod->apiserver networking (e.g. the k0s staging cluster),
+# a single failed lease-renewal Put makes the manager exit ("leader election
+# lost") → CrossLoopBackOff. Turning it off removes that fragility; ordinary API
+# calls just retry instead of crashing the process.
+#
+# Referenced from the Provider via spec.runtimeConfigRef.
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: no-leader-election
+spec:
+  deploymentTemplate:
+    spec:
+      selector: {}
+      template:
+        spec:
+          containers:
+            - name: package-runtime
+              args:
+                - --leader-election=false

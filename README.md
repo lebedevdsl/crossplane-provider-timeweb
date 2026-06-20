@@ -110,19 +110,35 @@ for the full operator guide, including the optional `location` field, the
 mapping to upstream `preset_id`, and condition-reason vocabulary on
 resolution failures.
 
+## Installing the provider
+
+The provider ships as a standard Crossplane OCI package (`.xpkg`). Install it
+with a `Provider` referencing the package plus one pull `Secret`
+(`packagePullSecrets` covers **both** the package and the controller image),
+then a `ProviderConfig` holding your Timeweb token:
+
+```yaml
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata: { name: provider-timeweb }
+spec:
+  package: <registry>/provider-timeweb:<version>
+  packagePullSecrets: [{ name: registry-creds }]   # omit if the registry is public
+```
+
+**From source:** `make generate && make xpkg.build` builds the `.xpkg`; push the
+package and the multi-arch image to your own registry (`crossplane xpkg push …`,
+`make image`), then install as above. The API token is supplied only via
+`ProviderConfig`→`Secret`, never baked into the image. Note: re-pushing the same
+tag may not re-pull — bump an annotation on the `Provider` to force re-resolution.
+
 ## End-to-end testing
 
 The `test/e2e/` bundle stands up a k3d cluster + local registry + the
-Crossplane control plane, builds and installs the provider as an xpkg,
-and runs a [kuttl][kuttl] suite that exercises every MR kind against the
-live Timeweb API. Requires only a `TIMEWEB_CLOUD_TOKEN`. v0.3 adds bundles
-`08-network-lifecycle`, `09-server-lifecycle`, `10-server-with-network`
-(+ the env-gated `10b-server-with-network-id` import path), and
-`11-floating-ip-bind`. v0.4 adds the managed-Kubernetes bundles
-`12-k8s-cluster-lifecycle`, `13-k8s-nodepool-scaling`,
-`14-k8s-cluster-with-network`, and `15-k8s-addon`. The smallest server /
-cluster presets are discovered at runtime to keep a full run cheap (the K8s
-cluster bundles are the slowest — up to ~20 min provisioning per SC-001).
+Crossplane control plane, installs the provider, and runs a [kuttl][kuttl]
+suite that exercises every MR kind against the live Timeweb API. Requires only
+a `TIMEWEB_CLOUD_TOKEN`. The smallest server / cluster presets are discovered at
+runtime to keep a full run cheap (the K8s bundles are slowest — up to ~20 min).
 
 [kuttl]: https://kuttl.dev
 

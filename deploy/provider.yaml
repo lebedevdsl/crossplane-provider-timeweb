@@ -1,0 +1,16 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-timeweb
+spec:
+  # The published, embed-runtime .xpkg in the Timeweb registry.
+  # Pin by digest (@sha256:...) once published for reproducibility.
+  package: inyan-images.registry.twcstorage.ru/provider-timeweb:v0.1.2
+  # Pull secret lives in crossplane-system; covers BOTH the package and the
+  # embedded controller image pull (private registry).
+  packagePullSecrets:
+    - name: registry-creds
+  # Disable leader election (single replica; avoids lease-renewal crashes on a
+  # flaky pod->apiserver network) — see deploy/deploymentruntimeconfig.yaml.
+  runtimeConfigRef:
+    name: no-leader-election
