@@ -335,12 +335,14 @@ func isUpToDate(spec objectstoragev1alpha1.S3BucketParameters, b generated.Bucke
 }
 
 // setBucketReadyCondition maps the upstream BucketStatus to the standard
-// Crossplane Ready condition (T017). `quarantined` surfaces as a terminal
-// Ready=False; anything other than `active` is treated as Creating.
+// Crossplane Ready condition (T017). A ready bucket reports `created` (the
+// value the live API returns — verified on twc-staging; `active` is also
+// accepted defensively). `quarantined` surfaces as a terminal Ready=False;
+// any other value (e.g. `new`, `transfer`, `no_paid`) is treated as Creating.
 func setBucketReadyCondition(recorder record.EventRecorder, cr *objectstoragev1alpha1.S3Bucket, state generated.BucketStatus) {
 	var cond xpv2.Condition
 	switch strings.ToLower(string(state)) {
-	case "active":
+	case "created", "active":
 		cond = xpv2.Available()
 	case "quarantined":
 		cond = shared.ReadyFalse(shared.ReasonBucketQuarantined,

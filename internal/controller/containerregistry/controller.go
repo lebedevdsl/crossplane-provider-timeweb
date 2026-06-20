@@ -21,9 +21,11 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	cregv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/kubernetes/v1alpha1"
@@ -61,6 +63,7 @@ func SetupRegistry(mgr manager.Manager, l logging.Logger, opts SetupOptions) err
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&cregv1alpha1.ContainerRegistry{}).
+		WithOptions(controller.Options{RateLimiter: ratelimiter.NewController()}).
 		Complete(r)
 }
 
@@ -87,6 +90,7 @@ func SetupRepository(mgr manager.Manager, l logging.Logger, opts SetupOptions) e
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&cregv1alpha1.ContainerRegistryRepository{}).
+		WithOptions(controller.Options{RateLimiter: ratelimiter.NewController()}).
 		Complete(r)
 }
 

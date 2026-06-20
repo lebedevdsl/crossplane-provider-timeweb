@@ -29,6 +29,7 @@ package timeweb
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -41,12 +42,18 @@ import (
 // DefaultBaseURL is the Timeweb Cloud API base address.
 const DefaultBaseURL = "https://api.timeweb.cloud"
 
-// DefaultRateLimit caps requests per second per endpoint. Timeweb documents a
-// 20 r/s/endpoint ceiling; we throttle at the host level conservatively.
-const DefaultRateLimit = rate.Limit(15)
+// DefaultRateLimit caps requests/second to the Timeweb API host-wide. Although
+// Timeweb documents a 20 r/s/endpoint ceiling, the API is fronted by Qrator
+// DDoS protection that SILENTLY BANS an egress IP after a burst (the symptom is
+// a TCP SYN timeout, not a 4xx). Support confirmed (2026-06-19) this banned our
+// e2e cluster's egress at the old 15 r/s / burst-30 setting; they publish no
+// real limit ("снизьте количество запросов"), so we self-throttle VERY
+// conservatively. See the project memory on the Qrator egress ban.
+const DefaultRateLimit = rate.Limit(2)
 
-// DefaultBurst is the initial token-bucket capacity.
-const DefaultBurst = 30
+// DefaultBurst is the initial token-bucket capacity. Kept small so we never
+// emit a burst large enough to trip the antibot layer.
+const DefaultBurst = 3
 
 // DefaultTimeout is the per-request HTTP timeout. Set generously because
 // floating-IP allocation in some regions intermittently runs long (tens of
@@ -133,7 +140,7 @@ func New(cfg Config) (*Client, error) {
 
 	transport := cfg.HTTPTransport
 	if transport == nil {
-		transport = http.DefaultTransport
+		transport = newDefaultTransport()
 	}
 
 	limiter := rate.NewLimiter(rl, burst)
@@ -162,6 +169,28 @@ func New(cfg Config) (*Client, error) {
 		limiter:         limiter,
 		logger:          logger,
 	}, nil
+}
+
+// newDefaultTransport mirrors http.DefaultTransport but with explicit, short
+// connection-establishment timeouts. If Qrator silently drops our SYNs (the
+// egress-ban symptom — see the Qrator egress-ban project memory), the dial
+// fails in ~DialTimeout instead of hanging until the 60s per-request ceiling,
+// so the workqueue can back off promptly rather than pinning a reconcile worker
+// for a full minute on every banned request.
+func newDefaultTransport() *http.Transport {
+	return &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   15 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   10,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
 }
 
 // authTransport injects `Authorization: Bearer <token>` on every request.

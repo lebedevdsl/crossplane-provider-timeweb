@@ -88,7 +88,7 @@ const sampleBucketJSON = `{
     "name":"demo-bucket",
     "type":"private",
     "storage_class":"hot",
-    "status":"active",
+    "status":"created",
     "hostname":"s3.timeweb.cloud",
     "location":"ru-1",
     "access_key":"AK12345",
@@ -182,7 +182,7 @@ func TestObserve(t *testing.T) {
 	t.Run("QuarantinedBucket_ReadyFalse", func(t *testing.T) {
 		// T017: quarantined bucket must surface Ready=False/ReasonBucketQuarantined,
 		// not Ready=True as with the unconditional Available() it used to set.
-		quarantinedJSON := strings.Replace(sampleBucketJSON, `"status":"active"`, `"status":"quarantined"`, 1)
+		quarantinedJSON := strings.Replace(sampleBucketJSON, `"status":"created"`, `"status":"quarantined"`, 1)
 		fake := &timeweb.FakeClient{}
 		fake.GetStorageReturns(httpResp(http.StatusOK, quarantinedJSON), nil)
 		e := newExternal(fake, nil)
@@ -201,9 +201,10 @@ func TestObserve(t *testing.T) {
 	})
 
 	t.Run("ProvisioningBucket_Creating", func(t *testing.T) {
-		// T017: a bucket in a non-terminal provisioning state must report
-		// Ready=False/Creating, not Available.
-		provisioningJSON := strings.Replace(sampleBucketJSON, `"status":"active"`, `"status":"created"`, 1)
+		// T017: a bucket in a non-terminal provisioning state (e.g. `new`) must
+		// report Ready=False/Creating, not Available. (`created` is the READY
+		// state — verified live on twc-staging.)
+		provisioningJSON := strings.Replace(sampleBucketJSON, `"status":"created"`, `"status":"new"`, 1)
 		fake := &timeweb.FakeClient{}
 		fake.GetStorageReturns(httpResp(http.StatusOK, provisioningJSON), nil)
 		e := newExternal(fake, nil)
