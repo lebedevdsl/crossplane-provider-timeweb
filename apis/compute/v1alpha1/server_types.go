@@ -242,6 +242,14 @@ type ServerObservation struct {
 	// Maps to the Ready condition per FR-014.
 	// +optional
 	State *string `json:"state,omitempty"`
+
+	// AvailabilityZone is the server's RESOLVED/effective availability zone as
+	// reported by the upstream. A preset can place the server in a different zone
+	// than the requested `spec.forProvider.availabilityZone` (e.g. ssd-15 forces
+	// spb-3 regardless of a requested spb-1), so recording the observed zone
+	// makes that placement — and any drift — visible.
+	// +optional
+	AvailabilityZone *string `json:"availabilityZone,omitempty"`
 }
 
 // ServerSpec is the desired state.

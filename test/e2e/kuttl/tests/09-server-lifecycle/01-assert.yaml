@@ -1,51 +1,32 @@
-# Per-step assert timeout — Server provisioning takes longer than the
-# suite-wide default (240s). SC-001 caps `apply → Ready=True` at 10
-# minutes for the smallest preset; 600s gives the upstream
-# installing→starting→on transition room to complete.
+# Per-step assert timeout — Server provisioning takes longer than the suite-wide
+# default (240s); 600s covers the upstream installing→starting→on transition
+# (~10 min per spec SC-001 for the smallest preset).
+#
+# Conditions are checked with `kubectl wait --for=condition=<type>=<status>`
+# (selects by condition TYPE) instead of a declarative `status.conditions:`
+# block. kuttl matches the conditions ARRAY POSITIONALLY and there is no
+# unordered/partial slice match (kudobuilder/kuttl#76), so a declarative block
+# is fragile: a gating-ref Server lands [Synced, Ready] while non-gating kinds
+# land [Ready, Synced], and the order even flips across create vs update — the
+# recurring source of false failures in this suite. kubectl wait is
+# order-independent. Stable scalar fields are still asserted declaratively below
+# (maps, not slices → order does not apply).
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: 600
+commands:
+  - command: kubectl wait --for=condition=Synced=True --timeout=590s -n timeweb-e2e sshkeys.sshkey.m.timeweb.crossplane.io/e2e-server-sshkey
+  - command: kubectl wait --for=condition=Ready=True  --timeout=590s -n timeweb-e2e sshkeys.sshkey.m.timeweb.crossplane.io/e2e-server-sshkey
+  - command: kubectl wait --for=condition=Synced=True --timeout=590s -n timeweb-e2e servers.compute.m.timeweb.crossplane.io/e2e-server
+  - command: kubectl wait --for=condition=Ready=True  --timeout=590s -n timeweb-e2e servers.compute.m.timeweb.crossplane.io/e2e-server
 ---
-# Both MRs reach Ready=True + Synced=True. The Server takes longer
-# (the upstream VM goes through installing→starting→on) so the bundle's
-# extended timeout governs (~10 min per spec SC-001).
-#
-# kuttl matches arrays positionally. Server's conditions slice ends up
-# in order [Synced, Ready] because the runtime appends Synced=True
-# (ReconcileSuccess) on first successful reconcile BEFORE the upstream
-# VM has booted; Ready=True (Available) flips later when the controller
-# observes state="on". Same dynamic as `02-project-import` (Observe-only
-# pattern); opposite of `04-s3bucket` / `05-containerregistry` whose
-# external clients call `Available()` from inside Observe so Ready lands
-# before Synced.
-#
-# The SSHKey is full-lifecycle (managementPolicies: ['*']) but follows
-# the same [Synced, Ready] order because the controller doesn't preset
-# the Ready condition during its Observe path.
-apiVersion: sshkey.m.timeweb.crossplane.io/v1alpha1
-kind: SSHKey
-metadata:
-  name: e2e-server-sshkey
-  namespace: timeweb-e2e
-status:
-  conditions:
-  - type: Ready
-    status: "True"
-  - type: Synced
-    status: "True"
----
+# Stable-field declarative assert — the upstream VM is actually "on" (this is the
+# field Ready is gated on, so it doubles as a sanity check on the wait above).
 apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
 kind: Server
 metadata:
   name: e2e-server
   namespace: timeweb-e2e
 status:
-  # A Server with gating refs (here sshKeyRefs) lands conditions in
-  # [Synced, Ready] order: its first reconcile fails Connect (ref not yet
-  # Ready) → Synced set first; Ready is added once Create runs. Resources
-  # without gating refs (Network, SSHKey, FloatingIP) are [Ready, Synced].
-  conditions:
-  - type: Synced
-    status: "True"
-  - type: Ready
-    status: "True"
+  atProvider:
+    state: "on"

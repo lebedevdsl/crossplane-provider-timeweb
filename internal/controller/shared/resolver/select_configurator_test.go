@@ -142,3 +142,37 @@ func TestSelectConfigurator(t *testing.T) {
 		}
 	})
 }
+
+func TestSelectConfigurator_PromoPreference(t *testing.T) {
+	std := ConfiguratorEntry{
+		UpstreamID: 31, Tags: []string{"msk_nvme"},
+		Filters: map[string]any{"location": "ru-3"},
+		Bounds:  map[string]CapacityBound{"cpu": {Min: 1, Step: 1, Max: 8}, "ramMB": {Min: 1024, Step: 1024, Max: 8192}, "diskGB": {Min: 15, Step: 5, Max: 200}},
+	}
+	promo := ConfiguratorEntry{
+		UpstreamID: 11, Tags: []string{"discount35"},
+		Filters: map[string]any{"location": "ru-3"},
+		Bounds:  map[string]CapacityBound{"cpu": {Min: 1, Step: 1, Max: 8}, "ramMB": {Min: 1024, Step: 1024, Max: 8192}, "diskGB": {Min: 15, Step: 5, Max: 200}},
+	}
+	size := ConfiguratorInput{
+		Filters: map[string]any{"location": "ru-3"},
+		Sizing:  map[string]int64{"cpu": 1, "ramMB": 1024, "diskGB": 15},
+	}
+
+	t.Run("standard preferred over promo when both fit", func(t *testing.T) {
+		out, err := SelectConfigurator(size, []ConfiguratorEntry{promo, std}, "TestDim")
+		if err != nil {
+			t.Fatalf("err = %v", err)
+		}
+		if out.UpstreamID != 31 {
+			t.Errorf("UpstreamID = %d, want 31 (standard msk_nvme over promo discount35)", out.UpstreamID)
+		}
+	})
+
+	t.Run("only promo fits — clear no-orderable error", func(t *testing.T) {
+		_, err := SelectConfigurator(size, []ConfiguratorEntry{promo}, "TestDim")
+		if !errors.Is(err, ErrNoConfiguratorAvailable) {
+			t.Errorf("err = %v, want ErrNoConfiguratorAvailable (promo-only)", err)
+		}
+	})
+}

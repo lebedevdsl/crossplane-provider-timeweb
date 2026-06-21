@@ -489,8 +489,18 @@ func buildCreateServerBody(cr *computev1alpha1.Server, presetID, configuratorID,
 	}
 	if fp.Resources != nil {
 		// Custom sizing: emit the configuration block (configurator_id + the
-		// requested cpu/ram/disk/gpu in upstream MB units). XOR with preset_id.
+		// requested cpu/ram/disk/gpu in upstream units) XOR preset_id. `gpu`
+		// MUST be sent EXPLICITLY (0 for non-GPU configurators) — the Timeweb
+		// panel always includes `gpu: 0`, and omitting it makes the API discard
+		// the whole configuration block and fall back to preset 0 ("Preset with
+		// id: 0 not found"; verified live 2026-06-20 by diffing our body against
+		// a panel-created custom server). bandwidth is NOT part of a custom
+		// create.
 		r := fp.Resources
+		gpu := float32(0)
+		if r.GPU != nil {
+			gpu = float32(*r.GPU)
+		}
 		body.Configuration = &struct {
 			ConfiguratorId float32  `json:"configurator_id"` //nolint:revive // mirrors oapi-codegen output
 			Cpu            float32  `json:"cpu"`             //nolint:revive // mirrors oapi-codegen output
@@ -502,10 +512,7 @@ func buildCreateServerBody(cr *computev1alpha1.Server, presetID, configuratorID,
 			Cpu:            float32(r.CPU),
 			Ram:            float32(r.RAMGB * 1024),
 			Disk:           float32(r.DiskGB * 1024),
-		}
-		if r.GPU != nil {
-			g := float32(*r.GPU)
-			body.Configuration.Gpu = &g
+			Gpu:            &gpu,
 		}
 	} else {
 		body.PresetId = &presetID
@@ -555,6 +562,11 @@ func populateServerStatus(cr *computev1alpha1.Server, v twgen.Vds) {
 	cr.Status.AtProvider.UpstreamID = &id
 	state := string(v.Status)
 	cr.Status.AtProvider.State = &state
+	// Mirror the resolved/effective availability zone — a preset can override the
+	// requested zone, so surfacing the observed one makes placement observable.
+	if az := string(v.AvailabilityZone); az != "" {
+		cr.Status.AtProvider.AvailabilityZone = &az
+	}
 
 	// Locked sizing IDs come from the GET, not only from Create: status
 	// written during Create is wiped by the runtime's critical-annotation

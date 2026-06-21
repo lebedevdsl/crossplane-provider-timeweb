@@ -1,13 +1,11 @@
-# After the PATCH the Server stays Ready=True + Synced=True (the comment
-# change PATCHes upstream cleanly; no condition flap).
-apiVersion: compute.m.timeweb.crossplane.io/v1alpha1
-kind: Server
-metadata:
-  name: e2e-server
-  namespace: timeweb-e2e
-status:
-  conditions:
-  - type: Ready
-    status: "True"
-  - type: Synced
-    status: "True"
+# After the `comment` PATCH the Server stays Ready=True + Synced=True (the patch
+# applies upstream cleanly; no condition flap). Conditions are checked with
+# `kubectl wait` (order-independent) — the previous declarative block failed here
+# because the post-update conditions order is [Synced, Ready], not [Ready, Synced]
+# (kuttl matches the array positionally; see 01-assert.yaml and kuttl#76).
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 600
+commands:
+  - command: kubectl wait --for=condition=Synced=True --timeout=120s -n timeweb-e2e servers.compute.m.timeweb.crossplane.io/e2e-server
+  - command: kubectl wait --for=condition=Ready=True  --timeout=120s -n timeweb-e2e servers.compute.m.timeweb.crossplane.io/e2e-server

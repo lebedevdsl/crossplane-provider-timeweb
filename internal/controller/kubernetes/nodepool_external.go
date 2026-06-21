@@ -150,6 +150,13 @@ func (e *nodepoolExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	}
 
 	populateNodepoolStatus(cr, env.NodeGroup)
+	// Maintain the resolved parent-cluster id on EVERY Observe (not only Create):
+	// populateNodepoolStatus rebuilds atProvider from the nodegroup GET, which
+	// doesn't carry the parent id, so without this the CLUSTER column goes blank
+	// in steady state. clusterID is the already-resolved parent (status- or
+	// ref-derived) from e.clusterID above.
+	cid := shared.EncodeID(clusterID)
+	cr.Status.AtProvider.ClusterID = &cid
 	upToDate := isNodepoolUpToDate(cr.Spec.ForProvider, cr.Status.AtProvider, env.NodeGroup)
 	nodes, err := e.observeGroupNodes(ctx, clusterID, groupID)
 	if err != nil {
@@ -507,7 +514,9 @@ func nodeIsActive(status string) bool {
 // API echoes the requested count within a second of create, long before any
 // worker VM boots (caught by the T028 canary: Ready=True one second after
 // create). A node in a failed/error state surfaces ReasonUpstreamFailed.
-// T020: emits transition Events via RecordConditionChange.
+// Events fire only on meaningful transitions (Available, UpstreamFailed);
+// in-progress reconciliation is silent — status.atProvider.nodes already carries
+// the per-node states, so an Event per count change is redundant noise.
 func setNodepoolReadyCondition(cr *kubernetesv1alpha1.KubernetesClusterNodepool, upToDate bool, declared int, nodes []groupNodeBody, recorder record.EventRecorder) {
 	var cond xpv2.Condition
 	for _, n := range nodes {
@@ -523,7 +532,8 @@ func setNodepoolReadyCondition(cr *kubernetesv1alpha1.KubernetesClusterNodepool,
 	if !upToDate {
 		cond = shared.ReadyFalse(shared.ReasonReconciling,
 			"worker node count is converging to the desired value")
-		shared.RecordConditionChange(recorder, cr, cond)
+		// In-progress reconciliation: set the condition but emit no Event —
+		// status.atProvider.nodes carries the real progress signal.
 		cr.Status.SetConditions(cond)
 		return
 	}
@@ -547,7 +557,9 @@ func setNodepoolReadyCondition(cr *kubernetesv1alpha1.KubernetesClusterNodepool,
 		// to stay consistent with the shared condition-reason vocabulary.
 		cond = shared.ReadyFalse(shared.ReasonReconciling,
 			fmt.Sprintf("%d/%d worker nodes provisioned (%d listed)", active, declared, len(nodes)))
-		shared.RecordConditionChange(recorder, cr, cond)
+		// In-progress provisioning: set the condition but emit no Event — the
+		// "0/2 worker nodes provisioned" Event was redundant with the per-node
+		// states in status.atProvider.nodes.
 		cr.Status.SetConditions(cond)
 		return
 	}

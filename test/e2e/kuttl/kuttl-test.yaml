@@ -14,12 +14,16 @@
 #   TIMEWEB_S3_BUCKET_NAME, TIMEWEB_S3_PRESET_NAME
 #   TIMEWEB_CR_PRESET_NAME
 #
-# Why parallel: 1
-#   Every test hits the live Timeweb API with a shared bearer token.
-#   Concurrent reconciles + the upstream's IP-based rate limiter make
-#   parallel runs flaky in ways that have nothing to do with the
-#   controller under test. The whole bundle finishes in well under 10
-#   minutes — serial wins on signal-to-noise.
+# Why parallel: 1 (within a single kuttl invocation)
+#   This is the DEFAULT, not a hard limit. The earlier rationale ("concurrent
+#   reconciles trip the upstream rate limiter") is OBSOLETE: the provider now
+#   holds a single GLOBAL client rate limiter (~2 r/s), so total API pressure is
+#   bounded regardless of how many bundles reconcile at once — parallelism is
+#   anti-abuse-safe. For opt-in parallel runs, launch independent bundles as
+#   separate `make e2e.test KUTTL_TEST=<x>` jobs (the proven pattern). The real
+#   ceiling is ACCOUNT RESOURCE QUOTAS (concurrent servers/clusters/vCPU), not
+#   request rate — split the slow k8s tier from the fast server/router tier.
+#   See test/e2e/README.md.
 apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 testDirs:

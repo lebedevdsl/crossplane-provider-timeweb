@@ -37,6 +37,10 @@ spec:
     - jsonPath: .status.atProvider.installedVersion
       name: INSTALLED-VERSION
       type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: ID
+      priority: 1
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date

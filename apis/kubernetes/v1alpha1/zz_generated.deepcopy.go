@@ -854,6 +854,11 @@ func (in *KubernetesClusterObservation) DeepCopyInto(out *KubernetesClusterObser
 		*out = new(string)
 		**out = **in
 	}
+	if in.AutoCreatedNetworkID != nil {
+		in, out := &in.AutoCreatedNetworkID, &out.AutoCreatedNetworkID
+		*out = new(string)
+		**out = **in
+	}
 	if in.ResolvedProjectID != nil {
 		in, out := &in.ResolvedProjectID, &out.ResolvedProjectID
 		*out = new(int64)

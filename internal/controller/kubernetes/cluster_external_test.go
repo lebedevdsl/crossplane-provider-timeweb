@@ -173,6 +173,24 @@ func TestClusterObserve(t *testing.T) {
 		}
 	})
 
+	t.Run("AutoCreatedNetworkID_RecordedWhenNetworkLess", func(t *testing.T) {
+		// FR-011: a network-less cluster (newCluster sets no network ref) gets a
+		// VPC auto-created upstream; record its id for traceability (no delete,
+		// no sweep). The provider must issue no delete call.
+		withNet := strings.Replace(clusterActiveJSON, `"project_id":0`,
+			`"project_id":0,"network_id":"network-auto-xyz"`, 1)
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, withNet), nil)
+		fake.GetClusterKubeconfigReturns(httpResp(http.StatusOK, "apiVersion: v1\nkind: Config\n"), nil)
+		cr := newCluster(true)
+		if _, err := clusterE(fake, okResolver()).Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if cr.Status.AtProvider.AutoCreatedNetworkID == nil || *cr.Status.AtProvider.AutoCreatedNetworkID != "network-auto-xyz" {
+			t.Errorf("AutoCreatedNetworkID=%v, want network-auto-xyz", cr.Status.AtProvider.AutoCreatedNetworkID)
+		}
+	})
+
 	t.Run("NotFound_ReturnsNotExists", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetClusterReturns(httpResp(http.StatusNotFound, ""), nil)

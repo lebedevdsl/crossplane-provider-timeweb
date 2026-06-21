@@ -399,6 +399,14 @@ spec:
                 description: KubernetesClusterObservation is the observed state. Populated
                   by Observe.
                 properties:
+                  autoCreatedNetworkID:
+                    description: |-
+                      AutoCreatedNetworkID is the upstream id of the private network Timeweb
+                      AUTO-CREATES for a network-less cluster (no networkRef/Selector/ID in
+                      spec). Recorded for traceability so an operator can clean it up
+                      deliberately — the provider does NOT delete it and does NOT sweep for it.
+                      Empty when the cluster was given an explicit network.
+                    type: string
                   cpu:
                     description: CPU / RAM / Disk are the master sizing readout the
                       upstream returns.

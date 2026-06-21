@@ -24,7 +24,12 @@ spec:
   writeConnectionSecretToRef: { name: e2e-srv-custom-conn }
   forProvider:
     name: "${TWE_SERVER_NAME}-custom"
-    location: ru-1
+    # ru-3/msk-1: ru-1's configurator catalog exposes only promo/legacy
+    # configurators (discount35/ssd_2022/spb_gpu/spb3_dedicated_cpu) that the
+    # create endpoint refuses; ru-3 has a standard orderable configurator
+    # (msk_nvme/msk_high_cpu). Verified live 2026-06-20.
+    location: ru-3
+    availabilityZone: msk-1
     os: { image: ubuntu, version: "24.04" }
     resources:
       cpu: ${TWE_SRV_CPU}

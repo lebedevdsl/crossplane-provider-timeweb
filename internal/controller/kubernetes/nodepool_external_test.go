@@ -100,6 +100,25 @@ func TestNodepoolObserve(t *testing.T) {
 		}
 	})
 
+	t.Run("ClusterID_Repopulated_OnObserve", func(t *testing.T) {
+		// Regression (FR-001): the runtime's critical-annotation refresh wipes
+		// status written during Create, and populateNodepoolStatus doesn't
+		// re-set ClusterID — so the CLUSTER column went blank in steady state.
+		// Observe must repopulate it from the resolved parent (resolvedClusterID
+		// = 777 in nodepoolE) even when status.ClusterID starts empty.
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesActiveJSON), nil)
+		cr := newNodepool(true, 2)
+		cr.Status.AtProvider.ClusterID = nil // simulate the post-refresh wipe
+		if _, err := nodepoolE(fake).Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if cr.Status.AtProvider.ClusterID == nil || *cr.Status.AtProvider.ClusterID != "777" {
+			t.Errorf("ClusterID=%v after Observe, want 777 (repopulated)", cr.Status.AtProvider.ClusterID)
+		}
+	})
+
 	t.Run("NodesStillProvisioning_NotReady", func(t *testing.T) {
 		// T028 canary regression: the group echoes node_count immediately, so
 		// Ready must wait for the actual nodes to reach an active state.

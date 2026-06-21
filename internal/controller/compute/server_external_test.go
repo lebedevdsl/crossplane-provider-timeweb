@@ -388,7 +388,8 @@ func TestObserve(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetServerReturns(httpResp(http.StatusOK, sampleServerJSON), nil)
 		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
-		obs, err := e.Observe(ctx, newServer(1234567))
+		cr := newServer(1234567)
+		obs, err := e.Observe(ctx, cr)
 		if err != nil {
 			t.Fatalf("Observe: %v", err)
 		}
@@ -400,6 +401,10 @@ func TestObserve(t *testing.T) {
 		}
 		if string(obs.ConnectionDetails["privateIP"]) != "10.30.0.5" {
 			t.Errorf("privateIP secret = %q, want 10.30.0.5", obs.ConnectionDetails["privateIP"])
+		}
+		// FR-004: the resolved/effective AZ is mirrored into status.
+		if cr.Status.AtProvider.AvailabilityZone == nil || *cr.Status.AtProvider.AvailabilityZone != "spb-1" {
+			t.Errorf("AvailabilityZone=%v, want spb-1 (mirrored from GET)", cr.Status.AtProvider.AvailabilityZone)
 		}
 	})
 
@@ -837,6 +842,15 @@ func TestServerCustomSizing(t *testing.T) {
 		}
 		if body.Configuration.Ram != 4096 || body.Configuration.Disk != 40960 || body.Configuration.Cpu != 2 {
 			t.Errorf("config cpu/ram/disk = %v/%v/%v, want 2/4096/40960 (MB)", body.Configuration.Cpu, body.Configuration.Ram, body.Configuration.Disk)
+		}
+		// gpu MUST be present and 0 for a non-GPU server. Omitting it (the
+		// pre-v0.1.6 bug) makes the API discard the configuration block and 404
+		// with "Preset with id: 0 not found" — the panel always sends gpu:0.
+		if body.Configuration.Gpu == nil {
+			t.Fatal("create body: Configuration.Gpu must be set (gpu:0), not omitted — see the preset-0 regression")
+		}
+		if *body.Configuration.Gpu != 0 {
+			t.Errorf("config gpu = %v, want 0 for a non-GPU server", *body.Configuration.Gpu)
 		}
 	})
 

@@ -55,6 +55,7 @@ type clusterBody struct {
 	Disk             int    `json:"disk"`
 	AvailabilityZone string `json:"availability_zone"`
 	ProjectID        int    `json:"project_id"`
+	NetworkID        string `json:"network_id"`
 }
 
 type clustersEnvelope struct {
@@ -547,6 +548,15 @@ func populateClusterStatus(cr *kubernetesv1alpha1.KubernetesCluster, c clusterBo
 	if c.ConfiguratorID != 0 {
 		cid := int64(c.ConfiguratorID)
 		cr.Status.AtProvider.LockedConfiguratorID = &cid
+	}
+	// For a network-LESS cluster (no operator-supplied network ref/selector/id),
+	// the upstream network_id is the VPC Timeweb auto-created. Record it for
+	// cleanup traceability (read-only — the provider neither deletes it nor
+	// sweeps for it; see FR-011).
+	fp := cr.Spec.ForProvider
+	if c.NetworkID != "" && fp.NetworkRef == nil && fp.NetworkSelector == nil && fp.NetworkID == nil {
+		anid := c.NetworkID
+		cr.Status.AtProvider.AutoCreatedNetworkID = &anid
 	}
 }
 

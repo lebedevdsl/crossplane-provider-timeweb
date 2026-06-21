@@ -445,6 +445,10 @@ func configuratorEntries(cfgs []twgen.ServersConfigurator) []ConfiguratorEntry {
 			}
 			bounds["gpu"] = CapacityBound{Min: int64(*r.GpuMin), Step: step, Max: int64(*r.GpuMax)}
 		}
+		var tags []string
+		if cfg.Tags != nil {
+			tags = *cfg.Tags
+		}
 		out = append(out, ConfiguratorEntry{
 			UpstreamID: int64(cfg.Id),
 			Filters: map[string]any{
@@ -454,6 +458,7 @@ func configuratorEntries(cfgs []twgen.ServersConfigurator) []ConfiguratorEntry {
 				"cpu_frequency":            cfg.CpuFrequency,
 			},
 			Bounds: bounds,
+			Tags:   tags,
 		})
 	}
 	return out

@@ -1,6 +1,22 @@
 <!-- SPECKIT START -->
-Current feature: **008-packaging** — read the plan at
-`specs/008-packaging/plan.md`. Packaging + delivery (no MR/CRD change): publish
+Current feature: **009-stabilization-bugfixes** — read the plan at
+`specs/009-stabilization-bugfixes/plan.md`. Stabilization/bugfix round from the
+008 live-e2e findings: observability (populate nodepool `CLUSTER`, rename
+`PUBLIC-IP`→`PUBLIC`, surface node public addr [VERIFY], server resolved AZ),
+e2e reliability (context-flake retry, `TWE_LOCATION`/`TWE_AZ` parameterization,
+opt-in parallel), custom sizing (verify k8s-worker `gpu` [VERIFY], prefer
+non-promo standard configurators, clear no-orderable error), auto-network
+traceability (record auto-VPC id on owner — no delete/no sweep), release hygiene
+(`--debug` off, clean semver, validate bundle 19). All changes additive. OUT of
+scope: server SSH-key runtime mgmt (`_next-server-ssh-keys`), dataplane
+delete-guard annotations (`_next-extra-annotations`). Companion artifacts in
+`specs/009-stabilization-bugfixes/`: spec.md, research.md (R-1..R-7), data-model.md,
+contracts/ (observability/resolver-selection/e2e-harness), quickstart.md. Source
+findings: `specs/_next-008-followups.md`.
+
+Feature **008-packaging** is COMPLETE (uncommitted on the `008-packaging` branch
+at this writing) — read its plan at `specs/008-packaging/plan.md`. Packaging +
+delivery (no MR/CRD change): publish
 the provider as a standard Crossplane OCI package (`.xpkg`) + multi-arch
 controller image to a private **Timeweb CRaaS** registry (closes the missing
 `xpkg push`), and generalize the e2e harness to install the *published* package

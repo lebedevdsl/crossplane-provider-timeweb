@@ -11,7 +11,8 @@ spec:
     name: "${TWE_K8S_CLUSTER_NAME}-scale"
     k8sVersion: "${TWE_K8S_VERSION}"
     networkDriver: cilium
-    availabilityZone: msk-1
+    location: "${TWE_LOCATION}"                    # required by the CRD; msk-1 lives in ru-3 (matches bundle 12)
+    availabilityZone: "${TWE_AZ}"
     presetName: "${TWE_K8S_MASTER_PRESET}"
 ---
 apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1

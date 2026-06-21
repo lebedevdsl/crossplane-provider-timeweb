@@ -32,7 +32,7 @@ spec:
       name: PRESET
       type: string
     - jsonPath: .spec.forProvider.publicIP
-      name: PUBLIC-IP
+      name: PUBLIC
       type: boolean
     - jsonPath: .spec.forProvider.nodeCount
       name: DESIRED

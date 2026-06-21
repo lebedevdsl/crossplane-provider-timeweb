@@ -96,7 +96,17 @@ by `resources` (cpu/ramGB/diskGB) instead of `presetName`:
 
 Worker nodes come up with **public IPs by default** (FR-008) — leaving
 `nodepool.spec.forProvider.publicIP` unset preserves that upstream default
-byte-for-byte. For a **private cluster**, set both halves of the arrangement:
+byte-for-byte. The `PUBLIC` print column reflects this **flag** (`true`/`false`/
+unset-default), not an address. Note: the upstream node API exposes only a
+single private `node_ip` per node (`status.atProvider.nodes[].ip`, on the
+cluster network) — there is **no per-node public IPv4** to surface, even for
+public nodes; public reachability is governed by the `publicIP` flag.
+
+For a **network-less cluster**, Timeweb auto-creates a private VPC; its id is
+recorded in `status.atProvider.autoCreatedNetworkID` for traceability (the
+provider does **not** delete it — clean it up deliberately if unwanted).
+
+For a **private cluster**, set both halves of the arrangement:
 
 ```yaml
 # KubernetesCluster: attach the cluster to a router-NAT'd network

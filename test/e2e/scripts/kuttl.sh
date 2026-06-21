@@ -65,8 +65,22 @@ fi
 # Verify the named context actually exists locally — otherwise any
 # subsequent kubectl call would fail with a confusing "context not found"
 # AFTER we've already started creating Secrets etc.
-if ! kubectl config get-contexts -o name | grep -qxF "$E2E_KUBECONTEXT"; then
-  echo "ERROR: kubectl context $E2E_KUBECONTEXT does not exist on this host (kubectl config get-contexts)." >&2
+#
+# The lookup is RETRIED: `kubectl config get-contexts` intermittently returns an
+# empty/partial list on a transient kubeconfig read race (observed killing
+# bundles mid-suite even though the context plainly exists). We retry the
+# existence READ only — the explicit-context safety is unchanged; we still abort
+# if the context is genuinely absent after all attempts.
+_ctx_ok=0
+for _attempt in 1 2 3 4 5; do
+  if kubectl config get-contexts -o name 2>/dev/null | grep -qxF "$E2E_KUBECONTEXT"; then
+    _ctx_ok=1
+    break
+  fi
+  sleep 2
+done
+if [ "$_ctx_ok" != 1 ]; then
+  echo "ERROR: kubectl context $E2E_KUBECONTEXT does not exist on this host (kubectl config get-contexts, after 5 attempts)." >&2
   exit 1
 fi
 

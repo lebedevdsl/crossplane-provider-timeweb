@@ -21,4 +21,4 @@ spec:
     os:
       image: ubuntu
       version: "24.04"
-    availabilityZone: spb-1           # same zone as the FloatingIP (Timeweb bind requires same-zone)
+    availabilityZone: spb-3           # ssd-15 lands in spb-3; must match the FIP (Timeweb bind requires same-zone)

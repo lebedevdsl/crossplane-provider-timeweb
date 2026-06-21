@@ -608,6 +608,14 @@ spec:
                 description: ServerObservation is the observed state. Populated by
                   Observe.
                 properties:
+                  availabilityZone:
+                    description: |-
+                      AvailabilityZone is the server's RESOLVED/effective availability zone as
+                      reported by the upstream. A preset can place the server in a different zone
+                      than the requested `spec.forProvider.availabilityZone` (e.g. ssd-15 forces
+                      spb-3 regardless of a requested spb-1), so recording the observed zone
+                      makes that placement — and any drift — visible.
+                    type: string
                   boundFloatingIPs:
                     description: |-
                       BoundFloatingIPs lists the upstream IDs (strings) of floating IPs

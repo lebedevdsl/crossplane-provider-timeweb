@@ -182,7 +182,7 @@ type KubernetesClusterNodepoolStatus struct {
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="CLUSTER",type="string",JSONPath=".status.atProvider.clusterID"
 // +kubebuilder:printcolumn:name="PRESET",type="string",JSONPath=".spec.forProvider.presetName"
-// +kubebuilder:printcolumn:name="PUBLIC-IP",type="boolean",JSONPath=".spec.forProvider.publicIP"
+// +kubebuilder:printcolumn:name="PUBLIC",type="boolean",JSONPath=".spec.forProvider.publicIP"
 // +kubebuilder:printcolumn:name="DESIRED",type="integer",JSONPath=".spec.forProvider.nodeCount"
 // +kubebuilder:printcolumn:name="OBSERVED",type="integer",JSONPath=".status.atProvider.observedNodeCount"
 // +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1

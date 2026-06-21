@@ -137,6 +137,7 @@ type S3BucketStatus struct {
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="SIZE-GB",type="integer",JSONPath=".spec.forProvider.initialSizeGB"
 // +kubebuilder:printcolumn:name="CLASS",type="string",JSONPath=".spec.forProvider.storageClass"
+// +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.status"
 // +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 

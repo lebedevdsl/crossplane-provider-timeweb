@@ -22,7 +22,7 @@ spec:
   forProvider:
     name: "${TWE_PRIV_NET_NAME}"
     subnetCIDR: 10.39.0.0/24
-    location: ru-3
+    location: "${TWE_LOCATION}"
     description: "kuttl 19 private-cluster"
 ---
 apiVersion: network.m.timeweb.crossplane.io/v1alpha1
@@ -35,8 +35,8 @@ spec:
     kind: ProviderConfig
     name: e2e
   forProvider:
-    location: ru-3
-    availabilityZone: msk-1
+    location: "${TWE_LOCATION}"
+    availabilityZone: "${TWE_AZ}"
     isDDoSGuard: false
 ---
 apiVersion: network.m.timeweb.crossplane.io/v1alpha1
@@ -50,8 +50,8 @@ spec:
     name: e2e
   forProvider:
     name: "${TWE_PRIV_ROUTER_NAME}"
-    location: ru-3
-    availabilityZone: msk-1
+    location: "${TWE_LOCATION}"
+    availabilityZone: "${TWE_AZ}"
     presetName: "${TWE_ROUTER_PRESET}"
     networks:
       - networkRef:
@@ -76,8 +76,8 @@ spec:
     name: "${TWE_PRIV_CLUSTER_NAME}"
     k8sVersion: "${TWE_K8S_VERSION}"
     networkDriver: cilium
-    location: ru-3
-    availabilityZone: msk-1
+    location: "${TWE_LOCATION}"
+    availabilityZone: "${TWE_AZ}"
     masterNodesCount: 1
     networkRef:
       name: e2e-priv-net

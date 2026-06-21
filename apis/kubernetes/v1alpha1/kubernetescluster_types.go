@@ -145,6 +145,14 @@ type KubernetesClusterObservation struct {
 	// +optional
 	ResolvedNetworkID *string `json:"resolvedNetworkID,omitempty"`
 
+	// AutoCreatedNetworkID is the upstream id of the private network Timeweb
+	// AUTO-CREATES for a network-less cluster (no networkRef/Selector/ID in
+	// spec). Recorded for traceability so an operator can clean it up
+	// deliberately — the provider does NOT delete it and does NOT sweep for it.
+	// Empty when the cluster was given an explicit network.
+	// +optional
+	AutoCreatedNetworkID *string `json:"autoCreatedNetworkID,omitempty"`
+
 	// ResolvedProjectID is the upstream project_id the cluster lives in.
 	// +optional
 	ResolvedProjectID *int64 `json:"resolvedProjectID,omitempty"`

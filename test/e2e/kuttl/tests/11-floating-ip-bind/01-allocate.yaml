@@ -21,7 +21,7 @@ spec:
     name: e2e-fip-conn
   forProvider:
     location: ru-1
-    availabilityZone: spb-1           # MUST match the Server's zone to bind (Timeweb requires same-zone)
+    availabilityZone: spb-3           # preset ssd-15 (preset_id 2573) is anchored to spb-3; the FIP MUST be spb-3 to bind (Timeweb requires same-zone; a preset overrides a conflicting requested AZ)
     isDDoSGuard: false
     comment: "kuttl 11 floating-ip-bind"
 ---
@@ -43,4 +43,4 @@ spec:
     os:
       image: ubuntu
       version: "24.04"
-    availabilityZone: spb-1           # same zone as the FloatingIP (Timeweb bind requires same-zone)
+    availabilityZone: spb-3           # ssd-15 lands in spb-3 regardless of request; pin explicitly so spec matches reality

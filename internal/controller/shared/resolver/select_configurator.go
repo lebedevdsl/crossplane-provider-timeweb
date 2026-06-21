@@ -19,6 +19,7 @@ package resolver
 import (
 	"fmt"
 	"sort"
+	"strings"
 )
 
 // ConfiguratorEntry is the shape a dimension's configurator fetcher
@@ -32,6 +33,30 @@ type ConfiguratorEntry struct {
 	// Sizing input. Each axis name maps to a {Min, Step, Max} tuple
 	// matching the upstream `requirements.{min,step,max}` shape.
 	Bounds map[string]CapacityBound
+	// Tags are the upstream catalog tags (e.g. "msk_nvme", "discount35",
+	// "ssd_2022"). Used to prefer standard-family configurators over
+	// promo/legacy ones (FR-010) and to surface a clear error when only
+	// promo/legacy entries remain (FR-009).
+	Tags []string
+}
+
+// promoTagMarkers classify a configurator as promo/legacy (deprioritized, and
+// frequently non-orderable — e.g. the ru-1 `discount35`/`ssd_2022` entries that
+// the create endpoint refuses). Substring match, case-insensitive. Kept as a
+// small, extensible list (NOT hardcoded ids — ids drift per account/region).
+var promoTagMarkers = []string{"discount", "promo", "sale", "legacy", "2022"}
+
+// isPromoEntry reports whether any of the entry's tags marks it promo/legacy.
+func isPromoEntry(e ConfiguratorEntry) bool {
+	for _, t := range e.Tags {
+		lt := strings.ToLower(t)
+		for _, m := range promoTagMarkers {
+			if strings.Contains(lt, m) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // CapacityBound mirrors the upstream `requirements.{min,step,max}` shape.
@@ -102,6 +127,37 @@ func SelectConfigurator(input ConfiguratorInput, entries []ConfiguratorEntry, di
 			Filters: input.Filters, Sizing: input.Sizing,
 			ClosestRejected: ConfiguratorRejection{UpstreamID: closestRejectedByBound.UpstreamID, Reason: closestBoundReason},
 			DimensionID:     dimensionID,
+		}
+	}
+
+	// Step 2b: prefer non-promo STANDARD-family configurators (FR-010). Partition
+	// the survivors; if any standard entry fits, select only from those. If ONLY
+	// promo/legacy entries remain, surface a clear error naming that (FR-009)
+	// instead of picking one that the create endpoint is likely to refuse with a
+	// misleading phantom-preset error.
+	var standard, promo []ConfiguratorEntry
+	for _, e := range survivors {
+		if isPromoEntry(e) {
+			promo = append(promo, e)
+		} else {
+			standard = append(standard, e)
+		}
+	}
+	if len(standard) > 0 {
+		survivors = standard
+	} else {
+		ids := make([]int64, 0, len(promo))
+		for _, e := range promo {
+			ids = append(ids, e.UpstreamID)
+		}
+		return ConfiguratorOutput{}, &NoConfiguratorAvailableError{
+			Filters: input.Filters, Sizing: input.Sizing,
+			ClosestRejected: ConfiguratorRejection{
+				UpstreamID: ids[0],
+				Reason: fmt.Sprintf("only promo/legacy configurators available for this location/size %v "+
+					"— these are typically not orderable; choose a different region or a standard family", ids),
+			},
+			DimensionID: dimensionID,
 		}
 	}
 

@@ -110,6 +110,14 @@ func Classify(resp *http.Response) error {
 	case resp.StatusCode >= 200 && resp.StatusCode < 300:
 		return nil
 	case resp.StatusCode == http.StatusNotFound:
+		// Surface the upstream "what wasn't found" detail + response_id instead
+		// of a bare sentinel — a 404 on e.g. a configurator-based server create
+		// carries the actual missing-resource reason (Constitution §II: never
+		// swallow the upstream explanation). Wrap ErrNotFound so callers that
+		// tolerate 404 on delete (errors.Is) still match.
+		if detail := readErrorDetail(resp); detail != "" {
+			return fmt.Errorf("%w: %s", ErrNotFound, detail)
+		}
 		return ErrNotFound
 	case isTransientStatus(resp.StatusCode):
 		reason := http.StatusText(resp.StatusCode)
@@ -207,6 +215,39 @@ func readErrorMessage(resp *http.Response) string {
 		}
 	}
 	// Not the expected JSON shape — return a trimmed raw snippet.
+	if s := strings.TrimSpace(string(body)); s != "" {
+		if len(s) > 300 {
+			s = s[:300]
+		}
+		return s
+	}
+	return ""
+}
+
+// readErrorDetail extracts the upstream message AND response_id, formatted for
+// enriching an error reason (used for 404s, where the message names the missing
+// resource and the response_id correlates with a Timeweb support ticket).
+// Returns "" when nothing useful is present.
+func readErrorDetail(resp *http.Response) string {
+	if resp == nil || resp.Body == nil {
+		return ""
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
+	if err != nil || len(body) == 0 {
+		return ""
+	}
+	var b errorResponseBody
+	if err := json.Unmarshal(body, &b); err == nil {
+		msg := stringifyMessage(b.Message)
+		switch {
+		case msg != "" && b.ResponseID != "":
+			return fmt.Sprintf("%s (response_id: %s)", msg, b.ResponseID)
+		case msg != "":
+			return msg
+		case b.ResponseID != "":
+			return "response_id: " + b.ResponseID
+		}
+	}
 	if s := strings.TrimSpace(string(body)); s != "" {
 		if len(s) > 300 {
 			s = s[:300]

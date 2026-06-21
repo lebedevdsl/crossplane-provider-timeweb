@@ -133,7 +133,7 @@ when the IP is unbound.
 | SYNCED    | string  | `.status.conditions[?(@.type=='Synced')].status`  |          |
 | CLUSTER   | string  | `.status.atProvider.clusterID`                    |          |
 | PRESET    | string  | `.spec.forProvider.presetName`                    |          |
-| PUBLIC-IP | boolean | `.spec.forProvider.publicIP`                      |          |
+| PUBLIC    | boolean | `.spec.forProvider.publicIP`                      |          |
 | DESIRED   | integer | `.spec.forProvider.nodeCount`                     |          |
 | OBSERVED  | integer | `.status.atProvider.observedNodeCount`            |          |
 | ID        | string  | `.metadata.annotations.crossplane\.io/external-name` | 1     |

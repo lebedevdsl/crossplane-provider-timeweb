@@ -31,6 +31,9 @@ spec:
     - jsonPath: .spec.forProvider.storageClass
       name: CLASS
       type: string
+    - jsonPath: .status.atProvider.status
+      name: STATE
+      type: string
     - jsonPath: .metadata.annotations.crossplane\.io/external-name
       name: ID
       priority: 1
