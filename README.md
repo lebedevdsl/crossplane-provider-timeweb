@@ -1,5 +1,12 @@
 # Crossplane Provider for Timeweb Cloud
 
+> **Disclaimer:** this repo is built with [Claude Code][claude-code] +
+> [GitHub's spec-kit][spec-kit] as part of adopting an AI dev flow. I only
+> steered the decisions and reviewed the code.
+
+[claude-code]: https://claude.com/claude-code
+[spec-kit]: https://github.com/github/spec-kit
+
 A [Crossplane v2][crossplane] provider that exposes Timeweb Cloud
 resources as Kubernetes managed resources.
 
@@ -134,19 +141,33 @@ tag may not re-pull — bump an annotation on the `Provider` to force re-resolut
 
 ## End-to-end testing
 
-The `test/e2e/` bundle stands up a k3d cluster + local registry + the
-Crossplane control plane, installs the provider, and runs a [kuttl][kuttl]
-suite that exercises every MR kind against the live Timeweb API. Requires only
-a `TIMEWEB_CLOUD_TOKEN`. The smallest server / cluster presets are discovered at
-runtime to keep a full run cheap (the K8s bundles are slowest — up to ~20 min).
+The `test/e2e/` bundle runs a [kuttl][kuttl] suite that exercises every MR kind
+against the live Timeweb API. Requires a `TIMEWEB_CLOUD_TOKEN`. The smallest
+presets are discovered at runtime (or seeded in `presets.local.env` for
+network-restricted hosts). The K8s bundles are slowest (~20 min).
+
+It runs in two modes:
+
+- **Local (k3d):** spins up a k3d cluster + local registry + Crossplane,
+  side-loads the provider, and runs the suite.
+- **Remote cluster:** installs the **published** package on an operator-set
+  context (e.g. a Timeweb-hosted cluster, to run from inside Timeweb when the
+  dev network is WAF-blocked) and runs the suite there — set `E2E_KUBECONTEXT`
+  (an explicit non-`k3d-` context is required) after installing
+  `deploy/provider.yaml`.
 
 [kuttl]: https://kuttl.dev
 
 ```bash
 export TIMEWEB_CLOUD_TOKEN=<your-token>
-make e2e          # full pipeline: up → deploy → test
-make e2e.cleanup  # wipe leftover MRs (investigate first)
-make e2e.down     # tear down the cluster
+
+# Local (k3d):
+make e2e                                   # full pipeline: up → deploy → test
+make e2e.cleanup                           # wipe leftover MRs (investigate first)
+make e2e.down                              # tear down the cluster
+
+# Remote cluster (provider already installed from the published package):
+make e2e.test E2E_KUBECONTEXT=<context>    # e.g. KUTTL_TEST=12-k8s-cluster-lifecycle for one bundle
 ```
 
 See [`test/e2e/README.md`](./test/e2e/README.md) for details, prerequisites,

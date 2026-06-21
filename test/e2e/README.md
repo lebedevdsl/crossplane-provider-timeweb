@@ -82,11 +82,23 @@ the resolver matches by id and verifies the base slug.
 
 ## What the suite covers
 
-The kuttl bundle lives under `test/e2e/kuttl/`. Every test is pure
-declarative apply/assert YAML — the only "command" in the whole pipeline
-is the Secret creation done by the wrapper. `parallel: 1` because every
-test shares one bearer token; serializing avoids upstream rate-limit
-interference.
+The kuttl bundle lives under `test/e2e/kuttl/`. Tests are declarative
+apply/assert YAML (plus `kubectl wait` condition checks, which are
+order-independent — preferred over declarative `status.conditions` blocks
+that kuttl matches positionally).
+
+**Region** is parameterized via `TWE_LOCATION` / `TWE_AZ` (seeded in
+`presets.local.env`, default `ru-3`/`msk-1`) — bundles must not hardcode a
+region the account can't fulfill. The preset-based server's region follows
+`TWE_SERVER_PRESET` instead.
+
+**Parallelism**: `parallel: 1` is the *default*, not a limit. The provider holds
+a single global client rate limiter (~2 r/s), so total API pressure is bounded
+regardless of concurrency — parallel runs are anti-abuse-safe. For opt-in
+parallelism, launch independent bundles as separate
+`make e2e.test KUTTL_TEST=<x>` jobs (split the slow k8s tier from the fast
+server/router tier). The real ceiling is **account resource quotas**
+(concurrent servers/clusters/vCPU), not request rate.
 
 | Test directory                          | Variant                  | Live upstream cost                                         |
 |-----------------------------------------|--------------------------|------------------------------------------------------------|

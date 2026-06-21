@@ -1,6 +1,6 @@
 # Cloud Servers, Networks & Floating IPs
 
-Operator guide for the v0.3 compute/network kinds: **`Server`** (cloud VM),
+Operator guide for the compute/network kinds: **`Server`** (cloud VM),
 **`Network`** (VPC), and **`FloatingIP`** (floating IPv4). For the storage-class
 kinds (`S3Bucket`, `ContainerRegistry`) see [`presets.md`](./presets.md).
 
@@ -177,6 +177,11 @@ the controller fills a per-location default (`ru-1→spb-1`, `ru-2→msk-1`,
 `ru-3→spb-3`, `nl-1→ams-1`, `de-1→fra-1`, `kz-1→ala-1`). For a location without
 a known default, set `forProvider.availabilityZone` explicitly.
 
+> **Observed zone.** A preset can place the server in a different zone than the
+> one you requested (e.g. `ssd-15` lands in `spb-3` regardless). The effective
+> zone is mirrored to `status.atProvider.availabilityZone`, so check there (not
+> just the spec) to see where the server actually landed.
+
 > **Same-zone requirement.** Timeweb rejects a bind when the floating IP and
 > the server are in different availability zones
 > (`different_zones_exception`). A FloatingIP is allocated independently, so
@@ -211,12 +216,12 @@ All three unset → the account's default project.
 | `FloatingIP` has an `ip` but `observedBoundTo` empty | Unbound by design (no Server references it). | Add its name to a `Server.forProvider.floatingIPRefs`. |
 | Any MR `Ready=False, reason=Deleting` while the CR still exists | Kubernetes deletion in flight. | Wait for the finalizer cascade; `kubectl describe` to inspect. |
 
-## What's NOT in v0.3
+## Not yet supported
 
-Each lands as its own follow-up feature (see `spec.md §Clarifications`):
+Each lands as its own follow-up feature:
 
-- Custom-configurator sizing (the dashboard's "Произвольная" tab) and dedicated-CPU sub-tiers
-- Resize / re-image of a live Server (changing `presetName` or `os`)
+- Resize / re-image of a live Server (changing `presetName`/`resources` or `os`
+  — sizing is fixed at create; a change requires delete + recreate)
 - **Network disks** (сетевые диски) — a Server boots with only its preset's
   bundled root volume; there is no `Server` field or `NetworkDisk` kind to
   attach additional network drives

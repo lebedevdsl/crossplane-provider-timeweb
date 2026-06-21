@@ -225,9 +225,12 @@ addon; the cluster stays `Ready=True`.
 | Cluster edit rejected `ImmutableFieldChange` | changed `networkDriver`/`availabilityZone`/`presetName`/`masterNodesCount` | delete + recreate; only `k8sVersion`/`name`/`description` are mutable |
 | Addon `ReconcileError`, lists valid types | `type`/`version` not in the cluster's catalog | use a catalog entry |
 
-## What's NOT in v0.x
+## Not yet supported
 
-Custom-configurator sizing (`cpu`/`ram`/`disk`), `is_ingress`/`is_k8s_dashboard`
-toggles, OIDC provider, maintenance windows, custom pod/service CIDR, in-place
-nodepool label/autoscaling mutation, and per-addon config PATCH. Each is a
-follow-up extending `kubernetes.m.timeweb.crossplane.io`.
+`is_ingress`/`is_k8s_dashboard` toggles, OIDC provider, maintenance windows,
+custom pod/service CIDR, in-place nodepool label/autoscaling mutation, and
+per-addon config PATCH. Each is a follow-up extending
+`kubernetes.m.timeweb.crossplane.io`.
+
+(Custom-configurator sizing via `resources.{cpu,ramGB,diskGB}` — for masters and
+worker pools — **is** supported; see "Custom sizing" above.)
