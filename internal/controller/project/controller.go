@@ -35,6 +35,7 @@ import (
 // Setup registers the Project controller with mgr.
 func Setup(mgr manager.Manager, l logging.Logger, pollInterval time.Duration) error {
 	name := managed.ControllerName(projectv1alpha1.ProjectGroupVersionKind.String())
+	recorder := mgr.GetEventRecorderFor(name) //nolint:staticcheck // SA1019 — old events API; same pattern across this provider
 
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(projectv1alpha1.ProjectGroupVersionKind),
@@ -43,10 +44,10 @@ func Setup(mgr manager.Manager, l logging.Logger, pollInterval time.Duration) er
 			usage: resource.NewProviderConfigUsageTracker(mgr.GetClient(),
 				&apisv1alpha1.ProviderConfigUsage{}),
 			logger:   l.WithValues("controller", name),
-			recorder: mgr.GetEventRecorderFor(name),
+			recorder: recorder,
 		}),
 		managed.WithLogger(l.WithValues("controller", name)),
-		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))), //nolint:staticcheck // SA1019 — old events API; same pattern across this provider
+		managed.WithRecorder(event.NewAPIRecorder(recorder)),
 		managed.WithPollInterval(pollInterval),
 		// Opt the reconciler into spec.managementPolicies — needed for users
 		// to set per-resource action lists (e.g. [Observe, Create, Update,

@@ -42,6 +42,7 @@ PLATFORMS       ?= linux/amd64
 OAPI_CODEGEN    := $(GO) run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
 CONTROLLER_GEN  := $(GO) run sigs.k8s.io/controller-tools/cmd/controller-gen
 COUNTERFEITER   := $(GO) run github.com/maxbrunsfeld/counterfeiter/v6
+GOIMPORTS       := $(GO) run golang.org/x/tools/cmd/goimports
 
 # ---------------------------------------------------------------------------
 # Phony targets
@@ -101,7 +102,7 @@ generate-client: ## Regenerate the Timeweb HTTP client from docs/openapi-timeweb
 	# even with -generate types,client (server stubs are excluded but their
 	# import statements remain in the template output). goimports + gofmt
 	# normalise the file to a buildable state.
-	goimports -w internal/clients/timeweb/generated/zz_generated_client.go
+	$(GOIMPORTS) -w internal/clients/timeweb/generated/zz_generated_client.go
 	gofmt -w internal/clients/timeweb/generated/zz_generated_client.go
 
 .PHONY: generate-crds

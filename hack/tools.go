@@ -19,6 +19,7 @@ import (
 	_ "github.com/kudobuilder/kuttl/cmd/kubectl-kuttl"
 	_ "github.com/maxbrunsfeld/counterfeiter/v6"
 	_ "github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen"
+	_ "golang.org/x/tools/cmd/goimports"
 	_ "golang.org/x/vuln/cmd/govulncheck"
 	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
 )
