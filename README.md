@@ -120,10 +120,11 @@ spec:
   packagePullSecrets: [{ name: registry-creds }]   # omit if the registry is public
 ```
 
-**From source:** `make generate && make xpkg.build` builds the `.xpkg`; push the
-package and the multi-arch image to your own registry (`crossplane xpkg push …`,
-`make image`), then install as above. The API token is supplied only via
-`ProviderConfig`→`Secret`, never baked into the image. Note: re-pushing the same
+**From source:** the controller runtime is **embedded** in the package, so one
+artifact is all you need. `make xpkg.push IMAGE_REPO=<your-registry>/provider-timeweb VERSION=<tag>`
+builds the `.xpkg` (per arch) and pushes it as a multi-arch index; `make release`
+also cosign-signs it. Then install as above. The API token is supplied only via
+`ProviderConfig`→`Secret`, never baked into the package. Note: re-pushing the same
 tag may not re-pull — bump an annotation on the `Provider` to force re-resolution.
 
 ## End-to-end testing

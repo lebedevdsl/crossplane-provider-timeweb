@@ -49,25 +49,15 @@ jobs:
       - name: Run code generation
         run: make generate
 
-      - name: Build multi-arch image and push
-        env:
-          VERSION: ${{ github.ref_name }}
-        run: make image
-
-      - name: Sign image (cosign keyless)
-        env:
-          VERSION: ${{ github.ref_name }}
-        run: cosign sign --yes ghcr.io/lebedevdsl/provider-timeweb:${VERSION}
-
-      - name: Build Crossplane package
-        env:
-          VERSION: ${{ github.ref_name }}
-        run: make xpkg.build
-
-      - name: Push Crossplane package
+      # Embed model: the controller runtime is baked INTO the .xpkg, so there is
+      # no separate controller image. `make release` builds the per-arch embedded
+      # package(s), pushes them as one (multi-arch) index to ghcr, then
+      # cosign-signs that package ref (keyless via the id-token below).
+      # Provider.spec.package = ghcr.io/lebedevdsl/provider-timeweb:<tag>.
+      - name: Build embedded package, push to ghcr, and cosign-sign
         env:
           VERSION: ${{ github.ref_name }}
         run: |
-          crossplane xpkg push \
-            -f bin/provider-timeweb-${VERSION}.xpkg \
-            ghcr.io/lebedevdsl/provider-timeweb:${VERSION}-xpkg
+          make release \
+            IMAGE_REPO=ghcr.io/lebedevdsl/provider-timeweb \
+            VERSION="${VERSION}"
