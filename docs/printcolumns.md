@@ -1,7 +1,7 @@
 # Printcolumn Conventions
 
 This document describes the standard `kubectl get` column layout used across all
-managed-resource kinds in this provider (feature 007, US3/FR-006).
+managed-resource kinds in this provider.
 
 ---
 

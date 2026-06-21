@@ -94,7 +94,7 @@ by `resources` (cpu/ramGB/diskGB) instead of `presetName`:
 
 ### Worker node networking — private clusters
 
-Worker nodes come up with **public IPs by default** (FR-008) — leaving
+Worker nodes come up with **public IPs by default** — leaving
 `nodepool.spec.forProvider.publicIP` unset preserves that upstream default
 byte-for-byte. The `PUBLIC` print column reflects this **flag** (`true`/`false`/
 unset-default), not an address. Note: the upstream node API exposes only a

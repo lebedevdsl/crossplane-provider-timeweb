@@ -29,14 +29,9 @@ resources as Kubernetes managed resources.
 | `KubernetesClusterNodepool`   | `kubernetes.m.timeweb.crossplane.io`   | Worker group (`clusterRef`). Scalable `nodeCount`; optional autoscaling/autohealing. |
 | `KubernetesClusterAddon`      | `kubernetes.m.timeweb.crossplane.io`   | One installed cluster addon (`clusterRef`, `type`+`version`). |
 
-All managed resources are **namespaced** (Crossplane v2 modern MRs), using
-the `<svc>.m.timeweb.crossplane.io` group convention. The
-`network.m.timeweb.crossplane.io` group is the committed home for the whole
-network family — `Network` + `FloatingIP` ship today; `Router`, `Balancer`,
-`FirewallRule` / `SecurityGroup` extend the same group in future features. The
-`kubernetes.m.timeweb.crossplane.io` group is the committed home for all
-managed-Kubernetes kinds (`KubernetesCluster` + `KubernetesClusterNodepool` +
-`KubernetesClusterAddon` today; future OIDC/maintenance kinds extend it).
+All resources are **namespaced** Crossplane v2 managed resources, grouped by
+service under `<svc>.m.timeweb.crossplane.io` (`compute`, `network`,
+`kubernetes`, `objectstorage`, `project`, `sshkey`).
 
 **New here?** Start with [`docs/getting-started.md`](./docs/getting-started.md)
 — it walks: API token → Kubernetes Secret → ProviderConfig → first resource →
@@ -47,27 +42,19 @@ See [`docs/servers.md`](./docs/servers.md) for the `Server` / `Network` /
 for the managed-Kubernetes guide (cluster + nodepool + addon, scaling, version
 upgrade, kubeconfig, troubleshooting).
 
-## ProviderConfig — namespaced + cluster-scoped pair
+## ProviderConfig
 
-The provider ships **two** `ProviderConfig` kinds (FR-001):
+Two kinds share one spec, differing only in scope. The API token is read from a
+Kubernetes `Secret` via `secretRef: {name, namespace, key}`.
 
-Both kinds share a **single `ProviderConfigSpec`** shape (matches the
-`provider-kubernetes` / `provider-helm` / `provider-upjet-azure` v2
-convention) with full `secretRef: {name, namespace, key}`. Per-kind
-semantics are enforced by the controller, not by CRD validation:
+| Kind                    | Scope      | `secretRef.namespace`                                          |
+|-------------------------|------------|---------------------------------------------------------------|
+| `ProviderConfig`        | Namespaced | Optional — defaults to the config's namespace; no cross-namespace refs. |
+| `ClusterProviderConfig` | Cluster    | Required.                                                     |
 
-| Kind                    | Scope      | `secretRef.namespace` behavior                                                   |
-|-------------------------|------------|----------------------------------------------------------------------------------|
-| `ProviderConfig`        | Namespaced | Optional — defaults to the PC's own namespace. Cross-namespace refs are rejected. |
-| `ClusterProviderConfig` | Cluster    | Required — the cluster-scoped CR has no namespace to default to.                 |
-
-A managed resource references its PC via `spec.providerConfigRef`
-(`{kind: ProviderConfig|ClusterProviderConfig, name}`). The controller
-**hard-switches** on `kind` — there is no silent fallback between the
-two kinds. When `kind` is omitted, the crossplane-runtime v2 default of
-`ClusterProviderConfig` applies. A missing or mistyped `(kind, name)`
-pair surfaces as `Synced=False` with a typed
-`InvalidProviderConfigRef` message.
+A resource selects its config with `spec.providerConfigRef: {kind, name}`. If
+`kind` is omitted it defaults to `ClusterProviderConfig`; a wrong `(kind, name)`
+surfaces as `Synced=False`.
 
 ```yaml
 # Namespaced: PC + Secret live alongside the MRs that use them.

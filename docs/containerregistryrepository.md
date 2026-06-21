@@ -7,7 +7,7 @@ A repository (image namespace) inside a parent `ContainerRegistry`.
 | API group | `kubernetes.m.timeweb.crossplane.io` |
 | Kind | `ContainerRegistryRepository` |
 | Scope | Namespaced |
-| External-name format | `<parent-registry-name>/<repository-name>` (composite, R-2) |
+| External-name format | `<parent-registry-name>/<repository-name>` (composite) |
 | Connection Secret | none — use the parent registry's Secret |
 
 ## API-level constraint: observe-only

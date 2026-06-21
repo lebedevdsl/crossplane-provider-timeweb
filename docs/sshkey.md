@@ -53,7 +53,7 @@ spec:
 | `Synced` | Reconciliation reached upstream cleanly. | `ImmutableFieldChange` (terminal — stays False until reverted or recreated), `APIError`, `RateLimited`. |
 | `Ready` | Upstream key exists and matches spec. | `SSHKeyNotFound`, `Reconciling`. |
 
-## Immutable-field handling (FR-017)
+## Immutable-field handling
 
 Editing `spec.forProvider.name` or `spec.forProvider.body` after the resource
 is `Ready=True`:

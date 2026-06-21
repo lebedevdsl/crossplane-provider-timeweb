@@ -83,7 +83,7 @@ spec:
     image: demo-prod.cr.twcstorage.ru/mygroup/myimage:v1
 ```
 
-### Credentials — R-1 caveat
+### Credentials caveat
 
 The Timeweb OpenAPI document does not expose a registry-specific auth
 endpoint. The controller's default implementation reads the first
@@ -105,7 +105,7 @@ operators can either:
 | `Synced` | Reconciliation reached upstream cleanly. | `ImmutableFieldChange`, `PresetNotFound`, `APIError`, `RateLimited`. |
 | `Ready` | Registry exists upstream AND credentials are usable. | `CredentialsPending`, `RegistryNotFound`, `Reconciling`. |
 
-## Immutable-field handling (FR-017)
+## Immutable-field handling
 
 `name` and `initialSizeGB` (the tariff tier) are immutable. Editing either
 triggers reject-and-surface:

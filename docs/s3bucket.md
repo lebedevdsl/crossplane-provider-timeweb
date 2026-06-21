@@ -87,7 +87,7 @@ via `Secret.data` mapping or a one-line `subPath`.
 | `Synced` | Reconciliation reached upstream cleanly. | `ImmutableFieldChange`, `APIError`, `RateLimited`. |
 | `Ready` | Bucket exists upstream and is not quarantined. | `BucketNotFound`, `BucketQuarantined`, `Reconciling`. |
 
-## Immutable-field handling (FR-017)
+## Immutable-field handling
 
 Editing `spec.forProvider.name`, `initialSizeGB`, or `storageClass` triggers
 reject-and-surface:

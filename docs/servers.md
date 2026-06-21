@@ -122,8 +122,8 @@ spec:
   `networkRef`). The controller verifies the VPC's location via an upstream GET
   and attaches; deleting the Server leaves the VPC untouched.
 
-`Network` is created on the v2 endpoint and deleted on the v1 endpoint
-(research §R-6); only `description` is mutable.
+`Network` is created on the v2 endpoint and deleted on the v1 endpoint; only
+`description` is mutable.
 
 ## Pinning a public IPv4 (FloatingIP)
 

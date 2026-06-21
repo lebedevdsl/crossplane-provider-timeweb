@@ -57,7 +57,7 @@ spec:
 ## Immutable fields
 
 **None.** All `forProvider` fields are mutable on the upstream API. The
-controller `Update` method PATCHes the changes in place; the FR-017
+controller `Update` method PATCHes the changes in place; the immutable-field
 reject-and-surface flow never fires for Project.
 
 ## Lifecycle

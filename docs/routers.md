@@ -88,4 +88,4 @@ spec:
 | `PresetNotFound` on the tier | slug wrong, or tier not sold in the zone's region | pick a tier of the zone's region (see slug rule above) |
 | transient `networks_location_mismatch` events | new network still settling upstream | wait — retried automatically; persistent ⇒ genuine region mismatch |
 | `Ready=False UpstreamFailed` naming two zones | upstream placed the router elsewhere than requested | delete and recreate (upstream mis-placement) |
-| deletion pending, event names a k8s service | FR-012 guard | delete/unbind the cluster first |
+| deletion pending, event names a k8s service | a bound k8s service blocks router deletion | delete/unbind the cluster first |
