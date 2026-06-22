@@ -1,0 +1,11 @@
+# Step 7 — shrink the match set by UNLABELLING net-1 (one of the ORIGINAL
+# networks, not the just-added net-3). The Network stays; it just stops matching
+# the selector. The router must detach it — proving the selector re-evaluates the
+# WHOLE set and converges on removal (FR-003), exercising the Update detach path
+# and the Normal DetachedNetwork event. Detach != delete: the Network MR
+# survives. End state: {net-2, net-3} attached.
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: kubectl -n timeweb-e2e label network/e2e-sel-net-1 router-attach-
+    timeout: 60

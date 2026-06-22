@@ -1,0 +1,23 @@
+# Step 6 — the running router auto-attaches net-3 (count goes 2 -> 3) with NO
+# edit to the Router. Fast: net-3 attaches via Update once Ready (no router
+# re-provision). Proves the dynamic, self-converging match set.
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: kubectl -n timeweb-e2e wait --for=condition=Ready --timeout=600s network/e2e-sel-net-3
+    timeout: 660
+  - script: kubectl -n timeweb-e2e wait --for=condition=Synced --timeout=120s network/e2e-sel-net-3
+    timeout: 180
+  - script: kubectl -n timeweb-e2e wait --for=condition=Ready --timeout=300s router/e2e-sel-router
+    timeout: 360
+  - timeout: 660
+    script: |
+      for i in $(seq 1 60); do
+        n=$(kubectl -n timeweb-e2e get router/e2e-sel-router -o jsonpath='{.status.atProvider.networks[*].id}' 2>/dev/null | wc -w | tr -d ' ')
+        echo "attached networks: $n (want >=3)"
+        [ "$n" -ge 3 ] && exit 0
+        sleep 10
+      done
+      echo "FAIL: <3 networks attached (auto-attach of net-3 did not converge)"
+      kubectl -n timeweb-e2e get router/e2e-sel-router -o jsonpath='{.status.atProvider.networks[*].id}'; echo
+      exit 1

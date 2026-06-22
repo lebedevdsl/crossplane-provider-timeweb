@@ -1,0 +1,105 @@
+# A Router that attaches private networks by LABEL SELECTOR (feature 010).
+#
+# `networkSelector` is a third per-attachment selection mode alongside
+# `networkRef` / `networkID`. It expands TO-MANY: the Router attaches every
+# Ready Network in its namespace whose labels match, and the attached set
+# self-converges as Networks are created, (un)labeled, or deleted — no edit to
+# the Router is needed when the fleet changes.
+#
+# Rules (admission-enforced):
+#   - exactly one of networkRef / networkID / networkSelector per entry
+#   - a networkSelector must constrain at least one label (no match-all)
+#   - natFloatingIP cannot be combined with networkSelector — NAT needs a
+#     single, stable network→IP mapping, so use an explicit networkRef/networkID
+#     entry for NAT'd networks (shown below; it also wins on overlap)
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: app-net-1
+  namespace: default
+  labels:
+    router-attach: "true"
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default
+  forProvider:
+    name: app-net-1
+    subnetCIDR: 10.60.0.0/24
+    location: ru-3
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: app-net-2
+  namespace: default
+  labels:
+    router-attach: "true"
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default
+  forProvider:
+    name: app-net-2
+    subnetCIDR: 10.60.1.0/24
+    location: ru-3
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: db-net
+  namespace: default
+  labels:
+    router-attach: "true"
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default
+  forProvider:
+    name: db-net
+    subnetCIDR: 10.60.2.0/24
+    location: ru-3
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: FloatingIP
+metadata:
+  name: db-egress
+  namespace: default
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default
+  forProvider:
+    location: ru-3
+    availabilityZone: msk-1
+    isDDoSGuard: false
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Router
+metadata:
+  name: edge-selector
+  namespace: default
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default
+  forProvider:
+    name: edge-selector
+    location: ru-3
+    availabilityZone: msk-1
+    presetName: router-1x1-1gb
+    networks:
+      # To-many: attach every Ready Network labeled router-attach=true
+      # (app-net-1, app-net-2, db-net — and any future one with the label).
+      - networkSelector:
+          matchLabels:
+            router-attach: "true"
+        dhcp: true
+      # Explicit entry for db-net so it can have NAT. It is also matched by the
+      # selector above, but the explicit entry wins on overlap: db-net is
+      # attached once, with NAT enabled and these per-attachment settings.
+      - networkRef:
+          name: db-net
+        natFloatingIP:
+          ref:
+            name: db-egress

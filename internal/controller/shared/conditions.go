@@ -73,6 +73,13 @@ const (
 	// an automatic re-reconcile when the parent transitions to Ready=True, so
 	// no error-return / explicit requeue is needed.
 	ReasonParentNotReady xpv2.ConditionReason = "ParentNotReady"
+	// ReasonNoNetworksResolved is set on a Router whose declared network
+	// attachments resolve to zero networks (e.g. a networkSelector that matches
+	// nothing, or only not-yet-Ready Networks). The upstream requires a router
+	// to always have >=1 network, so the provider blocks rather than issuing a
+	// create/detach that would breach that invariant; it recovers automatically
+	// once at least one matching Network becomes Ready.
+	ReasonNoNetworksResolved xpv2.ConditionReason = "NoNetworksResolved"
 )
 
 // SyncedFalse returns a Synced=False condition with the supplied reason and

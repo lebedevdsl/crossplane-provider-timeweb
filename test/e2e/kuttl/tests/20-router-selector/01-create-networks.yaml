@@ -1,0 +1,40 @@
+# Step 1 — create the labelled Networks FIRST (feature 010 US1, formulation B).
+#
+# Networks are created before the Router so they can reach Ready before the
+# selector resolves. That makes router-create deterministic: the selector sees
+# BOTH networks and the router is created with both attached in one batch — no
+# race on create-instant readiness, no waiting for a 2nd network to attach after
+# the router leaves "starting".
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: e2e-sel-net-1
+  namespace: timeweb-e2e
+  labels:
+    router-attach: "true"
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    name: "${TWE_ROUTER_NET_NAME}-sel-1"
+    subnetCIDR: 10.39.0.0/24
+    location: ru-3
+    description: "kuttl 20 router-selector"
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: e2e-sel-net-2
+  namespace: timeweb-e2e
+  labels:
+    router-attach: "true"
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    name: "${TWE_ROUTER_NET_NAME}-sel-2"
+    subnetCIDR: 10.39.1.0/24
+    location: ru-3
+    description: "kuttl 20 router-selector"

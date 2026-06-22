@@ -31,16 +31,16 @@ spec:
     - jsonPath: .spec.forProvider.subnetCIDR
       name: CIDR
       type: string
-    - jsonPath: .status.atProvider.state
-      name: STATE
-      type: string
     - jsonPath: .metadata.annotations.crossplane\.io/external-name
       name: ID
-      priority: 1
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
+    - jsonPath: .status.atProvider.state
+      name: TYPE
+      priority: 1
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:

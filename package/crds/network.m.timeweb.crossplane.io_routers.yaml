@@ -121,9 +121,16 @@ spec:
                       requires a router to ALWAYS have at least one network (enforced both
                       at create and at last-detach). Order-insensitive set semantics:
                       entries are attached/detached/toggled in place on a live router.
+
+                      MaxItems bounds the number of DECLARED entries (not the networks a
+                      selector resolves to at runtime — a single networkSelector entry still
+                      matches an unbounded set, per FR-014). The bound is required so the
+                      per-entry CEL rules (which call size() on the selector's matchLabels /
+                      matchExpressions) stay within the apiserver's CEL cost budget.
                     items:
-                      description: RouterNetworkAttachment is one private network
-                        attached to the Router.
+                      description: |-
+                        RouterNetworkAttachment is one private network (or, via networkSelector, a
+                        set of private networks) attached to the Router.
                       properties:
                         dhcp:
                           description: |-
@@ -193,12 +200,12 @@ spec:
                               == 1'
                         networkID:
                           description: |-
-                            NetworkID is the raw upstream network id (network-<hex>) for networks
-                            not modeled as Network resources.
+                            NetworkID is the raw upstream network id (network-<hex>) for a single
+                            network not modeled as a Network resource.
                           type: string
                         networkRef:
-                          description: NetworkRef names a Network resource in the
-                            same namespace.
+                          description: NetworkRef names a single Network resource
+                            in the same namespace.
                           properties:
                             name:
                               description: Name of the referenced object.
@@ -231,6 +238,60 @@ spec:
                           required:
                           - name
                           type: object
+                        networkSelector:
+                          description: |-
+                            NetworkSelector attaches EVERY Ready Network in the Router's namespace
+                            whose labels match (to-many expansion). The attached set converges
+                            continuously as networks are created, (un)labeled, or deleted. It must
+                            constrain at least one label (an empty/match-all selector is rejected at
+                            admission) and cannot be combined with natFloatingIP — one floating IP
+                            cannot serve a changing set of networks. The DHCP / Gateway /
+                            ReservedIPs on this entry become the defaults for every network the
+                            selector brings in.
+                          properties:
+                            matchExpressions:
+                              description: matchExpressions is a list of label selector
+                                requirements. The requirements are ANDed.
+                              items:
+                                description: |-
+                                  A label selector requirement is a selector that contains values, a key, and an operator that
+                                  relates the key and values.
+                                properties:
+                                  key:
+                                    description: key is the label key that the selector
+                                      applies to.
+                                    type: string
+                                  operator:
+                                    description: |-
+                                      operator represents a key's relationship to a set of values.
+                                      Valid operators are In, NotIn, Exists and DoesNotExist.
+                                    type: string
+                                  values:
+                                    description: |-
+                                      values is an array of string values. If the operator is In or NotIn,
+                                      the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                      the values array must be empty. This array is replaced during a strategic
+                                      merge patch.
+                                    items:
+                                      type: string
+                                    type: array
+                                    x-kubernetes-list-type: atomic
+                                required:
+                                - key
+                                - operator
+                                type: object
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            matchLabels:
+                              additionalProperties:
+                                type: string
+                              description: |-
+                                matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                operator is "In", and the values array contains only "value". The requirements are ANDed.
+                              type: object
+                          type: object
+                          x-kubernetes-map-type: atomic
                         reservedIPs:
                           description: |-
                             ReservedIPs optionally reserves addresses in the network's subnet.
@@ -240,9 +301,20 @@ spec:
                           type: array
                       type: object
                       x-kubernetes-validations:
-                      - message: exactly one of networkRef or networkID must be set
+                      - message: exactly one of networkRef, networkID, or networkSelector
+                          must be set
                         rule: '(has(self.networkRef) ? 1 : 0) + (has(self.networkID)
-                          ? 1 : 0) == 1'
+                          ? 1 : 0) + (has(self.networkSelector) ? 1 : 0) == 1'
+                      - message: networkSelector must specify at least one matchLabels
+                          entry or matchExpressions term (a match-all selector is
+                          rejected)
+                        rule: '!has(self.networkSelector) || (has(self.networkSelector.matchLabels)
+                          && size(self.networkSelector.matchLabels) > 0) || (has(self.networkSelector.matchExpressions)
+                          && size(self.networkSelector.matchExpressions) > 0)'
+                      - message: natFloatingIP cannot be combined with networkSelector;
+                          use networkRef/networkID for NAT'd networks
+                        rule: '!(has(self.networkSelector) && has(self.natFloatingIP))'
+                    maxItems: 64
                     minItems: 1
                     type: array
                   presetName:

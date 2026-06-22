@@ -967,3 +967,117 @@ func TestRouterPlacementRegionCoverage(t *testing.T) {
 		})
 	}
 }
+
+// --- Selector guards: zero-resolution, never-detach-last, pacing -------------
+
+// routerNetworksDHCPOffJSON builds a {router_networks:[…]} payload of networks
+// with DHCP disabled and no NAT — used by the pacing test.
+func routerNetworksDHCPOffJSON(ids []string) string {
+	var b strings.Builder
+	b.WriteString(`{"router_networks":[`)
+	for i, id := range ids {
+		if i > 0 {
+			b.WriteString(",")
+		}
+		fmt.Fprintf(&b, `{"id":%q,"nat_ip":null,"dhcp":{"is_enabled":false}}`, id)
+	}
+	b.WriteString(`]}`)
+	return b.String()
+}
+
+func TestRouterCreate_ZeroResolutionBlocks(t *testing.T) { // T016
+	ctx := context.Background()
+	fake := &timeweb.FakeClient{}
+	e := routerE(fake, okRouterResolver())
+	e.resolvedNetworks = nil // selector matched nothing
+
+	_, err := e.Create(ctx, newRouter(false))
+	if err == nil {
+		t.Fatal("Create returned nil error, want a blocking error for zero resolved networks")
+	}
+	if fake.CreateRouterCallCount() != 0 {
+		t.Errorf("CreateRouter called %d times, want 0 (must not POST a zero-network router)", fake.CreateRouterCallCount())
+	}
+	cr := newRouter(false)
+	_, _ = e.Create(ctx, cr)
+	if got := cr.GetCondition(xpv2.TypeSynced).Reason; got != shared.ReasonNoNetworksResolved {
+		t.Errorf("Synced reason = %q, want %q", got, shared.ReasonNoNetworksResolved)
+	}
+}
+
+func TestRouterUpdate_NeverDetachLast(t *testing.T) { // T017
+	ctx := context.Background()
+	fake := &timeweb.FakeClient{}
+	fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+	fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterTwoNetworksJSON), nil)
+
+	e := routerE(fake, okRouterResolver())
+	e.resolvedNetworks = nil // match set drained to zero
+
+	cr := newRouter(true)
+	_, err := e.Update(ctx, cr)
+	if err == nil {
+		t.Fatal("Update returned nil error, want a blocking error for drain-to-zero")
+	}
+	if fake.DeleteRouterNetworkCallCount() != 0 {
+		t.Errorf("DeleteRouterNetwork called %d times, want 0 (must not detach the last network)", fake.DeleteRouterNetworkCallCount())
+	}
+	if got := cr.GetCondition(xpv2.TypeSynced).Reason; got != shared.ReasonNoNetworksResolved {
+		t.Errorf("Synced reason = %q, want %q", got, shared.ReasonNoNetworksResolved)
+	}
+}
+
+func TestRouterUpdate_PacesBulkMutations(t *testing.T) { // T018
+	ctx := context.Background()
+
+	// 12 already-attached networks, all with DHCP off upstream; the resolved
+	// set wants DHCP on for all 12 → 12 PATCH ops needed, but pacing caps them.
+	ids := make([]string, 0, 12)
+	atts := make([]resolvedAttachment, 0, 12)
+	for i := 0; i < 12; i++ {
+		id := fmt.Sprintf("network-%02d", i)
+		ids = append(ids, id)
+		atts = append(atts, resolvedAttachment{NetworkID: id, DHCP: true})
+	}
+
+	fake := &timeweb.FakeClient{}
+	fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+	fake.GetNetworksReturns(httpResp(http.StatusOK, routerNetworksDHCPOffJSON(ids)), nil)
+	fake.PatchNetworkReturns(httpResp(http.StatusOK, ""), nil)
+
+	e := routerE(fake, okRouterResolver())
+	e.resolvedNetworks = atts
+
+	_, err := e.Update(ctx, newRouter(true))
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if got := fake.PatchNetworkCallCount(); got != maxRouterMutationsPerReconcile {
+		t.Errorf("PatchNetwork called %d times, want %d (paced cap)", got, maxRouterMutationsPerReconcile)
+	}
+}
+
+func TestRouterUpdate_EmitsAttachEvent(t *testing.T) { // feature 010: attach/detach observability
+	ctx := context.Background()
+	fake := &timeweb.FakeClient{}
+	fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+	fake.GetNetworksReturns(httpResp(http.StatusOK, `{"router_networks":[]}`), nil) // nothing attached yet
+	fake.AddNetworksReturns(httpResp(http.StatusCreated, `{"router_network":{"id":"network-aaa"}}`), nil)
+
+	rec := record.NewFakeRecorder(10)
+	e := routerE(fake, okRouterResolver())
+	e.recorder = rec
+	e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", DHCP: false}}
+
+	if _, err := e.Update(ctx, newRouter(true)); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	select {
+	case ev := <-rec.Events:
+		if !strings.Contains(ev, reasonAttachedNetwork) || !strings.Contains(ev, "network-aaa") {
+			t.Errorf("event = %q, want %s for network-aaa", ev, reasonAttachedNetwork)
+		}
+	default:
+		t.Errorf("no event emitted, want %s", reasonAttachedNetwork)
+	}
+}

@@ -1,0 +1,26 @@
+# Step 4 — the router provisions and is created with BOTH selector-matched
+# networks. Router-Ready is the only genuinely slow wait (~5–15 min upstream
+# provisioning; generous ceiling). Count==2 should hold as soon as the router is
+# observable (both were in the create batch), so the poll converges fast.
+#
+# Conditions asserted by TYPE (order-independent). The >=2 check polls because
+# kubectl wait --for=jsonpath errors on an out-of-bounds index and a declarative
+# assert can't match the dynamic network-<hex> ids.
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: kubectl -n timeweb-e2e wait --for=condition=Ready --timeout=1800s router/e2e-sel-router
+    timeout: 1860
+  - script: kubectl -n timeweb-e2e wait --for=condition=Synced --timeout=300s router/e2e-sel-router
+    timeout: 360
+  - timeout: 360
+    script: |
+      for i in $(seq 1 30); do
+        n=$(kubectl -n timeweb-e2e get router/e2e-sel-router -o jsonpath='{.status.atProvider.networks[*].id}' 2>/dev/null | wc -w | tr -d ' ')
+        echo "attached networks: $n (want >=2)"
+        [ "$n" -ge 2 ] && exit 0
+        sleep 10
+      done
+      echo "FAIL: <2 networks attached"
+      kubectl -n timeweb-e2e get router/e2e-sel-router -o jsonpath='{.status.atProvider.networks[*].id}'; echo
+      exit 1

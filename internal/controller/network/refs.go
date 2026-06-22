@@ -20,10 +20,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -67,14 +69,24 @@ func resolveRouterRefs(ctx context.Context, kube client.Client, cr *networkv1alp
 	ns := cr.GetNamespace()
 	fp := cr.Spec.ForProvider
 
-	attachments := make([]resolvedAttachment, 0, len(fp.Networks))
+	// De-duplicated union keyed by upstream network id. Explicit entries
+	// (networkRef/networkID) are resolved first and WIN on overlap; selector
+	// entries fill only ids not already present. `order` preserves a stable
+	// emission order (explicit entries in declared order, then selector
+	// matches in sorted-id order) so the resolved slice is deterministic.
+	byID := make(map[string]resolvedAttachment, len(fp.Networks))
+	order := make([]string, 0, len(fp.Networks))
+
+	// Pass 1 — explicit entries (networkRef / networkID).
 	for i, a := range fp.Networks {
+		if a.NetworkSelector != nil {
+			continue
+		}
 		ra := resolvedAttachment{
 			DHCP:        a.DHCP,
 			Gateway:     a.Gateway,
 			ReservedIPs: a.ReservedIPs,
 		}
-
 		switch {
 		case a.NetworkID != nil && *a.NetworkID != "":
 			ra.NetworkID = *a.NetworkID
@@ -86,7 +98,7 @@ func resolveRouterRefs(ctx context.Context, kube client.Client, cr *networkv1alp
 			ra.NetworkID = id
 		default:
 			// CEL enforces exactly-one-of; this is a belt-and-braces guard.
-			return nil, nil, fmt.Errorf("network/router: networks[%d]: one of networkRef or networkID must be set", i)
+			return nil, nil, fmt.Errorf("network/router: networks[%d]: one of networkRef, networkID, or networkSelector must be set", i)
 		}
 
 		if nat := a.NATFloatingIP; nat != nil {
@@ -104,7 +116,42 @@ func resolveRouterRefs(ctx context.Context, kube client.Client, cr *networkv1alp
 			}
 		}
 
-		attachments = append(attachments, ra)
+		if _, exists := byID[ra.NetworkID]; !exists {
+			order = append(order, ra.NetworkID)
+		}
+		byID[ra.NetworkID] = ra // explicit always wins
+	}
+
+	// Pass 2 — selector entries (to-many expansion). Each entry attaches every
+	// Ready Network in the namespace whose labels match; not-yet-Ready matches
+	// are skipped (FR-007), and ids already claimed by an explicit (or earlier
+	// selector) entry are left untouched (FR-006).
+	for _, a := range fp.Networks {
+		if a.NetworkSelector == nil {
+			continue
+		}
+		ids, err := resolveRouterNetworkSelector(ctx, kube, ns, a.NetworkSelector)
+		if err != nil {
+			return nil, nil, err
+		}
+		for _, id := range ids {
+			if _, exists := byID[id]; exists {
+				continue
+			}
+			byID[id] = resolvedAttachment{
+				NetworkID:   id,
+				NATIP:       "", // selector-sourced attachments never NAT (CEL-enforced)
+				DHCP:        a.DHCP,
+				Gateway:     a.Gateway,
+				ReservedIPs: a.ReservedIPs,
+			}
+			order = append(order, id)
+		}
+	}
+
+	attachments := make([]resolvedAttachment, 0, len(order))
+	for _, id := range order {
+		attachments = append(attachments, byID[id])
 	}
 
 	var projectID *int64
@@ -140,6 +187,36 @@ func resolveRouterNetworkRef(ctx context.Context, kube client.Client, ns string,
 		return "", fmt.Errorf("%w: Network %q (not Ready=True)", ErrTargetNotReady, ref.Name)
 	}
 	return *target.Status.AtProvider.UpstreamID, nil
+}
+
+// resolveRouterNetworkSelector lists the Networks in ns whose labels match the
+// selector and returns the upstream ids of those that are provisioned AND
+// Ready=True (the same gate resolveRouterNetworkRef applies to a single ref).
+// Not-yet-Ready matches are skipped, not errored (FR-007) — a provisioning
+// fleet must not wedge the router. The returned ids are sorted for a
+// deterministic resolved set.
+func resolveRouterNetworkSelector(ctx context.Context, kube client.Client, ns string, ls *metav1.LabelSelector) ([]string, error) {
+	sel, err := metav1.LabelSelectorAsSelector(ls)
+	if err != nil {
+		return nil, fmt.Errorf("network/router: invalid networkSelector: %w", err)
+	}
+	var list networkv1alpha1.NetworkList
+	if err := kube.List(ctx, &list, client.InNamespace(ns), client.MatchingLabelsSelector{Selector: sel}); err != nil {
+		return nil, fmt.Errorf("network/router: list Networks by selector in namespace %q: %w", ns, err)
+	}
+	ids := make([]string, 0, len(list.Items))
+	for i := range list.Items {
+		n := &list.Items[i]
+		if n.Status.AtProvider.UpstreamID == nil || *n.Status.AtProvider.UpstreamID == "" {
+			continue // not yet provisioned
+		}
+		if n.GetCondition(xpv2.TypeReady).Status != corev1.ConditionTrue {
+			continue // not Ready=True
+		}
+		ids = append(ids, *n.Status.AtProvider.UpstreamID)
+	}
+	sort.Strings(ids)
+	return ids, nil
 }
 
 // resolveFloatingIPRef returns the referenced FloatingIP's assigned address

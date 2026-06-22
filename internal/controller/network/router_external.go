@@ -39,6 +39,28 @@ import (
 
 var errNotRouter = errors.New("managed resource is not a Router")
 
+// maxRouterMutationsPerReconcile caps the per-network attach/detach/DHCP/NAT
+// upstream calls a single Update issues, so a large networkSelector match set
+// converges incrementally instead of bursting (FR-014) — Timeweb sits behind
+// Qrator, which silently bans call bursts. Update returns WITHOUT claiming
+// convergence when the cap is hit; Observe re-detects the remainder and the
+// rate-limited workqueue re-queues.
+const maxRouterMutationsPerReconcile = 8
+
+// blockNoNetworks surfaces the zero-resolution / drain-to-zero block (FR-008):
+// the declared attachments resolve to no networks, so the provider refuses to
+// create or converge a zero-network router (the upstream would reject it with
+// `router_must_have_at_least_one_network`). It sets a typed Synced=False
+// condition and returns an error so the reconciler requeues; it recovers
+// automatically once a matching Network becomes Ready.
+func (e *routerExternal) blockNoNetworks(cr *networkv1alpha1.Router) error {
+	const msg = "router network attachments resolve to zero networks — a networkSelector matched nothing (or only not-yet-Ready Networks) and no explicit networkRef/networkID is set; the upstream requires at least one network. Label/create a matching Ready Network or add an explicit attachment. Blocking until at least one network resolves"
+	cond := shared.SyncedFalse(shared.ReasonNoNetworksResolved, msg)
+	shared.RecordConditionChange(e.recorder, cr, cond)
+	cr.Status.SetConditions(cond)
+	return errors.New("network/router: " + msg)
+}
+
 // routerExternal implements managed.ExternalClient for Router.
 //
 // Convergence contract (data-model.md, Router lifecycle): Observe is the
@@ -193,6 +215,12 @@ func (e *routerExternal) Create(ctx context.Context, mg resource.Managed) (manag
 		}
 	}
 
+	// Zero-resolution guard (FR-008): never POST a zero-network router — the
+	// upstream rejects it. A selector that matched nothing lands here.
+	if len(e.resolvedNetworks) == 0 {
+		return managed.ExternalCreation{}, e.blockNoNetworks(cr)
+	}
+
 	_, createResolvedZone, err := shared.ResolvePlacement(cr.Spec.ForProvider.Location, cr.Spec.ForProvider.AvailabilityZone)
 	if err != nil {
 		return managed.ExternalCreation{}, fmt.Errorf("network/router: %w", err)
@@ -255,6 +283,14 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 		return managed.ExternalUpdate{}, nil
 	}
 
+	// Drain-to-zero guard (FR-008 / never-detach-last): if the declared
+	// attachments resolve to nothing, do NOT detach the router's networks —
+	// that would breach the upstream's >=1-network invariant. Keep the existing
+	// attachments and block with a clear reason instead.
+	if len(e.resolvedNetworks) == 0 {
+		return managed.ExternalUpdate{}, e.blockNoNetworks(cr)
+	}
+
 	// Tier drift → reject as immutable (FR-002a fallback until the upstream
 	// resize op is captured, R-4 — this detection point later swaps in the
 	// in-place resize call).
@@ -309,9 +345,15 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 		declared[a.NetworkID] = a
 	}
 
-	// Attach missing networks (one POST with every missing entry). A 403
-	// networks_location_mismatch here is transient — newly created VPCs
-	// settle in ~1 min (classified in timeweb/errors.go).
+	// ops counts the per-network upstream mutations this pass; once it reaches
+	// maxRouterMutationsPerReconcile we return without claiming convergence so
+	// a large selector match set drains incrementally (FR-014).
+	ops := 0
+
+	// Attach missing networks (one batched POST with every missing entry). A
+	// 403 networks_location_mismatch here is transient — newly created VPCs
+	// settle in ~1 min (classified in timeweb/errors.go). The batched attach is
+	// a single call regardless of count, so it is not itself a burst risk.
 	var missing []routerNetworkIn
 	for _, a := range e.resolvedNetworks {
 		if _, ok := observed[a.NetworkID]; ok {
@@ -335,13 +377,29 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 		if classifyErr != nil {
 			return managed.ExternalUpdate{}, classifyErr
 		}
+		ops++
+		for _, m := range missing {
+			e.emitNetworkEvent(cr, reasonAttachedNetwork, m.Id)
+		}
 	}
 
-	// Detach networks no longer declared (the network itself survives —
-	// detach never deletes, upstream design / FR-005).
+	// Detach networks no longer declared (the network itself survives — detach
+	// never deletes, upstream design / FR-005). Paced, and guarded so the
+	// router never drops to zero networks: attaches above raise the effective
+	// count, and we stop before the last attachment would be removed.
+	upstreamCount := len(nets) + len(missing)
 	for _, n := range nets {
 		if _, ok := declared[n.Id]; ok {
 			continue
+		}
+		if ops >= maxRouterMutationsPerReconcile {
+			return managed.ExternalUpdate{}, nil // paced — converge next reconcile
+		}
+		if upstreamCount <= 1 {
+			// Never-detach-last backstop. With a non-empty declared set this is
+			// unreachable (declared networks are attached above), but it guards
+			// the drain race regardless.
+			break
 		}
 		resp, err := e.tw.DeleteRouterNetwork(ctx, id, n.Id)
 		if err != nil {
@@ -353,16 +411,22 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 		if classifyErr != nil {
 			return managed.ExternalUpdate{}, classifyErr
 		}
+		ops++
+		upstreamCount--
+		e.emitNetworkEvent(cr, reasonDetachedNetwork, n.Id)
 	}
 
 	// Per-attachment convergence on already-attached networks: PATCH drifted
-	// DHCP, then converge NAT via the official per-network NAT ops.
+	// DHCP, then converge NAT via the official per-network NAT ops. Paced.
 	for _, a := range e.resolvedNetworks {
 		n, ok := observed[a.NetworkID]
 		if !ok {
 			continue // just attached above; next Observe verifies
 		}
 		if observedDHCPEnabled(n) != a.DHCP {
+			if ops >= maxRouterMutationsPerReconcile {
+				return managed.ExternalUpdate{}, nil // paced
+			}
 			resp, err := e.tw.PatchNetwork(ctx, id, a.NetworkID,
 				twgen.PatchNetworkJSONRequestBody{IsDhcpEnabled: a.DHCP})
 			if err != nil {
@@ -374,6 +438,7 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 			if classifyErr != nil {
 				return managed.ExternalUpdate{}, classifyErr
 			}
+			ops++
 		}
 		// Converge NAT via the official per-network NAT ops. Observe remains
 		// the sole convergence authority (the drift row in isRouterUpToDate
@@ -381,6 +446,9 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 		observedNAT := shared.DerefString(n.NatIp)
 		switch {
 		case a.NATIP != "" && a.NATIP != observedNAT:
+			if ops >= maxRouterMutationsPerReconcile {
+				return managed.ExternalUpdate{}, nil // paced
+			}
 			// Enable / change NAT to the declared floating-ip address.
 			resp, err := e.tw.UpdateRouterNat(ctx, id, a.NetworkID,
 				twgen.UpdateRouterNatJSONRequestBody{NatIp: a.NATIP})
@@ -393,7 +461,11 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 			if classifyErr != nil {
 				return managed.ExternalUpdate{}, classifyErr
 			}
+			ops++
 		case a.NATIP == "" && observedNAT != "":
+			if ops >= maxRouterMutationsPerReconcile {
+				return managed.ExternalUpdate{}, nil // paced
+			}
 			// Disable NAT.
 			resp, err := e.tw.DeleteRouterNat(ctx, id, a.NetworkID)
 			if err != nil {
@@ -405,6 +477,7 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 			if classifyErr != nil {
 				return managed.ExternalUpdate{}, classifyErr
 			}
+			ops++
 		}
 	}
 
@@ -750,3 +823,25 @@ func (e *routerExternal) setRouterReadyCondition(cr *networkv1alpha1.Router, sta
 func observedDHCPEnabled(n twgen.NetworkOut) bool {
 	return n.Dhcp.IsEnabled
 }
+
+// emitNetworkEvent records a Normal Event for a per-network attach/detach. With
+// networkSelector the attachment set changes WITHOUT a spec edit, so these
+// events are the operator-visible signal (via kubectl describe/get events) that
+// a selector resolved to / dropped a network. reason is AttachedNetwork or
+// DetachedNetwork.
+func (e *routerExternal) emitNetworkEvent(cr *networkv1alpha1.Router, reason, networkID string) {
+	if e.recorder == nil {
+		return
+	}
+	verb := "attached"
+	if reason == reasonDetachedNetwork {
+		verb = "detached"
+	}
+	e.recorder.Event(cr, corev1.EventTypeNormal, reason,
+		fmt.Sprintf("%s network %s", verb, networkID))
+}
+
+const (
+	reasonAttachedNetwork = "AttachedNetwork"
+	reasonDetachedNetwork = "DetachedNetwork"
+)

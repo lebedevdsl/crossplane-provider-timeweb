@@ -1,0 +1,21 @@
+# Step 5 — dynamic auto-attach to a RUNNING router. Add a third labelled Network
+# without touching the Router. Because the router is already started, this
+# attaches via the Update path in ~1 reconcile (fast) — this is the real proof
+# that the selector match set is dynamic, and it's where the Normal
+# AttachedNetwork event fires (feature 010 observability).
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: e2e-sel-net-3
+  namespace: timeweb-e2e
+  labels:
+    router-attach: "true"
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    name: "${TWE_ROUTER_NET_NAME}-sel-3"
+    subnetCIDR: 10.39.2.0/24
+    location: ru-3
+    description: "kuttl 20 router-selector grow"

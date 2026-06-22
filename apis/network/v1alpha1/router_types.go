@@ -36,17 +36,31 @@ type FloatingIPSelector struct {
 	IP *string `json:"ip,omitempty"`
 }
 
-// RouterNetworkAttachment is one private network attached to the Router.
-// +kubebuilder:validation:XValidation:rule="(has(self.networkRef) ? 1 : 0) + (has(self.networkID) ? 1 : 0) == 1",message="exactly one of networkRef or networkID must be set"
+// RouterNetworkAttachment is one private network (or, via networkSelector, a
+// set of private networks) attached to the Router.
+// +kubebuilder:validation:XValidation:rule="(has(self.networkRef) ? 1 : 0) + (has(self.networkID) ? 1 : 0) + (has(self.networkSelector) ? 1 : 0) == 1",message="exactly one of networkRef, networkID, or networkSelector must be set"
+// +kubebuilder:validation:XValidation:rule="!has(self.networkSelector) || (has(self.networkSelector.matchLabels) && size(self.networkSelector.matchLabels) > 0) || (has(self.networkSelector.matchExpressions) && size(self.networkSelector.matchExpressions) > 0)",message="networkSelector must specify at least one matchLabels entry or matchExpressions term (a match-all selector is rejected)"
+// +kubebuilder:validation:XValidation:rule="!(has(self.networkSelector) && has(self.natFloatingIP))",message="natFloatingIP cannot be combined with networkSelector; use networkRef/networkID for NAT'd networks"
 type RouterNetworkAttachment struct {
-	// NetworkRef names a Network resource in the same namespace.
+	// NetworkRef names a single Network resource in the same namespace.
 	// +optional
 	NetworkRef *xpv2.Reference `json:"networkRef,omitempty"`
 
-	// NetworkID is the raw upstream network id (network-<hex>) for networks
-	// not modeled as Network resources.
+	// NetworkID is the raw upstream network id (network-<hex>) for a single
+	// network not modeled as a Network resource.
 	// +optional
 	NetworkID *string `json:"networkID,omitempty"`
+
+	// NetworkSelector attaches EVERY Ready Network in the Router's namespace
+	// whose labels match (to-many expansion). The attached set converges
+	// continuously as networks are created, (un)labeled, or deleted. It must
+	// constrain at least one label (an empty/match-all selector is rejected at
+	// admission) and cannot be combined with natFloatingIP — one floating IP
+	// cannot serve a changing set of networks. The DHCP / Gateway /
+	// ReservedIPs on this entry become the defaults for every network the
+	// selector brings in.
+	// +optional
+	NetworkSelector *metav1.LabelSelector `json:"networkSelector,omitempty"`
 
 	// NATFloatingIP enables internet egress for this network through the
 	// referenced floating IP. Absent = NAT off. The explicit per-attachment
@@ -122,7 +136,14 @@ type RouterParameters struct {
 	// requires a router to ALWAYS have at least one network (enforced both
 	// at create and at last-detach). Order-insensitive set semantics:
 	// entries are attached/detached/toggled in place on a live router.
+	//
+	// MaxItems bounds the number of DECLARED entries (not the networks a
+	// selector resolves to at runtime — a single networkSelector entry still
+	// matches an unbounded set, per FR-014). The bound is required so the
+	// per-entry CEL rules (which call size() on the selector's matchLabels /
+	// matchExpressions) stay within the apiserver's CEL cost budget.
 	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=64
 	Networks []RouterNetworkAttachment `json:"networks"`
 
 	// ProjectRef / ProjectID assign the router to a Timeweb project —

@@ -1,0 +1,22 @@
+# Step 3 — create the Router now that both Networks are Ready. The single
+# networkSelector resolves to BOTH at create time, so the router is created with
+# both attached in one batch (to-many at create).
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Router
+metadata:
+  name: e2e-sel-router
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+  forProvider:
+    name: "${TWE_ROUTER_NAME}-sel"
+    location: ru-3
+    availabilityZone: msk-1
+    presetName: "${TWE_ROUTER_PRESET}"
+    networks:
+      - networkSelector:
+          matchLabels:
+            router-attach: "true"
+        dhcp: true

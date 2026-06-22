@@ -1,0 +1,10 @@
+# Step 2 — gate on both Networks being Ready+Synced before the Router is created.
+# This is what makes formulation B deterministic. Condition waits are by TYPE
+# (order-independent); per-command timeout (kuttl v0.26 TestStep has none).
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: kubectl -n timeweb-e2e wait --for=condition=Ready --timeout=600s network/e2e-sel-net-1 network/e2e-sel-net-2
+    timeout: 660
+  - script: kubectl -n timeweb-e2e wait --for=condition=Synced --timeout=120s network/e2e-sel-net-1 network/e2e-sel-net-2
+    timeout: 180

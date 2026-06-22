@@ -22,6 +22,7 @@ package v1alpha1
 
 import (
 	"github.com/crossplane/crossplane/apis/v2/core/v2"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -472,6 +473,11 @@ func (in *RouterNetworkAttachment) DeepCopyInto(out *RouterNetworkAttachment) {
 		in, out := &in.NetworkID, &out.NetworkID
 		*out = new(string)
 		**out = **in
+	}
+	if in.NetworkSelector != nil {
+		in, out := &in.NetworkSelector, &out.NetworkSelector
+		*out = new(v1.LabelSelector)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.NATFloatingIP != nil {
 		in, out := &in.NATFloatingIP, &out.NATFloatingIP

@@ -1,5 +1,25 @@
 <!-- SPECKIT START -->
-Current feature: **009-stabilization-bugfixes** — read the plan at
+Current feature: **010-router-network-selectors** — read the plan at
+`specs/010-router-network-selectors/plan.md`. Additive extension of the existing
+`Router` kind (feature 006): a third per-attachment network-selection mode, a label
+`networkSelector` (`metav1.LabelSelector`) alongside `networkRef`/`networkID`. It
+expands **to-many** — attaching every `Ready` Network in the namespace whose labels
+match, self-converging as networks are created/(un)labeled/deleted. Effective set =
+de-duplicated union of all entries; explicit entries win on overlap. Decisions baked
+in: NAT rejected on selector entries (use explicit ref/id for NAT); empty/match-all
+selector rejected at admission; upstream "≥1 network" invariant pre-empted with a
+runtime zero-resolution + never-detach-last guard (CRD `minItems=1` only bounds
+*declared* entries, not *resolved* networks); large match sets converge incrementally
+with **paced** attach/detach calls (Qrator burst-ban) plus a `Network→Router` mapping
+`Watches`. Status needs NO schema change — `status.atProvider.networks` already
+mirrors the upstream GET. Companion artifacts in `specs/010-router-network-selectors/`:
+spec.md (US1–US3, FR-001..015, Clarifications session 2026-06-22), research.md
+(R-1..R-8), data-model.md, contracts/ (router-selector-v1alpha1 / selector-resolution),
+quickstart.md. Touch points: `apis/network/v1alpha1/router_types.go` (field + CEL),
+`internal/controller/network/refs.go` (selector expansion/dedup/precedence/zero-guard),
+`router_external.go` (paced Update + never-detach-last), `controller.go` (Watches).
+
+Feature **009-stabilization-bugfixes** — read the plan at
 `specs/009-stabilization-bugfixes/plan.md`. Stabilization/bugfix round from the
 008 live-e2e findings: observability (populate nodepool `CLUSTER`, rename
 `PUBLIC-IP`→`PUBLIC`, surface node public addr [VERIFY], server resolved AZ),

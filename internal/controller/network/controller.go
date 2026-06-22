@@ -23,6 +23,7 @@ limitations under the License.
 package network
 
 import (
+	"context"
 	"time"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
@@ -30,9 +31,13 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	networkv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/network/v1alpha1"
 	apisv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/v1alpha1"
@@ -122,6 +127,46 @@ func SetupRouter(mgr manager.Manager, l logging.Logger, pollInterval time.Durati
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&networkv1alpha1.Router{}).
+		// Re-enqueue selector-using Routers when a Network they might match is
+		// created/updated/deleted, so new matches attach promptly (FR-004)
+		// rather than waiting up to a full poll interval. The poll remains the
+		// correctness fallback; this only reduces latency.
+		Watches(&networkv1alpha1.Network{}, handler.EnqueueRequestsFromMapFunc(mapNetworkToRouters(mgr.GetClient()))).
 		WithOptions(controller.Options{RateLimiter: ratelimiter.NewController()}).
 		Complete(r)
+}
+
+// mapNetworkToRouters returns a handler mapping a changed Network to the
+// Routers in the same namespace that use a networkSelector. It is a cheap
+// pre-filter — the actual label match is re-evaluated in the Router's Observe;
+// here we only avoid waking Routers that can't possibly be selector-driven.
+func mapNetworkToRouters(kube client.Client) handler.MapFunc {
+	return func(ctx context.Context, obj client.Object) []reconcile.Request {
+		var routers networkv1alpha1.RouterList
+		if err := kube.List(ctx, &routers, client.InNamespace(obj.GetNamespace())); err != nil {
+			return nil
+		}
+		var reqs []reconcile.Request
+		for i := range routers.Items {
+			if !routerUsesSelector(&routers.Items[i]) {
+				continue
+			}
+			reqs = append(reqs, reconcile.Request{NamespacedName: types.NamespacedName{
+				Namespace: routers.Items[i].Namespace,
+				Name:      routers.Items[i].Name,
+			}})
+		}
+		return reqs
+	}
+}
+
+// routerUsesSelector reports whether any of the Router's network attachments
+// selects by label.
+func routerUsesSelector(r *networkv1alpha1.Router) bool {
+	for i := range r.Spec.ForProvider.Networks {
+		if r.Spec.ForProvider.Networks[i].NetworkSelector != nil {
+			return true
+		}
+	}
+	return false
 }

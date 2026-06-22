@@ -1,0 +1,24 @@
+# Step 8 — the router detaches net-1 (count 3 -> 2) with NO edit to the Router,
+# leaving {net-2, net-3}. Proves selector convergence on removal + the
+# DetachedNetwork event. net-1 itself still exists (detach != delete).
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: kubectl -n timeweb-e2e wait --for=condition=Ready --timeout=300s router/e2e-sel-router
+    timeout: 360
+  - timeout: 660
+    script: |
+      for i in $(seq 1 60); do
+        n=$(kubectl -n timeweb-e2e get router/e2e-sel-router -o jsonpath='{.status.atProvider.networks[*].id}' 2>/dev/null | wc -w | tr -d ' ')
+        echo "attached networks: $n (want ==2 after unlabelling net-1)"
+        [ "$n" -eq 2 ] && break
+        if [ "$i" -eq 60 ]; then
+          echo "FAIL: net-1 not detached (count still $n)"
+          kubectl -n timeweb-e2e get router/e2e-sel-router -o jsonpath='{.status.atProvider.networks[*].id}'; echo
+          exit 1
+        fi
+        sleep 10
+      done
+      # detach != delete: the unlabelled Network MR must still exist.
+      kubectl -n timeweb-e2e get network/e2e-sel-net-1 >/dev/null || { echo "FAIL: net-1 Network MR was deleted (detach should not delete)"; exit 1; }
+      echo "OK: net-1 detached, count==2, Network MR intact"
