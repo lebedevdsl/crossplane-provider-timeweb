@@ -166,9 +166,13 @@ xpkg.build: generate-crds ## Build the .xpkg(s) embedding the controller runtime
 	@mkdir -p $(BIN_DIR)
 	@# Embed model: bake the runtime into the package — strip the external
 	@# spec.controller block from a staged copy (committed file unchanged).
-	@# Per platform: buildx --load the single-arch runtime, docker save it to a
-	@# tarball, embed it into the .xpkg. (--load/save works with the default
-	@# docker driver; OCI export / multi-arch --push needs a container driver.)
+	@# Per platform: CROSS-COMPILE the binary ON THE HOST (CGO_ENABLED=0, fast,
+	@# warm go cache), then buildx --load a COPY-only runtime image (no
+	@# in-container go build → no ~5-min cold compile, and cross-arch needs no
+	@# QEMU since there are no RUN steps), docker save it, embed into the .xpkg.
+	@# (--load/save works with the default docker driver; OCI export / multi-arch
+	@# --push needs a container driver.) For multi-arch, set PLATFORMS to a
+	@# comma list — each per-arch .xpkg is assembled into one index by xpkg.push.
 	@# Examples are NOT bundled (--examples-root) until the leading comment-doc
 	@# headers are fixed; xpkg's parser is stricter than validate-examples.
 	@rm -rf $(BIN_DIR)/pkg-stage && mkdir -p $(BIN_DIR)/pkg-stage && cp -R $(PKG_DIR)/. $(BIN_DIR)/pkg-stage/
@@ -176,9 +180,12 @@ xpkg.build: generate-crds ## Build the .xpkg(s) embedding the controller runtime
 	@rm -f $(BIN_DIR)/provider-$(VERSION)-*.xpkg
 	@mkdir -p $(BIN_DIR)/no-examples
 	@for p in $$(echo "$(PLATFORMS)" | tr ',' ' '); do \
-	    arch=$${p##*/}; \
-	    echo ">> $$p: build runtime image -> embed into .xpkg"; \
-	    $(DOCKER) buildx build --platform $$p --build-arg VERSION=$(VERSION) \
+	    os=$${p%%/*}; arch=$${p##*/}; \
+	    echo ">> $$p: host cross-compile -> COPY into runtime image -> embed into .xpkg"; \
+	    CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO) build \
+	        -ldflags="-s -w -X $(MODULE)/internal/version.Version=$(VERSION)" \
+	        -o $(BIN_DIR)/provider-$$os-$$arch ./cmd/provider || exit 1; \
+	    $(DOCKER) buildx build --platform $$p \
 	        --load -t provider-timeweb-runtime:$(VERSION) . || exit 1; \
 	    $(DOCKER) save provider-timeweb-runtime:$(VERSION) -o $(BIN_DIR)/runtime-$$arch.tar || exit 1; \
 	    $(CROSSPLANE) xpkg build --package-root=$(BIN_DIR)/pkg-stage \

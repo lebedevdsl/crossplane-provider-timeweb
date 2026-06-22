@@ -1,0 +1,7 @@
+# The runtime image is COPY-only (see Dockerfile): it needs ONLY the host
+# cross-compiled binaries, not the source tree. Ship a minimal build context so
+# the daemon upload is tiny and the build stays fast.
+*
+!bin
+bin/*
+!bin/provider-linux-*
