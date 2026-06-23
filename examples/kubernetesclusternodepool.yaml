@@ -41,6 +41,14 @@ spec:
     # Optional: Kubernetes node labels (immutable post-create).
     # labels:
     #   role: worker
+    # Custom sizing (instead of presetName). flavor picks the worker
+    # configurator family: standard (default; general — lowest RAM/cpu floor)
+    # or dedicated-cpu (~4 GB/cpu floor). Immutable post-create.
+    # resources:
+    #   cpu: 2
+    #   ramGB: 2          # valid on standard; dedicated-cpu would require >= 8
+    #   diskGB: 40
+    #   flavor: standard  # | dedicated-cpu
   providerConfigRef:
     kind: ProviderConfig
     name: default

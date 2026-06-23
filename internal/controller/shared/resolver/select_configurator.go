@@ -59,6 +59,24 @@ func isPromoEntry(e ConfiguratorEntry) bool {
 	return false
 }
 
+// matchTags reports whether have ⊇ want (exact tag match). On the first missing
+// tag it returns a reason naming it and the requested family set.
+func matchTags(have, want []string) (string, bool) {
+	for _, w := range want {
+		found := false
+		for _, h := range have {
+			if h == w {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Sprintf("missing required family tag %q (want %v)", w, want), false
+		}
+	}
+	return "", true
+}
+
 // CapacityBound mirrors the upstream `requirements.{min,step,max}` shape.
 // Min and Max are inclusive; Step controls the granularity of valid
 // values (Step <= 0 means any value within [Min,Max] is acceptable).
@@ -108,6 +126,33 @@ func SelectConfigurator(input ConfiguratorInput, entries []ConfiguratorEntry, di
 			ClosestRejected: ConfiguratorRejection{UpstreamID: closestRejectedByFilter.UpstreamID, Reason: closestFilterReason},
 			DimensionID:     dimensionID,
 		}
+	}
+
+	// Step 1b: required-tag (family) filter. An entry survives only if its Tags
+	// contains every tag in RequireTags. Applied BEFORE capability + fit so
+	// selection never crosses families (e.g. tightest-fit can't grab the
+	// dedicated-cpu family over general) and a sizing rejection is reported
+	// against an in-family entry — surfacing the chosen flavor's constraint.
+	if len(input.RequireTags) > 0 {
+		var afterTags []ConfiguratorEntry
+		var closestRejectedByTag ConfiguratorEntry
+		closestTagReason := ""
+		for _, e := range afterFilter {
+			if reason, ok := matchTags(e.Tags, input.RequireTags); ok {
+				afterTags = append(afterTags, e)
+			} else if closestTagReason == "" {
+				closestRejectedByTag = e
+				closestTagReason = reason
+			}
+		}
+		if len(afterTags) == 0 {
+			return ConfiguratorOutput{}, &NoConfiguratorAvailableError{
+				Filters: input.Filters, Sizing: input.Sizing,
+				ClosestRejected: ConfiguratorRejection{UpstreamID: closestRejectedByTag.UpstreamID, Reason: closestTagReason},
+				DimensionID:     dimensionID,
+			}
+		}
+		afterFilter = afterTags
 	}
 
 	// Step 2: capability filter.

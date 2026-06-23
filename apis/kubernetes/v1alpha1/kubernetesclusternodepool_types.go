@@ -34,6 +34,16 @@ type KubernetesNodepoolResources struct {
 	DiskGB int `json:"diskGB"`
 	// +optional
 	GPU *int `json:"gpu,omitempty"`
+	// Flavor selects the worker configurator family. `standard` maps to the
+	// general family (k8s_configurator_general — the panel's "Premium NVMe"
+	// default, lowest RAM-per-CPU floor); `dedicated-cpu` maps to the
+	// dedicated-CPU family (k8s_configurator_dedicated_cpu, ~4 GB/cpu floor).
+	// Without it the resolver's tightest-fit sort could silently pick the
+	// dedicated family and reject small ratios upstream.
+	// +kubebuilder:validation:Enum=standard;dedicated-cpu
+	// +kubebuilder:default=standard
+	// +optional
+	Flavor string `json:"flavor,omitempty"`
 }
 
 // NodepoolAutoscaling configures the upstream cluster-autoscaler for a

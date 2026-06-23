@@ -1,23 +1,30 @@
 <!-- SPECKIT START -->
-Current feature: **010-router-network-selectors** — read the plan at
-`specs/010-router-network-selectors/plan.md`. Additive extension of the existing
-`Router` kind (feature 006): a third per-attachment network-selection mode, a label
-`networkSelector` (`metav1.LabelSelector`) alongside `networkRef`/`networkID`. It
-expands **to-many** — attaching every `Ready` Network in the namespace whose labels
-match, self-converging as networks are created/(un)labeled/deleted. Effective set =
-de-duplicated union of all entries; explicit entries win on overlap. Decisions baked
-in: NAT rejected on selector entries (use explicit ref/id for NAT); empty/match-all
-selector rejected at admission; upstream "≥1 network" invariant pre-empted with a
-runtime zero-resolution + never-detach-last guard (CRD `minItems=1` only bounds
-*declared* entries, not *resolved* networks); large match sets converge incrementally
-with **paced** attach/detach calls (Qrator burst-ban) plus a `Network→Router` mapping
-`Watches`. Status needs NO schema change — `status.atProvider.networks` already
-mirrors the upstream GET. Companion artifacts in `specs/010-router-network-selectors/`:
-spec.md (US1–US3, FR-001..015, Clarifications session 2026-06-22), research.md
-(R-1..R-8), data-model.md, contracts/ (router-selector-v1alpha1 / selector-resolution),
-quickstart.md. Touch points: `apis/network/v1alpha1/router_types.go` (field + CEL),
-`internal/controller/network/refs.go` (selector expansion/dedup/precedence/zero-guard),
-`router_external.go` (paced Update + never-detach-last), `controller.go` (Watches).
+Current feature: **011-nodepool-flavor** — read the plan at
+`specs/011-nodepool-flavor/plan.md`. Additive: an optional `flavor` enum
+(`standard` | `dedicated-cpu`, default `standard`) on `KubernetesClusterNodepool`
+worker `resources`, selecting the worker configurator **family**. Fixes the resolver
+silently picking `dedicated-cpu` (hidden ~4 GB/cpu floor) over `general` via the
+tightest-fit sort (which rejected small pools like 2cpu/2GB with
+`invalid_configuration_ram`). Mapping: `standard`→`k8s_configurator_general` (panel
+default, low ratio), `dedicated-cpu`→`k8s_configurator_dedicated_cpu`. Mechanism:
+`RequireTags []string` on `ConfiguratorInput` + a tag-filter step in
+`SelectConfigurator` (after capability filter, before standard/promo partition and the
+fit sort); `resolveK8sConfigurator` maps flavor→tag for the **worker** dim only (master
+unchanged — single family). CRD enum + `+kubebuilder:default=standard`, no CEL;
+regenerate CRD YAML + DeepCopy in the same PR. Backward compatible — existing pools keep
+their locked configurator (Create-time resolution only). Touch points:
+`apis/kubernetes/v1alpha1/kubernetesclusternodepool_types.go`,
+`internal/controller/shared/resolver/{resolver.go,select_configurator.go}`,
+`internal/controller/kubernetes/{configurator.go,nodepool_external.go}`. Companion
+artifacts in `specs/011-nodepool-flavor/`: spec.md (US1–US3, FR-001..008), research.md
+(R-1..R-6), data-model.md, contracts/ (nodepool-flavor-v1alpha1 /
+configurator-flavor-selection), quickstart.md.
+
+Feature **010-router-network-selectors** is COMPLETE/merged (shipped in v0.3.0): the
+`Router` kind gained a per-attachment `networkSelector` (`metav1.LabelSelector`)
+alongside `networkRef`/`networkID`, expanding to-many over `Ready` labelled Networks
+with a never-detach-last guard, paced attach/detach, and a `Network→Router` `Watches`.
+Artifacts in `specs/010-router-network-selectors/`.
 
 Feature **009-stabilization-bugfixes** — read the plan at
 `specs/009-stabilization-bugfixes/plan.md`. Stabilization/bugfix round from the

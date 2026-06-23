@@ -133,6 +133,11 @@ type ConfiguratorInput struct {
 	// Sizing values are validated against each candidate configurator's
 	// requirements.{min,step,max} bounds (cpu, ramMB, diskGB, …).
 	Sizing map[string]int64
+	// RequireTags constrains candidates by upstream catalog tag: an entry is
+	// eligible only if its Tags contains EVERY tag listed here. Empty/nil means
+	// no tag constraint (prior behavior). Used to pin the k8s worker
+	// configurator family (general vs dedicated-cpu) before the fit sort.
+	RequireTags []string
 }
 
 // ConfiguratorOutput carries the picked configurator's upstream ID and

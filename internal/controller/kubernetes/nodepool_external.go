@@ -193,7 +193,8 @@ func (e *nodepoolExternal) Create(ctx context.Context, mg resource.Managed) (man
 		location, err = e.parentClusterLocation(ctx, clusterID)
 		if err == nil {
 			configuratorID, err = resolveK8sConfigurator(ctx, e.resolver, e.pcRef,
-				resolver.DimKubernetesWorkerConfigurator, location, r.CPU, r.RAMGB, r.DiskGB, r.GPU)
+				resolver.DimKubernetesWorkerConfigurator, location, r.CPU, r.RAMGB, r.DiskGB, r.GPU,
+				workerFlavorTags(r.Flavor)...)
 		}
 	} else {
 		// Preset path is zone-filtered by the parent's AZ — a cross-zone
