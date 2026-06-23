@@ -479,15 +479,19 @@ func buildCreateClusterBody(cr *kubernetesv1alpha1.KubernetesCluster, presetID, 
 		// Custom sizing: emit the configuration block (configurator_id + cpu/
 		// ram/disk in upstream MB). XOR with preset_id.
 		body.Configuration = &struct {
-			ConfiguratorId int `json:"configurator_id"` //nolint:revive // mirrors oapi-codegen output
-			Cpu            int `json:"cpu"`             //nolint:revive // mirrors oapi-codegen output
-			Disk           int `json:"disk"`            //nolint:revive // mirrors oapi-codegen output
-			Ram            int `json:"ram"`             //nolint:revive // mirrors oapi-codegen output
+			ConfiguratorId int  `json:"configurator_id"` //nolint:revive // mirrors oapi-codegen output
+			Cpu            int  `json:"cpu"`             //nolint:revive // mirrors oapi-codegen output
+			Disk           int  `json:"disk"`            //nolint:revive // mirrors oapi-codegen output
+			Gpu            *int `json:"gpu"`             //nolint:revive // mirrors oapi-codegen output
+			Ram            int  `json:"ram"`             //nolint:revive // mirrors oapi-codegen output
 		}{
 			ConfiguratorId: configuratorID,
 			Cpu:            r.CPU,
-			Ram:            r.RAMGB * 1024,
 			Disk:           r.DiskGB * 1024,
+			// Panel sends "gpu": null on the master configurator; the field must
+			// be present or the create is accepted then fails to provision.
+			Gpu: nil,
+			Ram: r.RAMGB * 1024,
 		}
 	} else {
 		pid := presetID

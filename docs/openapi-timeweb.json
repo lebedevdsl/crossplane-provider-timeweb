@@ -42203,15 +42203,15 @@
             "type": "boolean",
             "description": "Автомасштабирование. Автоматическое увеличение и уменьшение количества нод в группе в зависимости от текущей нагрузки"
           },
-          "min-size": {
+          "min_size": {
             "minimum": 2,
             "type": "integer",
-            "description": "Минимальное количество нод. Передавать в связке с параметрами `is_autoscaling` и `max_size`"
+            "description": "Минимальное количество нод. Передавать в связке с параметрами `is_autoscaling` и `max_size`. (Spec names this `min-size` with a dash, but the API only accepts `min_size`.)"
           },
-          "max-size": {
+          "max_size": {
             "minimum": 2,
             "type": "integer",
-            "description": "Максимальное количество нод. Передавать в связке с параметрами `is_autoscaling` и `min_size`. Максимальное количество нод ограничено тарифом кластера"
+            "description": "Максимальное количество нод. Передавать в связке с параметрами `is_autoscaling` и `min_size`. Максимальное количество нод ограничено тарифом кластера. (Spec names this `max-size` with a dash, but the API only accepts `max_size`.)"
           },
           "is_autohealing": {
             "type": "boolean",
@@ -42289,7 +42289,8 @@
               "configurator_id",
               "disk",
               "cpu",
-              "ram"
+              "ram",
+              "gpu"
             ],
             "properties": {
               "configurator_id": {
@@ -42307,6 +42308,11 @@
               "ram": {
                 "type": "integer",
                 "description": "Размер ОЗУ сервера в МБ"
+              },
+              "gpu": {
+                "type": "integer",
+                "nullable": true,
+                "description": "Количество видеокарт (мастер-конфигуратор требует поле; null = без GPU)"
               }
             },
             "description": "Параметры конфигурации мастер-ноды. Нельзя передавать вместе с `preset_id`."

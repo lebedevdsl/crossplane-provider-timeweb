@@ -772,6 +772,9 @@ type ClusterIn struct {
 		// Disk Размер диска в МБ
 		Disk int `json:"disk"`
 
+		// Gpu Количество видеокарт (мастер-конфигуратор требует поле; null = без GPU)
+		Gpu *int `json:"gpu"`
+
 		// Ram Размер ОЗУ сервера в МБ
 		Ram int `json:"ram"`
 	} `json:"configuration,omitempty"`
@@ -1180,11 +1183,11 @@ type NodeGroupIn struct {
 	// Labels Лейблы для группы нод
 	Labels *[]SetLabels `json:"labels,omitempty"`
 
-	// MaxSize Максимальное количество нод. Передавать в связке с параметрами `is_autoscaling` и `min_size`. Максимальное количество нод ограничено тарифом кластера
-	MaxSize *int `json:"max-size,omitempty"`
+	// MaxSize Максимальное количество нод. Передавать в связке с параметрами `is_autoscaling` и `min_size`. Максимальное количество нод ограничено тарифом кластера. (Spec names this `max-size` with a dash, but the API only accepts `max_size`.)
+	MaxSize *int `json:"max_size,omitempty"`
 
-	// MinSize Минимальное количество нод. Передавать в связке с параметрами `is_autoscaling` и `max_size`
-	MinSize *int `json:"min-size,omitempty"`
+	// MinSize Минимальное количество нод. Передавать в связке с параметрами `is_autoscaling` и `max_size`. (Spec names this `min-size` with a dash, but the API only accepts `min_size`.)
+	MinSize *int `json:"min_size,omitempty"`
 
 	// Name Название группы
 	Name string `json:"name"`

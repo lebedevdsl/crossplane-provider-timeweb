@@ -388,7 +388,14 @@ func buildCreateNodeGroupBody(cr *kubernetesv1alpha1.KubernetesClusterNodepool, 
 	}
 	if r := fp.Resources; r != nil {
 		// Custom sizing: emit the configuration block (configurator_id + cpu/
-		// ram/disk in upstream MB + optional gpu). XOR with preset_id.
+		// ram/disk in upstream MB). gpu is sent ONLY when a positive count is
+		// requested — the k8s WORKER configurator rejects gpu:0 ("configuration.gpu
+		// must be a positive number") and tolerates omission. (Differs from the
+		// master, which needs gpu:null, and servers, which need gpu:0.)
+		var gpu *int
+		if r.GPU != nil && *r.GPU > 0 {
+			gpu = r.GPU
+		}
 		body.Configuration = &struct {
 			ConfiguratorId int  `json:"configurator_id"` //nolint:revive // mirrors oapi-codegen output
 			Cpu            int  `json:"cpu"`             //nolint:revive // mirrors oapi-codegen output
@@ -400,7 +407,7 @@ func buildCreateNodeGroupBody(cr *kubernetesv1alpha1.KubernetesClusterNodepool, 
 			Cpu:            r.CPU,
 			Ram:            r.RAMGB * 1024,
 			Disk:           r.DiskGB * 1024,
-			Gpu:            r.GPU,
+			Gpu:            gpu,
 		}
 	} else {
 		pid := presetID
