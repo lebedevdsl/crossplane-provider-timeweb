@@ -67,6 +67,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	}
 	return &external{
 		tw:       tw.ClientInterface,
+		twFull:   tw,
 		recorder: c.recorder,
 		resolver: resolver.New(&twgen.ClientWithResponses{ClientInterface: tw.ClientInterface}, resolver.Options{SharedCache: c.cache}),
 		pcRef: resolver.PCRef{

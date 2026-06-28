@@ -18,7 +18,8 @@ resources as Kubernetes managed resources.
 |-------------------------------|----------------------------------------|----------------------------------------------------------|
 | `Project`                     | `project.m.timeweb.crossplane.io`      | Logical grouping container. Observe-only import flow.    |
 | `SshKey`                      | `sshkey.m.timeweb.crossplane.io`       | Account-level SSH public keys.                           |
-| `S3Bucket`                    | `objectstorage.m.timeweb.crossplane.io`| S3-compatible object storage; size via `initialSizeGB`.  |
+| `S3Bucket`                    | `objectstorage.m.timeweb.crossplane.io`| S3-compatible object storage; size via `initialSizeGB`. Connection Secret carries `endpoint`/`bucket`/`region` only — **no credentials** (use `S3User`). |
+| `S3User`                      | `objectstorage.m.timeweb.crossplane.io`| Scoped, least-privilege object-storage credential. `bucketAccess[]` grants `read`/`read-write`/`admin` per bucket (`bucketRef` or `bucketName`); publishes scoped `access_key`/`secret_key` to its connection Secret. |
 | `ContainerRegistry`           | `kubernetes.m.timeweb.crossplane.io` | Docker registry; size via `initialSizeGB`.          |
 | `ContainerRegistryRepository` | `kubernetes.m.timeweb.crossplane.io` | Observe-only view of repositories within a registry.|
 | `Server`                      | `compute.m.timeweb.crossplane.io`      | Cloud server (VM). Sized via `presetName`; OS via `os.{image,version}`. Refs `Network`, `Project`, `SshKey`, `FloatingIP`. |
@@ -103,6 +104,41 @@ The CRD enforces the enum at admission time. See [`docs/presets.md`](./docs/pres
 for the full operator guide, including the optional `location` field, the
 mapping to upstream `preset_id`, and condition-reason vocabulary on
 resolution failures.
+
+## Object-storage credentials — `S3User`
+
+`S3Bucket` no longer hands out keys. Its connection Secret carries only
+`endpoint`, `bucket`, and `region`; the `access_key`/`secret_key` it used to
+emit were **account-admin** keys with full access to every bucket and the
+storage API. Scoped credentials now come from a separate `S3User`.
+
+```yaml
+apiVersion: objectstorage.m.timeweb.crossplane.io/v1alpha1
+kind: S3User
+metadata:
+  name: app-rw
+  namespace: team-a
+spec:
+  forProvider:
+    name: app-rw
+    bucketAccess:
+      - bucketRef: { name: app-bucket }   # an S3Bucket in this namespace
+        accessLevel: read-write            # read | read-write | admin
+  providerConfigRef: { name: default }
+  writeConnectionSecretToRef:
+    name: app-s3-creds                     # access_key/secret_key/endpoint/bucket
+```
+
+One `S3User` may span several buckets at mixed levels (`bucketAccess[]`), and
+may reference a bucket it does not manage by `bucketName`. All of a user's
+grants render to one merged policy, matching what the Timeweb panel reads.
+
+> [!WARNING]
+> **Breaking change (v1alpha1).** Consumers that read `access_key`/`secret_key`
+> from an `S3Bucket` connection Secret must migrate: create an `S3User` granting
+> the access they need and point the workload at the `S3User` Secret instead.
+> The bucket-side `status.attachedUsers` mirror (and the `ATTACHED` print
+> column) shows which users currently hold a grant on a bucket.
 
 ## Installing the provider
 

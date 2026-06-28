@@ -43,8 +43,14 @@ var (
 	S3BucketKind = "S3Bucket"
 	// S3BucketGroupVersionKind is the full GVK for S3Bucket.
 	S3BucketGroupVersionKind = GroupVersion.WithKind(S3BucketKind)
+
+	// S3UserKind is the Kind name for S3User.
+	S3UserKind = "S3User"
+	// S3UserGroupVersionKind is the full GVK for S3User.
+	S3UserGroupVersionKind = GroupVersion.WithKind(S3UserKind)
 )
 
 func init() {
 	SchemeBuilder.Register(&S3Bucket{}, &S3BucketList{})
+	SchemeBuilder.Register(&S3User{}, &S3UserList{})
 }

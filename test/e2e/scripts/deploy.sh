@@ -42,9 +42,17 @@ docker push "$E2E_IMAGE_PUSH"
 
 echo "[e2e] building xpkg with embedded runtime image"
 mkdir -p "$(dirname "$E2E_XPKG_PATH")"
+# Examples are NOT embedded: xpkg's example parser is stricter than
+# `crossplane beta validate` and rejects the leading comment-doc headers the
+# examples/ files carry (e.g. examples/providerconfig.yaml). This mirrors the
+# Makefile `xpkg.build` target, which embeds an empty examples dir for the same
+# reason. The e2e kuttl bundle applies its own manifests, so embedded examples
+# are unnecessary here.
+_empty_examples="$(mktemp -d)"
+trap 'rm -rf "$_empty_examples"' EXIT
 crossplane xpkg build \
   --package-root=package \
-  --examples-root=examples \
+  --examples-root="$_empty_examples" \
   --embed-runtime-image="$E2E_IMAGE_PUSH" \
   --package-file="$E2E_XPKG_PATH"
 

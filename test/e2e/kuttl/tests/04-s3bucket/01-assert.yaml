@@ -1,17 +1,11 @@
-apiVersion: objectstorage.m.timeweb.crossplane.io/v1alpha1
-kind: S3Bucket
-metadata:
-  name: e2e-s3
-  namespace: timeweb-e2e
-status:
-  # kuttl matches arrays positionally. Full-lifecycle MRs (Observe sets
-  # Available before the runtime appends Synced=True) end up with Ready
-  # at index [0], Synced at [1]. Only Observe-only MRs (Project) end up
-  # with the opposite order. See controller/registry_external_test.go
-  # for the unit-level reference and 06-preset-not-found/01-assert.yaml
-  # for a failure-path example of the same rule.
-  conditions:
-  - type: Ready
-    status: "True"
-  - type: Synced
-    status: "True"
+# Conditions are checked with `kubectl wait --for=condition=<type>=<status>`
+# (selects by condition TYPE), NOT a declarative `status.conditions:` block:
+# kuttl matches the conditions array POSITIONALLY (kudobuilder/kuttl#76), and the
+# order is code-path-dependent (Ready/Synced index flips across kinds and across
+# create vs update). kubectl wait is order-independent — the reliable form.
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 240
+commands:
+  - command: kubectl wait --for=condition=Synced=True --timeout=230s -n timeweb-e2e s3buckets.objectstorage.m.timeweb.crossplane.io/e2e-s3
+  - command: kubectl wait --for=condition=Ready=True  --timeout=230s -n timeweb-e2e s3buckets.objectstorage.m.timeweb.crossplane.io/e2e-s3

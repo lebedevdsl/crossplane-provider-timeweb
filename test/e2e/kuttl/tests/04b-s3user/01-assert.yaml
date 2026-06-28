@@ -1,0 +1,22 @@
+# Conditions are checked with `kubectl wait --for=condition=<type>=<status>`
+# (selects by condition TYPE), NOT a declarative `status.conditions:` block:
+# kuttl matches the conditions array POSITIONALLY (kudobuilder/kuttl#76) and the
+# order differs between the full-lifecycle bucket and the user, so a declarative
+# block is fragile. kubectl wait is order-independent.
+#
+# 600s: the user only provisions AFTER its backing bucket reaches Ready (the
+# ParentNotReady gate), so its budget spans both upstream Create round-trips plus
+# the two-protocol identity+policy attach.
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 600
+commands:
+  - command: kubectl wait --for=condition=Synced=True --timeout=590s -n timeweb-e2e s3buckets.objectstorage.m.timeweb.crossplane.io/e2e-s3user-bucket
+  - command: kubectl wait --for=condition=Ready=True  --timeout=590s -n timeweb-e2e s3buckets.objectstorage.m.timeweb.crossplane.io/e2e-s3user-bucket
+  - command: kubectl wait --for=condition=Synced=True --timeout=590s -n timeweb-e2e s3users.objectstorage.m.timeweb.crossplane.io/e2e-s3user
+  - command: kubectl wait --for=condition=Ready=True  --timeout=590s -n timeweb-e2e s3users.objectstorage.m.timeweb.crossplane.io/e2e-s3user
+  # The scoped credential Secret was published (access_key/secret_key/endpoint/bucket).
+  # Use `script` (run via sh -c) — `command` is exec'd WITHOUT a shell, so a pipe
+  # is passed as kubectl args (`grep -q` → "unknown shorthand flag: 'q'").
+  - script: kubectl get secret -n timeweb-e2e e2e-s3user-conn -o jsonpath='{.data.access_key}' | grep -q .
+  - script: kubectl get secret -n timeweb-e2e e2e-s3user-conn -o jsonpath='{.data.secret_key}' | grep -q .

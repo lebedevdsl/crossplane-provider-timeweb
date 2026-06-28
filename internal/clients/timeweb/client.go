@@ -83,6 +83,13 @@ type Client struct {
 
 	limiter *rate.Limiter
 	logger  Logger
+
+	// httpDoer + baseURL back the hand-written endpoints (e.g. the v2
+	// storages/users IAM surface in storages_users_v2.go) that are not in the
+	// generated OpenAPI client. They share the auth round-tripper; callers
+	// reuse the limiter via limiter.Wait before sending.
+	httpDoer *http.Client
+	baseURL  string
 }
 
 // Config configures a Client. Token is required; the rest fall back to the
@@ -168,6 +175,8 @@ func New(cfg Config) (*Client, error) {
 		ClientInterface: gen,
 		limiter:         limiter,
 		logger:          logger,
+		httpDoer:        httpClient,
+		baseURL:         baseURL,
 	}, nil
 }
 

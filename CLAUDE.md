@@ -1,5 +1,28 @@
 <!-- SPECKIT START -->
-Current feature: **011-nodepool-flavor** — read the plan at
+Current feature: **012-s3user-iam** — read the plan at
+`specs/012-s3user-iam/plan.md`. New namespaced kind **`S3User`**
+(`objectstorage.m.timeweb.crossplane.io/v1alpha1`) provisioning scoped, least-privilege
+object-storage IAM users to replace the account-admin keys `S3Bucket` hands out.
+Two protocols: identity via Timeweb proprietary `/api/v2/storages/users` REST
+(hand-patch `docs/openapi-timeweb.json` + regen), grants via AWS **IAM Query**
+(`PutUserPolicy`/`GetUserPolicy`/`ListUserPolicies`/`DeleteUserPolicy`) SigV4-signed at
+`https://panel.s3.twcstorage.ru/` (region `ru-1`, service `iam`) with the account
+super-user's S3 keys derived at runtime from `GET /api/v1/storages/users` (never cached).
+**Live-verified 2026-06-28**: RGW supports N inline policies/user but the panel persists
+all grants as ONE merged `iam-user-policy` — controller MUST match it (single-writer,
+user-centric `S3User.bucketAccess[]` with typed `bucketRef`); Observe diffs statements
+**semantically** (panel reuses Sids, unordered). AWS-SDK confined to a new
+`internal/clients/rgwiam` package (signer-only, `aws/signer/v4`) — controller stays
+AWS-free. Also **redesigns `S3Bucket`** (breaking, alpha): connection Secret drops
+`access_key`/`secret_key` (keeps `endpoint`/`bucket`/`region`); adds read-only
+`status.attachedUsers` mirror. Touch points: `apis/objectstorage/v1alpha1/{types.go,
+groupversion_info.go}`, `internal/controller/s3user/*` (new), `internal/clients/rgwiam/*`
+(new), `internal/controller/s3bucket/external.go`, `cmd/provider/main.go`; regenerate CRDs
++ DeepCopy same PR. Companion artifacts in `specs/012-s3user-iam/`: spec.md (US1–US4,
+FR-001..018), research.md (R-1..R-7), data-model.md, contracts/ (s3user-v1alpha1 /
+s3bucket-redesign-v1alpha1 / timeweb-s3user-endpoints), quickstart.md.
+
+Feature **011-nodepool-flavor** — read the plan at
 `specs/011-nodepool-flavor/plan.md`. Additive: an optional `flavor` enum
 (`standard` | `dedicated-cpu`, default `standard`) on `KubernetesClusterNodepool`
 worker `resources`, selecting the worker configurator **family**. Fixes the resolver

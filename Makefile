@@ -201,9 +201,12 @@ xpkg.push: xpkg.build ## Push the per-arch .xpkg(s) as one (multi-arch) index to
 	$(CROSSPLANE) xpkg push --package-files=$$files $(IMAGE_REPO):$(VERSION)
 
 .PHONY: release
-release: xpkg.push ## Publish: push the (multi-arch) package, then cosign-sign it.
-	$(COSIGN) sign --yes $(IMAGE_REPO):$(VERSION)
-	@echo "OK published $(VERSION): package = $(IMAGE_REPO):$(VERSION)   <- Provider.spec.package"
+release: xpkg.push ## Publish: push the (multi-arch) package, then cosign-sign it BY DIGEST.
+	@digest=$$(docker buildx imagetools inspect $(IMAGE_REPO):$(VERSION) | awk '/^Digest:/{print $$2; exit}'); \
+	if [ -z "$$digest" ]; then echo "ERROR: could not resolve digest for $(IMAGE_REPO):$(VERSION)" >&2; exit 1; fi; \
+	echo ">> sign $(IMAGE_REPO)@$$digest"; \
+	$(COSIGN) sign --yes $(IMAGE_REPO)@$$digest
+	@echo "OK published $(VERSION): package = $(IMAGE_REPO):$(VERSION)   <- Provider.spec.package (signed by digest)"
 
 # --------- Housekeeping -----------------------------------------------------
 

@@ -40,12 +40,16 @@ const (
 	// Mapped from `shared.ErrInvalidProviderConfigRef` in connectors.
 	ReasonInvalidProviderConfigRef xpv2.ConditionReason = "InvalidProviderConfigRef"
 	ReasonAPIError                 xpv2.ConditionReason = "APIError"
-	ReasonRateLimited              xpv2.ConditionReason = "RateLimited"
-	ReasonReconciling              xpv2.ConditionReason = "Reconciling"
-	ReasonSecretMissing            xpv2.ConditionReason = "SecretMissing"
-	ReasonSecretKeyEmpty           xpv2.ConditionReason = "SecretKeyEmpty"
-	ReasonRepositoryNotPushed      xpv2.ConditionReason = "RepositoryNotPushed"
-	ReasonBucketQuarantined        xpv2.ConditionReason = "BucketQuarantined"
+	// ReasonInvalidConfiguration surfaces an operator-side spec error the CRD
+	// schema cannot catch — e.g. the same bucket granted twice in an S3User's
+	// bucketAccess list (resolved names collide only at reconcile time).
+	ReasonInvalidConfiguration xpv2.ConditionReason = "InvalidConfiguration"
+	ReasonRateLimited          xpv2.ConditionReason = "RateLimited"
+	ReasonReconciling          xpv2.ConditionReason = "Reconciling"
+	ReasonSecretMissing        xpv2.ConditionReason = "SecretMissing"
+	ReasonSecretKeyEmpty       xpv2.ConditionReason = "SecretKeyEmpty"
+	ReasonRepositoryNotPushed  xpv2.ConditionReason = "RepositoryNotPushed"
+	ReasonBucketQuarantined    xpv2.ConditionReason = "BucketQuarantined"
 	// ReasonPaymentRequired surfaces the Timeweb `no_paid` upstream server
 	// state — the resource was created but the account lacks the funds/quota
 	// to start it. Not a controller failure (Synced stays true); the server

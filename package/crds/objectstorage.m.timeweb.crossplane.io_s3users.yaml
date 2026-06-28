@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.21.0
-  name: s3buckets.objectstorage.m.timeweb.crossplane.io
+  name: s3users.objectstorage.m.timeweb.crossplane.io
 spec:
   group: objectstorage.m.timeweb.crossplane.io
   names:
@@ -12,10 +12,10 @@ spec:
     - crossplane
     - managed
     - timeweb
-    kind: S3Bucket
-    listKind: S3BucketList
-    plural: s3buckets
-    singular: s3bucket
+    kind: S3User
+    listKind: S3UserList
+    plural: s3users
+    singular: s3user
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -25,14 +25,11 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
-    - jsonPath: .spec.forProvider.initialSizeGB
-      name: SIZE-GB
-      type: integer
-    - jsonPath: .spec.forProvider.storageClass
-      name: CLASS
+    - jsonPath: .spec.forProvider.name
+      name: USER
       type: string
     - jsonPath: .status.atProvider.status
-      name: STATE
+      name: STATUS
       type: string
     - jsonPath: .metadata.annotations.crossplane\.io/external-name
       name: ID
@@ -45,10 +42,10 @@ spec:
     schema:
       openAPIV3Schema:
         description: |-
-          S3Bucket is a Timeweb Cloud S3-compatible object-storage bucket.
-          `name` is immutable; `type`, `description`, project assignment, and
-          `presetName` are mutable. Sizing is preset-only — see
-          `contracts/s3bucket-refactor-v1alpha1.md`.
+          S3User is a scoped Timeweb object-storage IAM user. `name` is immutable;
+          `bucketAccess` and `projectID` are mutable. Credentials are written to the
+          connection Secret (scoped — never the account-admin keys). See
+          `contracts/s3user-v1alpha1.md`.
         properties:
           apiVersion:
             description: |-
@@ -68,77 +65,87 @@ spec:
           metadata:
             type: object
           spec:
-            description: S3BucketSpec is the desired state.
+            description: S3UserSpec is the desired state.
             properties:
               forProvider:
                 description: |-
-                  S3BucketParameters are the operator-settable fields. Sizing is
-                  preset-only: the Timeweb S3 surface exposes its volume tiers as
-                  discrete presets (1 GB / 10 GB / 100 GB / 250 GB) in the dashboard,
-                  and the upstream `/api/v1/storages/buckets` Create endpoint only
-                  accepts a `preset_id` (the alternate `configuration{id,disk}` block
-                  requires a service-internal configurator id that is not discoverable
-                  via any public catalog endpoint — see spec.md §Clarifications
-                  2026-05-31 catalog-endpoint reality check).
+                  S3UserParameters are the operator-settable fields for a scoped object-storage
+                  IAM user. The controller renders one merged inline policy (`iam-user-policy`)
+                  from BucketAccess — the same convention the Timeweb panel reads/writes.
                 properties:
-                  description:
-                    description: Description is a free-form comment. Mutable.
-                    type: string
-                  initialSizeGB:
+                  bucketAccess:
                     description: |-
-                      InitialSizeGB picks the bucket's tariff tier by disk size. The
-                      controller maps `(initialSizeGB, location?, storageClass)` to one
-                      upstream `preset_id` at reconcile time. Valid values match
-                      Timeweb's published S3 storage tiers — bump this enum when the
-                      upstream catalog grows.
-
-                      Note: the generated Timeweb client (PresetsStorage.Disk and the
-                      CreateBucket body's size/preset fields) uses *float32 for disk
-                      quantities; the controller converts the resolved preset_id via
-                      float32(presetID) at the call site (see s3bucket/external.go).
-                    enum:
-                    - 1
-                    - 10
-                    - 100
-                    - 250
-                    format: int64
-                    type: integer
-                  location:
-                    description: |-
-                      Location optionally narrows preset selection to one upstream
-                      region (e.g. "ru-1"). Leave empty when the account has a single
-                      region; set explicitly only if the cheapest-tier preset is
-                      ambiguous across regions for your account.
-                    type: string
+                      BucketAccess lists the buckets this user may reach and at what level.
+                      Each bucket may appear at most once (duplicates are rejected). An empty
+                      list yields an identity with only the account-wide bucket-listing
+                      permission ("revoked from every bucket").
+                    items:
+                      description: |-
+                        BucketGrant binds one bucket to one access level. Exactly one of BucketRef /
+                        BucketName must be set.
+                      properties:
+                        accessLevel:
+                          description: AccessLevel is the grant level for this bucket.
+                          enum:
+                          - read
+                          - read-write
+                          - admin
+                          type: string
+                        bucketName:
+                          description: BucketName names the bucket directly (for buckets
+                            not managed here).
+                          type: string
+                        bucketRef:
+                          description: BucketRef references an S3Bucket in the same
+                            namespace.
+                          properties:
+                            name:
+                              description: Name of the referenced object.
+                              type: string
+                            policy:
+                              description: Policies for referencing.
+                              properties:
+                                resolution:
+                                  default: Required
+                                  description: |-
+                                    Resolution specifies whether resolution of this reference is required.
+                                    The default is 'Required', which means the reconcile will fail if the
+                                    reference cannot be resolved. 'Optional' means this reference will be
+                                    a no-op if it cannot be resolved.
+                                  enum:
+                                  - Required
+                                  - Optional
+                                  type: string
+                                resolve:
+                                  description: |-
+                                    Resolve specifies when this reference should be resolved. The default
+                                    is 'IfNotPresent', which will attempt to resolve the reference only when
+                                    the corresponding field is not present. Use 'Always' to resolve the
+                                    reference on every reconcile.
+                                  enum:
+                                  - Always
+                                  - IfNotPresent
+                                  type: string
+                              type: object
+                          required:
+                          - name
+                          type: object
+                      required:
+                      - accessLevel
+                      type: object
+                    maxItems: 64
+                    type: array
                   name:
-                    description: Name is the globally-unique bucket name. Immutable.
-                    maxLength: 63
-                    minLength: 3
-                    pattern: ^[a-z0-9][a-z0-9.\-]{1,61}[a-z0-9]$
+                    description: Name is the IAM user name. Immutable.
+                    maxLength: 250
+                    minLength: 1
                     type: string
                   projectID:
-                    description: ProjectID assigns the bucket to a Timeweb project.
-                      Mutable.
+                    description: ProjectID optionally assigns the user to a Timeweb
+                      project.
                     type: integer
-                  storageClass:
-                    description: |-
-                      StorageClass picks the upstream storage tier. `hot` is the
-                      frequently-accessed default; `cold` is optimized for archives.
-                    enum:
-                    - hot
-                    - cold
-                    type: string
-                  type:
-                    description: Type is the bucket's access policy. Mutable post-create.
-                    enum:
-                    - private
-                    - public
-                    type: string
                 required:
-                - initialSizeGB
                 - name
-                - storageClass
-                - type
                 type: object
               managementPolicies:
                 default:
@@ -199,79 +206,45 @@ spec:
             - forProvider
             type: object
           status:
-            description: S3BucketStatus is the observed state.
+            description: S3UserStatus is the observed state.
             properties:
               atProvider:
-                description: S3BucketObservation is the controller-managed view of
-                  the upstream bucket.
+                description: S3UserObservation is the controller-managed view of the
+                  upstream IAM user.
                 properties:
-                  attachedUsers:
+                  accessKeyID:
                     description: |-
-                      AttachedUsers is a read-only mirror of the S3Users granted access to
-                      this bucket and at what level (feature 012). Observational only — an
-                      S3Bucket never writes or owns grants; the S3User is the sole writer.
-                      Populated best-effort during Observe; may lag or be truncated under
-                      rate limits.
+                      AccessKeyID is the user's non-secret access key id. The secret key
+                      lives only in the connection Secret, never in status.
+                    type: string
+                  id:
+                    description: ID is the upstream IAM user UUID (also encoded as
+                      external-name).
+                    type: string
+                  policyHash:
+                    description: PolicyHash is a stable hash of the rendered desired
+                      policy (drift signal).
+                    type: string
+                  resolvedBuckets:
+                    description: ResolvedBuckets mirrors the resolved (bucket name,
+                      level) grants applied.
                     items:
-                      description: |-
-                        S3BucketAttachedUser is one user→bucket grant as observed from the upstream
-                        IAM policy (read-only mirror).
+                      description: ResolvedGrant is one applied (bucket name, level)
+                        grant, mirrored to status.
                       properties:
                         accessLevel:
-                          description: AccessLevel is the derived grant level for
-                            this bucket.
+                          description: AccessLevel is the applied access level.
                           type: string
-                        name:
-                          description: Name is the IAM user name.
+                        bucketName:
+                          description: BucketName is the resolved bucket name.
                           type: string
                       required:
                       - accessLevel
-                      - name
+                      - bucketName
                       type: object
                     type: array
-                  diskStats:
-                    description: DiskStats is the disk-usage stats.
-                    properties:
-                      isUnlimited:
-                        description: IsUnlimited indicates an unmetered plan.
-                        type: boolean
-                      sizeKB:
-                        description: SizeKB is total disk capacity in KB.
-                        type: integer
-                      usedKB:
-                        description: UsedKB is the consumed disk in KB.
-                        type: integer
-                    type: object
-                  hostname:
-                    description: Hostname is the S3 endpoint URL.
-                    type: string
-                  id:
-                    description: ID is the Timeweb bucket ID (also encoded as external-name).
-                    type: integer
-                  location:
-                    description: Location is the geographic region.
-                    type: string
-                  lockedPresetID:
-                    description: |-
-                      LockedPresetID is the upstream preset ID locked at first Create —
-                      snapshot of what the resolver chose for `presetName`. Survives
-                      later resolver-cache rotations and dimension-registry edits.
-                    format: int64
-                    type: integer
-                  movedInQuarantineAt:
-                    description: |-
-                      MovedInQuarantineAt is the RFC3339 timestamp the bucket entered
-                      quarantine (nil when not quarantined).
-                    type: string
-                  objectAmount:
-                    description: ObjectAmount is the file count.
-                    type: integer
                   status:
-                    description: Status is the upstream status string.
-                    type: string
-                  storageClass:
-                    description: StorageClass is the upstream-reported tier (hot /
-                      cold).
+                    description: Status is the upstream user status (e.g. "active").
                     type: string
                 type: object
               conditions:

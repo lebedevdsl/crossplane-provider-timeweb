@@ -1,0 +1,44 @@
+# S3User - scoped object-storage credential over a real bucket (feature 012).
+#
+# Self-contained: provisions its OWN S3Bucket (distinct upstream name from the
+# 04-s3bucket bundle's `${TWE_S3_NAME}` to avoid a global-name collision) and an
+# S3User granted read-write on it via bucketRef. The user's Connect gates on the
+# bucket being Ready (ParentNotReady) before it provisions the identity + policy.
+#
+# 10 GB tier: the account permits only ONE 1 GB bucket, so e2e buckets use 10 GB
+# to avoid colliding with an existing 1 GB bucket (and the 04-s3bucket bundle).
+apiVersion: objectstorage.m.timeweb.crossplane.io/v1alpha1
+kind: S3Bucket
+metadata:
+  name: e2e-s3user-bucket
+  namespace: timeweb-e2e
+spec:
+  forProvider:
+    name: "${TWE_S3_NAME}-iam"
+    type: private
+    storageClass: hot
+    initialSizeGB: 10
+    description: "kuttl e2e - S3User backing bucket"
+  writeConnectionSecretToRef:
+    name: e2e-s3user-bucket-conn
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
+---
+apiVersion: objectstorage.m.timeweb.crossplane.io/v1alpha1
+kind: S3User
+metadata:
+  name: e2e-s3user
+  namespace: timeweb-e2e
+spec:
+  forProvider:
+    name: "${TWE_S3_NAME}-iam-user"
+    bucketAccess:
+      - bucketRef:
+          name: e2e-s3user-bucket
+        accessLevel: read-write
+  writeConnectionSecretToRef:
+    name: e2e-s3user-conn
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e

@@ -37,6 +37,7 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	objectstoragev1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/objectstorage/v1alpha1"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/rgwiam"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb/generated"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared"
@@ -45,13 +46,12 @@ import (
 
 var errNotS3Bucket = errors.New("managed resource is not a S3Bucket")
 
-// Connection-Secret keys produced by the controller.
+// Connection-Secret keys produced by the controller. Feature 012 removed
+// access_key/secret_key — see buildConnection.
 const (
-	connKeyEndpoint  = "endpoint"
-	connKeyBucket    = "bucket"
-	connKeyRegion    = "region"
-	connKeyAccessKey = "access_key"
-	connKeySecretKey = "secret_key"
+	connKeyEndpoint = "endpoint"
+	connKeyBucket   = "bucket"
+	connKeyRegion   = "region"
 )
 
 // external implements managed.ExternalClient for S3Bucket.
@@ -60,6 +60,11 @@ type external struct {
 	recorder record.EventRecorder
 	resolver resolver.Resolver
 	pcRef    resolver.PCRef
+
+	// twFull backs the read-only attachedUsers mirror (feature 012). Optional;
+	// nil disables the mirror (e.g. in unit tests). Best-effort — the mirror
+	// never blocks bucket readiness.
+	twFull *timeweb.Client
 }
 
 // Observe fetches the upstream bucket; populates status + connection details.
@@ -96,6 +101,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	populateStatus(cr, bucket)
+	e.populateAttachedUsers(ctx, cr)
 	setBucketReadyCondition(e.recorder, cr, bucket.Status)
 
 	return managed.ExternalObservation{
@@ -103,6 +109,87 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		ResourceUpToDate:  isUpToDate(cr.Spec.ForProvider, bucket),
 		ConnectionDetails: buildConnection(cr, bucket),
 	}, nil
+}
+
+// populateAttachedUsers fills status.atProvider.attachedUsers with the S3Users
+// granted access to this bucket and their level (feature 012, read-only mirror).
+// Best-effort and non-blocking: it lists scoped users first (cheap, Bearer-only)
+// and returns early when there are none; only then does it derive the admin
+// signer and read each user's policy. Any error leaves the mirror unchanged and
+// never affects bucket readiness.
+func (e *external) populateAttachedUsers(ctx context.Context, cr *objectstoragev1alpha1.S3Bucket) {
+	if e.twFull == nil {
+		return
+	}
+	users, ok := listScopedUsers(ctx, e.twFull)
+	if !ok {
+		return
+	}
+	if len(users) == 0 {
+		cr.Status.AtProvider.AttachedUsers = nil
+		return
+	}
+	ak, sk, err := deriveAdminKeys(ctx, e.twFull)
+	if err != nil {
+		return
+	}
+	iam := rgwiam.New(rgwiam.Config{AccessKeyID: ak, SecretAccessKey: sk})
+	bucketName := cr.Spec.ForProvider.Name
+	attached := make([]objectstoragev1alpha1.S3BucketAttachedUser, 0, len(users))
+	for _, u := range users {
+		doc, err := iam.GetUserPolicy(ctx, u.Name, rgwiam.PolicyName)
+		if err != nil {
+			continue // best-effort: skip this user
+		}
+		if level, present := rgwiam.DeriveLevelForBucket(doc, bucketName); present {
+			attached = append(attached, objectstoragev1alpha1.S3BucketAttachedUser{Name: u.Name, AccessLevel: level})
+		}
+	}
+	cr.Status.AtProvider.AttachedUsers = attached
+}
+
+// listScopedUsers returns the v2 scoped IAM users; ok=false on any error.
+func listScopedUsers(ctx context.Context, tw *timeweb.Client) ([]timeweb.IAMUser, bool) {
+	resp, err := tw.ListStorageUsersV2(ctx)
+	if err != nil {
+		return nil, false
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if err := timeweb.Classify(resp); err != nil {
+		return nil, false
+	}
+	var env struct {
+		Users []timeweb.IAMUser `json:"iam_users"`
+	}
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return nil, false
+	}
+	return env.Users, true
+}
+
+// deriveAdminKeys reads the account super-user's S3 keys (v1, uncached).
+func deriveAdminKeys(ctx context.Context, tw *timeweb.Client) (string, string, error) {
+	resp, err := tw.GetStorageUsers(ctx)
+	if err != nil {
+		return "", "", err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if err := timeweb.Classify(resp); err != nil {
+		return "", "", err
+	}
+	var env struct {
+		Users []struct {
+			AccessKey string `json:"access_key"`
+			SecretKey string `json:"secret_key"`
+		} `json:"users"`
+	}
+	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
+		return "", "", err
+	}
+	if len(env.Users) == 0 || env.Users[0].AccessKey == "" {
+		return "", "", fmt.Errorf("s3bucket: no account-admin S3 keys")
+	}
+	return env.Users[0].AccessKey, env.Users[0].SecretKey, nil
 }
 
 // Create POSTs a new bucket via the resolver-driven presetName path.
@@ -355,12 +442,15 @@ func setBucketReadyCondition(recorder record.EventRecorder, cr *objectstoragev1a
 }
 
 // buildConnection assembles the Opaque connection-Secret keys.
+//
+// As of feature 012 the S3Bucket Secret carries only non-secret metadata —
+// access_key/secret_key are NO LONGER emitted (they were the account-admin
+// super-user keys, full access to every bucket). Scoped credentials come from
+// the S3User kind instead. This is a breaking change, accepted in v1alpha1.
 func buildConnection(_ *objectstoragev1alpha1.S3Bucket, b generated.Bucket) managed.ConnectionDetails {
 	return managed.ConnectionDetails{
-		connKeyEndpoint:  []byte(b.Hostname),
-		connKeyBucket:    []byte(b.Name),
-		connKeyRegion:    []byte(b.Location),
-		connKeyAccessKey: []byte(b.AccessKey),
-		connKeySecretKey: []byte(b.SecretKey),
+		connKeyEndpoint: []byte(b.Hostname),
+		connKeyBucket:   []byte(b.Name),
+		connKeyRegion:   []byte(b.Location),
 	}
 }

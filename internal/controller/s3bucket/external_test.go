@@ -131,6 +131,13 @@ func TestObserve(t *testing.T) {
 		if string(obs.ConnectionDetails["endpoint"]) != "s3.timeweb.cloud" {
 			t.Errorf("endpoint = %q", obs.ConnectionDetails["endpoint"])
 		}
+		// Feature 012: the S3Bucket Secret MUST NOT carry account-admin keys.
+		if _, ok := obs.ConnectionDetails["access_key"]; ok {
+			t.Errorf("connection Secret leaks access_key (should be removed in feature 012)")
+		}
+		if _, ok := obs.ConnectionDetails["secret_key"]; ok {
+			t.Errorf("connection Secret leaks secret_key (should be removed in feature 012)")
+		}
 	})
 
 	t.Run("NotFound", func(t *testing.T) {

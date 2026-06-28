@@ -1,0 +1,42 @@
+# Example S3User managed resource for the Timeweb Crossplane provider.
+#
+# Provisions a scoped, least-privilege object-storage IAM user and publishes a
+# connection Secret (type: Opaque) with keys: access_key / secret_key / endpoint
+# / bucket. These credentials are SCOPED to the granted buckets only — unlike the
+# account-admin keys the S3Bucket kind used to hand out.
+#
+# IMMUTABLE FIELDS: name.
+# Mutable: bucketAccess (add/change/remove grants — applied in place; the issued
+# keys do not change), projectID.
+#
+# All of a user's grants render to one merged inline policy (iam-user-policy),
+# the same convention the Timeweb panel reads/writes.
+#
+# See specs/012-s3user-iam/quickstart.md for day-2 operations and troubleshooting.
+---
+apiVersion: objectstorage.m.timeweb.crossplane.io/v1alpha1
+kind: S3User
+metadata:
+  name: app-data-rw
+  namespace: timeweb-prod
+spec:
+  forProvider:
+    # IMMUTABLE — the IAM user name.
+    name: app-data-rw
+    # One or more bucket grants. Each entry takes exactly one of bucketRef
+    # (a reference to an S3Bucket in this namespace) or bucketName (a direct
+    # name), plus an access level: read | read-write | admin.
+    bucketAccess:
+      - bucketRef:
+          name: demo-images
+        accessLevel: read-write
+      # - bucketName: shared-assets
+      #   accessLevel: read
+    # Optional Timeweb project assignment.
+    # projectID: 12345
+  # Connection Secret destination — keys: access_key, secret_key, endpoint, bucket.
+  writeConnectionSecretToRef:
+    name: app-data-rw-creds
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default

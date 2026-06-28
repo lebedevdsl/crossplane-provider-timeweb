@@ -44,6 +44,7 @@ import (
 	projectctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/project"
 	providerconfigctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/providerconfig"
 	s3bucketctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/s3bucket"
+	s3userctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/s3user"
 	sshkeyctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/sshkey"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/version"
 )
@@ -130,6 +131,10 @@ func main() {
 	}
 	if err := s3bucketctrl.Setup(mgr, log, pollInterval); err != nil {
 		log.Info("unable to register S3Bucket controller", "error", err.Error())
+		os.Exit(1)
+	}
+	if err := s3userctrl.Setup(mgr, log, pollInterval); err != nil {
+		log.Info("unable to register S3User controller", "error", err.Error())
 		os.Exit(1)
 	}
 	if err := containerregistryctrl.SetupAll(mgr, log, containerregistryctrl.SetupOptions{

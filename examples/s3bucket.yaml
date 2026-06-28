@@ -1,9 +1,10 @@
 # Example S3Bucket managed resource for the Timeweb Crossplane provider.
 #
 # The controller publishes a connection Secret (type: Opaque) containing
-# endpoint / bucket / region / access_key / secret_key. Mount it via
-# `envFrom` or `volumeMounts.secretName` to give workloads programmatic
-# access to the bucket.
+# endpoint / bucket / region. As of feature 012 it NO LONGER contains
+# access_key / secret_key — those were account-admin keys (full access to every
+# bucket). For scoped, per-bucket credentials, create an S3User (see
+# examples/s3user.yaml) and consume ITS connection Secret.
 #
 # IMMUTABLE FIELDS: name.
 # Mutable: type, description, projectID, initialSizeGB (within-tier moves
@@ -30,7 +31,7 @@ spec:
     description: "User-uploaded images for example.com"
     # Optional project assignment (resolves via ProjectRef or ProjectID).
     # projectID: 12345
-  # Connection Secret destination — keys: endpoint, bucket, region, access_key, secret_key.
+  # Connection Secret destination — keys: endpoint, bucket, region.
   writeConnectionSecretToRef:
     name: demo-images-creds
     # namespace defaults to the MR's namespace if omitted
