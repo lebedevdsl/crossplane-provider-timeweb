@@ -29,6 +29,7 @@ import (
 	objectstoragev1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/objectstorage/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/rgwiam"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/rgwiam/rgwiamfakes"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
 )
 
 func newResp(code int, body string) *http.Response {
@@ -129,6 +130,37 @@ func TestObserve_UpToDate(t *testing.T) {
 	}
 	if _, hasAdmin := obs.ConnectionDetails["region"]; hasAdmin {
 		t.Errorf("unexpected key in S3User connection secret")
+	}
+}
+
+func TestBuildConnection_Buckets(t *testing.T) {
+	u := timeweb.IAMUser{AccessKey: "AK", SecretKey: "SK"}
+
+	// Single bucket: `bucket` and `buckets` both name it.
+	single := buildConnection(u, []rgwiam.Grant{{Bucket: "only", Level: rgwiam.LevelRead}})
+	if got := string(single[connKeyBucket]); got != "only" {
+		t.Errorf("single bucket = %q, want only", got)
+	}
+	if got := string(single[connKeyBuckets]); got != "only" {
+		t.Errorf("single buckets = %q, want only", got)
+	}
+
+	// Multi-bucket: `bucket` is the first (sorted) grant; `buckets` lists all.
+	multi := buildConnection(u, []rgwiam.Grant{
+		{Bucket: "alpha", Level: rgwiam.LevelReadWrite},
+		{Bucket: "beta", Level: rgwiam.LevelRead},
+	})
+	if got := string(multi[connKeyBucket]); got != "alpha" {
+		t.Errorf("multi primary bucket = %q, want alpha", got)
+	}
+	if got := string(multi[connKeyBuckets]); got != "alpha,beta" {
+		t.Errorf("multi buckets = %q, want alpha,beta", got)
+	}
+
+	// No grants: empty, not absent (consumers can rely on the keys existing).
+	none := buildConnection(u, nil)
+	if got := string(none[connKeyBuckets]); got != "" {
+		t.Errorf("no-grant buckets = %q, want empty", got)
 	}
 }
 

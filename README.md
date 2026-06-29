@@ -126,7 +126,7 @@ spec:
         accessLevel: read-write            # read | read-write | admin
   providerConfigRef: { name: default }
   writeConnectionSecretToRef:
-    name: app-s3-creds                     # access_key/secret_key/endpoint/bucket
+    name: app-s3-creds                     # access_key/secret_key/endpoint/bucket/buckets
 ```
 
 One `S3User` may span several buckets at mixed levels (`bucketAccess[]`), and
