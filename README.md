@@ -142,10 +142,19 @@ grants render to one merged policy, matching what the Timeweb panel reads.
 
 ## Installing the provider
 
-The provider ships as a standard Crossplane OCI package (`.xpkg`). Install it
-with a `Provider` referencing the package plus one pull `Secret`
-(`packagePullSecrets` covers **both** the package and the controller image),
-then a `ProviderConfig` holding your Timeweb token:
+Each [release](https://github.com/lebedevdsl/crossplane-provider-timeweb/releases)
+attaches an `install.yaml` (the `Provider` manifest pinned to that version). The
+package is public on ghcr — one apply installs the provider (runtime embedded, no
+pull secret):
+
+```bash
+kubectl apply -f https://github.com/lebedevdsl/crossplane-provider-timeweb/releases/latest/download/install.yaml
+```
+
+Then point it at your Timeweb token with a `ProviderConfig` + `Secret` (below).
+
+Installing from a **private** registry instead needs a pull `Secret`
+(`packagePullSecrets` covers **both** the package and the controller image):
 
 ```yaml
 apiVersion: pkg.crossplane.io/v1

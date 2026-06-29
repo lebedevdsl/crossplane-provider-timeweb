@@ -38,3 +38,4 @@ kubeconfig
 # e2e diagnostics (events + describes + provider logs, collected per run)
 test/e2e/.diagnostics/
 test/e2e/presets.local.env
+install.yaml

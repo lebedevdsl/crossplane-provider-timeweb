@@ -61,3 +61,11 @@ jobs:
           make release \
             IMAGE_REPO=ghcr.io/lebedevdsl/provider-timeweb \
             VERSION="${VERSION}"
+
+      # Publish the GitHub release: notes (docs/release-notes/<tag>.md) + a
+      # standard one-command Install section, with install.yaml attached as an
+      # asset (the Provider manifest pinned to this tag).
+      - name: Publish GitHub release with install.yaml
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash hack/publish-release.sh "${{ github.ref_name }}"
