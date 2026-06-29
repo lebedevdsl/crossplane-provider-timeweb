@@ -1,0 +1,22 @@
+# Firewall - rule-group lifecycle (feature 013).
+#
+# Self-contained: provisions a firewall rule group with inbound + outbound rules
+# and NO attachments (attaching needs a real load balancer id, which this bundle
+# does not create — see 02-attach.yaml, gated on TWE_FW_BALANCER_ID).
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Firewall
+metadata:
+  name: e2e-firewall
+  namespace: timeweb-e2e
+spec:
+  forProvider:
+    name: "${TWE_FW_NAME}"
+    description: "kuttl e2e - firewall rule group"
+    policy: DROP
+    rules:
+      - { direction: ingress, protocol: tcp, port: "443", cidr: "0.0.0.0/0" }
+      - { direction: ingress, protocol: tcp, port: "22",  cidr: "100.64.0.0/10" }
+      - { direction: egress,  protocol: udp, port: "53",  cidr: "0.0.0.0/0" }
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e

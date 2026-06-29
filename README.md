@@ -26,6 +26,7 @@ resources as Kubernetes managed resources.
 | `Network`                     | `network.m.timeweb.crossplane.io`      | VPC (private network). `subnetCIDR` + `location`.        |
 | `FloatingIP`                  | `network.m.timeweb.crossplane.io`      | Floating IPv4. Pure allocation; bound **from a Server** via `floatingIPRefs`, or NATs a router network via `Router.networks[].natFloatingIP`. |
 | `Router`                      | `network.m.timeweb.crossplane.io`      | NAT/DHCP router for private networks. Tier-sized per zone; per-attachment NAT (`natFloatingIP`) + DHCP; the private-cluster building block (see `docs/routers.md`). |
+| `Firewall`                    | `network.m.timeweb.crossplane.io`      | Cloud firewall rule group. Allow-list (`policy: DROP`) of inline inbound/outbound `rules` (`direction`/`protocol`/`port`/`cidr`); attached to services via opaque `attachedServices[]` (`{serviceID, serviceType}`; v1 = load balancers). Single-writer; 1:1 service exclusivity. |
 | `KubernetesCluster`           | `kubernetes.m.timeweb.crossplane.io`   | Managed K8s control plane. Sized via master `presetName`; exact `k8sVersion`; publishes a `kubeconfig` connection Secret; in-place version upgrade. Refs `Network`, `Project`. |
 | `KubernetesClusterNodepool`   | `kubernetes.m.timeweb.crossplane.io`   | Worker group (`clusterRef`). Scalable `nodeCount`; optional autoscaling/autohealing. |
 | `KubernetesClusterAddon`      | `kubernetes.m.timeweb.crossplane.io`   | One installed cluster addon (`clusterRef`, `type`+`version`). |
@@ -126,7 +127,7 @@ spec:
         accessLevel: read-write            # read | read-write | admin
   providerConfigRef: { name: default }
   writeConnectionSecretToRef:
-    name: app-s3-creds                     # access_key/secret_key/endpoint/bucket
+    name: app-s3-creds                     # access_key/secret_key/endpoint/bucket/buckets
 ```
 
 One `S3User` may span several buckets at mixed levels (`bucketAccess[]`), and

@@ -1,0 +1,10 @@
+# Conditions checked with `kubectl wait --for=condition` (order-independent) —
+# NOT a declarative status.conditions block (kuttl matches arrays positionally).
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 240
+commands:
+  - command: kubectl wait --for=condition=Synced=True --timeout=230s -n timeweb-e2e firewalls.network.m.timeweb.crossplane.io/e2e-firewall
+  - command: kubectl wait --for=condition=Ready=True  --timeout=230s -n timeweb-e2e firewalls.network.m.timeweb.crossplane.io/e2e-firewall
+  # The group reports its rule count (3 rules declared).
+  - script: test "$(kubectl get firewall -n timeweb-e2e e2e-firewall -o jsonpath='{.status.atProvider.ruleCount}')" = "3"

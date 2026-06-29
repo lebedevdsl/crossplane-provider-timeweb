@@ -84,6 +84,11 @@ const (
 	// create/detach that would breach that invariant; it recovers automatically
 	// once at least one matching Network becomes Ready.
 	ReasonNoNetworksResolved xpv2.ConditionReason = "NoNetworksResolved"
+	// ReasonServiceConflict is set on a Firewall when a service it declares in
+	// attachedServices is already attached to a DIFFERENT rule group upstream
+	// (1:1 exclusivity). The controller refuses to silently move the service;
+	// the operator must detach it from the other group first.
+	ReasonServiceConflict xpv2.ConditionReason = "ServiceConflict"
 )
 
 // SyncedFalse returns a Synced=False condition with the supplied reason and

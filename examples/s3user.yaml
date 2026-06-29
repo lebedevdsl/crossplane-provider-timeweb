@@ -34,7 +34,9 @@ spec:
       #   accessLevel: read
     # Optional Timeweb project assignment.
     # projectID: 12345
-  # Connection Secret destination — keys: access_key, secret_key, endpoint, bucket.
+  # Connection Secret destination — keys: access_key, secret_key, endpoint,
+  # bucket (the primary/first bucket), buckets (comma-separated list of all
+  # granted buckets — the keys authorize every one).
   writeConnectionSecretToRef:
     name: app-data-rw-creds
   providerConfigRef:

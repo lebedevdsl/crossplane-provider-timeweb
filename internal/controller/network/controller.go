@@ -136,6 +136,37 @@ func SetupRouter(mgr manager.Manager, l logging.Logger, pollInterval time.Durati
 		Complete(r)
 }
 
+// SetupFirewall registers the Firewall controller with mgr. Unlike Router it
+// needs no catalog resolver and no Watches: a Firewall's rules and service
+// attachments are inline literals (opaque {id,type}), so there is nothing to
+// resolve or watch.
+func SetupFirewall(mgr manager.Manager, l logging.Logger, pollInterval time.Duration) error {
+	name := managed.ControllerName(networkv1alpha1.FirewallGroupVersionKind.String())
+	recorder := mgr.GetEventRecorderFor(name) //nolint:staticcheck // SA1019 — same pattern as other controllers in this provider
+
+	r := managed.NewReconciler(mgr,
+		resource.ManagedKind(networkv1alpha1.FirewallGroupVersionKind),
+		managed.WithExternalConnector(&connector{
+			kube: mgr.GetClient(),
+			usage: resource.NewProviderConfigUsageTracker(mgr.GetClient(),
+				&apisv1alpha1.ProviderConfigUsage{}),
+			logger:   l.WithValues("controller", name),
+			recorder: recorder,
+			// Firewall has no preset/catalog resolution; cache is only needed by Router.
+		}),
+		managed.WithLogger(l.WithValues("controller", name)),
+		managed.WithRecorder(event.NewAPIRecorder(recorder)),
+		managed.WithPollInterval(pollInterval),
+		managed.WithManagementPolicies(),
+	)
+
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(name).
+		For(&networkv1alpha1.Firewall{}).
+		WithOptions(controller.Options{RateLimiter: ratelimiter.NewController()}).
+		Complete(r)
+}
+
 // mapNetworkToRouters returns a handler mapping a changed Network to the
 // Routers in the same namespace that use a networkSelector. It is a cheap
 // pre-filter — the actual label match is re-evaluated in the Router's Observe;

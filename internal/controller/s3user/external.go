@@ -42,6 +42,10 @@ const (
 	connKeySecretKey = "secret_key"
 	connKeyEndpoint  = "endpoint"
 	connKeyBucket    = "bucket"
+	// connKeyBuckets is the comma-separated, sorted list of EVERY bucket this
+	// user can reach. `bucket` (singular) is the first one — kept for the common
+	// single-bucket case and back-compat; multi-bucket consumers read `buckets`.
+	connKeyBuckets = "buckets"
 
 	// dataEndpoint is the S3 data host consumers connect to (distinct from the
 	// IAM/panel host). Verified host for ru-1 storage (research R-7).
@@ -305,16 +309,23 @@ func setReadyCondition(recorder record.EventRecorder, cr *objectstoragev1alpha1.
 	cr.Status.SetConditions(cond)
 }
 
-// buildConnection assembles the scoped connection-Secret keys.
+// buildConnection assembles the scoped connection-Secret keys. The same keys
+// authorize every granted bucket (one access/secret key + the shared regional
+// endpoint); `bucket` names the primary one and `buckets` lists them all.
 func buildConnection(u timeweb.IAMUser, grants []rgwiam.Grant) managed.ConnectionDetails {
+	names := make([]string, 0, len(grants))
+	for _, g := range grants {
+		names = append(names, g.Bucket)
+	}
 	bucket := ""
-	if len(grants) > 0 {
-		bucket = grants[0].Bucket
+	if len(names) > 0 {
+		bucket = names[0]
 	}
 	return managed.ConnectionDetails{
 		connKeyAccessKey: []byte(u.AccessKey),
 		connKeySecretKey: []byte(u.SecretKey),
 		connKeyEndpoint:  []byte(dataEndpoint),
 		connKeyBucket:    []byte(bucket),
+		connKeyBuckets:   []byte(strings.Join(names, ",")),
 	}
 }

@@ -57,6 +57,11 @@ var (
 	RouterKind = "Router"
 	// RouterGroupVersionKind is the GVK for Router.
 	RouterGroupVersionKind = GroupVersion.WithKind(RouterKind)
+
+	// FirewallKind is the Kind for Firewall.
+	FirewallKind = "Firewall"
+	// FirewallGroupVersionKind is the GVK for Firewall.
+	FirewallGroupVersionKind = GroupVersion.WithKind(FirewallKind)
 )
 
 func init() {
@@ -64,5 +69,6 @@ func init() {
 		&Network{}, &NetworkList{},
 		&FloatingIP{}, &FloatingIPList{},
 		&Router{}, &RouterList{},
+		&Firewall{}, &FirewallList{},
 	)
 }
