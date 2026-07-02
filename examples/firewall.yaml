@@ -1,0 +1,41 @@
+# Example Firewall managed resource for the Timeweb Crossplane provider.
+#
+# A firewall rule group is an allow-list (policy: DROP — default-deny): only the
+# listed traffic is permitted, everything else is blocked. Rules and service
+# attachments are inline (the Firewall is their single writer).
+#
+# IMMUTABLE FIELDS: policy (set at create; delete+recreate to change).
+# Mutable: name, description, rules (add/change/remove in place), attachedServices.
+#
+# Attachments are opaque {serviceID, serviceType} references — v1 targets load
+# balancers (serviceType: balancer). A service belongs to at most one group.
+#
+# See specs/013-firewall-api/quickstart.md for day-2 operations and troubleshooting.
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Firewall
+metadata:
+  name: ingress-lockdown
+  namespace: timeweb-prod
+spec:
+  forProvider:
+    name: ingress-lockdown
+    description: "lock the ingress LB to known sources"
+    # DROP = default-deny allow-list (the dashboard's "Разрешающий"); ACCEPT =
+    # default-allow. IMMUTABLE.
+    policy: DROP
+    rules:
+      # Inbound (ingress): allow web from anywhere, SSH only from the CGNAT range.
+      - { direction: ingress, protocol: tcp, port: "443", cidr: "0.0.0.0/0" }
+      - { direction: ingress, protocol: tcp, port: "80",  cidr: "0.0.0.0/0" }
+      - { direction: ingress, protocol: tcp, port: "22",  cidr: "100.64.0.0/10" }
+      # Outbound (egress): allow DNS. icmp rules omit the port.
+      - { direction: egress,  protocol: udp, port: "53",  cidr: "0.0.0.0/0" }
+      - { direction: egress,  protocol: icmp, cidr: "0.0.0.0/0" }
+    # Services this group governs. serviceType defaults to balancer.
+    attachedServices:
+      - serviceID: "k8s-lb_REPLACE-with-your-load-balancer-id"
+        serviceType: balancer
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default

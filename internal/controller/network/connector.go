@@ -105,6 +105,11 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 			ext.resolvedProjectID = pid
 		}
 		return ext, nil
+	case *networkv1alpha1.Firewall:
+		// Attachments are opaque {id,type} literals — nothing to resolve, so no
+		// reference resolution (and nothing to skip on delete; the finalizer can
+		// never wedge on a missing dependency).
+		return &firewallExternal{tw: tw, recorder: c.recorder}, nil
 	default:
 		return nil, errUnknownKind
 	}

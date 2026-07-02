@@ -1,5 +1,28 @@
 <!-- SPECKIT START -->
-Current feature: **012-s3user-iam** — read the plan at
+Current feature: **013-firewall-api** — read the plan at
+`specs/013-firewall-api/plan.md`. New namespaced kind **`Firewall`**
+(`network.m.timeweb.crossplane.io/v1alpha1`) managing a Timeweb Cloud **firewall rule
+group** declaratively: identity (`name`/`description`/create-only `policy` `DROP`(default-deny)
+|`ACCEPT`), inline **rules** (`direction` ingress|egress / `protocol` tcp|udp|icmp / `port`
+string / `cidr`), and inline **service attachments** by **opaque `{serviceID, serviceType}`**
+(not typed refs) — v1 targets **load balancers** (`resource_type=balancer`; env runs k8s LBs,
+no servers). Single-writer, **1:1 exclusivity** (a service is in ≤1 group → `ServiceConflict`).
+API is the documented `/api/v1/firewall/*` surface (already in `docs/openapi-timeweb.json`);
+**live-verified 2026-06-28** the real `ResourceType` enum is `server|dbaas|balancer|app` (the
+published `server`-only is stale). **Client is HAND-WRITTEN** `internal/clients/timeweb/firewall.go`
+(the `doV2`/`storages_users_v2.go` pattern), NOT regenerated — so the stale enum/tag don't matter.
+Controller mirrors **Router** (Observe-as-sole-authority + paced one-pass Update set-diff) but
+**simpler**: opaque attachments ⇒ NO ref resolution, NO selector, NO catalog resolver, NO
+`Watches`; nothing to skip on delete (no refs ⇒ finalizer can't wedge). Touch points:
+`apis/network/v1alpha1/{firewall_types.go,groupversion_info.go}`,
+`internal/clients/timeweb/firewall.go` (new), `internal/controller/network/firewall_*` (new),
+`cmd/provider/main.go`; regen CRDs + DeepCopy same PR. Companion artifacts in
+`specs/013-firewall-api/`: spec.md (US1–US4, FR-001..015 +FR-010a), research.md (R-1..R-8), data-model.md,
+contracts/ (firewall-v1alpha1 / timeweb-firewall-endpoints), quickstart.md. e2e: group+rules
+self-contained; service-attachment e2e needs a pre-existing balancer id (no `LoadBalancer` kind).
+
+Feature **012-s3user-iam** is COMPLETE (committed `c5a2802`; shipped in v0.4.0 notes) — read the
+plan at
 `specs/012-s3user-iam/plan.md`. New namespaced kind **`S3User`**
 (`objectstorage.m.timeweb.crossplane.io/v1alpha1`) provisioning scoped, least-privilege
 object-storage IAM users to replace the account-admin keys `S3Bucket` hands out.
