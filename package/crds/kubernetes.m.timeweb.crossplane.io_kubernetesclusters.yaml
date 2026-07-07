@@ -31,8 +31,8 @@ spec:
     - jsonPath: .status.atProvider.k8sVersion
       name: K8S-VERSION
       type: string
-    - jsonPath: .spec.forProvider.presetName
-      name: PRESET
+    - jsonPath: .status.atProvider.sizing
+      name: SIZING
       type: string
     - jsonPath: .status.atProvider.state
       name: STATE
@@ -440,6 +440,12 @@ spec:
                       cluster lives in.
                     format: int64
                     type: integer
+                  sizing:
+                    description: |-
+                      Sizing is the human-readable master sizing summary backing the SIZING
+                      print column: `preset:<slug>` when sized via presetName, or
+                      `<cpu>cpu/<ram>gb/<disk>gb` when sized via resources.
+                    type: string
                   state:
                     description: State is the upstream cluster status string. Maps
                       to Ready per FR-015.

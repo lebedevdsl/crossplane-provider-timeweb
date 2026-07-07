@@ -8,7 +8,17 @@ It covers: generating an API token → creating the Kubernetes Secret → applyi
 
 - A running Kubernetes cluster with [Crossplane installed][crossplane-install]
   (v2 or later).
-- The Timeweb provider installed. Install from the Timeweb provider package:
+- The Timeweb provider installed. Every
+  [release](https://github.com/lebedevdsl/crossplane-provider-timeweb/releases)
+  attaches an `install.yaml` — the `Provider` manifest pinned to that version,
+  pulling the public package from ghcr (runtime embedded, no pull secret):
+
+  ```bash
+  kubectl apply -f https://github.com/lebedevdsl/crossplane-provider-timeweb/releases/latest/download/install.yaml
+  kubectl wait provider/provider-timeweb --for=condition=Healthy --timeout=120s
+  ```
+
+  Or apply the manifest yourself, pinning the version to a tagged ghcr image:
 
   ```bash
   kubectl apply -f - <<'EOF'
@@ -17,10 +27,13 @@ It covers: generating an API token → creating the Kubernetes Secret → applyi
   metadata:
     name: provider-timeweb
   spec:
-    package: xpkg.upbound.io/lebedevdsl/provider-timeweb:latest
+    package: ghcr.io/lebedevdsl/provider-timeweb:v0.4.1
   EOF
   kubectl wait provider/provider-timeweb --for=condition=Healthy --timeout=120s
   ```
+
+  Private-registry installs and building from source are covered in the
+  [README](../README.md#installing-the-provider).
 
 - `kubectl` configured to talk to that cluster.
 
@@ -79,7 +92,8 @@ spec:
       key: token
 ```
 
-Apply it:
+Apply it (the same manifest ships as
+[`examples/providerconfig.yaml`](../examples/providerconfig.yaml)):
 
 ```bash
 kubectl apply -f examples/providerconfig.yaml
@@ -123,7 +137,7 @@ spec:
     name: default
 ```
 
-Apply it:
+Apply it (also available as [`examples/network.yaml`](../examples/network.yaml)):
 
 ```bash
 kubectl apply -f examples/network.yaml
@@ -181,6 +195,13 @@ Common conditions:
   [`examples/kubernetescluster.yaml`](../examples/kubernetescluster.yaml),
   [`examples/kubernetesclusternodepool.yaml`](../examples/kubernetesclusternodepool.yaml),
   and [`docs/kubernetes.md`](./kubernetes.md).
+- **Object storage (bucket + scoped credentials)**: see
+  [`examples/s3bucket.yaml`](../examples/s3bucket.yaml),
+  [`examples/s3user.yaml`](../examples/s3user.yaml),
+  [`docs/s3bucket.md`](./s3bucket.md), and [`docs/s3user.md`](./s3user.md).
+- **Firewall (cloud rule group for load balancers)**: see
+  [`examples/firewall.yaml`](../examples/firewall.yaml) and
+  [`docs/firewall.md`](./firewall.md).
 - **Container registry**: see [`examples/containerregistry.yaml`](../examples/containerregistry.yaml)
   and [`docs/presets.md`](./presets.md).
 - **Router + private cluster**: see [`examples/network/router.yaml`](../examples/network/router.yaml)

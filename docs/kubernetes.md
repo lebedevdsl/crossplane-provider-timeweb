@@ -71,6 +71,13 @@ by `resources` (cpu/ramGB/diskGB) instead of `presetName`:
 
 - Exactly one of `presetName` / `resources` per kind (admission-enforced);
   presets remain supported.
+- Nodepool `resources` takes an optional `flavor` (`standard` | `dedicated-cpu`,
+  default `standard`) selecting the worker configurator **family**: `standard`
+  is the panel's "Premium NVMe" general family with the lowest RAM-per-CPU
+  floor; `dedicated-cpu` carries a ~4 GB/cpu floor. Without the default the
+  resolver could silently pick the dedicated family and reject small ratios
+  (e.g. 2 cpu / 2 GB) with `invalid_configuration_ram`. Masters have a single
+  family — no flavor there.
 - `ramGB`/`diskGB` are normalized to the upstream MB units and emitted as the
   `configuration` block; `status.atProvider.lockedConfiguratorID` records the
   resolved configurator.

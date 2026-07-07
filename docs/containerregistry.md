@@ -63,9 +63,9 @@ spec:
 | Key | Source |
 | --- | ------ |
 | `.dockerconfigjson` | Marshaled docker config: `{"auths":{"<endpoint>":{"username":"…","password":"…","auth":"<base64>"}}}` |
-| `endpoint` | `<name>.cr.twcstorage.ru` (derived from registry name; verify per deployment) |
-| `username` | First storage-user's `access_key` (see "Credentials" below) |
-| `password` | First storage-user's `secret_key` — **sensitive** |
+| `endpoint` | `<name>.registry.twcstorage.ru` (derived from the registry name) |
+| `username` | The registry name |
+| `password` | The operator's Timeweb API token — **sensitive** |
 
 ### Using the Secret as an `imagePullSecret`
 
@@ -80,30 +80,29 @@ spec:
   - name: demo-prod-pull
   containers:
   - name: app
-    image: demo-prod.cr.twcstorage.ru/mygroup/myimage:v1
+    image: demo-prod.registry.twcstorage.ru/mygroup/myimage:v1
 ```
 
 ### Credentials caveat
 
-The Timeweb OpenAPI document does not expose a registry-specific auth
-endpoint. The controller's default implementation reads the first
-storage-user (`GET /api/v1/storages/users`) and uses its `access_key`/
-`secret_key` as the docker username/password. This is a best-effort
-default; verify against your account's actual registry credentials.
+Timeweb has no separate credential API for container registries — the
+dashboard shows that docker login uses the **registry name as the username
+and the account API token as the password**, and the controller synthesizes
+the Secret from exactly that pair (no upstream lookup). Confirmed against the
+dashboard's registry detail page.
 
-If `GET /api/v1/storages/users` returns 403 or an empty list, the registry
-CR reaches `Synced=True, Ready=False, reason=CredentialsPending` —
-operators can either:
-- Open an issue describing the actual mechanism, or
-- Patch the connection Secret out-of-band with the real credentials
-  (subsequent reconciles will overwrite if the API later becomes available).
+Consequence: the Secret embeds the same API token the provider itself uses.
+Anyone who can read the pull Secret can call the Timeweb API with the
+account's rights — scope access to the Secret's namespace accordingly. When
+Timeweb ships per-registry credentials, the controller will switch to
+fetching those instead.
 
 ## Conditions
 
 | Condition | True meaning | False reasons |
 | --------- | ------------ | -------------- |
 | `Synced` | Reconciliation reached upstream cleanly. | `ImmutableFieldChange`, `PresetNotFound`, `APIError`, `RateLimited`. |
-| `Ready` | Registry exists upstream AND credentials are usable. | `CredentialsPending`, `RegistryNotFound`, `Reconciling`. |
+| `Ready` | Registry exists upstream. | `RegistryNotFound`, `Reconciling`. |
 
 ## Immutable-field handling
 
@@ -119,7 +118,7 @@ triggers reject-and-surface:
 
 | Operation | Upstream call | Notes |
 | --------- | ------------- | ----- |
-| Observe | `GET /api/v1/container-registry/{id}` + `GET /api/v1/storages/users` | The latter is used for the connection Secret. |
+| Observe | `GET /api/v1/container-registry/{id}` | Connection Secret is synthesized locally (name + API token). |
 | Create | `POST /api/v1/container-registry` | Resolves `initialSizeGB` → `preset_id` first. |
 | Update | `PATCH /api/v1/container-registry/{id}` | Mutable subset only. |
 | Delete | `DELETE /api/v1/container-registry/{id}` | 404 treated as success. |

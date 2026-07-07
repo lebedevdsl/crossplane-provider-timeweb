@@ -164,6 +164,12 @@ type KubernetesClusterObservation struct {
 	RAM *int `json:"ram,omitempty"`
 	// +optional
 	Disk *int `json:"disk,omitempty"`
+
+	// Sizing is the human-readable master sizing summary backing the SIZING
+	// print column: `preset:<slug>` when sized via presetName, or
+	// `<cpu>cpu/<ram>gb/<disk>gb` when sized via resources.
+	// +optional
+	Sizing *string `json:"sizing,omitempty"`
 }
 
 // KubernetesClusterSpec is the desired state.
@@ -185,7 +191,7 @@ type KubernetesClusterStatus struct {
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="LOCATION",type="string",JSONPath=".spec.forProvider.location"
 // +kubebuilder:printcolumn:name="K8S-VERSION",type="string",JSONPath=".status.atProvider.k8sVersion"
-// +kubebuilder:printcolumn:name="PRESET",type="string",JSONPath=".spec.forProvider.presetName"
+// +kubebuilder:printcolumn:name="SIZING",type="string",JSONPath=".status.atProvider.sizing"
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.state"
 // +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"

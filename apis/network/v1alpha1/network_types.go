@@ -92,9 +92,9 @@ type NetworkStatus struct {
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="LOCATION",type="string",JSONPath=".spec.forProvider.location"
 // +kubebuilder:printcolumn:name="CIDR",type="string",JSONPath=".spec.forProvider.subnetCIDR"
-// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
+// +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.state",priority=1
+// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:printcolumn:name="TYPE",type="string",JSONPath=".status.atProvider.state",priority=1
 
 // Network is a Timeweb VPC (private network). Created via the v2
 // endpoint, deleted via the v1 endpoint — see feature-003 research §R-6.

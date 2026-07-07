@@ -25,11 +25,15 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
-    - jsonPath: .status.atProvider.clusterID
+    - jsonPath: .spec.forProvider.clusterRef.name
       name: CLUSTER
       type: string
-    - jsonPath: .spec.forProvider.presetName
-      name: PRESET
+    - jsonPath: .status.atProvider.clusterID
+      name: CLUSTER-ID
+      priority: 1
+      type: string
+    - jsonPath: .status.atProvider.sizing
+      name: SIZING
       type: string
     - jsonPath: .spec.forProvider.publicIP
       name: PUBLIC
@@ -375,6 +379,12 @@ spec:
                   observedNodeCount:
                     description: ObservedNodeCount is the upstream node count.
                     type: integer
+                  sizing:
+                    description: |-
+                      Sizing is the human-readable worker sizing summary backing the SIZING
+                      print column: `preset:<slug>` when sized via presetName, or
+                      `<cpu>cpu/<ram>gb/<disk>gb` when sized via resources.
+                    type: string
                   upstreamID:
                     description: UpstreamID is the Timeweb worker-group id (external-name).
                     type: string

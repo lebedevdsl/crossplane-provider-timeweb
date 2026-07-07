@@ -25,8 +25,12 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
-    - jsonPath: .status.atProvider.clusterID
+    - jsonPath: .spec.forProvider.clusterRef.name
       name: CLUSTER
+      type: string
+    - jsonPath: .status.atProvider.clusterID
+      name: CLUSTER-ID
+      priority: 1
       type: string
     - jsonPath: .spec.forProvider.type
       name: TYPE

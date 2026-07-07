@@ -40,9 +40,12 @@ service under `<svc>.m.timeweb.crossplane.io` (`compute`, `network`,
 `kubectl get` in under 5 minutes.
 
 See [`docs/servers.md`](./docs/servers.md) for the `Server` / `Network` /
-`FloatingIP` operator guide, and [`docs/kubernetes.md`](./docs/kubernetes.md)
+`FloatingIP` operator guide, [`docs/kubernetes.md`](./docs/kubernetes.md)
 for the managed-Kubernetes guide (cluster + nodepool + addon, scaling, version
-upgrade, kubeconfig, troubleshooting).
+upgrade, kubeconfig, troubleshooting), [`docs/s3bucket.md`](./docs/s3bucket.md)
++ [`docs/s3user.md`](./docs/s3user.md) for object storage (bucket + scoped
+credentials), and [`docs/firewall.md`](./docs/firewall.md) for cloud firewall
+rule groups.
 
 ## ProviderConfig
 

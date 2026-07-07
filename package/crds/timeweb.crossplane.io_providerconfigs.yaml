@@ -19,13 +19,12 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .spec.credentials.secretRef.name
+      name: SECRET-NAME
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
-    - jsonPath: .spec.credentials.secretRef.name
-      name: SECRET-NAME
-      priority: 1
-      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:

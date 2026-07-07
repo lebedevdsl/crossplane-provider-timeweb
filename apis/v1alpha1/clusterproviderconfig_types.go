@@ -29,9 +29,9 @@ type ClusterProviderConfigStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,provider,timeweb}
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="SECRET-NS",type="string",JSONPath=".spec.credentials.secretRef.namespace"
-// +kubebuilder:printcolumn:name="SECRET-NAME",type="string",JSONPath=".spec.credentials.secretRef.name",priority=1
+// +kubebuilder:printcolumn:name="SECRET-NAME",type="string",JSONPath=".spec.credentials.secretRef.name"
+// +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
 // ClusterProviderConfig is the cluster-scoped configuration for the Timeweb
 // Crossplane provider. Resolved when an MR's `spec.providerConfigRef.kind`

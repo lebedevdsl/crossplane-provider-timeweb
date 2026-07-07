@@ -562,6 +562,17 @@ func populateClusterStatus(cr *kubernetesv1alpha1.KubernetesCluster, c clusterBo
 		anid := c.NetworkID
 		cr.Status.AtProvider.AutoCreatedNetworkID = &anid
 	}
+	// SIZING print column: one readable summary regardless of which sizing
+	// variant the spec uses (presetName leaves a resources-shaped column
+	// blank and vice versa).
+	switch {
+	case fp.PresetName != nil:
+		s := "preset:" + *fp.PresetName
+		cr.Status.AtProvider.Sizing = &s
+	case fp.Resources != nil:
+		s := fmt.Sprintf("%dcpu/%dgb/%dgb", fp.Resources.CPU, fp.Resources.RAMGB, fp.Resources.DiskGB)
+		cr.Status.AtProvider.Sizing = &s
+	}
 }
 
 // setClusterReadyCondition maps the upstream cluster status string to the

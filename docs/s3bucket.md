@@ -1,9 +1,10 @@
 # `S3Bucket` (v1alpha1) — Timeweb Cloud S3-compatible bucket
 
 An S3-compatible object-storage bucket. The controller publishes an Opaque
-connection Secret with `endpoint`, `bucket`, `region`, `access_key`, and
-`secret_key` — the values needed to talk to the bucket from any S3 client
-library.
+connection Secret with `endpoint`, `bucket`, and `region` — non-secret
+metadata only. **Credentials are NOT emitted** (since v0.4.0): they were the
+account-admin super-user keys with full access to every bucket. Scoped
+credentials come from the [`S3User`](./s3user.md) kind instead.
 
 | Property | Value |
 | -------- | ----- |
@@ -11,7 +12,7 @@ library.
 | Kind | `S3Bucket` |
 | Scope | Namespaced |
 | External-name format | stringified Timeweb bucket ID |
-| Connection Secret | `Opaque` (keys: `endpoint`, `bucket`, `region`, `access_key`, `secret_key`) |
+| Connection Secret | `Opaque` (keys: `endpoint`, `bucket`, `region`) |
 
 ## Manifest
 
@@ -63,6 +64,7 @@ spec:
 | `diskStats` | object | `sizeKB`, `usedKB`, `isUnlimited`. |
 | `objectAmount` | integer | File count. |
 | `movedInQuarantineAt` | string (RFC3339, optional) | Non-null when the bucket is quarantined. |
+| `attachedUsers` | list | Read-only mirror of which `S3User`s hold a grant on this bucket and at what level (`{name, accessLevel}`). Observational only — `S3User` is the sole writer of grants. |
 
 ## Connection Secret (type `Opaque`)
 
@@ -71,14 +73,12 @@ spec:
 | `endpoint` | `atProvider.hostname` | S3 endpoint URL. |
 | `bucket` | upstream `name` | Bucket name (matches `spec.forProvider.name`). |
 | `region` | `atProvider.location` | Geographic region. |
-| `access_key` | upstream `access_key` | S3 access key — **sensitive**. |
-| `secret_key` | upstream `secret_key` | S3 secret key — **sensitive**. |
 
-Reference the Secret via `envFrom` to make all five available as env vars,
-or via `volumeMounts.secretName` to mount as files. The standard
-`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_ENDPOINT_URL_S3`
-environment variables your S3 SDK expects can be remapped from these keys
-via `Secret.data` mapping or a one-line `subPath`.
+**No `access_key`/`secret_key`.** Since v0.4.0 the bucket Secret carries only
+non-secret metadata. To talk to the bucket, create an [`S3User`](./s3user.md)
+with a `bucketAccess` grant and consume *its* connection Secret — it publishes
+scoped `access_key`/`secret_key` (plus `endpoint`/`bucket`/`buckets`) that
+authorize only the granted buckets.
 
 ## Conditions
 

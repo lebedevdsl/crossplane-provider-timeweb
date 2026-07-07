@@ -157,6 +157,12 @@ type KubernetesClusterNodepoolObservation struct {
 	// group-level node count alone is echoed before any VM exists.
 	// +optional
 	Nodes []NodepoolNode `json:"nodes,omitempty"`
+
+	// Sizing is the human-readable worker sizing summary backing the SIZING
+	// print column: `preset:<slug>` when sized via presetName, or
+	// `<cpu>cpu/<ram>gb/<disk>gb` when sized via resources.
+	// +optional
+	Sizing *string `json:"sizing,omitempty"`
 }
 
 // NodepoolNode is one worker node of the group as reported upstream.
@@ -190,8 +196,9 @@ type KubernetesClusterNodepoolStatus struct {
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,timeweb}
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
-// +kubebuilder:printcolumn:name="CLUSTER",type="string",JSONPath=".status.atProvider.clusterID"
-// +kubebuilder:printcolumn:name="PRESET",type="string",JSONPath=".spec.forProvider.presetName"
+// +kubebuilder:printcolumn:name="CLUSTER",type="string",JSONPath=".spec.forProvider.clusterRef.name"
+// +kubebuilder:printcolumn:name="CLUSTER-ID",type="string",JSONPath=".status.atProvider.clusterID",priority=1
+// +kubebuilder:printcolumn:name="SIZING",type="string",JSONPath=".status.atProvider.sizing"
 // +kubebuilder:printcolumn:name="PUBLIC",type="boolean",JSONPath=".spec.forProvider.publicIP"
 // +kubebuilder:printcolumn:name="DESIRED",type="integer",JSONPath=".spec.forProvider.nodeCount"
 // +kubebuilder:printcolumn:name="OBSERVED",type="integer",JSONPath=".status.atProvider.observedNodeCount"

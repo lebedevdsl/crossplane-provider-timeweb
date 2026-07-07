@@ -97,7 +97,8 @@ type KubernetesClusterAddonStatus struct {
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,timeweb}
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
-// +kubebuilder:printcolumn:name="CLUSTER",type="string",JSONPath=".status.atProvider.clusterID"
+// +kubebuilder:printcolumn:name="CLUSTER",type="string",JSONPath=".spec.forProvider.clusterRef.name"
+// +kubebuilder:printcolumn:name="CLUSTER-ID",type="string",JSONPath=".status.atProvider.clusterID",priority=1
 // +kubebuilder:printcolumn:name="TYPE",type="string",JSONPath=".spec.forProvider.type"
 // +kubebuilder:printcolumn:name="VERSION",type="string",JSONPath=".spec.forProvider.version"
 // +kubebuilder:printcolumn:name="INSTALLED-VERSION",type="string",JSONPath=".status.atProvider.installedVersion"

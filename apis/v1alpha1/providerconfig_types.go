@@ -85,8 +85,8 @@ type ProviderConfigStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,provider,timeweb}
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="SECRET-NAME",type="string",JSONPath=".spec.credentials.secretRef.name"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:printcolumn:name="SECRET-NAME",type="string",JSONPath=".spec.credentials.secretRef.name",priority=1
 
 // ProviderConfig is the namespaced configuration for the Timeweb Crossplane
 // provider. Managed resources in the same namespace reference one via

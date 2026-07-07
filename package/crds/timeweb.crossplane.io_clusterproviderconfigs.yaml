@@ -19,16 +19,15 @@ spec:
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .metadata.creationTimestamp
-      name: AGE
-      type: date
     - jsonPath: .spec.credentials.secretRef.namespace
       name: SECRET-NS
       type: string
     - jsonPath: .spec.credentials.secretRef.name
       name: SECRET-NAME
-      priority: 1
       type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
     name: v1alpha1
     schema:
       openAPIV3Schema:
