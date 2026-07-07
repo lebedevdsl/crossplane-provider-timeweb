@@ -11,27 +11,37 @@ metadata:
       controller (no Upjet / no Terraform-provider lineage). Managed
       resources: namespaced ProviderConfig + cluster-scoped
       ClusterProviderConfig (with the dual-reference fallback documented
-      in the README), Project, SshKey, S3Bucket, Server (cloud VM, compute
-      group), Network (VPC) and FloatingIP (floating IPv4) in the network
-      group, and KubernetesCluster + KubernetesClusterNodepool +
+      in the README); Project and SshKey (account scope); S3Bucket and
+      S3User in the objectstorage group (the bucket publishes non-secret
+      endpoint metadata, the user grants per-bucket read/read-write/admin
+      access and publishes the scoped keys); Server (cloud VM, compute
+      group); Network (VPC), FloatingIP, Router (NAT/DHCP for private
+      networks, the private-cluster building block), and Firewall (rule
+      group with inline rules and opaque service attachments) in the
+      network group; KubernetesCluster + KubernetesClusterNodepool +
       KubernetesClusterAddon + ContainerRegistry + ContainerRegistryRepository
       in the kubernetes group (managed K8s — preset- or resources-sized
-      control plane, scalable worker pools, kubeconfig connection Secret,
-      in-place version upgrade; ContainerRegistry/Repository moved here from
-      their own group to mirror the dashboard's Kubernetes → registries tab).
+      control plane, scalable worker pools with a flavor family selector,
+      kubeconfig connection Secret, in-place version upgrade).
       Sizing on the two storage-class MRs (S3Bucket, ContainerRegistry) is via
       `initialSizeGB` with a CEL-enforced enum tied to Timeweb's published
       tariff tiers; the Server and the K8s cluster/nodepool are sized via
       either a `presetName` slug or a custom `resources` (cpu/ramGB/diskGB)
       resolved by the in-controller catalog resolver. Floating-IP
-      bind/unbind is owned by the Server (Server-consumes-IP).
+      bind/unbind is owned by the Server (Server-consumes-IP), and a Router
+      NATs its attached networks through a referenced FloatingIP.
     meta.crossplane.io/readme: |
-      See the top-level README.md, docs/presets.md (storage sizing),
-      docs/servers.md (Server / Network / FloatingIP) and
-      docs/kubernetes.md (managed Kubernetes) for the operator walkthrough.
+      See the top-level README.md and docs/getting-started.md, then the
+      per-area guides: docs/presets.md (storage sizing), docs/servers.md
+      (Server / Network / FloatingIP), docs/routers.md (Router + private
+      cluster), docs/firewall.md, docs/kubernetes.md (managed Kubernetes),
+      docs/s3bucket.md + docs/s3user.md (object storage).
 spec:
+  # This block never reaches the published package: xpkg.build strips
+  # `controller:`/`image:` from its staged copy and embeds the runtime image
+  # into the .xpkg instead, so the tag below does not need a bump per release.
   controller:
-    image: ghcr.io/lebedevdsl/provider-timeweb:v0.1.0
+    image: ghcr.io/lebedevdsl/provider-timeweb:v0.5.0
   crossplane:
     # Provider targets Crossplane v2 from day one (namespaced managed
     # resources, v2-only `pkg.crossplane.io/v1` Provider install model).
