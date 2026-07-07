@@ -95,9 +95,10 @@ spec:
 
 ## Sizing — `initialSizeGB`
 
-`ContainerRegistry` and `S3Bucket` size themselves via a single integer
-field constrained to the tariff tiers Timeweb publishes. No preset slugs,
-no configurator IDs — operators pick the size they actually want.
+`ContainerRegistry` and `S3Bucket` are sized by one field: `initialSizeGB`,
+an integer restricted to the tariff tiers Timeweb publishes. The provider
+resolves it to the matching upstream `preset_id` internally, so the spec
+never references preset slugs or configurator IDs.
 
 | MR                  | Allowed `initialSizeGB`         |
 |---------------------|---------------------------------|
@@ -136,13 +137,8 @@ spec:
 One `S3User` may span several buckets at mixed levels (`bucketAccess[]`), and
 may reference a bucket it does not manage by `bucketName`. All of a user's
 grants render to one merged policy, matching what the Timeweb panel reads.
-
-> [!WARNING]
-> **Breaking change (v1alpha1).** Consumers that read `access_key`/`secret_key`
-> from an `S3Bucket` connection Secret must migrate: create an `S3User` granting
-> the access they need and point the workload at the `S3User` Secret instead.
-> The bucket-side `status.attachedUsers` mirror (and the `ATTACHED` print
-> column) shows which users currently hold a grant on a bucket.
+The bucket-side `status.attachedUsers` mirror shows which users currently
+hold a grant on a bucket.
 
 ## Installing the provider
 

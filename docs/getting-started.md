@@ -118,8 +118,8 @@ kubectl logs -n crossplane-system -l pkg.crossplane.io/revision=provider-timeweb
 
 ## Step 4 — Apply a first resource (Network)
 
-A `Network` is the simplest placed resource — no preset resolution, no OS
-matching. It just allocates a Timeweb VPC:
+A `Network` is the simplest placed resource to start with: it only allocates
+a Timeweb VPC, with no preset resolution or OS matching involved:
 
 ```yaml
 apiVersion: network.m.timeweb.crossplane.io/v1alpha1

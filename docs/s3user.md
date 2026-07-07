@@ -109,5 +109,6 @@ the identity + policy still delete by external-name.
 | Delete | IAM `DeleteUserPolicy` + `DELETE /api/v2/storages/users/{id}` | 404 treated as success. |
 
 Grants go through the AWS IAM Query API (SigV4-signed against
-`panel.s3.twcstorage.ru`); identity through the Timeweb REST API. Both are
-driven by the same `ProviderConfig` token — no extra credentials to configure.
+`panel.s3.twcstorage.ru`); identity through the Timeweb REST API. Both
+authenticate from the single `ProviderConfig` token: the IAM signing keys are
+derived from it at runtime, so no additional credentials are configured.
