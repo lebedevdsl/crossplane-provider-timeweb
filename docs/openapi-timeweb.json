@@ -10159,6 +10159,103 @@
             "source": "import java.io.IOException;\nimport java.io.InputStream;\nimport java.lang.System;\nimport java.net.HttpURLConnection;\nimport java.net.URL;\nimport java.util.Scanner;\n\nclass Main {\n\n\tpublic static void main(String[] args) throws IOException {\n\t\tURL url = new URL(\"https://api.timeweb.cloud/api/v1/k8s/clusters/85/groups/46\");\n\t\tHttpURLConnection httpConn = (HttpURLConnection) url.openConnection();\n\t\thttpConn.setRequestMethod(\"DELETE\");\n\n\t\thttpConn.setRequestProperty(\"Content-Type\", \"application/json\");\n\t\thttpConn.setRequestProperty(\"Authorization\", \"Bearer \" + System.getenv(\"TIMEWEB_CLOUD_TOKEN\"));\n\n\t\tInputStream responseStream = httpConn.getResponseCode() / 100 == 2\n\t\t\t\t? httpConn.getInputStream()\n\t\t\t\t: httpConn.getErrorStream();\n\t\tScanner s = new Scanner(responseStream).useDelimiter(\"\\\\A\");\n\t\tString response = s.hasNext() ? s.next() : \"\";\n\t\tSystem.out.println(response);\n\t}\n}\n"
           }
         ]
+      },
+      "patch": {
+        "tags": [
+          "Kubernetes"
+        ],
+        "summary": "Обновление группы нод (hand-patched: undocumented, panel-verified 2026-07-10)",
+        "description": "PATCH существующей группы нод: name/labels/taints. Отсутствующие поля не изменяются (полный набор шлёт только панель).",
+        "operationId": "updateClusterNodeGroup",
+        "parameters": [
+          {
+            "description": "ID кластера",
+            "required": true,
+            "schema": {
+              "title": "Cluster Id",
+              "type": "integer",
+              "description": "ID кластера"
+            },
+            "name": "cluster_id",
+            "in": "path"
+          },
+          {
+            "description": "ID группы",
+            "required": true,
+            "schema": {
+              "title": "Group Id",
+              "type": "integer",
+              "description": "ID группы"
+            },
+            "name": "group_id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NodeGroupUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Информация о группе нод",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/NodeGroupResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "response_id": {
+                          "$ref": "#/components/schemas/response_id"
+                        }
+                      },
+                      "required": [
+                        "response_id"
+                      ]
+                    }
+                  ]
+                },
+                "example": {
+                  "response_id": "96118bab-77d1-4681-9b4c-6c3b89cbbf90",
+                  "node_group": {
+                    "id": 341,
+                    "name": "Группа нод 341",
+                    "created_at": "2023-01-13T10:10:29.753519",
+                    "preset_id": 399,
+                    "node_count": 8
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
       }
     },
     "/api/v1/k8s/clusters/{cluster_id}/groups/{group_id}/nodes": {
@@ -42220,6 +42317,13 @@
           "public_ip_enabled": {
             "type": "boolean",
             "description": "Назначать ли публичные IP узлам группы (присутствует в реальных ответах API, отсутствует в опубликованном swagger; hand-patch — feature 006). Управляет публичной адресацией узлов; egress в приватной схеме идёт через NAT роутера."
+          },
+          "taints": {
+            "type": "array",
+            "description": "Таинты для группы нод (hand-patched)",
+            "items": {
+              "$ref": "#/components/schemas/Taint"
+            }
           }
         },
         "example": {
@@ -52123,6 +52227,52 @@
           "price",
           "is_available"
         ]
+      },
+      "Taint": {
+        "type": "object",
+        "description": "Таинт для группы нод (hand-patched: undocumented upstream field, live-verified 2026-07-10)",
+        "required": [
+          "key",
+          "effect"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Ключ"
+          },
+          "value": {
+            "type": "string",
+            "description": "Значение"
+          },
+          "effect": {
+            "type": "string",
+            "description": "Эффект: NoSchedule | PreferNoSchedule | NoExecute"
+          }
+        }
+      },
+      "NodeGroupUpdate": {
+        "type": "object",
+        "description": "Тело PATCH-запроса группы нод (hand-patched: undocumented verb, panel-verified 2026-07-10). Провайдер отправляет только name/labels/taints.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Название группы"
+          },
+          "labels": {
+            "type": "array",
+            "description": "Лейблы для группы нод",
+            "items": {
+              "$ref": "#/components/schemas/SetLabels"
+            }
+          },
+          "taints": {
+            "type": "array",
+            "description": "Таинты для группы нод",
+            "items": {
+              "$ref": "#/components/schemas/Taint"
+            }
+          }
+        }
       }
     },
     "parameters": {

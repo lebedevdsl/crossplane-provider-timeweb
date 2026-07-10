@@ -189,7 +189,8 @@ spec:
                       type: string
                     description: |-
                       Labels are Kubernetes node labels applied to the group. Marshaled to
-                      the upstream array<{key,value}> shape on create. Immutable post-create.
+                      the upstream array<{key,value}> shape. Day-2 mutable (feature 015):
+                      edits and out-of-band drift converge in place via the group PATCH.
                     type: object
                   name:
                     description: Name of the worker group. Immutable post-create.
@@ -263,6 +264,49 @@ spec:
                     - diskGB
                     - ramGB
                     type: object
+                  taints:
+                    description: |-
+                      Taints are Kubernetes node taints applied to every node of the group,
+                      present from the moment a node joins (no post-join tainting window).
+                      Day-2 mutable: edits converge in place; out-of-band changes are
+                      reverted (the declaration is the single writer of the group's taint
+                      set). Same key with different effects is allowed; duplicate
+                      key+effect pairs are rejected at admission.
+                    items:
+                      description: |-
+                        NodepoolTaint is one Kubernetes node taint applied to every node of the
+                        worker group (feature 015). Identity within the list is (key, effect):
+                        the same key may appear with different effects, but an exact key+effect
+                        duplicate is rejected by a type-level CEL rule. A nil Value marshals as
+                        "" upstream (the two are equivalent).
+                      properties:
+                        effect:
+                          description: Effect is the scheduling effect.
+                          enum:
+                          - NoSchedule
+                          - PreferNoSchedule
+                          - NoExecute
+                          type: string
+                        key:
+                          description: |-
+                            Key is the taint key (Kubernetes label-key syntax: optional
+                            DNS-subdomain prefix + name segment).
+                          maxLength: 253
+                          minLength: 1
+                          pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?[A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?$
+                          type: string
+                        value:
+                          description: Value is the optional taint value (Kubernetes
+                            label-value syntax).
+                          maxLength: 63
+                          pattern: ^([A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?)?$
+                          type: string
+                      required:
+                      - effect
+                      - key
+                      type: object
+                    maxItems: 12
+                    type: array
                 required:
                 - name
                 - nodeCount
@@ -469,6 +513,10 @@ spec:
           rule: '!has(self.spec.forProvider.autoscaling) || !self.spec.forProvider.autoscaling.enabled
             || (self.spec.forProvider.autoscaling.minSize >= 2 && self.spec.forProvider.autoscaling.maxSize
             >= 2 && self.spec.forProvider.autoscaling.maxSize >= self.spec.forProvider.autoscaling.minSize)'
+        - message: taints must not repeat the same key+effect pair
+          rule: '!has(self.spec.forProvider.taints) || self.spec.forProvider.taints.all(t,
+            self.spec.forProvider.taints.filter(u, u.key == t.key && u.effect == t.effect).size()
+            == 1)'
     served: true
     storage: true
     subresources:

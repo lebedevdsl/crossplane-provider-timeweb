@@ -2779,6 +2779,41 @@ type FakeClient struct {
 		result1 *http.Response
 		result2 error
 	}
+	UpdateClusterNodeGroupStub        func(context.Context, int, int, generated.UpdateClusterNodeGroupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
+	updateClusterNodeGroupMutex       sync.RWMutex
+	updateClusterNodeGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 generated.UpdateClusterNodeGroupJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}
+	updateClusterNodeGroupReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateClusterNodeGroupReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
+	UpdateClusterNodeGroupWithBodyStub        func(context.Context, int, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)
+	updateClusterNodeGroupWithBodyMutex       sync.RWMutex
+	updateClusterNodeGroupWithBodyArgsForCall []struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}
+	updateClusterNodeGroupWithBodyReturns struct {
+		result1 *http.Response
+		result2 error
+	}
+	updateClusterNodeGroupWithBodyReturnsOnCall map[int]struct {
+		result1 *http.Response
+		result2 error
+	}
 	UpdateClusterVersionStub        func(context.Context, int, generated.UpdateClusterVersionJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)
 	updateClusterVersionMutex       sync.RWMutex
 	updateClusterVersionArgsForCall []struct {
@@ -15166,6 +15201,143 @@ func (fake *FakeClient) UpdateClusterReturnsOnCall(i int, result1 *http.Response
 	}{result1, result2}
 }
 
+func (fake *FakeClient) UpdateClusterNodeGroup(arg1 context.Context, arg2 int, arg3 int, arg4 generated.UpdateClusterNodeGroupJSONRequestBody, arg5 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateClusterNodeGroupMutex.Lock()
+	ret, specificReturn := fake.updateClusterNodeGroupReturnsOnCall[len(fake.updateClusterNodeGroupArgsForCall)]
+	fake.updateClusterNodeGroupArgsForCall = append(fake.updateClusterNodeGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 generated.UpdateClusterNodeGroupJSONRequestBody
+		arg5 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.UpdateClusterNodeGroupStub
+	fakeReturns := fake.updateClusterNodeGroupReturns
+	fake.recordInvocation("UpdateClusterNodeGroup", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.updateClusterNodeGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateClusterNodeGroupCallCount() int {
+	fake.updateClusterNodeGroupMutex.RLock()
+	defer fake.updateClusterNodeGroupMutex.RUnlock()
+	return len(fake.updateClusterNodeGroupArgsForCall)
+}
+
+func (fake *FakeClient) UpdateClusterNodeGroupCalls(stub func(context.Context, int, int, generated.UpdateClusterNodeGroupJSONRequestBody, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateClusterNodeGroupMutex.Lock()
+	defer fake.updateClusterNodeGroupMutex.Unlock()
+	fake.UpdateClusterNodeGroupStub = stub
+}
+
+func (fake *FakeClient) UpdateClusterNodeGroupArgsForCall(i int) (context.Context, int, int, generated.UpdateClusterNodeGroupJSONRequestBody, []generated.RequestEditorFn) {
+	fake.updateClusterNodeGroupMutex.RLock()
+	defer fake.updateClusterNodeGroupMutex.RUnlock()
+	argsForCall := fake.updateClusterNodeGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeClient) UpdateClusterNodeGroupReturns(result1 *http.Response, result2 error) {
+	fake.updateClusterNodeGroupMutex.Lock()
+	defer fake.updateClusterNodeGroupMutex.Unlock()
+	fake.UpdateClusterNodeGroupStub = nil
+	fake.updateClusterNodeGroupReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateClusterNodeGroupReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateClusterNodeGroupMutex.Lock()
+	defer fake.updateClusterNodeGroupMutex.Unlock()
+	fake.UpdateClusterNodeGroupStub = nil
+	if fake.updateClusterNodeGroupReturnsOnCall == nil {
+		fake.updateClusterNodeGroupReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateClusterNodeGroupReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateClusterNodeGroupWithBody(arg1 context.Context, arg2 int, arg3 int, arg4 string, arg5 io.Reader, arg6 ...generated.RequestEditorFn) (*http.Response, error) {
+	fake.updateClusterNodeGroupWithBodyMutex.Lock()
+	ret, specificReturn := fake.updateClusterNodeGroupWithBodyReturnsOnCall[len(fake.updateClusterNodeGroupWithBodyArgsForCall)]
+	fake.updateClusterNodeGroupWithBodyArgsForCall = append(fake.updateClusterNodeGroupWithBodyArgsForCall, struct {
+		arg1 context.Context
+		arg2 int
+		arg3 int
+		arg4 string
+		arg5 io.Reader
+		arg6 []generated.RequestEditorFn
+	}{arg1, arg2, arg3, arg4, arg5, arg6})
+	stub := fake.UpdateClusterNodeGroupWithBodyStub
+	fakeReturns := fake.updateClusterNodeGroupWithBodyReturns
+	fake.recordInvocation("UpdateClusterNodeGroupWithBody", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6})
+	fake.updateClusterNodeGroupWithBodyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5, arg6...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) UpdateClusterNodeGroupWithBodyCallCount() int {
+	fake.updateClusterNodeGroupWithBodyMutex.RLock()
+	defer fake.updateClusterNodeGroupWithBodyMutex.RUnlock()
+	return len(fake.updateClusterNodeGroupWithBodyArgsForCall)
+}
+
+func (fake *FakeClient) UpdateClusterNodeGroupWithBodyCalls(stub func(context.Context, int, int, string, io.Reader, ...generated.RequestEditorFn) (*http.Response, error)) {
+	fake.updateClusterNodeGroupWithBodyMutex.Lock()
+	defer fake.updateClusterNodeGroupWithBodyMutex.Unlock()
+	fake.UpdateClusterNodeGroupWithBodyStub = stub
+}
+
+func (fake *FakeClient) UpdateClusterNodeGroupWithBodyArgsForCall(i int) (context.Context, int, int, string, io.Reader, []generated.RequestEditorFn) {
+	fake.updateClusterNodeGroupWithBodyMutex.RLock()
+	defer fake.updateClusterNodeGroupWithBodyMutex.RUnlock()
+	argsForCall := fake.updateClusterNodeGroupWithBodyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6
+}
+
+func (fake *FakeClient) UpdateClusterNodeGroupWithBodyReturns(result1 *http.Response, result2 error) {
+	fake.updateClusterNodeGroupWithBodyMutex.Lock()
+	defer fake.updateClusterNodeGroupWithBodyMutex.Unlock()
+	fake.UpdateClusterNodeGroupWithBodyStub = nil
+	fake.updateClusterNodeGroupWithBodyReturns = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) UpdateClusterNodeGroupWithBodyReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.updateClusterNodeGroupWithBodyMutex.Lock()
+	defer fake.updateClusterNodeGroupWithBodyMutex.Unlock()
+	fake.UpdateClusterNodeGroupWithBodyStub = nil
+	if fake.updateClusterNodeGroupWithBodyReturnsOnCall == nil {
+		fake.updateClusterNodeGroupWithBodyReturnsOnCall = make(map[int]struct {
+			result1 *http.Response
+			result2 error
+		})
+	}
+	fake.updateClusterNodeGroupWithBodyReturnsOnCall[i] = struct {
+		result1 *http.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) UpdateClusterVersion(arg1 context.Context, arg2 int, arg3 generated.UpdateClusterVersionJSONRequestBody, arg4 ...generated.RequestEditorFn) (*http.Response, error) {
 	fake.updateClusterVersionMutex.Lock()
 	ret, specificReturn := fake.updateClusterVersionReturnsOnCall[len(fake.updateClusterVersionArgsForCall)]
@@ -17896,6 +18068,10 @@ func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	defer fake.unbindFloatingIpMutex.RUnlock()
 	fake.updateClusterMutex.RLock()
 	defer fake.updateClusterMutex.RUnlock()
+	fake.updateClusterNodeGroupMutex.RLock()
+	defer fake.updateClusterNodeGroupMutex.RUnlock()
+	fake.updateClusterNodeGroupWithBodyMutex.RLock()
+	defer fake.updateClusterNodeGroupWithBodyMutex.RUnlock()
 	fake.updateClusterVersionMutex.RLock()
 	defer fake.updateClusterVersionMutex.RUnlock()
 	fake.updateClusterVersionWithBodyMutex.RLock()

@@ -1,0 +1,22 @@
+# Step 2 — day-2 metadata edit + scale-up in one apply (feature 015 US2+US3):
+# taint value change, taint removal, label change, nodeCount 2→3. The
+# controller converges metadata via one owned-fields PATCH and the count via
+# a relative delta; the group is never recreated.
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesClusterNodepool
+metadata:
+  name: e2e-k8s-taints-workers
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef: { kind: ProviderConfig, name: e2e }
+  forProvider:
+    name: tainted-workers
+    clusterRef: { name: e2e-k8s-taints }
+    presetName: "${TWE_K8S_WORKER_PRESET}"
+    nodeCount: 3
+    labels:
+      role: e2e-updated
+    taints:
+      - key: dedicated
+        value: e2e-updated
+        effect: NoSchedule

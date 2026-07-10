@@ -5,7 +5,7 @@
 #
 # IMMUTABLE FIELDS: name, presetName (or resources), clusterRef, publicIP,
 #   autohealing, autoscaling.enabled.
-# Mutable: nodeCount (when autoscaling is off).
+# Mutable: nodeCount (when autoscaling is off), labels, taints.
 #
 # See docs/kubernetes.md for scaling, private-cluster config, and troubleshooting.
 ---
@@ -38,9 +38,18 @@ spec:
     #   maxSize: 6
     # Optional: auto-recover failed nodes. Immutable post-create.
     # autohealing: true
-    # Optional: Kubernetes node labels (immutable post-create).
+    # Optional: Kubernetes node labels. Mutable — edits and out-of-band
+    # drift converge in place.
     # labels:
     #   role: worker
+    # Optional: Kubernetes node taints (max 12) — nodes join already tainted;
+    # workloads need a matching toleration. Mutable, same convergence as
+    # labels. effect: NoSchedule | PreferNoSchedule | NoExecute; value is
+    # optional; the same key may repeat only with a different effect.
+    # taints:
+    #   - key: dedicated
+    #     value: ingress
+    #     effect: NoSchedule
     # Custom sizing (instead of presetName). flavor picks the worker
     # configurator family: standard (default; general — lowest RAM/cpu floor)
     # or dedicated-cpu (~4 GB/cpu floor). Immutable post-create.
