@@ -110,7 +110,7 @@ reverted; empty set clears.
 
 - [X] T011 [P] [US4] Add `examples/kubernetes/nodepool-taints.yaml` (valid
       dedicated-pool example) and verify `make validate-examples` passes
-- [ ] T012 [US4] Verify admission rejections against a live apiserver
+- [X] T012 [US4] Verify admission rejections against a live apiserver
       (server-side dry-run on the e2e control plane): unknown effect,
       malformed key, duplicate key+effect, >12 items — messages match
       contracts/nodepool-taints-v1alpha1.md (CEL cost-budget check from
@@ -128,7 +128,7 @@ reverted; empty set clears.
 - [X] T014 [P] Refresh `docs/kubernetes.md`: taints section + labels
       mutability note (quickstart.md §3/§4 content)
 - [X] T015 Run `make reviewable` (generate + lint + test; clean tree)
-- [ ] T016 Live validation gate per plan.md: `make e2e.up` + `make e2e.deploy`,
+- [X] T016 Live validation gate per plan.md: `make e2e.up` + `make e2e.deploy`,
       apply the custom minimal-nodepool manifest (flat `clusterID` to the
       pre-existing Ready cluster) and walk create-with-taints → node
       propagation (read-only kubeconfig check) → day-2 edit (public-host
