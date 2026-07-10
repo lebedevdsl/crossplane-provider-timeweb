@@ -69,7 +69,7 @@ the single writer.
 | apply rejected: `Unsupported value: "NoScheduleTypo"` | effect must be NoSchedule / PreferNoSchedule / NoExecute |
 | apply rejected: `taints must not repeat the same key+effect pair` | duplicate identity; same key needs distinct effects |
 | `SYNCED=False` with an upstream error after a taint edit | PATCH rejected upstream — see the CR events; drift will be retried |
-| taint edit converged (`SYNCED=True`) but a pre-existing node still shows the old taint | upstream applies group taints at node join on this platform version — cycle the node (scale down/up) to re-taint in place |
+| a value-less taint shows on the nodepool but not on the node objects | platform quirk: taints with an empty value persist on the group but are not applied to nodes — give the taint a value |
 
 Scheduling semantics are standard Kubernetes:
 https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/

@@ -182,12 +182,18 @@ sets:
 ```
 
 Both are **mutable**: edit and re-apply — the pool converges in place via a
-group PATCH (metadata converges even on autoscaled pools). Removing the
-blocks clears the sets upstream. The declaration is the single writer:
-changes made in the panel or via the raw API are reverted on the next
-reconcile. Up to 12 taints; the same key may repeat only with a different
-effect; workloads target the pool with a matching toleration +
+group PATCH (metadata converges even on autoscaled pools), and Timeweb
+re-configures **already-running nodes** (they pass through an `updating`
+state; no recreation). Removing the blocks clears the sets upstream. The
+declaration is the single writer: changes made in the panel or via the raw
+API are reverted on the next reconcile.
+`status.atProvider.labels`/`.taints` mirror what the upstream group
+actually reports. Up to 12 taints; the same key may repeat only with a
+different effect; workloads target the pool with a matching toleration +
 `nodeSelector`.
+
+Platform quirk: a taint with an **empty value** persists on the group but
+is not applied to the node objects — give every taint a value.
 
 ## 3. Private network + project
 

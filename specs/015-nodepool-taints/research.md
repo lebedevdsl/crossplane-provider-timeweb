@@ -127,9 +127,16 @@ node-propagation kubeconfig read → day-2 edit → empty-set clear →
 out-of-band drift revert → delete) without provisioning a cluster. The
 bundle remains runnable in the standard harness unchanged.
 
-**Node-propagation check** (deferred-to-gate #2): whether a PATCHed taint
-reaches *already-running* nodes is observable only against live nodes. If
-propagation is join-time-only, the quirk is recorded (support ticket +
-docs note: "taint edits apply to nodes added after the change; cycle nodes
-to re-taint in place") — the group-config contract (FR-014's in-sync
-definition) is unaffected.
+**Node-propagation check — RESOLVED at the gate (2026-07-10, group 117111
+on cluster 1096397)**: Timeweb DOES propagate group-level taint/label
+changes to already-running nodes — the node transitions through an
+`updating` state and comes back with the new sets applied in place (no
+recreation; observed for add, modify, and clear). One quirk found:
+a **value-less taint** (`value: ""`) is persisted on the group object but
+is NOT applied to the node object (a *valued* `PreferNoSchedule` taint
+propagates fine, so it is the empty value, not the effect). Documented in
+quickstart/docs; upstream ticket candidate per project convention. Also
+confirmed at the gate: public-host PATCH applies taints verbatim; the
+`value` key is REQUIRED in taint entries (omitting it → 400
+`taints.N.value must be a string`) — the provider always sends `""` for
+nil, which is accepted.
