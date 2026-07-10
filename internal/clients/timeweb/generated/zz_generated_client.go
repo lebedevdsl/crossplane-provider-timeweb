@@ -1200,6 +1200,9 @@ type NodeGroupIn struct {
 
 	// PublicIpEnabled Назначать ли публичные IP узлам группы (присутствует в реальных ответах API, отсутствует в опубликованном swagger; hand-patch — feature 006). Управляет публичной адресацией узлов; egress в приватной схеме идёт через NAT роутера.
 	PublicIpEnabled *bool `json:"public_ip_enabled,omitempty"`
+
+	// Taints Таинты для группы нод (hand-patched)
+	Taints *[]Taint `json:"taints,omitempty"`
 }
 
 // NodeGroupOut defines model for NodeGroupOut.
@@ -1227,6 +1230,18 @@ type NodeGroupResponse struct {
 
 	// ResponseId ID запроса
 	ResponseId *string `json:"response_id,omitempty"`
+}
+
+// NodeGroupUpdate Тело PATCH-запроса группы нод (hand-patched: undocumented verb, panel-verified 2026-07-10). Провайдер отправляет только name/labels/taints.
+type NodeGroupUpdate struct {
+	// Labels Лейблы для группы нод
+	Labels *[]SetLabels `json:"labels,omitempty"`
+
+	// Name Название группы
+	Name *string `json:"name,omitempty"`
+
+	// Taints Таинты для группы нод
+	Taints *[]Taint `json:"taints,omitempty"`
 }
 
 // NodeGroupsResponse defines model for NodeGroupsResponse.
@@ -1762,6 +1777,18 @@ type StaticRoutesResponse struct {
 
 	// StaticRoutes Статические маршруты
 	StaticRoutes []StaticRouteOut `json:"static_routes"`
+}
+
+// Taint Таинт для группы нод (hand-patched: undocumented upstream field, live-verified 2026-07-10)
+type Taint struct {
+	// Effect Эффект: NoSchedule | PreferNoSchedule | NoExecute
+	Effect string `json:"effect"`
+
+	// Key Ключ
+	Key string `json:"key"`
+
+	// Value Значение
+	Value *string `json:"value,omitempty"`
 }
 
 // WorkerPresetOutApi defines model for WorkerPresetOutApi.
@@ -4058,6 +4085,9 @@ type PostKubernetesAddonsUpdateJSONRequestBody PostKubernetesAddonsUpdateJSONBod
 // CreateClusterNodeGroupJSONRequestBody defines body for CreateClusterNodeGroup for application/json ContentType.
 type CreateClusterNodeGroupJSONRequestBody = NodeGroupIn
 
+// UpdateClusterNodeGroupJSONRequestBody defines body for UpdateClusterNodeGroup for application/json ContentType.
+type UpdateClusterNodeGroupJSONRequestBody = NodeGroupUpdate
+
 // ReduceCountOfNodesInGroupJSONRequestBody defines body for ReduceCountOfNodesInGroup for application/json ContentType.
 type ReduceCountOfNodesInGroupJSONRequestBody = ReduceNodes
 
@@ -4587,6 +4617,11 @@ type ClientInterface interface {
 
 	// GetClusterNodeGroup request
 	GetClusterNodeGroup(ctx context.Context, clusterId int, groupId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateClusterNodeGroupWithBody request with any body
+	UpdateClusterNodeGroupWithBody(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateClusterNodeGroup(ctx context.Context, clusterId int, groupId int, body UpdateClusterNodeGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ReduceCountOfNodesInGroupWithBody request with any body
 	ReduceCountOfNodesInGroupWithBody(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -5529,6 +5564,30 @@ func (c *Client) DeleteClusterNodeGroup(ctx context.Context, clusterId int, grou
 
 func (c *Client) GetClusterNodeGroup(ctx context.Context, clusterId int, groupId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetClusterNodeGroupRequest(c.Server, clusterId, groupId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClusterNodeGroupWithBody(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterNodeGroupRequestWithBody(c.Server, clusterId, groupId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClusterNodeGroup(ctx context.Context, clusterId int, groupId int, body UpdateClusterNodeGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterNodeGroupRequest(c.Server, clusterId, groupId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -8790,6 +8849,60 @@ func NewGetClusterNodeGroupRequest(server string, clusterId int, groupId int) (*
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewUpdateClusterNodeGroupRequest calls the generic UpdateClusterNodeGroup builder with application/json body
+func NewUpdateClusterNodeGroupRequest(server string, clusterId int, groupId int, body UpdateClusterNodeGroupJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateClusterNodeGroupRequestWithBody(server, clusterId, groupId, "application/json", bodyReader)
+}
+
+// NewUpdateClusterNodeGroupRequestWithBody generates requests for UpdateClusterNodeGroup with any type of body
+func NewUpdateClusterNodeGroupRequestWithBody(server string, clusterId int, groupId int, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "group_id", runtime.ParamLocationPath, groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/k8s/clusters/%s/groups/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -14108,6 +14221,11 @@ type ClientWithResponsesInterface interface {
 	// GetClusterNodeGroupWithResponse request
 	GetClusterNodeGroupWithResponse(ctx context.Context, clusterId int, groupId int, reqEditors ...RequestEditorFn) (*GetClusterNodeGroupResponse, error)
 
+	// UpdateClusterNodeGroupWithBodyWithResponse request with any body
+	UpdateClusterNodeGroupWithBodyWithResponse(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterNodeGroupResponse, error)
+
+	UpdateClusterNodeGroupWithResponse(ctx context.Context, clusterId int, groupId int, body UpdateClusterNodeGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterNodeGroupResponse, error)
+
 	// ReduceCountOfNodesInGroupWithBodyWithResponse request with any body
 	ReduceCountOfNodesInGroupWithBodyWithResponse(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReduceCountOfNodesInGroupResponse, error)
 
@@ -15563,6 +15681,40 @@ func (r GetClusterNodeGroupResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetClusterNodeGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateClusterNodeGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// NodeGroup Группа нод
+		NodeGroup NodeGroupOut `json:"node_group"`
+
+		// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+		ResponseId ResponseId `json:"response_id"`
+	}
+	JSON400 *N400
+	JSON401 *N401
+	JSON403 *N403
+	JSON404 *N404
+	JSON429 *N429
+	JSON500 *N500
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateClusterNodeGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateClusterNodeGroupResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -20110,6 +20262,23 @@ func (c *ClientWithResponses) GetClusterNodeGroupWithResponse(ctx context.Contex
 	return ParseGetClusterNodeGroupResponse(rsp)
 }
 
+// UpdateClusterNodeGroupWithBodyWithResponse request with arbitrary body returning *UpdateClusterNodeGroupResponse
+func (c *ClientWithResponses) UpdateClusterNodeGroupWithBodyWithResponse(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterNodeGroupResponse, error) {
+	rsp, err := c.UpdateClusterNodeGroupWithBody(ctx, clusterId, groupId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClusterNodeGroupResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateClusterNodeGroupWithResponse(ctx context.Context, clusterId int, groupId int, body UpdateClusterNodeGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterNodeGroupResponse, error) {
+	rsp, err := c.UpdateClusterNodeGroup(ctx, clusterId, groupId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClusterNodeGroupResponse(rsp)
+}
+
 // ReduceCountOfNodesInGroupWithBodyWithResponse request with arbitrary body returning *ReduceCountOfNodesInGroupResponse
 func (c *ClientWithResponses) ReduceCountOfNodesInGroupWithBodyWithResponse(ctx context.Context, clusterId int, groupId int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReduceCountOfNodesInGroupResponse, error) {
 	rsp, err := c.ReduceCountOfNodesInGroupWithBody(ctx, clusterId, groupId, contentType, body, reqEditors...)
@@ -23545,6 +23714,80 @@ func ParseGetClusterNodeGroupResponse(rsp *http.Response) (*GetClusterNodeGroupR
 	}
 
 	response := &GetClusterNodeGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// NodeGroup Группа нод
+			NodeGroup NodeGroupOut `json:"node_group"`
+
+			// ResponseId ID запроса, который можно указывать при обращении в службу технической поддержки, чтобы помочь определить проблему.
+			ResponseId ResponseId `json:"response_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest N400
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest N401
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest N403
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest N404
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest N429
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest N500
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateClusterNodeGroupResponse parses an HTTP response from a UpdateClusterNodeGroupWithResponse call
+func ParseUpdateClusterNodeGroupResponse(rsp *http.Response) (*UpdateClusterNodeGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateClusterNodeGroupResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

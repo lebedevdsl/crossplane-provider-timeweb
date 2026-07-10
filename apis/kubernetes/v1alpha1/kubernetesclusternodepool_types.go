@@ -46,6 +46,28 @@ type KubernetesNodepoolResources struct {
 	Flavor string `json:"flavor,omitempty"`
 }
 
+// NodepoolTaint is one Kubernetes node taint applied to every node of the
+// worker group (feature 015). Identity within the list is (key, effect):
+// the same key may appear with different effects, but an exact key+effect
+// duplicate is rejected by a type-level CEL rule. A nil Value marshals as
+// "" upstream (the two are equivalent).
+type NodepoolTaint struct {
+	// Key is the taint key (Kubernetes label-key syntax: optional
+	// DNS-subdomain prefix + name segment).
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:Pattern=`^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?[A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?$`
+	Key string `json:"key"`
+	// Value is the optional taint value (Kubernetes label-value syntax).
+	// +kubebuilder:validation:MaxLength=63
+	// +kubebuilder:validation:Pattern=`^([A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?)?$`
+	// +optional
+	Value *string `json:"value,omitempty"`
+	// Effect is the scheduling effect.
+	// +kubebuilder:validation:Enum=NoSchedule;PreferNoSchedule;NoExecute
+	Effect string `json:"effect"`
+}
+
 // NodepoolAutoscaling configures the upstream cluster-autoscaler for a
 // worker group. When Enabled, the controller does NOT reconcile NodeCount
 // against the observed count (the autoscaler owns it). Upstream requires
@@ -112,9 +134,20 @@ type KubernetesClusterNodepoolParameters struct {
 	ClusterID *string `json:"clusterID,omitempty"`
 
 	// Labels are Kubernetes node labels applied to the group. Marshaled to
-	// the upstream array<{key,value}> shape on create. Immutable post-create.
+	// the upstream array<{key,value}> shape. Day-2 mutable (feature 015):
+	// edits and out-of-band drift converge in place via the group PATCH.
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// Taints are Kubernetes node taints applied to every node of the group,
+	// present from the moment a node joins (no post-join tainting window).
+	// Day-2 mutable: edits converge in place; out-of-band changes are
+	// reverted (the declaration is the single writer of the group's taint
+	// set). Same key with different effects is allowed; duplicate
+	// key+effect pairs are rejected at admission.
+	// +kubebuilder:validation:MaxItems=12
+	// +optional
+	Taints []NodepoolTaint `json:"taints,omitempty"`
 
 	// Autoscaling enables the upstream cluster-autoscaler for this group.
 	// Immutable post-create.
@@ -163,6 +196,18 @@ type KubernetesClusterNodepoolObservation struct {
 	// `<cpu>cpu/<ram>gb/<disk>gb` when sized via resources.
 	// +optional
 	Sizing *string `json:"sizing,omitempty"`
+
+	// Labels mirrors the upstream group's node labels as reported by the
+	// last observation (spec shape; drift from spec.forProvider.labels is
+	// converged by Update).
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Taints mirrors the upstream group's node taints as reported by the
+	// last observation (spec shape; an upstream empty value is shown with
+	// the value omitted).
+	// +optional
+	Taints []NodepoolTaint `json:"taints,omitempty"`
 }
 
 // NodepoolNode is one worker node of the group as reported upstream.
@@ -209,6 +254,7 @@ type KubernetesClusterNodepoolStatus struct {
 // +kubebuilder:validation:XValidation:rule="has(self.spec.forProvider.presetName) == has(oldSelf.spec.forProvider.presetName)",message="switching between presetName and resources requires recreate"
 // +kubebuilder:validation:XValidation:rule="has(self.spec.forProvider.publicIP) == has(oldSelf.spec.forProvider.publicIP)",message="publicIP is immutable (set/unset requires recreate)"
 // +kubebuilder:validation:XValidation:rule="!has(self.spec.forProvider.autoscaling) || !self.spec.forProvider.autoscaling.enabled || (self.spec.forProvider.autoscaling.minSize >= 2 && self.spec.forProvider.autoscaling.maxSize >= 2 && self.spec.forProvider.autoscaling.maxSize >= self.spec.forProvider.autoscaling.minSize)",message="when autoscaling is enabled: minSize and maxSize must each be >= 2 and maxSize must be >= minSize"
+// +kubebuilder:validation:XValidation:rule="!has(self.spec.forProvider.taints) || self.spec.forProvider.taints.all(t, self.spec.forProvider.taints.filter(u, u.key == t.key && u.effect == t.effect).size() == 1)",message="taints must not repeat the same key+effect pair"
 
 // KubernetesClusterNodepool is one Timeweb managed-Kubernetes worker group.
 type KubernetesClusterNodepool struct {

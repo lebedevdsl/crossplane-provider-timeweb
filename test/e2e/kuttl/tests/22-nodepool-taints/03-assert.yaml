@@ -1,0 +1,18 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 600
+commands:
+  - command: kubectl wait --for=condition=Synced=True --timeout=590s -n timeweb-e2e kubernetesclusternodepools.kubernetes.m.timeweb.crossplane.io/e2e-k8s-taints-workers
+  - command: kubectl wait --for=condition=Ready=True  --timeout=590s -n timeweb-e2e kubernetesclusternodepools.kubernetes.m.timeweb.crossplane.io/e2e-k8s-taints-workers
+  - script: |
+      set -e
+      [ "${TWE_NO_API_SWEEP:-0}" = "1" ] && { echo "skip: host API check disabled"; exit 0; }
+      CID=$(kubectl get kubernetesclusters.kubernetes.m.timeweb.crossplane.io -n timeweb-e2e e2e-k8s-taints -o jsonpath='{.metadata.annotations.crossplane\.io/external-name}')
+      GID=$(kubectl get kubernetesclusternodepools.kubernetes.m.timeweb.crossplane.io -n timeweb-e2e e2e-k8s-taints-workers -o jsonpath='{.metadata.annotations.crossplane\.io/external-name}')
+      for i in $(seq 1 18); do
+        BODY=$(curl -sf -H "Authorization: Bearer ${TIMEWEB_CLOUD_TOKEN}" \
+          "https://api.timeweb.cloud/api/v1/k8s/clusters/${CID}/groups/${GID}")
+        echo "$BODY" | grep -q '"dedicated"' || exit 0
+        sleep 10
+      done
+      echo "upstream taints were not cleared"; exit 1

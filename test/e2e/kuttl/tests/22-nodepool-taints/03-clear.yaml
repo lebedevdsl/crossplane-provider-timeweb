@@ -1,0 +1,14 @@
+# Step 3 — remove all taints and labels: the controller PATCHes explicit
+# empty sets (the clear operation), not omitted fields.
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesClusterNodepool
+metadata:
+  name: e2e-k8s-taints-workers
+  namespace: timeweb-e2e
+spec:
+  providerConfigRef: { kind: ProviderConfig, name: e2e }
+  forProvider:
+    name: tainted-workers
+    clusterRef: { name: e2e-k8s-taints }
+    presetName: "${TWE_K8S_WORKER_PRESET}"
+    nodeCount: 3

@@ -1,5 +1,26 @@
 <!-- SPECKIT START -->
-Current feature: **013-firewall-api** — read the plan at
+Current feature: **015-nodepool-taints** — read the plan at
+`specs/015-nodepool-taints/plan.md`. Additive on **`KubernetesClusterNodepool`**: optional
+**`taints []{key,value?,effect}`** (enum `NoSchedule|PreferNoSchedule|NoExecute`, MaxItems=12,
+label-syntax patterns, CEL unique-(key,effect)) AND **day-2 mutability for taints + the existing
+`labels`** (create-only contract lifted) with single-writer drift reversion. Upstream surface
+**live-verified 2026-07-10**: node-group POST accepts `taints` (panel probe, echoed), public GET
+returns `labels`+`taints` arrays, and the same `/k8s/clusters/{cid}/groups/{gid}` path takes an
+**undocumented PATCH** (panel-verified; public-host PATCH exercised via the provider at the live
+gate). Hand-patch `docs/openapi-timeweb.json` (Taint schema, NodeGroupIn.taints, PATCH op →
+`UpdateClusterNodeGroup`) + regen client. Controller: Observe set-diffs declared vs upstream
+taints (identity key+effect) & labels (map⇄array) from the EXISTING GET; Update PATCHes **owned
+fields only** (`name`,`labels`,`taints`, full-set replace) BEFORE the autoscaling early-return.
+Touch points: `apis/kubernetes/v1alpha1/kubernetesclusternodepool_types.go`,
+`internal/controller/kubernetes/nodepool_external{,_test}.go`, regen CRDs+DeepCopy same PR.
+Validation: kuttl bundle 22 authored; live gate = `e2e.up`+`e2e.deploy` + custom manifest
+attaching a minimal 1-node pool by flat `clusterID` to a pre-existing Ready cluster (no cluster
+provisioning; `inyan-infra`/`cloud-infra` untouched). Companion artifacts in
+`specs/015-nodepool-taints/`: spec.md (US1–US4, FR-001..014, 2 clarify sessions), research.md
+(R-1..R-8), data-model.md, contracts/ (nodepool-taints-v1alpha1 / timeweb-nodegroup-patch),
+quickstart.md.
+
+Feature **013-firewall-api** is COMPLETE/merged — read the plan at
 `specs/013-firewall-api/plan.md`. New namespaced kind **`Firewall`**
 (`network.m.timeweb.crossplane.io/v1alpha1`) managing a Timeweb Cloud **firewall rule
 group** declaratively: identity (`name`/`description`/create-only `policy` `DROP`(default-deny)

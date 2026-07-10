@@ -165,6 +165,36 @@ Autoscaling instead of manual scaling (`minSize`/`maxSize` ≥ 2):
 When autoscaling is on the controller stops reconciling `nodeCount` — the
 upstream autoscaler owns the count.
 
+### Dedicated pools: taints & labels
+
+Worker groups carry Kubernetes node labels and taints declaratively — nodes
+join the cluster already labelled and tainted (no post-join window), and
+every node added later (scale-up, autoscaler, autohealing) carries the same
+sets:
+
+```yaml
+    labels:
+      role: ingress
+    taints:
+      - key: dedicated
+        value: ingress        # optional
+        effect: NoSchedule    # NoSchedule | PreferNoSchedule | NoExecute
+```
+
+Both are **mutable**: edit and re-apply — the pool converges in place via a
+group PATCH (metadata converges even on autoscaled pools), and Timeweb
+re-configures **already-running nodes** (they pass through an `updating`
+state; no recreation). Removing the blocks clears the sets upstream. The
+declaration is the single writer: changes made in the panel or via the raw
+API are reverted on the next reconcile.
+`status.atProvider.labels`/`.taints` mirror what the upstream group
+actually reports. Up to 12 taints; the same key may repeat only with a
+different effect; workloads target the pool with a matching toleration +
+`nodeSelector`.
+
+Platform quirk: a taint with an **empty value** persists on the group but
+is not applied to the node objects — give every taint a value.
+
 ## 3. Private network + project
 
 ```yaml
@@ -235,9 +265,10 @@ addon; the cluster stays `Ready=True`.
 ## Not yet supported
 
 `is_ingress`/`is_k8s_dashboard` toggles, OIDC provider, maintenance windows,
-custom pod/service CIDR, in-place nodepool label/autoscaling mutation, and
-per-addon config PATCH. Each is a follow-up extending
-`kubernetes.m.timeweb.crossplane.io`.
+custom pod/service CIDR, in-place autoscaling mutation, and per-addon config
+PATCH. Each is a follow-up extending `kubernetes.m.timeweb.crossplane.io`.
+(In-place label/taint mutation **is** supported — see "Dedicated pools"
+above.)
 
 (Custom-configurator sizing via `resources.{cpu,ramGB,diskGB}` — for masters and
 worker pools — **is** supported; see "Custom sizing" above.)

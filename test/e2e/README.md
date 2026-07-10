@@ -139,6 +139,7 @@ checks, which are order-independent). All lifecycle bundles run with
 | `19-private-cluster/`          | NAT'd network → cluster with no public node IPs    | 1 router + VPC + cluster                |
 | `20-router-selector/`          | `networkSelector` to-many expansion                | 1 router + VPCs                         |
 | `21-firewall/`                 | `Firewall` group + rules (no attachments — needs a real LB id) | 1 firewall group         |
+| `22-nodepool-taints/`          | Nodepool taints/labels: create tainted → day-2 edit + scale → clear | 1 cluster + workers |
 
 **Parallelism**: `parallel: 1` is the *default*, not a limit. The provider
 holds a single global client rate limiter (~2 r/s), so total API pressure is

@@ -502,3 +502,192 @@ func TestNodepoolPublicIP(t *testing.T) {
 		t.Errorf("publicIP=true: body field = %v, want true", got)
 	}
 }
+
+// --- feature 015: taints + label mutability ---------------------------------
+
+// nodeGroupTaintedJSON echoes a group carrying one label and two taints
+// (one value-less — upstream serializes value as ""). Taint order differs
+// from the spec fixtures below to pin order-insensitive comparison.
+const nodeGroupTaintedJSON = `{"node_group":{"id":42,"name":"workers","preset_id":9,"node_count":2,` +
+	`"labels":[{"key":"role","value":"ingress"}],` +
+	`"taints":[{"key":"probe","value":"","effect":"NoExecute"},{"key":"dedicated","value":"ingress","effect":"NoSchedule"}]}}`
+
+func taintedSpec(cr *kubernetesv1alpha1.KubernetesClusterNodepool) *kubernetesv1alpha1.KubernetesClusterNodepool {
+	cr.Spec.ForProvider.Labels = map[string]string{"role": "ingress"}
+	cr.Spec.ForProvider.Taints = []kubernetesv1alpha1.NodepoolTaint{
+		{Key: "dedicated", Value: strPtr("ingress"), Effect: "NoSchedule"},
+		{Key: "probe", Effect: "NoExecute"}, // nil value ≡ "" upstream
+	}
+	return cr
+}
+
+func TestNodepoolTaintsLabels(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Create_MarshalsTaintsAndLabels", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
+		fake.CreateClusterNodeGroupReturns(httpResp(http.StatusCreated, nodeGroupJSON), nil)
+		cr := taintedSpec(newNodepool(false, 2))
+		if _, err := nodepoolE(fake).Create(ctx, cr); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		_, _, body, _ := fake.CreateClusterNodeGroupArgsForCall(0)
+		if body.Taints == nil || len(*body.Taints) != 2 {
+			t.Fatalf("create body taints=%v, want 2 entries", body.Taints)
+		}
+		got := *body.Taints
+		if got[0].Key != "dedicated" || got[0].Effect != "NoSchedule" || got[0].Value == nil || *got[0].Value != "ingress" {
+			t.Errorf("taint[0]=%+v, want dedicated=ingress:NoSchedule", got[0])
+		}
+		if got[1].Key != "probe" || got[1].Effect != "NoExecute" || got[1].Value == nil || *got[1].Value != "" {
+			t.Errorf("taint[1]=%+v, want probe (empty value) NoExecute", got[1])
+		}
+		if body.Labels == nil || len(*body.Labels) != 1 || (*body.Labels)[0].Key != "role" {
+			t.Errorf("create body labels=%v, want [role=ingress]", body.Labels)
+		}
+	})
+
+	t.Run("Create_NoTaints_OmitsField", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
+		fake.CreateClusterNodeGroupReturns(httpResp(http.StatusCreated, nodeGroupJSON), nil)
+		if _, err := nodepoolE(fake).Create(ctx, newNodepool(false, 2)); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		_, _, body, _ := fake.CreateClusterNodeGroupArgsForCall(0)
+		if body.Taints != nil {
+			t.Errorf("taints=%v on a taint-less spec, want omitted", body.Taints)
+		}
+	})
+
+	t.Run("Observe_UpToDate_OrderInsensitive", func(t *testing.T) {
+		// Upstream lists the taints in a different order than the spec and
+		// serializes the value-less taint as "" — still up to date.
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupTaintedJSON), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesActiveJSON), nil)
+		cr := taintedSpec(newNodepool(true, 2))
+		obs, err := nodepoolE(fake).Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if !obs.ResourceUpToDate {
+			t.Error("ResourceUpToDate=false for order-only representation differences")
+		}
+		// status.atProvider mirrors the observed sets in spec shape.
+		if cr.Status.AtProvider.Labels["role"] != "ingress" {
+			t.Errorf("status labels=%v, want role=ingress mirrored", cr.Status.AtProvider.Labels)
+		}
+		if len(cr.Status.AtProvider.Taints) != 2 {
+			t.Fatalf("status taints=%v, want 2 mirrored", cr.Status.AtProvider.Taints)
+		}
+		for _, mt := range cr.Status.AtProvider.Taints {
+			if mt.Key == "probe" && mt.Value != nil {
+				t.Errorf("empty upstream value mirrored as %q, want omitted", *mt.Value)
+			}
+		}
+	})
+
+	t.Run("Observe_TaintDrift_NotUpToDate", func(t *testing.T) {
+		// Out-of-band upstream edit (extra taint gone / value changed) must
+		// surface as drift — the declaration is the single writer.
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil) // no taints upstream
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesActiveJSON), nil)
+		obs, err := nodepoolE(fake).Observe(ctx, taintedSpec(newNodepool(true, 2)))
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if obs.ResourceUpToDate {
+			t.Error("ResourceUpToDate=true while declared taints are missing upstream")
+		}
+	})
+
+	t.Run("Update_Drift_PatchesOwnedFieldsOnly", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil) // no metadata upstream
+		fake.UpdateClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupTaintedJSON), nil)
+		cr := taintedSpec(newNodepool(true, 2))
+		if _, err := nodepoolE(fake).Update(ctx, cr); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.UpdateClusterNodeGroupCallCount() != 1 {
+			t.Fatalf("PATCH called %d times, want 1", fake.UpdateClusterNodeGroupCallCount())
+		}
+		_, _, _, body, _ := fake.UpdateClusterNodeGroupArgsForCall(0)
+		if body.Name == nil || *body.Name != "workers" {
+			t.Errorf("PATCH name=%v, want workers", body.Name)
+		}
+		if body.Taints == nil || len(*body.Taints) != 2 || body.Labels == nil || len(*body.Labels) != 1 {
+			t.Errorf("PATCH body labels=%v taints=%v, want full declared sets", body.Labels, body.Taints)
+		}
+	})
+
+	t.Run("Update_NoDrift_NoPatch", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupTaintedJSON), nil)
+		if _, err := nodepoolE(fake).Update(ctx, taintedSpec(newNodepool(true, 2))); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.UpdateClusterNodeGroupCallCount() != 0 {
+			t.Error("PATCH issued while metadata is converged")
+		}
+	})
+
+	t.Run("Update_ClearsToEmptySets", func(t *testing.T) {
+		// Removing every taint/label must PATCH explicit [] (the clear op),
+		// not omit the fields.
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupTaintedJSON), nil)
+		fake.UpdateClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		if _, err := nodepoolE(fake).Update(ctx, newNodepool(true, 2)); err != nil { // spec: no taints/labels
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.UpdateClusterNodeGroupCallCount() != 1 {
+			t.Fatalf("PATCH called %d times, want 1", fake.UpdateClusterNodeGroupCallCount())
+		}
+		_, _, _, body, _ := fake.UpdateClusterNodeGroupArgsForCall(0)
+		if body.Taints == nil || len(*body.Taints) != 0 || body.Labels == nil || len(*body.Labels) != 0 {
+			t.Errorf("PATCH body labels=%v taints=%v, want explicit empty sets", body.Labels, body.Taints)
+		}
+	})
+
+	t.Run("Update_AutoscalingOn_StillConvergesMetadata", func(t *testing.T) {
+		// The metadata leg runs BEFORE the autoscaling early-return: tainted
+		// autoscaled pools must stay correctable, while the count is left to
+		// the autoscaler.
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		fake.UpdateClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupTaintedJSON), nil)
+		cr := taintedSpec(newNodepool(true, 9))
+		cr.Spec.ForProvider.Autoscaling = &kubernetesv1alpha1.NodepoolAutoscaling{Enabled: true, MinSize: 2, MaxSize: 6}
+		if _, err := nodepoolE(fake).Update(ctx, cr); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.UpdateClusterNodeGroupCallCount() != 1 {
+			t.Errorf("PATCH called %d times, want 1", fake.UpdateClusterNodeGroupCallCount())
+		}
+		if fake.IncreaseCountOfNodesInGroupCallCount()+fake.ReduceCountOfNodesInGroupCallCount() != 0 {
+			t.Error("scale call issued while autoscaling enabled")
+		}
+	})
+
+	t.Run("Update_PatchTerminal_BadRequest", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		fake.UpdateClusterNodeGroupReturns(httpResp(http.StatusBadRequest, `{"message":"bad"}`), nil)
+		if _, err := nodepoolE(fake).Update(ctx, taintedSpec(newNodepool(true, 2))); err == nil {
+			t.Fatal("want terminal error on PATCH 400")
+		}
+	})
+
+	t.Run("Update_PatchTransient_NetworkError", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		fake.UpdateClusterNodeGroupReturns(nil, errors.New("timeout"))
+		if _, err := nodepoolE(fake).Update(ctx, taintedSpec(newNodepool(true, 2))); err == nil {
+			t.Fatal("want error on PATCH transport failure")
+		}
+	})
+}

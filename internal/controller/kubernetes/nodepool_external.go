@@ -38,10 +38,23 @@ import (
 
 var errNotNodepool = errors.New("managed resource is not a KubernetesClusterNodepool")
 
+type nodeGroupKV struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+type nodeGroupTaint struct {
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+	Effect string `json:"effect"`
+}
+
 type nodeGroupBody struct {
-	ID        int `json:"id"`
-	PresetID  int `json:"preset_id"`
-	NodeCount int `json:"node_count"`
+	ID        int              `json:"id"`
+	PresetID  int              `json:"preset_id"`
+	NodeCount int              `json:"node_count"`
+	Labels    []nodeGroupKV    `json:"labels"`
+	Taints    []nodeGroupTaint `json:"taints"`
 }
 
 type nodeGroupEnvelope struct {
@@ -292,6 +305,30 @@ func (e *nodepoolExternal) Update(ctx context.Context, mg resource.Managed) (man
 		return managed.ExternalUpdate{}, shared.RejectImmutableChange(cr, e.recorder, "presetName")
 	}
 
+	// Converge labels/taints BEFORE the autoscaling early-return so tainted
+	// autoscaled pools stay correctable. One PATCH carrying ONLY the owned
+	// fields (name/labels/taints, full-set replace): the verb is
+	// undocumented and absent-field semantics unproven, so unowned state
+	// (autoscaler/sizing/publicIP) is never sent (research.md R-4/R-7).
+	// Empty declared sets are sent as [] — that is the clear operation.
+	if !nodepoolMetadataUpToDate(cr.Spec.ForProvider, observed) {
+		name := cr.Spec.ForProvider.Name
+		labels := declaredLabels(cr.Spec.ForProvider.Labels)
+		taints := declaredTaints(cr.Spec.ForProvider.Taints)
+		resp, err := e.tw.UpdateClusterNodeGroup(ctx, clusterID, groupID, twgen.UpdateClusterNodeGroupJSONRequestBody{
+			Name:   &name,
+			Labels: &labels,
+			Taints: &taints,
+		})
+		if err != nil {
+			return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		if err := timeweb.Classify(resp); err != nil {
+			return managed.ExternalUpdate{}, fmt.Errorf("kubernetes/nodepool: update labels/taints: %w", err)
+		}
+	}
+
 	// Autoscaling owns the count — don't fight it.
 	if cr.Spec.ForProvider.Autoscaling != nil && cr.Spec.ForProvider.Autoscaling.Enabled {
 		return managed.ExternalUpdate{}, nil
@@ -415,17 +452,12 @@ func buildCreateNodeGroupBody(cr *kubernetesv1alpha1.KubernetesClusterNodepool, 
 		body.PresetId = &pid
 	}
 	if len(fp.Labels) > 0 {
-		labels := make([]twgen.SetLabels, 0, len(fp.Labels))
-		// Deterministic order keeps the create body stable across reconciles.
-		keys := make([]string, 0, len(fp.Labels))
-		for k := range fp.Labels {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for _, k := range keys {
-			labels = append(labels, twgen.SetLabels{Key: k, Value: fp.Labels[k]})
-		}
+		labels := declaredLabels(fp.Labels)
 		body.Labels = &labels
+	}
+	if len(fp.Taints) > 0 {
+		taints := declaredTaints(fp.Taints)
+		body.Taints = &taints
 	}
 	if fp.Autoscaling != nil && fp.Autoscaling.Enabled {
 		t := true
@@ -441,6 +473,69 @@ func buildCreateNodeGroupBody(cr *kubernetesv1alpha1.KubernetesClusterNodepool, 
 	return body
 }
 
+// declaredLabels marshals the spec label map to the upstream array shape.
+// Deterministic (sorted) order keeps request bodies stable across reconciles.
+func declaredLabels(in map[string]string) []twgen.SetLabels {
+	keys := make([]string, 0, len(in))
+	for k := range in {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	out := make([]twgen.SetLabels, 0, len(in))
+	for _, k := range keys {
+		out = append(out, twgen.SetLabels{Key: k, Value: in[k]})
+	}
+	return out
+}
+
+// declaredTaints marshals the spec taints to the wire shape in spec order.
+// A nil Value is sent as "" — upstream echoes value as a plain string, so
+// the two are one identity (data-model.md).
+func declaredTaints(in []kubernetesv1alpha1.NodepoolTaint) []twgen.Taint {
+	out := make([]twgen.Taint, 0, len(in))
+	for _, t := range in {
+		v := ""
+		if t.Value != nil {
+			v = *t.Value
+		}
+		value := v
+		out = append(out, twgen.Taint{Key: t.Key, Value: &value, Effect: t.Effect})
+	}
+	return out
+}
+
+// nodepoolMetadataUpToDate reports whether the upstream group's labels and
+// taints match the declared sets, order-insensitively. Any mismatch —
+// operator edit or out-of-band upstream change — routes through Update's
+// owned-fields PATCH (feature 015; the declaration is the single writer).
+func nodepoolMetadataUpToDate(spec kubernetesv1alpha1.KubernetesClusterNodepoolParameters, g nodeGroupBody) bool {
+	if len(spec.Labels) != len(g.Labels) {
+		return false
+	}
+	for _, kv := range g.Labels {
+		if v, ok := spec.Labels[kv.Key]; !ok || v != kv.Value {
+			return false
+		}
+	}
+	if len(spec.Taints) != len(g.Taints) {
+		return false
+	}
+	want := make(map[[3]string]struct{}, len(spec.Taints))
+	for _, t := range spec.Taints {
+		v := ""
+		if t.Value != nil {
+			v = *t.Value
+		}
+		want[[3]string{t.Key, v, t.Effect}] = struct{}{}
+	}
+	for _, t := range g.Taints {
+		if _, ok := want[[3]string{t.Key, t.Value, t.Effect}]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
 func populateNodepoolStatus(cr *kubernetesv1alpha1.KubernetesClusterNodepool, g nodeGroupBody) {
 	uid := shared.EncodeID(g.ID)
 	cr.Status.AtProvider.UpstreamID = &uid
@@ -453,6 +548,30 @@ func populateNodepoolStatus(cr *kubernetesv1alpha1.KubernetesClusterNodepool, g 
 	if g.PresetID != 0 {
 		lp := int64(g.PresetID)
 		cr.Status.AtProvider.LockedPresetID = &lp
+	}
+	// Mirror the observed labels/taints in spec shape (feature 015): the
+	// status shows what the upstream group actually reports, so operators
+	// can see convergence without API access. nil when the group has none.
+	cr.Status.AtProvider.Labels = nil
+	if len(g.Labels) > 0 {
+		m := make(map[string]string, len(g.Labels))
+		for _, kv := range g.Labels {
+			m[kv.Key] = kv.Value
+		}
+		cr.Status.AtProvider.Labels = m
+	}
+	cr.Status.AtProvider.Taints = nil
+	if len(g.Taints) > 0 {
+		ts := make([]kubernetesv1alpha1.NodepoolTaint, 0, len(g.Taints))
+		for _, t := range g.Taints {
+			nt := kubernetesv1alpha1.NodepoolTaint{Key: t.Key, Effect: t.Effect}
+			if t.Value != "" {
+				v := t.Value
+				nt.Value = &v
+			}
+			ts = append(ts, nt)
+		}
+		cr.Status.AtProvider.Taints = ts
 	}
 	// SIZING print column: one readable summary regardless of which sizing
 	// variant the spec uses (presetName leaves a resources-shaped column
@@ -478,6 +597,11 @@ func isNodepoolUpToDate(spec kubernetesv1alpha1.KubernetesClusterNodepoolParamet
 	}
 	if spec.Resources != nil && status.LockedPresetID != nil {
 		return false // sizing switch presetName→resources: Update rejects
+	}
+	// Metadata (labels/taints) drift routes through Update's PATCH — checked
+	// before the autoscaling early-true so autoscaled pools stay correctable.
+	if !nodepoolMetadataUpToDate(spec, g) {
+		return false
 	}
 	if spec.Autoscaling != nil && spec.Autoscaling.Enabled {
 		return true
