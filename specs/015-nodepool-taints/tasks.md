@@ -134,7 +134,7 @@ reverted; empty set clears.
       propagation (read-only kubeconfig check) → day-2 edit (public-host
       PATCH proof) → empty-set clear → out-of-band revert → delete;
       re-observe upstream at each step
-- [ ] T017 Release prep: version bump to v0.6.0, release notes (taints +
+- [X] T017 Release prep: version bump to v0.6.0, release notes (taints +
       labels-mutability contract change highlighted per constitution),
       package build + publish, GitHub release
 
