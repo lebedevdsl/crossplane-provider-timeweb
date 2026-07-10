@@ -196,6 +196,18 @@ type KubernetesClusterNodepoolObservation struct {
 	// `<cpu>cpu/<ram>gb/<disk>gb` when sized via resources.
 	// +optional
 	Sizing *string `json:"sizing,omitempty"`
+
+	// Labels mirrors the upstream group's node labels as reported by the
+	// last observation (spec shape; drift from spec.forProvider.labels is
+	// converged by Update).
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Taints mirrors the upstream group's node taints as reported by the
+	// last observation (spec shape; an upstream empty value is shown with
+	// the value omitted).
+	// +optional
+	Taints []NodepoolTaint `json:"taints,omitempty"`
 }
 
 // NodepoolNode is one worker node of the group as reported upstream.

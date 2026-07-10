@@ -549,6 +549,30 @@ func populateNodepoolStatus(cr *kubernetesv1alpha1.KubernetesClusterNodepool, g 
 		lp := int64(g.PresetID)
 		cr.Status.AtProvider.LockedPresetID = &lp
 	}
+	// Mirror the observed labels/taints in spec shape (feature 015): the
+	// status shows what the upstream group actually reports, so operators
+	// can see convergence without API access. nil when the group has none.
+	cr.Status.AtProvider.Labels = nil
+	if len(g.Labels) > 0 {
+		m := make(map[string]string, len(g.Labels))
+		for _, kv := range g.Labels {
+			m[kv.Key] = kv.Value
+		}
+		cr.Status.AtProvider.Labels = m
+	}
+	cr.Status.AtProvider.Taints = nil
+	if len(g.Taints) > 0 {
+		ts := make([]kubernetesv1alpha1.NodepoolTaint, 0, len(g.Taints))
+		for _, t := range g.Taints {
+			nt := kubernetesv1alpha1.NodepoolTaint{Key: t.Key, Effect: t.Effect}
+			if t.Value != "" {
+				v := t.Value
+				nt.Value = &v
+			}
+			ts = append(ts, nt)
+		}
+		cr.Status.AtProvider.Taints = ts
+	}
 	// SIZING print column: one readable summary regardless of which sizing
 	// variant the spec uses (presetName leaves a resources-shaped column
 	// blank and vice versa).

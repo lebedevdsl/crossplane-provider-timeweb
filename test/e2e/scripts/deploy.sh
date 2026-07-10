@@ -24,6 +24,18 @@ for tool in docker kubectl crossplane; do
   }
 done
 
+# --- 0b. Cross-compile the runtime binary for the local docker arch ----------
+#
+# The Dockerfile is COPY-only (bin/provider-linux-<arch>); without this step a
+# stale binary from an old `make xpkg.build` run gets shipped silently (the
+# feature-015 gate hit exactly that).
+
+DOCKER_ARCH=$(docker version --format '{{.Server.Arch}}')
+echo "[e2e] cross-compiling provider for linux/${DOCKER_ARCH}"
+CGO_ENABLED=0 GOOS=linux GOARCH="$DOCKER_ARCH" go build \
+  -ldflags="-s -w -X github.com/lebedevdsl/crossplane-provider-timeweb/internal/version.Version=$E2E_VERSION" \
+  -o "bin/provider-linux-${DOCKER_ARCH}" ./cmd/provider
+
 # --- 1. Build the runtime image ----------------------------------------------
 
 echo "[e2e] building runtime image: $E2E_IMAGE_PUSH"

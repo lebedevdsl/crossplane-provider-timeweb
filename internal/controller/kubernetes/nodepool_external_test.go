@@ -567,12 +567,25 @@ func TestNodepoolTaintsLabels(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupTaintedJSON), nil)
 		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesActiveJSON), nil)
-		obs, err := nodepoolE(fake).Observe(ctx, taintedSpec(newNodepool(true, 2)))
+		cr := taintedSpec(newNodepool(true, 2))
+		obs, err := nodepoolE(fake).Observe(ctx, cr)
 		if err != nil {
 			t.Fatalf("Observe: %v", err)
 		}
 		if !obs.ResourceUpToDate {
 			t.Error("ResourceUpToDate=false for order-only representation differences")
+		}
+		// status.atProvider mirrors the observed sets in spec shape.
+		if cr.Status.AtProvider.Labels["role"] != "ingress" {
+			t.Errorf("status labels=%v, want role=ingress mirrored", cr.Status.AtProvider.Labels)
+		}
+		if len(cr.Status.AtProvider.Taints) != 2 {
+			t.Fatalf("status taints=%v, want 2 mirrored", cr.Status.AtProvider.Taints)
+		}
+		for _, mt := range cr.Status.AtProvider.Taints {
+			if mt.Key == "probe" && mt.Value != nil {
+				t.Errorf("empty upstream value mirrored as %q, want omitted", *mt.Value)
+			}
 		}
 	})
 

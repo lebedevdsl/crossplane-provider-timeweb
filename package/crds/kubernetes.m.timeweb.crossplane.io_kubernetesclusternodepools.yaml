@@ -382,6 +382,14 @@ spec:
                       Delete (which need the cluster_id in the path) never depend on a live
                       ref lookup.
                     type: string
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      Labels mirrors the upstream group's node labels as reported by the
+                      last observation (spec shape; drift from spec.forProvider.labels is
+                      converged by Update).
+                    type: object
                   lockedConfiguratorID:
                     description: |-
                       LockedConfiguratorID is the upstream configurator id resolved at Create
@@ -429,6 +437,45 @@ spec:
                       print column: `preset:<slug>` when sized via presetName, or
                       `<cpu>cpu/<ram>gb/<disk>gb` when sized via resources.
                     type: string
+                  taints:
+                    description: |-
+                      Taints mirrors the upstream group's node taints as reported by the
+                      last observation (spec shape; an upstream empty value is shown with
+                      the value omitted).
+                    items:
+                      description: |-
+                        NodepoolTaint is one Kubernetes node taint applied to every node of the
+                        worker group (feature 015). Identity within the list is (key, effect):
+                        the same key may appear with different effects, but an exact key+effect
+                        duplicate is rejected by a type-level CEL rule. A nil Value marshals as
+                        "" upstream (the two are equivalent).
+                      properties:
+                        effect:
+                          description: Effect is the scheduling effect.
+                          enum:
+                          - NoSchedule
+                          - PreferNoSchedule
+                          - NoExecute
+                          type: string
+                        key:
+                          description: |-
+                            Key is the taint key (Kubernetes label-key syntax: optional
+                            DNS-subdomain prefix + name segment).
+                          maxLength: 253
+                          minLength: 1
+                          pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?[A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?$
+                          type: string
+                        value:
+                          description: Value is the optional taint value (Kubernetes
+                            label-value syntax).
+                          maxLength: 63
+                          pattern: ^([A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?)?$
+                          type: string
+                      required:
+                      - effect
+                      - key
+                      type: object
+                    type: array
                   upstreamID:
                     description: UpstreamID is the Timeweb worker-group id (external-name).
                     type: string

@@ -27,10 +27,15 @@ effects is legal; exact (key, effect) duplicate is rejected at admission.
 
 ### status.atProvider (delta)
 
-No new fields. Declared taints are auditable from spec (FR-009 satisfied by
-`spec.forProvider.taints` — the CR is the declaration of record); observed
-sets are diffed in-memory during Observe, not mirrored (matches how labels
-are handled today; avoids status churn on every reconcile).
+| Field | Type | Notes |
+|-------|------|-------|
+| `labels` | `map[string]string` | upstream-observed node labels, spec shape |
+| `taints` | `[]NodepoolTaint` | upstream-observed taints, spec shape; upstream `""` value shown with value omitted |
+
+The mirror shows what the upstream group actually reports (operator request,
+gate session 2026-07-10): convergence is auditable from the CR alone —
+`spec.forProvider.*` is the declaration, `status.atProvider.*` the observed
+truth, and any difference is the drift Update is about to correct.
 
 ## Upstream wire model (hand-patched OpenAPI superset)
 

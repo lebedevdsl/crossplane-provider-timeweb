@@ -36,6 +36,7 @@ in place; the group is never replaced for a metadata change).
 | Out-of-band edits | reverted to declared sets on the next reconcile (single-writer) |
 | Clear | removing all taints (or labels) converges upstream to `[]` |
 | Sync | `Synced=True` only once the upstream group reports the declared sets (FR-014) |
+| Status mirror | `status.atProvider.labels`/`.taints` show the upstream-observed sets (spec shape) on every observation |
 | Node lifecycle | scale-up/autoscale/autoheal nodes carry the group's current sets (upstream guarantee, e2e-verified) |
 
 ## Conditions (unchanged vocabulary)
