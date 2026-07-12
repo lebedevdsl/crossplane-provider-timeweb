@@ -1,0 +1,5 @@
+# Trigger the one-shot full cache purge via the annotation contract.
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: kubectl annotate -n timeweb-e2e cdns.cdn.m.timeweb.crossplane.io/e2e-cdn cdn.timeweb.crossplane.io/purge=all --overwrite

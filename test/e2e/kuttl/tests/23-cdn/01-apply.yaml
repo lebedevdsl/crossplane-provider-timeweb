@@ -1,0 +1,24 @@
+# Cdn - lifecycle (feature 016). Self-contained: domain origin, no bucket
+# dependency. The origin host MUST resolve in public DNS — a non-resolvable
+# host makes the upstream create fail with a bare 500 (probe-verified
+# 2026-07-12), hence example.com (resolvable) and not a made-up subdomain.
+# Settings blocks exercise the day-2 config PATCH path.
+apiVersion: cdn.m.timeweb.crossplane.io/v1alpha1
+kind: Cdn
+metadata:
+  name: e2e-cdn
+  namespace: timeweb-e2e
+spec:
+  forProvider:
+    name: "${TWE_CDN_NAME}"
+    description: "kuttl e2e - cdn resource"
+    origin:
+      domain: example.com
+      https: true
+    cache:
+      edgeTTLSeconds: 3600
+    performance:
+      gzip: true
+  providerConfigRef:
+    kind: ProviderConfig
+    name: e2e
