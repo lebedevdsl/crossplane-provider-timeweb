@@ -1,5 +1,39 @@
 <!-- SPECKIT START -->
-Current feature: **015-nodepool-taints** — read the plan at
+Feature **016-cdn-resource** is COMPLETE — **released as v0.7.0**
+(`ghcr.io/lebedevdsl/provider-timeweb:v0.7.0`, 2026-07-12; live-gated on `inyan-staging`
+against the real API; kuttl bundle 23 + 28 unit tests). Follow-ups (query-string
+allowed/forbidden cache-key modes, custom domains/SSL/secure-token/traffic limits) seeded in
+`specs/_next-cdn-followups.preface.md`. Read the plan at
+`specs/016-cdn-resource/plan.md`. New namespaced kind **`Cdn`**
+(`cdn.m.timeweb.crossplane.io/v1alpha1`, NEW group dir `apis/cdn/`) managing a Timeweb Cloud
+CDN resource on the **undocumented** `/api/v1/cdn/http-resources` surface (devtools-captured
+2026-07-12: POST create w/ required `preset_id` + `server{host,port}`|`storage_id` origin;
+GET resource (`cdn_domain`, `status: processing`); **PATCH same path** partial updates w/
+nested `config`; **GET `/{id}/configuration`** full settings — SECRET-BEARING (`origin.aws`
+plaintext S3 keys: never log/mirror); POST `/{id}/clear-cache` `{purge_type: full|partial,
+paths}`). Spec surface: origin exactly-one of typed `bucketRef` (→`storage_id` = S3Bucket
+upstream id)/`domain`/`ip` + `https`/`port`; settings blocks cache (edge/browser TTL,
+always-online, query-string key) / security (`forceHTTPS`) / performance (http3, gzip,
+slicing 1–1024MB, contentOptimization off|video|images, robots deny|proxy|custom) / cors /
+requestHeaders — nil block ⇒ not owned, mirrored only; single-writer drift reversion,
+converge by configuration-readback diff (upstream `status` sticks at `processing` for hours
+while serving — NEVER gate Ready/updates/purge on it; suspended family only). Self-clearing
+purge annotation
+`cdn.timeweb.crossplane.io/purge` = `all` | comma-sep `/`-rooted paths → Event +
+`lastPurgedAt` + removal-on-success. AWS auth for bucket origins expected upstream-automatic
+(R-3; fallback `deriveAdminKeys` hoisted shared). Client **HAND-WRITTEN**
+`internal/clients/timeweb/cdn.go` (`firewall.go`/`doV2` pattern, NO openapi regen).
+Controller mirrors Firewall + `Watches(S3Bucket→Cdn)` (nodepool idiom) + ref gate skipped on
+deletion. Touch points: `apis/cdn/v1alpha1/*` (new), `apis/apis.go`,
+`internal/controller/cdn/*` (new), `cmd/provider/main.go`; regen CRDs+DeepCopy same PR.
+Validation: kuttl bundle 23 (admission) + live gate (fresh 10GB bucket + bucketRef Cdn,
+content via `technicalDomain`, drift revert, purge, delete). Open probes P-1..P-6 in
+`contracts/timeweb-cdn-endpoints.md` (DELETE semantics, presets, aws auto-wire, terminal
+status; all have fallbacks). Companion artifacts in `specs/016-cdn-resource/`: spec.md
+(US1–US4, FR-001..017, 4 clarify decisions + live probe findings), research.md (R-1..R-10),
+data-model.md, contracts/ (cdn-v1alpha1 / timeweb-cdn-endpoints), quickstart.md.
+
+Feature **015-nodepool-taints** is COMPLETE (shipped in **v0.6.0**) — read the plan at
 `specs/015-nodepool-taints/plan.md`. Additive on **`KubernetesClusterNodepool`**: optional
 **`taints []{key,value?,effect}`** (enum `NoSchedule|PreferNoSchedule|NoExecute`, MaxItems=12,
 label-syntax patterns, CEL unique-(key,effect)) AND **day-2 mutability for taints + the existing
