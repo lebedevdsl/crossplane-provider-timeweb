@@ -1,0 +1,601 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.21.0
+  name: cdns.cdn.m.timeweb.crossplane.io
+spec:
+  group: cdn.m.timeweb.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - timeweb
+    kind: Cdn
+    listKind: CdnList
+    plural: cdns
+    singular: cdn
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .status.atProvider.technicalDomain
+      name: DOMAIN
+      type: string
+    - jsonPath: .status.atProvider.state
+      name: STATE
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: ID
+      priority: 1
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          Cdn is a Timeweb Cloud CDN resource: one origin (S3 bucket by reference,
+          domain, or IP) served through an auto-assigned technical delivery domain,
+          with the declared settings blocks kept in sync (single-writer). The
+          `cdn.timeweb.crossplane.io/purge` annotation triggers a one-shot cache
+          purge. See specs/016-cdn-resource/contracts/timeweb-cdn-endpoints.md.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CdnSpec is the desired state.
+            properties:
+              forProvider:
+                description: |-
+                  CdnParameters is the operator-settable surface for a Timeweb CDN resource.
+                  Settings blocks left nil are NOT owned: the controller never writes them
+                  upstream and only mirrors them read-only in status (FR-010). See
+                  specs/016-cdn-resource/contracts/cdn-v1alpha1.md.
+                properties:
+                  cache:
+                    description: Cache configures CDN and browser caching.
+                    properties:
+                      alwaysOnline:
+                        description: AlwaysOnline serves stale cached content when
+                          the origin is down.
+                        type: boolean
+                      browserTTLSeconds:
+                        description: |-
+                          BrowserTTLSeconds sets the Cache-Control browser TTL. 0 or absent
+                          disables browser caching.
+                        format: int64
+                        minimum: 0
+                        type: integer
+                      edgeTTLSeconds:
+                        description: |-
+                          EdgeTTLSeconds is how long content stays cached on CDN nodes. 0 or
+                          absent disables CDN caching.
+                        format: int64
+                        minimum: 0
+                        type: integer
+                      queryStringInCacheKey:
+                        description: |-
+                          QueryStringInCacheKey includes query parameters in the CDN cache key
+                          (panel-verified, undocumented upstream setting).
+                        type: boolean
+                    type: object
+                  cors:
+                    description: Cors configures Access-Control-Allow-Origin handling.
+                    properties:
+                      alwaysAddHeader:
+                        description: |-
+                          AlwaysAddHeader adds the CORS header to every response, not only
+                          successful ones.
+                        type: boolean
+                      origins:
+                        description: |-
+                          Origins lists allowed origins: exact ("example.com"), wildcard
+                          subdomains ("*.example.com"), a domain with all subdomains
+                          (".example.com"), or an upstream-supported regex ("~a\\d+\\.example\\.com").
+                        items:
+                          type: string
+                        maxItems: 16
+                        minItems: 1
+                        type: array
+                        x-kubernetes-list-type: set
+                    required:
+                    - origins
+                    type: object
+                  description:
+                    description: Description is an optional free-form comment. Mutable.
+                    maxLength: 255
+                    type: string
+                  name:
+                    description: |-
+                      Name is the resource name shown in the dashboard. Defaults to the MR
+                      name. Mutable.
+                    maxLength: 255
+                    minLength: 1
+                    type: string
+                  origin:
+                    description: |-
+                      Origin is the content source. The origin kind (bucketRef/domain/ip)
+                      selects the upstream wiring: bucket origins attach by storage id and
+                      get AWS auth automatically; domain/ip origins are plain servers.
+                    properties:
+                      bucketRef:
+                        description: |-
+                          BucketRef points at an S3Bucket managed by this provider (same
+                          namespace). The bucket must be Ready before the CDN is created.
+                        properties:
+                          name:
+                            description: Name of the referenced S3Bucket.
+                            minLength: 1
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      domain:
+                        description: Domain is an external origin hostname (no scheme,
+                          no path).
+                        maxLength: 253
+                        minLength: 1
+                        pattern: ^[a-z0-9]([a-z0-9\-\.]*[a-z0-9])?$
+                        type: string
+                      https:
+                        default: true
+                        description: HTTPS selects the origin scheme (`use_https`).
+                          Defaults to true.
+                        type: boolean
+                      ip:
+                        description: IP is an external origin IPv4 address.
+                        pattern: ^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$
+                        type: string
+                      port:
+                        description: |-
+                          Port overrides the origin port for domain/ip origins. Defaults by
+                          scheme (443 for https, 80 for http).
+                        format: int64
+                        maximum: 65535
+                        minimum: 1
+                        type: integer
+                    type: object
+                    x-kubernetes-validations:
+                    - message: exactly one of bucketRef, domain, or ip must be set
+                      rule: '(has(self.bucketRef) ? 1 : 0) + (has(self.domain) ? 1
+                        : 0) + (has(self.ip) ? 1 : 0) == 1'
+                    - message: port applies to domain/ip origins only
+                      rule: '!(has(self.bucketRef) && has(self.port))'
+                  performance:
+                    description: Performance configures delivery optimizations and
+                      robots.txt.
+                    properties:
+                      contentOptimization:
+                        default: "off"
+                        description: |-
+                          ContentOptimization processes content by type: video packages into
+                          streaming formats, images optimizes them (panel-verified setting;
+                          quote "off" in YAML — bare off parses as boolean).
+                        enum:
+                        - "off"
+                        - video
+                        - images
+                        type: string
+                      gzip:
+                        description: Gzip enables CDN-side text compression.
+                        type: boolean
+                      http3:
+                        description: HTTP3 enables the HTTP/3 protocol on delivery.
+                        type: boolean
+                      largeFileSlicingMB:
+                        description: |-
+                          LargeFileSlicingMB enables large-file segmentation with the given
+                          block size. Absent disables slicing.
+                        format: int64
+                        maximum: 1024
+                        minimum: 1
+                        type: integer
+                      robots:
+                        description: Robots configures search-engine indexing via
+                          robots.txt.
+                        properties:
+                          custom:
+                            description: Custom is the inline robots.txt body for
+                              mode=custom.
+                            maxLength: 4096
+                            type: string
+                          mode:
+                            default: deny
+                            description: |-
+                              Mode: deny = do not index (default), proxy = pass the origin's
+                              robots.txt through, custom = serve the inline `custom` directives.
+                            enum:
+                            - deny
+                            - proxy
+                            - custom
+                            type: string
+                        required:
+                        - mode
+                        type: object
+                        x-kubernetes-validations:
+                        - message: custom content is required exactly when mode is
+                            'custom'
+                          rule: (has(self.custom) && self.mode == 'custom') || (!has(self.custom)
+                            && self.mode != 'custom')
+                    type: object
+                  projectID:
+                    description: ProjectID assigns the CDN resource to a Timeweb project.
+                    type: integer
+                  requestHeaders:
+                    description: |-
+                      RequestHeaders are custom headers the CDN adds to origin requests.
+                      Header names must be unique.
+
+                      MaxItems bounds the array per the apiserver CEL cost budget
+                      (project_cel_cost_budget_crd).
+                    items:
+                      description: CdnRequestHeader is one custom header the CDN sends
+                        to the origin.
+                      properties:
+                        name:
+                          description: Name is the HTTP header name.
+                          maxLength: 128
+                          minLength: 1
+                          pattern: ^[A-Za-z0-9][A-Za-z0-9\-_]*$
+                          type: string
+                        value:
+                          description: Value is the header value sent verbatim to
+                            the origin.
+                          maxLength: 1024
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    maxItems: 32
+                    type: array
+                    x-kubernetes-validations:
+                    - message: requestHeaders names must be unique
+                      rule: self.all(h, self.filter(o, o.name == h.name).size() ==
+                        1)
+                  security:
+                    description: Security configures the HTTP→HTTPS redirect.
+                    properties:
+                      forceHTTPS:
+                        description: ForceHTTPS redirects all HTTP requests on delivery
+                          domains to HTTPS.
+                        type: boolean
+                    type: object
+                required:
+                - origin
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: CdnStatus is the observed state.
+            properties:
+              atProvider:
+                description: CdnObservation is the observed state of a Timeweb CDN
+                  resource.
+                properties:
+                  domains:
+                    description: |-
+                      Domains mirrors the upstream delivery-domain aliases (includes the
+                      technical domain; read-only — custom domains are out of v1 scope).
+                    items:
+                      type: string
+                    maxItems: 8
+                    type: array
+                  id:
+                    description: ID is the upstream resource id (also encoded as external-name).
+                    format: int64
+                    type: integer
+                  lastPurgedAt:
+                    description: |-
+                      LastPurgedAt is when the last annotation-triggered cache purge
+                      succeeded upstream.
+                    format: date-time
+                    type: string
+                  lockedPresetID:
+                    description: LockedPresetID is the CDN preset chosen at Create.
+                    format: int64
+                    type: integer
+                  observedSettings:
+                    description: ObservedSettings mirrors the upstream configuration
+                      read-only.
+                    properties:
+                      cache:
+                        description: |-
+                          CdnCache is the caching settings block. When declared, the controller owns
+                          every field in it (absent leaves mean "disabled").
+                        properties:
+                          alwaysOnline:
+                            description: AlwaysOnline serves stale cached content
+                              when the origin is down.
+                            type: boolean
+                          browserTTLSeconds:
+                            description: |-
+                              BrowserTTLSeconds sets the Cache-Control browser TTL. 0 or absent
+                              disables browser caching.
+                            format: int64
+                            minimum: 0
+                            type: integer
+                          edgeTTLSeconds:
+                            description: |-
+                              EdgeTTLSeconds is how long content stays cached on CDN nodes. 0 or
+                              absent disables CDN caching.
+                            format: int64
+                            minimum: 0
+                            type: integer
+                          queryStringInCacheKey:
+                            description: |-
+                              QueryStringInCacheKey includes query parameters in the CDN cache key
+                              (panel-verified, undocumented upstream setting).
+                            type: boolean
+                        type: object
+                      cors:
+                        description: CdnCors is the CORS settings block (`Access-Control-Allow-Origin`).
+                        properties:
+                          alwaysAddHeader:
+                            description: |-
+                              AlwaysAddHeader adds the CORS header to every response, not only
+                              successful ones.
+                            type: boolean
+                          origins:
+                            description: |-
+                              Origins lists allowed origins: exact ("example.com"), wildcard
+                              subdomains ("*.example.com"), a domain with all subdomains
+                              (".example.com"), or an upstream-supported regex ("~a\\d+\\.example\\.com").
+                            items:
+                              type: string
+                            maxItems: 16
+                            minItems: 1
+                            type: array
+                            x-kubernetes-list-type: set
+                        required:
+                        - origins
+                        type: object
+                      performance:
+                        description: CdnPerformance is the delivery/performance settings
+                          block.
+                        properties:
+                          contentOptimization:
+                            default: "off"
+                            description: |-
+                              ContentOptimization processes content by type: video packages into
+                              streaming formats, images optimizes them (panel-verified setting;
+                              quote "off" in YAML — bare off parses as boolean).
+                            enum:
+                            - "off"
+                            - video
+                            - images
+                            type: string
+                          gzip:
+                            description: Gzip enables CDN-side text compression.
+                            type: boolean
+                          http3:
+                            description: HTTP3 enables the HTTP/3 protocol on delivery.
+                            type: boolean
+                          largeFileSlicingMB:
+                            description: |-
+                              LargeFileSlicingMB enables large-file segmentation with the given
+                              block size. Absent disables slicing.
+                            format: int64
+                            maximum: 1024
+                            minimum: 1
+                            type: integer
+                          robots:
+                            description: Robots configures search-engine indexing
+                              via robots.txt.
+                            properties:
+                              custom:
+                                description: Custom is the inline robots.txt body
+                                  for mode=custom.
+                                maxLength: 4096
+                                type: string
+                              mode:
+                                default: deny
+                                description: |-
+                                  Mode: deny = do not index (default), proxy = pass the origin's
+                                  robots.txt through, custom = serve the inline `custom` directives.
+                                enum:
+                                - deny
+                                - proxy
+                                - custom
+                                type: string
+                            required:
+                            - mode
+                            type: object
+                            x-kubernetes-validations:
+                            - message: custom content is required exactly when mode
+                                is 'custom'
+                              rule: (has(self.custom) && self.mode == 'custom') ||
+                                (!has(self.custom) && self.mode != 'custom')
+                        type: object
+                      requestHeaderNames:
+                        description: RequestHeaderNames lists the names of headers
+                          configured upstream.
+                        items:
+                          type: string
+                        type: array
+                      security:
+                        description: |-
+                          CdnSecurity is the security settings block. SSL certificates and secure
+                          tokens are deliberately absent (out of v1 scope — never touched upstream).
+                        properties:
+                          forceHTTPS:
+                            description: ForceHTTPS redirects all HTTP requests on
+                              delivery domains to HTTPS.
+                            type: boolean
+                        type: object
+                    type: object
+                  source:
+                    description: Source is the upstream-reported origin (bucket name
+                      or host).
+                    type: string
+                  state:
+                    description: State is the upstream lifecycle status (e.g. "processing").
+                    type: string
+                  technicalDomain:
+                    description: |-
+                      TechnicalDomain is the auto-assigned delivery domain
+                      (`*.cdn.twcstorage.ru`).
+                    type: string
+                  trafficUsage:
+                    description: TrafficUsage mirrors the upstream traffic counters.
+                    properties:
+                      cacheRatio:
+                        description: |-
+                          CacheRatio is the upstream cache-hit ratio, formatted as a string
+                          (CRD schemas disallow floats).
+                        type: string
+                      outgoingTrafficBytes:
+                        format: int64
+                        type: integer
+                      requests:
+                        format: int64
+                        type: integer
+                    type: object
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

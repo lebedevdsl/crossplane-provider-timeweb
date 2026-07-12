@@ -89,6 +89,14 @@ const (
 	// (1:1 exclusivity). The controller refuses to silently move the service;
 	// the operator must detach it from the other group first.
 	ReasonServiceConflict xpv2.ConditionReason = "ServiceConflict"
+	// ReasonOriginNotReady is set on a Cdn whose origin bucketRef target is
+	// missing, not yet Ready, or has no upstream id — creation waits (the
+	// S3Bucket watch re-triggers promptly once the bucket is usable).
+	ReasonOriginNotReady xpv2.ConditionReason = "OriginNotReady"
+	// ReasonSuspended is set when the upstream resource is administratively
+	// paused/suspended (e.g. a CDN over its traffic limit) — distinguishes a
+	// billing/limit stop from transient provisioning.
+	ReasonSuspended xpv2.ConditionReason = "Suspended"
 )
 
 // SyncedFalse returns a Synced=False condition with the supplied reason and

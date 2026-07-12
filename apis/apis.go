@@ -23,6 +23,7 @@ package apis
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 
+	cdnv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/cdn/v1alpha1"
 	computev1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/compute/v1alpha1"
 	kubernetesv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/kubernetes/v1alpha1"
 	networkv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/network/v1alpha1"
@@ -42,6 +43,7 @@ var AddToSchemes = runtime.SchemeBuilder{
 	computev1alpha1.AddToScheme,
 	networkv1alpha1.AddToScheme,
 	kubernetesv1alpha1.AddToScheme,
+	cdnv1alpha1.AddToScheme,
 }
 
 // AddToScheme registers every provider kind with s.
