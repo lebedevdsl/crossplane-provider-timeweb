@@ -264,6 +264,19 @@ No `LOCATION` — a firewall group is account-scoped, not placed.
 No ID column and no LOCATION column — account-scoped resources without a
 meaningful upstream ID to expose.
 
+### Cdn
+
+| Column | Type   | JSONPath                                          | Priority |
+|--------|--------|----------------------------------------------------|----------|
+| READY  | string | `.status.conditions[?(@.type=='Ready')].status`   |          |
+| SYNCED | string | `.status.conditions[?(@.type=='Synced')].status`  |          |
+| DOMAIN | string | `.status.atProvider.technicalDomain`              |          |
+| STATE  | string | `.status.atProvider.state`                        |          |
+| ID     | string | `.metadata.annotations.crossplane\.io/external-name` | 1     |
+| AGE    | date   | `.metadata.creationTimestamp`                     |          |
+
+No `LOCATION` — a CDN resource is global (edge network), not placed.
+
 ---
 
 ## Wide-Only Diagnostics (`-o wide`)
