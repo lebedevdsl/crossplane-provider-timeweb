@@ -37,6 +37,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/lebedevdsl/crossplane-provider-timeweb/apis"
+	cdnctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/cdn"
 	computectrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/compute"
 	containerregistryctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/containerregistry"
 	kubernetesctrl "github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/kubernetes"
@@ -174,6 +175,10 @@ func main() {
 	}
 	if err := kubernetesctrl.SetupAddon(mgr, log, pollInterval); err != nil {
 		log.Info("unable to register KubernetesClusterAddon controller", "error", err.Error())
+		os.Exit(1)
+	}
+	if err := cdnctrl.Setup(mgr, log, pollInterval); err != nil {
+		log.Info("unable to register Cdn controller", "error", err.Error())
 		os.Exit(1)
 	}
 

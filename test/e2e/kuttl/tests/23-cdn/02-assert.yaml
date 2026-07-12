@@ -1,0 +1,23 @@
+# Assert the purge annotation CONTRACT, not upstream timing: freshly created
+# resources refuse purges (500) for many minutes (platform quirk), so the pass
+# condition is EITHER a completed purge (CachePurged + lastPurgedAt + annotation
+# gone) OR the correct retry posture (PurgeFailed event + annotation retained).
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 240
+commands:
+  - script: |
+      for i in $(seq 1 46); do
+        ann="$(kubectl get cdn -n timeweb-e2e e2e-cdn -o jsonpath='{.metadata.annotations.cdn\.timeweb\.crossplane\.io/purge}')"
+        ts="$(kubectl get cdn -n timeweb-e2e e2e-cdn -o jsonpath='{.status.atProvider.lastPurgedAt}')"
+        events="$(kubectl get events -n timeweb-e2e --field-selector involvedObject.name=e2e-cdn -o jsonpath='{range .items[*]}{.reason}{"\n"}{end}')"
+        if [ -z "$ann" ] && [ -n "$ts" ] && echo "$events" | grep -q '^CachePurged$'; then
+          echo "purge completed"; exit 0
+        fi
+        if [ -n "$ann" ] && echo "$events" | grep -q '^PurgeFailed$'; then
+          echo "purge correctly retrying (upstream refuses on fresh resources)"; exit 0
+        fi
+        sleep 5
+      done
+      echo "no purge attempt observed (neither CachePurged nor PurgeFailed)" >&2
+      exit 1

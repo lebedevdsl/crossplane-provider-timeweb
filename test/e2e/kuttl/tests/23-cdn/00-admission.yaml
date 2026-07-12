@@ -1,0 +1,77 @@
+# Cdn - CRD admission checks (feature 016). Server dry-run only: exercises the
+# CEL rules without touching the live API.
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  # Two origins → rejected (exactly-one CEL rule).
+  - script: |
+      ! kubectl apply --dry-run=server -n $NAMESPACE -f - <<'EOF'
+      apiVersion: cdn.m.timeweb.crossplane.io/v1alpha1
+      kind: Cdn
+      metadata: { name: e2e-cdn-invalid-two }
+      spec:
+        forProvider:
+          origin: { domain: a.example.com, ip: 203.0.113.1 }
+        providerConfigRef: { kind: ProviderConfig, name: e2e }
+      EOF
+  # No origin → rejected.
+  - script: |
+      ! kubectl apply --dry-run=server -n $NAMESPACE -f - <<'EOF'
+      apiVersion: cdn.m.timeweb.crossplane.io/v1alpha1
+      kind: Cdn
+      metadata: { name: e2e-cdn-invalid-none }
+      spec:
+        forProvider:
+          origin: { https: true }
+        providerConfigRef: { kind: ProviderConfig, name: e2e }
+      EOF
+  # Port with bucketRef → rejected.
+  - script: |
+      ! kubectl apply --dry-run=server -n $NAMESPACE -f - <<'EOF'
+      apiVersion: cdn.m.timeweb.crossplane.io/v1alpha1
+      kind: Cdn
+      metadata: { name: e2e-cdn-invalid-port }
+      spec:
+        forProvider:
+          origin: { bucketRef: { name: b }, port: 8443 }
+        providerConfigRef: { kind: ProviderConfig, name: e2e }
+      EOF
+  # Slicing size out of range → rejected.
+  - script: |
+      ! kubectl apply --dry-run=server -n $NAMESPACE -f - <<'EOF'
+      apiVersion: cdn.m.timeweb.crossplane.io/v1alpha1
+      kind: Cdn
+      metadata: { name: e2e-cdn-invalid-slice }
+      spec:
+        forProvider:
+          origin: { domain: a.example.com }
+          performance: { largeFileSlicingMB: 2048 }
+        providerConfigRef: { kind: ProviderConfig, name: e2e }
+      EOF
+  # robots custom content without mode=custom → rejected.
+  - script: |
+      ! kubectl apply --dry-run=server -n $NAMESPACE -f - <<'EOF'
+      apiVersion: cdn.m.timeweb.crossplane.io/v1alpha1
+      kind: Cdn
+      metadata: { name: e2e-cdn-invalid-robots }
+      spec:
+        forProvider:
+          origin: { domain: a.example.com }
+          performance:
+            robots: { mode: deny, custom: "User-agent: *" }
+        providerConfigRef: { kind: ProviderConfig, name: e2e }
+      EOF
+  # Duplicate request-header names → rejected.
+  - script: |
+      ! kubectl apply --dry-run=server -n $NAMESPACE -f - <<'EOF'
+      apiVersion: cdn.m.timeweb.crossplane.io/v1alpha1
+      kind: Cdn
+      metadata: { name: e2e-cdn-invalid-headers }
+      spec:
+        forProvider:
+          origin: { domain: a.example.com }
+          requestHeaders:
+            - { name: X-A, value: "1" }
+            - { name: X-A, value: "2" }
+        providerConfigRef: { kind: ProviderConfig, name: e2e }
+      EOF

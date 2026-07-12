@@ -1,0 +1,59 @@
+# Example Cdn managed resource for the Timeweb Crossplane provider.
+#
+# A Cdn fronts exactly one origin — an S3Bucket by reference, a domain, or an
+# IP — behind an auto-assigned technical delivery domain
+# (status.atProvider.technicalDomain, *.cdn.twcstorage.ru).
+#
+# Settings blocks (cache / security / performance / cors / requestHeaders) are
+# owned only when declared: omitted blocks stay panel-managed and are mirrored
+# read-only under status.atProvider.observedSettings.
+#
+# Cache purge: annotate with cdn.timeweb.crossplane.io/purge=all (full) or a
+# comma-separated list of /-rooted paths ("/,/img,/index.html"). The controller
+# purges once, stamps status.atProvider.lastPurgedAt, and removes the annotation.
+#
+# Bucket origins: AWS auth for private buckets is wired automatically — no
+# credential fields in the manifest.
+#
+# See specs/016-cdn-resource/quickstart.md for day-2 operations and troubleshooting.
+---
+apiVersion: cdn.m.timeweb.crossplane.io/v1alpha1
+kind: Cdn
+metadata:
+  name: site-assets
+  namespace: timeweb-prod
+spec:
+  forProvider:
+    name: site-assets
+    description: "static assets for the site"
+    origin:
+      # Exactly one of bucketRef | domain | ip:
+      bucketRef:
+        name: site-assets           # S3Bucket in the same namespace
+      # domain: origin.example.com
+      # ip: 203.0.113.10
+      https: true                   # origin scheme (default true)
+      # port: 8443                  # domain/ip origins only
+    cache:
+      edgeTTLSeconds: 86400
+      browserTTLSeconds: 3600
+      alwaysOnline: true
+      queryStringInCacheKey: false
+    security:
+      forceHTTPS: true
+    performance:
+      http3: true
+      gzip: true
+      largeFileSlicingMB: 8
+      contentOptimization: "off"    # off | video | images (quote "off"!)
+      robots:
+        mode: deny                  # deny | proxy | custom (+ custom: |...)
+    cors:
+      origins: ["*.example.com"]
+      alwaysAddHeader: true
+    requestHeaders:
+      - name: X-Origin-Auth
+        value: replace-me
+  providerConfigRef:
+    kind: ProviderConfig
+    name: default
