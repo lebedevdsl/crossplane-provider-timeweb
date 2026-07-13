@@ -53,9 +53,13 @@ algorithm (panel docs, captured 2026-07-13): token = urlsafe-b64(md5(
 `https://<cdn-domain>/md5(<token>,<expires>)/<path>`; ip/expires omitted from
 the string when their checks are off; the CDN domain is not part of the
 signature. Spec surface: `security.secureToken: {secretRef, bindClientIP}`
-(key from a Secret, never in spec/status). Wire CAPTURED 2026-07-13:
-`config.security.secure_token = {"secret_key": "<key>", "restrict_by_ip": bool}`
-(null = off, per the cache-subfeature convention). READY to implement.
+(key from a Secret, never in spec/status). WRITE shape captured 2026-07-13
+(request body): `config.security.secure_token = {"secret_key": "<key>",
+"restrict_by_ip": bool}` (null = off, per the cache-subfeature convention).
+Readback UNKNOWN: whether the configuration GET echoes `secret_key` (like
+`origin.aws`) or masks it — decides the diff strategy (default: presence +
+`restrict_by_ip` diff, key written through like robots `content`; never
+logged/mirrored either way). READY to implement.
 
 ## 2c. Outbound traffic limit (panel-verified 2026-07-13)
 
@@ -65,7 +69,8 @@ SUSPENDED — with up to a **2-hour delay during which traffic keeps billing**
 (null = off; read-mirrored in status already). Spec surface:
 `trafficLimitGBPerMonth *int64` (nil = off) → bytes on write; the provider's
 `Ready=False reason=Suspended` mapping already covers the exceeded state.
-Wire CAPTURED 2026-07-13: top-level PATCH `{"traffic_limit_bytes": N}` —
+WRITE shape captured 2026-07-13 (request body): top-level PATCH
+`{"traffic_limit_bytes": N}` —
 panel "ГБ/мес" is GiB (3000 ГБ → 3221225472000 = 3000×2^30). READY to
 implement.
 
