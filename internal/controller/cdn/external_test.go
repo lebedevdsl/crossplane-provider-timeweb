@@ -262,6 +262,10 @@ func TestObserveUpToDate(t *testing.T) {
 	if cr.Status.AtProvider.ObservedSettings == nil {
 		t.Fatal("expected observedSettings mirror")
 	}
+	if string(obs.ConnectionDetails[connKeyTechnicalDomain]) != "abc.cdn.twcstorage.ru" ||
+		string(obs.ConnectionDetails[connKeyURL]) != "https://abc.cdn.twcstorage.ru" {
+		t.Fatalf("expected technical_domain/url connection details, got %v", obs.ConnectionDetails)
+	}
 }
 
 func TestObserveCacheDrift(t *testing.T) {

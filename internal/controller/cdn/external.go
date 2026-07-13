@@ -54,6 +54,24 @@ const (
 	eventPurgeFailed   = "PurgeFailed"
 )
 
+// Connection-secret keys published to spec.writeConnectionSecretToRef.
+const (
+	connKeyTechnicalDomain = "technical_domain"
+	connKeyURL             = "url"
+)
+
+// connectionDetails publishes the delivery endpoint (public data — the
+// Secret is a convenience for app wiring, not a credential store).
+func connectionDetails(res timeweb.CDNHTTPResource) managed.ConnectionDetails {
+	if res.CDNDomain == "" {
+		return nil
+	}
+	return managed.ConnectionDetails{
+		connKeyTechnicalDomain: []byte(res.CDNDomain),
+		connKeyURL:             []byte("https://" + res.CDNDomain),
+	}
+}
+
 var errOriginNotReady = errors.New("cdn: origin is not resolvable yet")
 
 // cdnAPI is the slice of the timeweb client the Cdn external needs.
@@ -130,13 +148,14 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	if isSuspendedState(res.Status) {
 		cr.SetConditions(shared.ReadyFalse(shared.ReasonSuspended,
 			fmt.Sprintf("upstream CDN resource is %q (limit/billing suspension); resolve in the panel", res.Status)))
-		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true}, nil
+		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true,
+			ConnectionDetails: connectionDetails(res)}, nil
 	}
 	cr.SetConditions(xpv2.Available())
 
-	patch, dirty := e.buildDesiredWrite(ctx, cr, res, cfg)
-	_ = patch
-	return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: !dirty}, nil
+	_, dirty := e.buildDesiredWrite(ctx, cr, res, cfg)
+	return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: !dirty,
+		ConnectionDetails: connectionDetails(res)}, nil
 }
 
 // Create provisions the CDN resource. It adopts a same-named orphan rather
@@ -195,7 +214,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		cr.Status.AtProvider.TechnicalDomain = &d
 	}
 	cr.SetConditions(xpv2.Creating())
-	return managed.ExternalCreation{}, nil
+	return managed.ExternalCreation{ConnectionDetails: connectionDetails(env.Resource)}, nil
 }
 
 // Update pushes at most one PATCH per reconcile with only the dirty owned
