@@ -705,18 +705,17 @@ func desiredConfig(p cdnv1alpha1.CdnParameters, cfg timeweb.CDNConfig, sec resol
 	out := &timeweb.CDNConfigPatch{}
 	dirty := false
 
-	// Delivery-domain aliases: owned when declared; desired = {technical} ∪
-	// declared — the technical domain is ALWAYS included, never detached.
+	// Delivery-domain aliases: the WRITE carries ONLY the declared custom
+	// domains — upstream manages the technical domain itself and COUNTS it
+	// inside the ≤2 aliases limit, so including it (2 customs + technical = 3)
+	// is rejected. Diff the declared customs against the observed aliases with
+	// the technical domain removed.
 	if p.Domains != nil {
-		obs := append([]string(nil), aliasesOf(cfg)...)
-		tech := technicalAlias(cfg)
+		obsCustoms := customAliases(cfg)
 		want := append([]string(nil), p.Domains...)
-		if tech != "" {
-			want = append(want, tech)
-		}
 		sort.Strings(want)
-		sort.Strings(obs)
-		if !slicesEqual(want, obs) {
+		sort.Strings(obsCustoms)
+		if !slicesEqual(want, obsCustoms) {
 			out.Domains = &timeweb.CDNConfigDomains{Aliases: want}
 			dirty = true
 		}
@@ -862,9 +861,7 @@ func desiredDelivery(perf *cdnv1alpha1.CdnPerformance, obs *timeweb.CDNConfigDel
 	if obs != nil {
 		obsHTTP3, obsGzip, obsLarge, obsImage = bDeref(obs.HTTP3), bDeref(obs.Gzip), bDeref(obs.LargeFiles), bDeref(obs.ImageOptimization)
 		obsSlice = i64Deref(obs.SliceSize)
-		if obs.Packaging != nil {
-			obsMP4 = bDeref(obs.Packaging.MP4)
-		}
+		obsMP4 = obs.Packaging.MP4Enabled()
 	}
 
 	if wantHTTP3 == obsHTTP3 && wantGzip == obsGzip && wantLarge == obsLarge &&
@@ -876,10 +873,19 @@ func desiredDelivery(perf *cdnv1alpha1.CdnPerformance, obs *timeweb.CDNConfigDel
 		Gzip:              &wantGzip,
 		LargeFiles:        &wantLarge,
 		ImageOptimization: &wantImage,
-		Packaging:         &timeweb.CDNPackaging{MP4: &wantMP4},
 	}
 	if wantLarge {
 		d.SliceSize = &wantSlice
+	}
+	// Packaging (video) is sent ONLY when its state changes — mp4 as an
+	// OBJECT to enable, explicit null to disable; NEVER a bool. Omitted
+	// otherwise so a plain http3/gzip/slicing change never touches it.
+	if wantMP4 != obsMP4 {
+		if wantMP4 {
+			d.Packaging = &timeweb.CDNPackaging{MP4: timeweb.JSONValue(map[string]any{})}
+		} else {
+			d.Packaging = &timeweb.CDNPackaging{MP4: timeweb.JSONNull}
+		}
 	}
 	return d
 }
@@ -1077,7 +1083,7 @@ func settingsMirror(cfg timeweb.CDNConfig) *cdnv1alpha1.CdnSettingsMirror {
 		mode := "off"
 		if bDeref(cfg.Delivery.ImageOptimization) {
 			mode = "images"
-		} else if cfg.Delivery.Packaging != nil && bDeref(cfg.Delivery.Packaging.MP4) {
+		} else if cfg.Delivery.Packaging.MP4Enabled() {
 			mode = "video"
 		}
 		perf.ContentOptimization = &mode
@@ -1112,6 +1118,19 @@ func aliasesOf(cfg timeweb.CDNConfig) []string {
 		return nil
 	}
 	return cfg.Domains.Aliases
+}
+
+// customAliases returns the observed delivery aliases with the technical
+// domain removed (the write-side alias set the operator owns).
+func customAliases(cfg timeweb.CDNConfig) []string {
+	tech := technicalAlias(cfg)
+	var out []string
+	for _, a := range aliasesOf(cfg) {
+		if a != tech {
+			out = append(out, a)
+		}
+	}
+	return out
 }
 
 // domainsAttached reports whether every declared custom domain is already an
