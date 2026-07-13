@@ -80,12 +80,46 @@ WRITE shape captured 2026-07-13 (request body): top-level PATCH
 panel "ГБ/мес" is GiB (3000 ГБ → 3221225472000 = 3000×2^30). READY to
 implement.
 
-## 3. Upstream quirks to track (RU support ticket drafted 2026-07-12)
+## 2d. Platform identified: CDNvideo (2026-07-13)
+
+The technical domain CNAMEs to `*.a.trbcdn.net` — Timeweb's CDN is a
+white-label of **CDNvideo** (ООО «СДН-видео»). Their public docs
+(doc.cdnvideo.ru) explain several observed behaviors: settings propagation
+"up to 15 minutes" (the processing/apply badge mechanism — Timeweb's status
+mapping holds it much longer), query-string modes all/whitelist/blacklist
+(one list max), the FULL stale_conditions vocabulary (errors, timeouts,
+invalid responses, 500/502/503/504, `updating`), the signed-link algorithm
+incl. **410 Gone for expired links** (Timeweb docs claim only 403), custom
+certificate renewal being MANUAL upstream, image optimization ≤2 MB, WebP
+conversion async, 100 resources/account. CDNvideo's own API may document
+purge limits etc. — a useful secondary reference for future rounds.
+Their open-source Terraform provider
+(github.com/opensource-cdnvideo/terraform-provider-cdnvideo, resource
+`cdnvideo_http`) documents the ENGINE's full schema — stale_conditions set,
+tokenized access, geo/IP/referer/UA limitations, ssl_protocols, SNI, cookie
+cache keys. **REFERENCE ONLY (operator directive 2026-07-13): Timeweb's
+facade differs from CDNvideo's native API (e.g. `query_args {mode,list}` vs
+`consider_args`/`args_whitelist`) and the integration depth is unknown —
+NEVER derive wire shapes or design from these docs; first-party captures
+remain the sole authority.**
+
+## 3. Upstream quirks to track (RU support tickets FILED — Qrator/CDN batch
+2026-07-13, incl. LE-fails-with-correct-CNAME on resource 22209)
 
 - `status` sticks at `processing` for hours before settling to `created`;
   panel badge + purge spinner track it.
 - `clear-cache`: 500 in the first ~2 minutes after create, 429 on repeats.
 - Create with a non-DNS-resolvable origin host → bare 500 (should be 4xx).
+- `POST /cdn/certificates` returns 204 with NO body — the created id is never
+  disclosed (and ids are RECYCLED), forcing identity-based ownership tracking.
+- Certificate upload rejects any field beyond `{certificate, private_key}`
+  ("property resource_id should not exist") yet the certificate is
+  resource-scoped — no documented way to target the resource in the request.
+- LE certificate tasks (`/cdn/certificates/tasks`) carry NO failure reason —
+  `status: failed` with no message/error field; undiagnosable via API.
+  Successful tasks VANISH from the list, yet `/issue` can still 409 with
+  `cert_issue_task_already_exists` even after the certificate was deleted —
+  an invisible/cached task record the API neither shows nor expires promptly.
 - Qrator IP bans triggered by error-loop traffic (two incidents 2026-07-12);
   provider now keeps purge retries poll-paced and origin-gated creates
   API-silent — keep that discipline in future controllers.
