@@ -56,10 +56,16 @@ signature. Spec surface: `security.secureToken: {secretRef, bindClientIP}`
 (key from a Secret, never in spec/status). WRITE shape captured 2026-07-13
 (request body): `config.security.secure_token = {"secret_key": "<key>",
 "restrict_by_ip": bool}` (null = off, per the cache-subfeature convention).
-Readback UNKNOWN: whether the configuration GET echoes `secret_key` (like
-`origin.aws`) or masks it — decides the diff strategy (default: presence +
-`restrict_by_ip` diff, key written through like robots `content`; never
-logged/mirrored either way). READY to implement.
+Disable captured too (request body 2026-07-13):
+`config.security = {"redirect": false, "secure_token": null}` — explicit null
+per the cache-subfeature convention, and the panel replaces the security
+SECTION wholesale (`redirect` included) ⇒ implementation must switch
+`CDNConfigSecurity` to full-section-replace semantics (drop omitempty on its
+keys, mirror the cache write struct). Readback UNKNOWN: whether the
+configuration GET echoes `secret_key` (like `origin.aws`) or masks it —
+decides the diff strategy (default: presence + `restrict_by_ip` diff, key
+written through like robots `content`; never logged/mirrored either way).
+READY to implement.
 
 ## 2c. Outbound traffic limit (panel-verified 2026-07-13)
 
