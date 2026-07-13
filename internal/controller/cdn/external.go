@@ -228,6 +228,9 @@ func (e *external) sslInputsFor(cr *cdnv1alpha1.Cdn, cfg timeweb.CDNConfig, cert
 		if st.BudgetKey != nil {
 			in.prevBudgetKey = *st.BudgetKey
 		}
+		if st.State != nil {
+			in.prevState = *st.State
+		}
 		if st.IssueAttempts != nil {
 			in.attempts = *st.IssueAttempts
 		}

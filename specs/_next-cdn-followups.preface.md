@@ -103,6 +103,16 @@ facade differs from CDNvideo's native API (e.g. `query_args {mode,list}` vs
 NEVER derive wire shapes or design from these docs; first-party captures
 remain the sole authority.**
 
+## 2e. SYSTEMIC: per-reconcile rate limiter (not CDN-specific)
+
+`timeweb.New` is called in every controller's Connect (20 sites) → each
+reconcile gets its OWN 2 r/s limiter, so concurrent/looping reconciles blow
+past Timeweb's server-side limit → 429 (observed on the CDN 017 error-loop,
+which froze status mirrors). Fix (future, all-kinds): a PROCESS-GLOBAL limiter
+shared across reconciles/controllers (build the timeweb.Client once in main,
+inject; or a package-level limiter). Contradicts the aspirational memory note
+that claimed a global limiter already exists.
+
 ## 3. Upstream quirks to track (RU support tickets FILED — Qrator/CDN batch
 2026-07-13, incl. LE-fails-with-correct-CNAME on resource 22209)
 

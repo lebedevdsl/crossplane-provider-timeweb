@@ -88,6 +88,19 @@ never ran) and only ONE custom domain (1 + technical = 2, at the limit) —
 each bug sits exactly one notch outside the gate's field combination. Lesson:
 sample the mundane settings-write matrix, not only the hard async paths.
 
+## R-10 — custom SSL has NO retry budget (v0.8.2)
+
+Custom upload is deterministic (same cert → same result), so the LE-style
+retry budget was wrong there: it left a bound custom cert showing stale
+`issueAttempts=1 / state=failed`. v0.8.2: custom uploads once per distinct
+cert identity (fingerprinted in budgetKey); a terminal rejection stays
+`failed` and is not re-sent until the Secret changes (identity → new
+budgetKey). `issueAttempts`/`lastIssueAttemptAt` are Let's-Encrypt-only now.
+Also confirmed: the CR status-mirror staleness operators saw was
+`429`-on-Observe caused by the v0.8.0 mp4/domains Update error-loop; the
+per-reconcile (non-global) rate limiter amplifies it — flagged as a systemic
+follow-up (make the timeweb client limiter process-global).
+
 ## R-8 — live-gate findings (2026-07-13, relaxed gate on inyan-staging)
 
 Verified live under the dev build: traffic limit (100 GiB → 107374182400),

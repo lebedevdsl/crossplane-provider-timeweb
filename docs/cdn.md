@@ -96,10 +96,11 @@ ssl:
 > `status.atProvider.ssl.state: exhausted` — reset with a domains/ssl spec
 > edit or `kubectl annotate cdn/X cdn.timeweb.crossplane.io/retry-ssl=now`.
 
-- `custom`: the chain must terminate in a system-trusted root — self-signed
-  certificates are rejected upstream (`422 cert_add_root_not_trusted`);
-  rejection surfaces as `ssl.state: failed` + an `SSLUploadFailed` Event with
-  poll-paced retries.
+- `custom`: no retry budget (upload is deterministic). The chain must
+  terminate in a system-trusted root — self-signed certificates are rejected
+  (`422 cert_add_root_not_trusted`), surfacing as `ssl.state: failed` + an
+  `SSLUploadFailed` Event; the same certificate is NOT re-uploaded until the
+  Secret changes. `issueAttempts` applies to Let's Encrypt only.
 - `custom`: rotation is declarative — update the TLS Secret and the provider
   uploads the new certificate, rebinds, and deletes its old one. No SAN
   validation is performed (upstream accepts any certificate; coverage is your
