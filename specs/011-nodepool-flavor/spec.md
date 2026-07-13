@@ -4,7 +4,7 @@
 
 **Created**: 2026-06-23
 
-**Status**: Draft
+**Status**: Complete (shipped)
 
 **Input**: User description: "Add a `flavor` selector to KubernetesClusterNodepool worker sizing (standard/dedicated-cpu) so operators pick the worker configurator family explicitly, instead of the resolver's tightest-fit silently landing on dedicated-cpu."
 

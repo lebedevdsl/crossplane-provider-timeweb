@@ -68,6 +68,7 @@ func SetupCluster(mgr manager.Manager, l logging.Logger, pollInterval time.Durat
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&kubernetesv1alpha1.KubernetesCluster{}).
+		WithOptions(controller.Options{RateLimiter: ratelimiter.NewController()}).
 		Complete(r)
 }
 

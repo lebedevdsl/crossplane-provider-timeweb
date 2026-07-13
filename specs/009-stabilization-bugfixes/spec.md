@@ -4,7 +4,7 @@
 
 **Created**: 2026-06-21
 
-**Status**: Draft
+**Status**: Complete (shipped)
 
 **Input**: User description: "`specs/_next-008-followups.md` add to spec" — the
 consolidated findings from the 008 packaging + live-e2e work on the Timeweb

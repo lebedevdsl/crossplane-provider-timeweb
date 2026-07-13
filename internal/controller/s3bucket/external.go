@@ -129,7 +129,7 @@ func (e *external) populateAttachedUsers(ctx context.Context, cr *objectstoragev
 		cr.Status.AtProvider.AttachedUsers = nil
 		return
 	}
-	ak, sk, err := deriveAdminKeys(ctx, e.twFull)
+	ak, sk, err := shared.DeriveAdminKeys(ctx, e.twFull)
 	if err != nil {
 		return
 	}
@@ -165,31 +165,6 @@ func listScopedUsers(ctx context.Context, tw *timeweb.Client) ([]timeweb.IAMUser
 		return nil, false
 	}
 	return env.Users, true
-}
-
-// deriveAdminKeys reads the account super-user's S3 keys (v1, uncached).
-func deriveAdminKeys(ctx context.Context, tw *timeweb.Client) (string, string, error) {
-	resp, err := tw.GetStorageUsers(ctx)
-	if err != nil {
-		return "", "", err
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if err := timeweb.Classify(resp); err != nil {
-		return "", "", err
-	}
-	var env struct {
-		Users []struct {
-			AccessKey string `json:"access_key"`
-			SecretKey string `json:"secret_key"`
-		} `json:"users"`
-	}
-	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
-		return "", "", err
-	}
-	if len(env.Users) == 0 || env.Users[0].AccessKey == "" {
-		return "", "", fmt.Errorf("s3bucket: no account-admin S3 keys")
-	}
-	return env.Users[0].AccessKey, env.Users[0].SecretKey, nil
 }
 
 // Create POSTs a new bucket via the resolver-driven presetName path.

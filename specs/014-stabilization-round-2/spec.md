@@ -269,6 +269,11 @@ spec covers the shipped Secret key set.
 
 **Rate-limit safety & reconcile efficiency (P1/P2)**
 
+- **FR-005b (018 follow-up, DevOps review 2026-07-13)**: the `rgwiam` IAM client
+  (`internal/clients/rgwiam/sigv4.go`, host `panel.s3.twcstorage.ru`) uses a bare
+  `http.Client` with NO shared limiter — a large S3User fleet could trip an egress ban on
+  that host independently of the API host. If that host is Qrator-fronted, bring it under
+  a shared per-host budget too (probe first). Low volume today.
 - **FR-005**: All requests to the upstream API host MUST share one process-wide rate
   budget regardless of controller, reconcile, or ProviderConfig token; transport/connection
   reuse MUST survive across reconciles.
@@ -305,7 +310,11 @@ spec covers the shipped Secret key set.
   for long kind names. Status observation field naming (external id field) and JSON casing
   MUST follow one convention.
 - **FR-015**: Connection-secret key naming MUST follow one documented convention across all
-  kinds; the change and its consumer impact MUST be called out in release notes.
+  kinds; the change and its consumer impact MUST be called out in release notes. This
+  round ALSO redesigns the S3User connection Secret to carry a per-bucket structure (each
+  granted bucket's name/region/endpoint) and DEPRECATE/REMOVE the singular
+  `endpoint`/`region`/`bucket` (breaking — 018 shipped only the non-breaking
+  primary-bucket derivation as an interim).
 
 **Documentation & examples (P2)**
 

@@ -42,6 +42,9 @@ const (
 	connKeySecretKey = "secret_key"
 	connKeyEndpoint  = "endpoint"
 	connKeyBucket    = "bucket"
+	// connKeyRegion is the primary granted bucket's region (018 FR-006 —
+	// derived, no longer implied by a hardcoded endpoint). Additive/non-breaking.
+	connKeyRegion = "region"
 	// connKeyBuckets is the comma-separated, sorted list of EVERY bucket this
 	// user can reach. `bucket` (singular) is the first one — kept for the common
 	// single-bucket case and back-compat; multi-bucket consumers read `buckets`.
@@ -68,6 +71,9 @@ type external struct {
 	recorder record.EventRecorder
 	// grants are the resolved desired (bucket, level) pairs (from Connect).
 	grants []rgwiam.Grant
+	// primaryRegion is the region of the primary granted bucket (empty when no
+	// bucketRef grant exposes one) — published as the `region` connection key.
+	primaryRegion string
 }
 
 // Observe fetches the upstream user + its inline policy; reports drift.
@@ -115,10 +121,13 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	setReadyCondition(e.recorder, cr, user.Status)
 
 	upToDate := observed != "" && rgwiam.PoliciesEqual(observed, desired)
+	// Create-only publishing (018): the single-user GET does NOT return the
+	// secret key, so republishing here would blank the Secret irrecoverably.
+	// Observe returns NO connection details — a runtime no-op — leaving the
+	// Create-published Secret intact for the resource's whole life.
 	return managed.ExternalObservation{
-		ResourceExists:    true,
-		ResourceUpToDate:  upToDate,
-		ConnectionDetails: buildConnection(user, e.grants),
+		ResourceExists:   true,
+		ResourceUpToDate: upToDate,
 	}, nil
 }
 
@@ -145,8 +154,26 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	populateStatus(cr, user, desired, e.grants)
+
+	// FR-005: an ADOPTED user comes from the LIST endpoint, which does not
+	// return the secret key — publishing then would write a BLANK credential no
+	// consumer can use. Publish nothing and RETURN AN ERROR so the failure is
+	// sticky: a nil return would let the runtime overwrite our condition with
+	// Synced=True/ReconcileSuccess (same condition Type), leaving the resource
+	// looking healthy while no usable Secret exists. The Warning event carries
+	// the real reason (the terminal reason surfaces as ReconcileError — see
+	// docs/conditions.md). The policy is already applied; the operator must
+	// delete+recreate to mint a fresh key, or supply it out of band.
+	if user.SecretKey == "" {
+		msg := "adopted upstream storage user has no retrievable secret key; connection Secret not published (delete+recreate to mint a fresh key, or supply the key out of band)"
+		if e.recorder != nil {
+			e.recorder.Event(cr, "Warning", string(shared.ReasonSecretMissing), msg)
+		}
+		return managed.ExternalCreation{}, errors.New(msg)
+	}
+
 	cr.Status.SetConditions(xpv2.Creating())
-	return managed.ExternalCreation{ConnectionDetails: buildConnection(user, e.grants)}, nil
+	return managed.ExternalCreation{ConnectionDetails: buildConnection(user, e.grants, e.primaryRegion)}, nil
 }
 
 // Update re-renders and PUTs the whole policy. `name` is immutable.
@@ -185,7 +212,9 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	populateStatus(cr, user, desired, e.grants)
-	return managed.ExternalUpdate{ConnectionDetails: buildConnection(user, e.grants)}, nil
+	// Create-only publishing (018): Update's GET lacks the secret key too —
+	// return no connection details so the Secret is never re-touched.
+	return managed.ExternalUpdate{}, nil
 }
 
 // Delete removes the inline policy then the identity. Already-gone ⇒ success.
@@ -312,7 +341,7 @@ func setReadyCondition(recorder record.EventRecorder, cr *objectstoragev1alpha1.
 // buildConnection assembles the scoped connection-Secret keys. The same keys
 // authorize every granted bucket (one access/secret key + the shared regional
 // endpoint); `bucket` names the primary one and `buckets` lists them all.
-func buildConnection(u timeweb.IAMUser, grants []rgwiam.Grant) managed.ConnectionDetails {
+func buildConnection(u timeweb.IAMUser, grants []rgwiam.Grant, region string) managed.ConnectionDetails {
 	names := make([]string, 0, len(grants))
 	for _, g := range grants {
 		names = append(names, g.Bucket)
@@ -321,11 +350,15 @@ func buildConnection(u timeweb.IAMUser, grants []rgwiam.Grant) managed.Connectio
 	if len(names) > 0 {
 		bucket = names[0]
 	}
-	return managed.ConnectionDetails{
+	out := managed.ConnectionDetails{
 		connKeyAccessKey: []byte(u.AccessKey),
 		connKeySecretKey: []byte(u.SecretKey),
 		connKeyEndpoint:  []byte(dataEndpoint),
 		connKeyBucket:    []byte(bucket),
 		connKeyBuckets:   []byte(strings.Join(names, ",")),
 	}
+	if region != "" {
+		out[connKeyRegion] = []byte(region)
+	}
+	return out
 }

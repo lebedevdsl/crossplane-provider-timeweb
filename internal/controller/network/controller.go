@@ -68,6 +68,7 @@ func SetupNetwork(mgr manager.Manager, l logging.Logger, pollInterval time.Durat
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&networkv1alpha1.Network{}).
+		WithOptions(controller.Options{RateLimiter: ratelimiter.NewController()}).
 		Complete(r)
 }
 
@@ -97,6 +98,7 @@ func SetupFloatingIP(mgr manager.Manager, l logging.Logger, pollInterval time.Du
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&networkv1alpha1.FloatingIP{}).
+		WithOptions(controller.Options{RateLimiter: ratelimiter.NewController()}).
 		Complete(r)
 }
 
