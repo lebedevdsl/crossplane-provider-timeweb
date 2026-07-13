@@ -34,6 +34,7 @@ type CdnBucketRef struct {
 // ip must be set (CEL-enforced).
 // +kubebuilder:validation:XValidation:rule="(has(self.bucketRef) ? 1 : 0) + (has(self.domain) ? 1 : 0) + (has(self.ip) ? 1 : 0) == 1",message="exactly one of bucketRef, domain, or ip must be set"
 // +kubebuilder:validation:XValidation:rule="!(has(self.bucketRef) && has(self.port))",message="port applies to domain/ip origins only"
+// +kubebuilder:validation:XValidation:rule="!(has(self.bucketRef) && has(self.awsAuthSecretRef))",message="awsAuthSecretRef applies to external origins only (in-account buckets auto-wire)"
 type CdnOrigin struct {
 	// BucketRef points at an S3Bucket managed by this provider (same
 	// namespace). The bucket must be Ready before the CDN is created.
@@ -63,6 +64,49 @@ type CdnOrigin struct {
 	// +kubebuilder:validation:Maximum=65535
 	// +optional
 	Port *int64 `json:"port,omitempty"`
+
+	// AWSAuthSecretRef enables AWS-signature auth against an EXTERNAL private
+	// S3-compatible origin (Secret keys: access_key, secret_key). Forbidden
+	// with bucketRef — in-account buckets are wired upstream automatically.
+	// +optional
+	AWSAuthSecretRef *CdnSecretRef `json:"awsAuthSecretRef,omitempty"`
+}
+
+// CdnSecretRef names a Secret in the Cdn's namespace (optionally a key).
+type CdnSecretRef struct {
+	// Name of the Secret.
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+	// Key within the Secret, where a single value is needed.
+	// +optional
+	Key *string `json:"key,omitempty"`
+}
+
+// CdnSSL manages the resource's SINGLE certificate slot (one certificate per
+// CDN resource — panel-verified). Absent block = slot unowned (panel-managed).
+// ⚠ letsEncrypt mode is implemented per the captured wire contract but has
+// never been observed succeeding upstream (issuance fails with a correct
+// CNAME and no error reason; ticket filed 2026-07-13).
+// +kubebuilder:validation:XValidation:rule="(self.mode == 'custom') == has(self.certificateSecretRef)",message="certificateSecretRef is required for mode custom and forbidden otherwise"
+type CdnSSL struct {
+	// Mode: none = unbind and delete the provider-created certificate;
+	// letsEncrypt = issue automatically (UNVERIFIED upstream — see docs);
+	// custom = upload from certificateSecretRef.
+	// +kubebuilder:validation:Enum=none;letsEncrypt;custom
+	Mode string `json:"mode"`
+	// CertificateSecretRef points at a kubernetes.io/tls Secret
+	// (tls.crt = full PEM chain, tls.key = private key).
+	// +optional
+	CertificateSecretRef *CdnSecretRef `json:"certificateSecretRef,omitempty"`
+}
+
+// CdnSecureToken enables signed-URL protection with the key from a Secret.
+type CdnSecureToken struct {
+	// SecretRef holds the signing key (Secret key name defaults to "secret").
+	SecretRef CdnSecretRef `json:"secretRef"`
+	// RestrictByIP binds signatures to the client IP.
+	// +optional
+	RestrictByIP *bool `json:"restrictByIP,omitempty"`
 }
 
 // CdnCache is the caching settings block. When declared, the controller owns
@@ -108,12 +152,17 @@ type CdnCache struct {
 	QueryStringCacheKeyParams []string `json:"queryStringCacheKeyParams,omitempty"`
 }
 
-// CdnSecurity is the security settings block. SSL certificates and secure
-// tokens are deliberately absent (out of v1 scope — never touched upstream).
+// CdnSecurity is the security settings block. The certificate slot is
+// managed by spec.forProvider.ssl (not here); writes are per-key partial.
 type CdnSecurity struct {
 	// ForceHTTPS redirects all HTTP requests on delivery domains to HTTPS.
 	// +optional
 	ForceHTTPS *bool `json:"forceHTTPS,omitempty"`
+
+	// SecureToken enables signed-URL access (see docs/cdn.md for the signing
+	// algorithm). Omitted while the security block is declared = disabled.
+	// +optional
+	SecureToken *CdnSecureToken `json:"secureToken,omitempty"`
 }
 
 // CdnRobots controls how the CDN answers /robots.txt.
@@ -232,6 +281,26 @@ type CdnParameters struct {
 	// +optional
 	Cors *CdnCors `json:"cors,omitempty"`
 
+	// Domains are custom delivery subdomains (CNAME → the technical domain is
+	// the operator's DNS task). The technical domain is always present and
+	// never touched. Omitted = alias set unowned.
+	// +optional
+	// +kubebuilder:validation:MaxItems=2
+	// +listType=set
+	Domains []string `json:"domains,omitempty"`
+
+	// SSL manages the resource's single certificate slot. See CdnSSL.
+	// +optional
+	SSL *CdnSSL `json:"ssl,omitempty"`
+
+	// TrafficLimitGBPerMonth caps monthly outbound traffic (GiB multiples
+	// upstream). 0 = explicitly no limit (clears an existing one); omitted =
+	// unowned. Exceeding the cap suspends the resource upstream (up to 2 h
+	// lag, traffic still billed meanwhile).
+	// +kubebuilder:validation:Minimum=0
+	// +optional
+	TrafficLimitGBPerMonth *int64 `json:"trafficLimitGBPerMonth,omitempty"`
+
 	// RequestHeaders are custom headers the CDN adds to origin requests.
 	// Header names must be unique.
 	//
@@ -273,6 +342,40 @@ type CdnSettingsMirror struct {
 	RequestHeaderNames []string `json:"requestHeaderNames,omitempty"`
 }
 
+// CdnCertificateStatus mirrors the upstream certificate (parsed by the
+// platform from the uploaded/issued PEM).
+type CdnCertificateStatus struct {
+	// +optional
+	ID *int64 `json:"id,omitempty"`
+	// +optional
+	Type *string `json:"type,omitempty"`
+	// +optional
+	CN *string `json:"cn,omitempty"`
+	// +optional
+	// +kubebuilder:validation:MaxItems=16
+	Domains []string `json:"domains,omitempty"`
+	// +optional
+	IssuedAt *string `json:"issuedAt,omitempty"`
+	// +optional
+	ExpiresAt *string `json:"expiresAt,omitempty"`
+}
+
+// CdnSSLStatus is the certificate-lifecycle bookkeeping (incl. the bounded
+// Let's Encrypt retry budget).
+type CdnSSLStatus struct {
+	// State: pending | issuing | bound | failed | exhausted.
+	// +optional
+	State *string `json:"state,omitempty"`
+	// +optional
+	IssueAttempts *int64 `json:"issueAttempts,omitempty"`
+	// +optional
+	LastIssueAttemptAt *metav1.Time `json:"lastIssueAttemptAt,omitempty"`
+	// BudgetKey fingerprints the domains+ssl declaration; a change resets the
+	// retry budget.
+	// +optional
+	BudgetKey *string `json:"budgetKey,omitempty"`
+}
+
 // CdnObservation is the observed state of a Timeweb CDN resource.
 type CdnObservation struct {
 	// ID is the upstream resource id (also encoded as external-name).
@@ -306,6 +409,21 @@ type CdnObservation struct {
 	// TrafficUsage mirrors the upstream traffic counters.
 	// +optional
 	TrafficUsage *CdnTrafficUsage `json:"trafficUsage,omitempty"`
+	// Certificate mirrors the upstream certificate bound or present.
+	// +optional
+	Certificate *CdnCertificateStatus `json:"certificate,omitempty"`
+	// ManagedCertificate marks the certificate the PROVIDER created — mode
+	// none / rotation / deletion only ever delete a cert whose id AND
+	// identity (type, cn, expiry) both match this marker. Upstream reuses
+	// certificate ids (live-verified), so a bare id is not a safe owner mark.
+	// +optional
+	ManagedCertificate *CdnCertificateStatus `json:"managedCertificate,omitempty"`
+	// SSL is the certificate-lifecycle state + LE retry budget.
+	// +optional
+	SSL *CdnSSLStatus `json:"ssl,omitempty"`
+	// TrafficLimitBytes mirrors the upstream outbound-traffic cap.
+	// +optional
+	TrafficLimitBytes *int64 `json:"trafficLimitBytes,omitempty"`
 }
 
 // CdnSpec is the desired state.

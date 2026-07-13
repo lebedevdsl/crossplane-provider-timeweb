@@ -18,6 +18,7 @@ package timeweb
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 )
 
@@ -141,11 +142,26 @@ type CDNConfigRobots struct {
 	Content *string `json:"content,omitempty"`
 }
 
-// CDNConfigSecurity is the `config.security` section. The controller writes
-// only Redirect; certificates and secure tokens are out of v1 scope.
+// CDNSecureToken is `security.secure_token` (write + readback-tolerant).
+type CDNSecureToken struct {
+	SecretKey    string `json:"secret_key,omitempty"`
+	RestrictByIP bool   `json:"restrict_by_ip"`
+}
+
+// CDNConfigSecurity is the READ shape of `config.security`.
 type CDNConfigSecurity struct {
-	Redirect      *bool  `json:"redirect,omitempty"`
-	CertificateID *int64 `json:"certificate_id,omitempty"`
+	Redirect      *bool           `json:"redirect,omitempty"`
+	CertificateID *int64          `json:"certificate_id,omitempty"`
+	SecureToken   *CDNSecureToken `json:"secure_token,omitempty"`
+}
+
+// CDNConfigSecurityPatch is the WRITE shape: per-key partial (wire-verified),
+// with json.RawMessage where an explicit null must be expressible
+// (certificate_id unbind, secure_token disable).
+type CDNConfigSecurityPatch struct {
+	Redirect      *bool           `json:"redirect,omitempty"`
+	CertificateID json.RawMessage `json:"certificate_id,omitempty"`
+	SecureToken   json.RawMessage `json:"secure_token,omitempty"`
 }
 
 // CDNConfigDomains is the `config.domains` section. Read/write-asymmetric
@@ -162,6 +178,12 @@ type CDNConfigOrigin struct {
 	AWS      *CDNAWSAuth `json:"aws,omitempty"`
 }
 
+// CDNConfigOriginPatch writes `config.origin` sub-keys (aws set or explicit
+// null via RawMessage; servers/scheme ride the top-level resource fields).
+type CDNConfigOriginPatch struct {
+	AWS json.RawMessage `json:"aws,omitempty"`
+}
+
 // CDNConfig is the settings object: read whole from `GET .../configuration`
 // (`http_resource_configuration` envelope), written as partial subsets under
 // the `config` key of the resource PATCH.
@@ -175,6 +197,31 @@ type CDNConfig struct {
 	Origin      *CDNConfigOrigin      `json:"origin,omitempty"`
 }
 
+// CDNConfigPatch is the WRITE shape of `config` (per-section partial; security
+// and origin use their patch variants for explicit-null capability).
+type CDNConfigPatch struct {
+	Cache       *CDNConfigCache         `json:"cache,omitempty"`
+	Delivery    *CDNConfigDelivery      `json:"delivery,omitempty"`
+	HTTPHeaders *CDNConfigHTTPHeaders   `json:"http_headers,omitempty"`
+	Robots      *CDNConfigRobots        `json:"robots,omitempty"`
+	Security    *CDNConfigSecurityPatch `json:"security,omitempty"`
+	Domains     *CDNConfigDomains       `json:"domains,omitempty"`
+	Origin      *CDNConfigOriginPatch   `json:"origin,omitempty"`
+}
+
+// JSONNull is the explicit-null RawMessage for disable/unbind writes.
+var JSONNull = json.RawMessage("null")
+
+// JSONValue marshals v into a RawMessage (panics only on unmarshalable types —
+// all callers pass plain structs/ints).
+func JSONValue(v any) json.RawMessage {
+	b, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
+
 // CDNResourceWrite is the create/patch body. All fields optional so PATCHes
 // stay truly partial (omitempty).
 type CDNResourceWrite struct {
@@ -185,7 +232,9 @@ type CDNResourceWrite struct {
 	Server      *CDNServer `json:"server,omitempty"`
 	StorageID   *int64     `json:"storage_id,omitempty"`
 	UseHTTPS    *bool      `json:"use_https,omitempty"`
-	Config      *CDNConfig `json:"config,omitempty"`
+	// TrafficLimitBytes: value or explicit null (clear).
+	TrafficLimitBytes json.RawMessage `json:"traffic_limit_bytes,omitempty"`
+	Config            *CDNConfigPatch `json:"config,omitempty"`
 }
 
 // CDNPreset is one entry of `GET /api/v1/cdn/presets` (probe-verified
@@ -248,4 +297,59 @@ func (c *Client) ClearCDNCache(ctx context.Context, id, purgeType string, paths 
 // ListCDNPresets GETs the CDN billing presets (create-time preset_id lookup).
 func (c *Client) ListCDNPresets(ctx context.Context) (*http.Response, error) {
 	return c.doV2(ctx, http.MethodGet, "/api/v1/cdn/presets", nil)
+}
+
+// CDNCertificate is one entry of `GET /api/v1/cdn/certificates` — the platform
+// parses the PEM (cn / SAN domains / validity).
+type CDNCertificate struct {
+	ID        int64    `json:"id"`
+	Type      string   `json:"type"`
+	CN        string   `json:"cn"`
+	Domains   []string `json:"domains"`
+	IssuedAt  string   `json:"issued_at"`
+	ExpiresAt string   `json:"expires_at"`
+}
+
+// CDNCertificateTask is one entry of `GET /api/v1/cdn/certificates/tasks`.
+// Tasks accumulate as history (key on max id); failed tasks carry NO reason
+// (upstream quirk, ticket filed 2026-07-13).
+type CDNCertificateTask struct {
+	ID         int64    `json:"id"`
+	Status     string   `json:"status"`
+	Domains    []string `json:"domains"`
+	ResourceID int64    `json:"resource_id"`
+}
+
+const cdnCertBase = "/api/v1/cdn/certificates"
+
+// ListCDNCertificates GETs the certificates of one CDN resource.
+func (c *Client) ListCDNCertificates(ctx context.Context, resourceID string) (*http.Response, error) {
+	return c.doV2(ctx, http.MethodGet, cdnCertBase+"?resource_id="+resourceID, nil)
+}
+
+// ListCDNCertificateTasks GETs the (accumulating) issuance task history.
+func (c *Client) ListCDNCertificateTasks(ctx context.Context, resourceID string) (*http.Response, error) {
+	return c.doV2(ctx, http.MethodGet, cdnCertBase+"/tasks?resource_id="+resourceID, nil)
+}
+
+// UploadCDNCertificate POSTs a custom certificate (PEM chain + key) → 204; the
+// created id is discovered from the inventory (upload returns no body). The
+// body carries ONLY these two fields — the strict upstream validator rejects
+// anything else ("property resource_id should not exist", live-verified).
+// SECRET-BEARING request — never logged.
+func (c *Client) UploadCDNCertificate(ctx context.Context, certPEM, keyPEM string, _ int64) (*http.Response, error) {
+	body := map[string]any{"certificate": certPEM, "private_key": keyPEM}
+	return c.doV2(ctx, http.MethodPost, cdnCertBase, body)
+}
+
+// IssueCDNCertificate requests Let's Encrypt issuance (202 async task; 422
+// cert_issue_incorrect_dns when the CNAME is not live).
+func (c *Client) IssueCDNCertificate(ctx context.Context, resourceID int64) (*http.Response, error) {
+	return c.doV2(ctx, http.MethodPost, cdnCertBase+"/issue", map[string]any{"resource_id": resourceID})
+}
+
+// DeleteCDNCertificate DELETEs a certificate object (409 certificate_in_use
+// while bound — transient-classified, self-healing after unbind).
+func (c *Client) DeleteCDNCertificate(ctx context.Context, id string) (*http.Response, error) {
+	return c.doV2(ctx, http.MethodDelete, cdnCertBase+"/"+id, nil)
 }

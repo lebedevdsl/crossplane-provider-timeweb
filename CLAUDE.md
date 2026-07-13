@@ -1,4 +1,22 @@
 <!-- SPECKIT START -->
+Feature **017-cdn-added-features** is COMPLETE — **released as v0.8.0** (live-gated end-to-end on inyan-staging incl. full Let's Encrypt automation + mode:none cleanup). Read the plan at
+`specs/017-cdn-added-features/plan.md`. Extends `Cdn` with the remaining panel surface, ALL
+wire-captured in-session 2026-07-13 (spec.md "Wire facts" is authoritative): `domains
+[]string` ≤2 (aliases = {tech}∪declared; tech domain untouchable), ONE cert per resource —
+`ssl {mode: none|letsEncrypt|custom, certificateSecretRef}` → `POST /cdn/certificates`
+{certificate, private_key} / `POST /cdn/certificates/issue` (202 async; 422
+cert_issue_incorrect_dns; tasks accumulate — key on max(id), NO failure reason) / bind =
+`config.security.certificate_id` (409 certificate_in_use guards delete order);
+delete-if-ours via `status.managedCertificateID`; rotation = parse Secret PEM vs readback
+{cn,domains,expires_at}; LE budget: ≥15min spacing, max 4, reset via spec change or
+self-clearing `cdn.timeweb.crossplane.io/retry-ssl` annotation; success = MATERIALIZATION
+(never task-state strings). **LE path UNVERIFIED upstream (fails w/ correct CNAME, no
+reason, ticket filed) — docs+release notes MUST carry the warning.** Also: secure token
+(`security.secureToken {secretRef, restrictByIP}` → `secure_token {secret_key,
+restrict_by_ip}|null`; security writes are per-key partial), `trafficLimitGBPerMonth` →
+`traffic_limit_bytes` (GiB), `origin.awsAuthSecretRef` (forbidden w/ bucketRef — those
+auto-wire upstream). Artifacts in `specs/017-cdn-added-features/`.
+
 Feature **016-cdn-resource** is COMPLETE — **released as v0.7.0**
 (`ghcr.io/lebedevdsl/provider-timeweb:v0.7.0`, 2026-07-12; live-gated on `inyan-staging`
 against the real API; kuttl bundle 23 + 28 unit tests). Follow-ups (query-string

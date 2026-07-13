@@ -66,6 +66,84 @@ hours while the CDN serves, applies changes, and purges normally, before
 eventually settling to `created` (platform quirk). The provider therefore mirrors it in `status.atProvider.state` but
 does NOT gate Ready, updates, or purges on it — only a suspended state does.
 
+## Custom delivery domains
+
+Up to 2 subdomains alongside the immutable technical domain:
+
+```yaml
+domains: [cdn.example.com, static.example.com]
+```
+
+CNAME each to `status.atProvider.technicalDomain` at your DNS provider (on
+Timeweb NS it updates automatically). The provider owns the alias set when
+declared and never touches the technical domain.
+
+## SSL — one certificate per resource
+
+```yaml
+ssl:
+  mode: letsEncrypt          # none | letsEncrypt | custom
+  # certificateSecretRef:    # required iff mode=custom
+  #   name: example-tls      # kubernetes.io/tls: tls.crt = full chain, tls.key
+```
+
+> **letsEncrypt mode** (verified end-to-end 2026-07-13): CNAME your custom
+> domain to `technicalDomain` FIRST — the provider attaches the domain, then
+> requests issuance and binds the certificate when it materializes (the
+> platform auto-binds). Issuance can fail transiently **with no error reason**
+> while DNS propagates to Let's Encrypt's resolvers; the provider retries on a
+> budget (max 4 attempts ≥15 min apart) and, if spent, sets
+> `status.atProvider.ssl.state: exhausted` — reset with a domains/ssl spec
+> edit or `kubectl annotate cdn/X cdn.timeweb.crossplane.io/retry-ssl=now`.
+
+- `custom`: the chain must terminate in a system-trusted root — self-signed
+  certificates are rejected upstream (`422 cert_add_root_not_trusted`);
+  rejection surfaces as `ssl.state: failed` + an `SSLUploadFailed` Event with
+  poll-paced retries.
+- `custom`: rotation is declarative — update the TLS Secret and the provider
+  uploads the new certificate, rebinds, and deletes its old one. No SAN
+  validation is performed (upstream accepts any certificate; coverage is your
+  responsibility).
+- `none`: unbinds, and deletes the certificate only if the provider created
+  it (`status.atProvider.managedCertificate`); panel-uploaded certificates
+  are never destroyed.
+- Block absent: the certificate slot stays panel-managed, mirrored in
+  `status.atProvider.certificate`.
+
+## Secure token (signed URLs)
+
+```yaml
+security:
+  secureToken:
+    secretRef: { name: cdn-signing }   # Secret key "secret" by default
+    restrictByIP: true
+```
+
+The signing key never appears in spec or status. Removing the block disables
+the feature upstream. Rotating the Secret's key propagates automatically
+(the platform echoes the current key, so the change is detected).
+
+## Outbound traffic limit
+
+```yaml
+trafficLimitGBPerMonth: 3000   # GiB upstream; 0 = explicitly no limit
+```
+
+Exceeding it SUSPENDS the resource (Ready=False reason=Suspended) with up to
+2 h of upstream lag — traffic keeps billing during that window.
+
+## External private S3 origins
+
+```yaml
+origin:
+  domain: bucket.external-s3.example
+  https: true
+  awsAuthSecretRef: { name: ext-s3-keys }   # keys: access_key / secret_key
+```
+
+Only for external origins — in-account `bucketRef` buckets are wired by the
+platform automatically and reject this field at admission.
+
 ## Query-string cache key
 
 Two forms, mutually exclusive (CEL-enforced):
@@ -82,15 +160,15 @@ cache:
 `whitelist` keys the cache only on the listed parameters; `blacklist` on all
 except them.
 
-## Signed URLs (secure token) — panel-managed until the next release
+## Signed URLs — the signing algorithm (app-side)
 
-The upstream supports signed-URL access (secret key, optional IP binding,
-expiry). v0.7.x does not manage it (enable in the panel; the provider never
-touches the block). Signing, for app-side use:
+Signing, for app-side use:
 `token = urlsafe_b64(md5("<secret><path><ip><expires>"))` with `=` stripped,
 `+`→`-`, `/`→`_`; fetch as
 `https://<cdn-domain>/md5(<token>,<expires>)/<path>`. Omit `<ip>`/`<expires>`
 from the string when those checks are disabled; the domain is never signed.
+Invalid signatures return 403; EXPIRED links return 410 Gone (upstream
+platform docs — the CDN is a CDNvideo white-label).
 
 ## Cache purge (annotation)
 

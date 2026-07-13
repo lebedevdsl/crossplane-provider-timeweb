@@ -57,6 +57,19 @@ spec:
     requestHeaders:
       - name: X-Origin-Auth
         value: replace-me
+    # Custom delivery domains (≤2; CNAME → technicalDomain is your DNS task):
+    # domains: [cdn.example.com, static.example.com]
+    # One certificate per resource (⚠ letsEncrypt automation unverified — docs/cdn.md):
+    # ssl:
+    #   mode: custom                  # none | letsEncrypt | custom
+    #   certificateSecretRef: { name: example-tls }   # kubernetes.io/tls
+    # Signed URLs (key from a Secret, never inline):
+    # security:
+    #   secureToken:
+    #     secretRef: { name: cdn-signing }
+    #     restrictByIP: true
+    # Monthly outbound cap (GiB; 0 = explicitly none; exceeding SUSPENDS):
+    # trafficLimitGBPerMonth: 3000
   # Optional: publish the delivery endpoint for app/DNS consumption
   # (keys: technical_domain, url — public data, no credentials).
   writeConnectionSecretToRef:
