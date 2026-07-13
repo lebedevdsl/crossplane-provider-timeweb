@@ -22,6 +22,17 @@ kind: Cdn
 metadata:
   name: site-assets
   namespace: timeweb-prod
+  # Available operator annotations (one-shot, self-clearing — the controller
+  # removes them after acting). Set with `kubectl annotate`, not in the manifest.
+  # annotations:
+  #   # Purge the CDN cache: `all` (full) or a comma-separated list of
+  #   # root-relative paths (each MUST start with `/`).
+  #   cdn.timeweb.crossplane.io/purge: "all"
+  #   # cdn.timeweb.crossplane.io/purge: "/,/img,/index.html"
+  #
+  #   # Reset the Let's Encrypt issuance retry budget after fixing DNS
+  #   # (value is ignored — presence triggers the reset).
+  #   cdn.timeweb.crossplane.io/retry-ssl: "now"
 spec:
   forProvider:
     name: site-assets
