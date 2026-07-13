@@ -38,7 +38,10 @@ spec:
       edgeTTLSeconds: 86400
       browserTTLSeconds: 3600
       alwaysOnline: true
-      queryStringInCacheKey: false
+      queryStringInCacheKey: false  # ALL params in the cache key (or none)
+      # — or per-parameter control (mutually exclusive with the bool):
+      # queryStringCacheKeyMode: whitelist        # all | whitelist | blacklist
+      # queryStringCacheKeyParams: ["utm_source", "ref", "v"]
     security:
       forceHTTPS: true
     performance:

@@ -24,8 +24,21 @@ Custom delivery domains (`config.domains.aliases` — mind the read/write
 asymmetry, R-9), SSL certificates (`/api/v1/cdn/certificates` exists;
 Let's Encrypt + custom), secure token (`security.secure_token`), traffic limits
 (`traffic_limit_bytes`), selective purge exposure beyond the annotation,
-operator-facing AWS-auth for EXTERNAL private S3 origins (in-account buckets
-auto-wire upstream).
+operator-facing AWS-auth for EXTERNAL private S3 origins — in-account buckets
+auto-wire upstream (officially: "Для приватных бакетов Timeweb Cloud ключи
+подставляются автоматически", panel AWS-auth drawer). External form =
+access/secret key pair → will need a secretRef surface.
+
+## 2b. Secure token / signed URLs (panel-documented, wire shape pending)
+
+Panel form: secret key + "ограничение доступа по IP-адресу" checkbox. Signing
+algorithm (panel docs, captured 2026-07-13): token = urlsafe-b64(md5(
+`<secret><path><ip><expires>`)) with `=` stripped, `+`→`-`, `/`→`_`; URL form
+`https://<cdn-domain>/md5(<token>,<expires>)/<path>`; ip/expires omitted from
+the string when their checks are off; the CDN domain is not part of the
+signature. Spec surface: `security.secureToken: {secretRef, bindClientIP}`
+(key from a Secret, never in spec/status). BLOCKED on one devtools capture:
+the save-PATCH body for `config.security.secure_token`.
 
 ## 3. Upstream quirks to track (RU support ticket drafted 2026-07-12)
 

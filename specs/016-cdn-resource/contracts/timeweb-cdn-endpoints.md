@@ -135,7 +135,7 @@ panel host `https://timeweb.cloud` proven working and available as fallback (015
 | P-1 | token on api host; list envelope | ✅ token works; list = `{"http_resources": [...], "meta", "response_id"}` |
 | P-2 | DELETE semantics + idempotency | ✅ DELETE → 204; repeat DELETE → 404; GET after → 404 (matches the 404-tolerant delete) |
 | P-3 | remaining write shapes | ✅ ALL resolved — see verified schema below |
-| P-4 | aws auto-wire on storage_id create | ✅ POST accepts `storage_id` directly (live gate); aws auto-wire confirmed via 22209's configuration read; data-plane check pending first real use |
+| P-4 | aws auto-wire on storage_id create | ✅ CLOSED — POST accepts `storage_id` directly (live gate) and the panel's AWS-auth drawer states it officially: "Для приватных бакетов Timeweb Cloud ключи подставляются автоматически"; the manual access/secret form is for EXTERNAL S3 origins only |
 | P-5 | presets envelope / count | ✅ `{"http_resource_presets": [{"id":3807,"service_name":"cdn_1","cost":1,"rate_cost":0.6}]}` — single preset |
 | P-6 | terminal status; apply visibility | ✅ terminal = **`created`** (settles after hours); `processing` covers provisioning AND settings applies; every PATCH re-enters it |
 

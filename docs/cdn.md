@@ -66,6 +66,32 @@ hours while the CDN serves, applies changes, and purges normally, before
 eventually settling to `created` (platform quirk). The provider therefore mirrors it in `status.atProvider.state` but
 does NOT gate Ready, updates, or purges on it — only a suspended state does.
 
+## Query-string cache key
+
+Two forms, mutually exclusive (CEL-enforced):
+
+```yaml
+cache:
+  queryStringInCacheKey: true          # ALL parameters join the cache key
+# — or per-parameter control:
+cache:
+  queryStringCacheKeyMode: whitelist   # all | whitelist | blacklist
+  queryStringCacheKeyParams: ["utm_source", "ref", "v"]
+```
+
+`whitelist` keys the cache only on the listed parameters; `blacklist` on all
+except them.
+
+## Signed URLs (secure token) — panel-managed until the next release
+
+The upstream supports signed-URL access (secret key, optional IP binding,
+expiry). v0.7.x does not manage it (enable in the panel; the provider never
+touches the block). Signing, for app-side use:
+`token = urlsafe_b64(md5("<secret><path><ip><expires>"))` with `=` stripped,
+`+`→`-`, `/`→`_`; fetch as
+`https://<cdn-domain>/md5(<token>,<expires>)/<path>`. Omit `<ip>`/`<expires>`
+from the string when those checks are disabled; the domain is never signed.
+
 ## Cache purge (annotation)
 
 ```sh
