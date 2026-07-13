@@ -52,6 +52,16 @@ signature. Spec surface: `security.secureToken: {secretRef, bindClientIP}`
 (key from a Secret, never in spec/status). BLOCKED on one devtools capture:
 the save-PATCH body for `config.security.secure_token`.
 
+## 2c. Outbound traffic limit (panel-verified 2026-07-13)
+
+Panel: enable toggle + limit in **GB/month**; on exceeding, the resource is
+SUSPENDED — with up to a **2-hour delay during which traffic keeps billing**
+(panel warning; ops-relevant). Wire: `traffic_limit_bytes` on the resource
+(null = off; read-mirrored in status already). Spec surface:
+`trafficLimitGBPerMonth *int64` (nil = off) → bytes conversion on write; the
+provider's `Ready=False reason=Suspended` mapping already covers the exceeded
+state. OPEN: one save-PATCH capture to confirm the write field name/units.
+
 ## 3. Upstream quirks to track (RU support ticket drafted 2026-07-12)
 
 - `status` sticks at `processing` for hours before settling to `created`;
