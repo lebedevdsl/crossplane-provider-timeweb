@@ -31,7 +31,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -101,10 +103,15 @@ type Config struct {
 	// BaseURL overrides DefaultBaseURL when set.
 	BaseURL string
 
-	// RateLimit overrides DefaultRateLimit when set.
+	// RateLimit overrides DefaultRateLimit when set. NOTE: the rate limiter is
+	// process-global per host and first-caller-wins — this override only takes
+	// effect for the FIRST client constructed for a given host; later clients
+	// reuse the existing limiter and ignore this value. All production callers
+	// pass the default, so this is effectively a first-init knob (mainly tests).
 	RateLimit rate.Limit
 
-	// Burst overrides DefaultBurst when set.
+	// Burst overrides DefaultBurst when set. Same first-caller-wins caveat as
+	// RateLimit (the shared per-host limiter is created once).
 	Burst int
 
 	// Timeout overrides DefaultTimeout when set.
@@ -145,12 +152,19 @@ func New(cfg Config) (*Client, error) {
 		logger = nopLogger{}
 	}
 
+	// Rate limiter + base transport are PROCESS-GLOBAL, keyed by host, and
+	// reused by every Client for that host. Building them per New() (i.e. per
+	// reconcile) gave each concurrent reconcile its own 2 r/s budget and
+	// connection pool, so the aggregate egress rate scaled with the number of
+	// reconciles and tripped Timeweb's 429 / Qrator egress ban (the reproduced
+	// CDN status-freeze incident). The per-request bearer token stays isolated
+	// in the per-Client authTransport that wraps the shared base transport, so
+	// sharing the transport never bleeds credentials across ProviderConfigs.
+	limiter := sharedLimiter(baseURL, rl, burst)
 	transport := cfg.HTTPTransport
 	if transport == nil {
-		transport = newDefaultTransport()
+		transport = sharedTransport(baseURL)
 	}
-
-	limiter := rate.NewLimiter(rl, burst)
 
 	httpClient := &http.Client{
 		Timeout: timeout,
@@ -178,6 +192,51 @@ func New(cfg Config) (*Client, error) {
 		httpDoer:        httpClient,
 		baseURL:         baseURL,
 	}, nil
+}
+
+// Process-global, per-host rate limiter + base transport. Keyed by host so a
+// future multi-host surface stays correct; today there is effectively one host.
+// The FIRST caller's rate/burst wins for a host (all callers pass the same
+// Default* values); later callers reuse it — the whole point is one budget.
+var (
+	sharedMu         sync.Mutex
+	sharedLimiters   = map[string]*rate.Limiter{}
+	sharedTransports = map[string]*http.Transport{}
+)
+
+func hostKey(baseURL string) string {
+	if u, err := url.Parse(baseURL); err == nil && u.Host != "" {
+		return u.Host
+	}
+	return baseURL
+}
+
+// sharedLimiter returns the process-global limiter for the base URL's host,
+// creating it once.
+func sharedLimiter(baseURL string, rl rate.Limit, burst int) *rate.Limiter {
+	key := hostKey(baseURL)
+	sharedMu.Lock()
+	defer sharedMu.Unlock()
+	if l, ok := sharedLimiters[key]; ok {
+		return l
+	}
+	l := rate.NewLimiter(rl, burst)
+	sharedLimiters[key] = l
+	return l
+}
+
+// sharedTransport returns the process-global base transport for the host,
+// creating it once so connection pools are reused across reconciles.
+func sharedTransport(baseURL string) *http.Transport {
+	key := hostKey(baseURL)
+	sharedMu.Lock()
+	defer sharedMu.Unlock()
+	if t, ok := sharedTransports[key]; ok {
+		return t
+	}
+	t := newDefaultTransport()
+	sharedTransports[key] = t
+	return t
 }
 
 // newDefaultTransport mirrors http.DefaultTransport but with explicit, short
