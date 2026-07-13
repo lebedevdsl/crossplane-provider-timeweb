@@ -108,4 +108,5 @@ retained, single `PurgeDeferred` Event.
 ## Out of contract (v1)
 
 Custom delivery domains, SSL certificates, secure token, traffic limits, pause/resume,
-selectors for origin references, connection secret.
+selectors for origin references. (Connection secret ADDED in v0.7.2: `technical_domain` +
+`url` published to `writeConnectionSecretToRef` — public endpoint data, no credentials.)

@@ -57,6 +57,10 @@ spec:
     requestHeaders:
       - name: X-Origin-Auth
         value: replace-me
+  # Optional: publish the delivery endpoint for app/DNS consumption
+  # (keys: technical_domain, url — public data, no credentials).
+  writeConnectionSecretToRef:
+    name: site-assets-cdn
   providerConfigRef:
     kind: ProviderConfig
     name: default

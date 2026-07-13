@@ -11,7 +11,7 @@ on the next reconcile).
 | Kind | `Cdn` |
 | Scope | Namespaced |
 | External-name format | upstream numeric resource id |
-| Connection Secret | none |
+| Connection Secret | `technical_domain`, `url` (public delivery endpoint — handy for app/DNS wiring via `writeConnectionSecretToRef`) |
 
 ## Manifest
 
