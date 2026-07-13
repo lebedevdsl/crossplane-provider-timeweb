@@ -4,7 +4,7 @@
 
 **Created**: 2026-06-28
 
-**Status**: Draft
+**Status**: Complete (shipped)
 
 **Input**: User description: "build firewall api" (with dashboard screenshots of the
 Timeweb **Управление сетями → Firewall** surface: rule groups, per-group inbound/outbound

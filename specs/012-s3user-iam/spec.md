@@ -4,7 +4,7 @@
 
 **Created**: 2026-06-28
 
-**Status**: Draft
+**Status**: Complete (shipped)
 
 **Input**: User description: "specs/_next-s3user-iam.preface.md — add an `S3User` managed-resource kind that provisions scoped, least-privilege object-storage credentials per bucket instead of the account-admin keys the existing `S3Bucket` kind hands out."
 
@@ -46,7 +46,10 @@ the account.
 1. **Given** an existing bucket and a valid provider configuration, **When** the
    operator applies an `S3User` granting `read-write` on that bucket, **Then** the
    resource reaches Synced=True and Ready=True and a connection Secret containing the
-   scoped access key, secret key, endpoint, and bucket name is created.
+   scoped `access_key`, `secret_key`, `endpoint`, and `bucket` name is created. (Shipped
+   surface also includes `buckets` — the comma-separated sorted list of ALL granted
+   buckets — and, as of 018, `region` derived from the primary bucket. Backfilled here to
+   match what ships; the per-bucket structure is a future breaking change, 014 FR-015.)
 2. **Given** a freshly provisioned `S3User` credential, **When** an application uses
    it to write and then read an object in the granted bucket, **Then** both operations
    succeed.

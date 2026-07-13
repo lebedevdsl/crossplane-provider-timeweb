@@ -1,4 +1,23 @@
 <!-- SPECKIT START -->
+Current feature: **018-stabilization** (release target **v0.9.0**, NON-BREAKING) — read the
+plan at `specs/018-stabilization/plan.md`. A hardening slice of the 014 review round:
+(1) **shared rate budget** — `timeweb.New` is per-Connect in all 9 connectors so N reconciles
+get N independent 2 r/s limiters (the multiplication that trips Timeweb 429 / Qrator ban — the
+reproduced CDN status-freeze); fix = process-global per-host limiter + shared transport reused
+by every client, per-request bearer auth kept isolated. (2) **S3User credential integrity** —
+`buildConnection` runs on Observe/Create/Update but the GET omits the secret key, so
+steady-state republishes a BLANK `secret_key` (data-loss); fix = create-only publish
+(Observe/Update return empty ConnectionDetails), derive singular `endpoint`/`region` from the
+primary granted bucket (kill hardcoded `s3.twcstorage.ru` default), adopted-no-key → condition.
+(3) **capped requeue** on SetupNetwork/SetupFloatingIP/SetupCluster (only ones missing it).
+(4) hygiene — examples dry-run clean, k8sVersion explain format, `docs/conditions.md` reference,
+hoist duplicated `deriveAdminKeys` (s3bucket+s3user) to shared, record hygiene (009/011/012/013
+complete, retire shipped `_next` seeds, backfill `buckets` into 012). Plan-phase verify VP-1
+(runtime empty-ConnectionDetails is a no-op) / VP-2 (GET omits key) / VP-3 (primary-bucket
+region source). Artifacts in `specs/018-stabilization/`. The BREAKING 014 items (secret-key
+renames incl. the per-bucket S3User structure, selector rejection, project-ref unification,
+printcolumn/JSON casing, immutability CEL) + P2 resilience stay in 014 for a later round.
+
 Feature **017-cdn-added-features** is COMPLETE — **released as v0.8.0** (live-gated end-to-end on inyan-staging incl. full Let's Encrypt automation + mode:none cleanup). Read the plan at
 `specs/017-cdn-added-features/plan.md`. Extends `Cdn` with the remaining panel surface, ALL
 wire-captured in-session 2026-07-13 (spec.md "Wire facts" is authoritative): `domains
