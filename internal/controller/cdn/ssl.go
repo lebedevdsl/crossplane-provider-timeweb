@@ -237,6 +237,17 @@ func computeSSL(in sslInputs) sslOutcome {
 			}
 			out.managed = markerFor(*match) // old gone (or id reused by a stranger) — adopt current
 		}
+		// Duplicate cleanup: the pre-fix re-upload loop (resource-scoped discovery
+		// never found the account-global upload) minted many identical certs.
+		// Delete any OTHER cert sharing the bound identity, one per reconcile,
+		// keeping the bound one — reclaims the account cert quota that eventually
+		// 500s the upload endpoint.
+		for i := range in.certificates {
+			if in.certificates[i].ID != match.ID && identityOf(in.certificates[i]).equal(*in.desired) {
+				out.action = sslAction{kind: sslActionDeleteOld, certID: in.certificates[i].ID}
+				return out
+			}
+		}
 		return out
 
 	case "letsEncrypt":
@@ -372,6 +383,24 @@ func (e *external) listCertificates(ctx context.Context, resourceID string) ([]t
 	return env.Certificates, nil
 }
 
+// certificatesForMode fetches the certificate set the discovery needs for the
+// declared SSL mode. Uploaded custom certs are account-global (no resource
+// association) and only appear in the account-wide list, so a resource-scoped
+// query would never find them — the pre-fix bug that re-uploaded a new cert
+// every reconcile (55+ duplicates, then 500s). LE certs ARE resource-scoped.
+func (e *external) certificatesForMode(ctx context.Context, resourceID, mode string) ([]timeweb.CDNCertificate, error) {
+	if mode == "custom" {
+		var env struct {
+			Certificates []timeweb.CDNCertificate `json:"certificates"`
+		}
+		if err := doJSON(func() (*http.Response, error) { return e.tw.ListAllCDNCertificates(ctx) }, &env); err != nil {
+			return nil, err
+		}
+		return env.Certificates, nil
+	}
+	return e.listCertificates(ctx, resourceID)
+}
+
 func (e *external) listCertificateTasks(ctx context.Context, resourceID string) ([]timeweb.CDNCertificateTask, error) {
 	var env struct {
 		Tasks []timeweb.CDNCertificateTask `json:"certificate_tasks"`
@@ -450,7 +479,14 @@ func (e *external) executeSSLAction(ctx context.Context, cr *cdnv1alpha1.Cdn, ac
 		err := e.do(func() (*http.Response, error) { return e.tw.DeleteCDNCertificate(ctx, id) })
 		if err == nil {
 			e.event(cr, "Normal", eventCertificateRemoved, "removed managed certificate "+id)
-			cr.Status.AtProvider.ManagedCertificate = nil
+			// Clear the marker ONLY when we deleted the tracked cert (rotation).
+			// Duplicate-cleanup deletes OTHER certs sharing the identity and must
+			// keep the marker pointing at the bound cert — otherwise the marker
+			// oscillates to nil every cleanup pass and the bound cert orphans on
+			// resource delete.
+			if m := cr.Status.AtProvider.ManagedCertificate; m != nil && m.ID != nil && strconv.FormatInt(*m.ID, 10) == id {
+				cr.Status.AtProvider.ManagedCertificate = nil
+			}
 		}
 		return err // 409 certificate_in_use = transient → retried after unbind lands
 	}

@@ -141,6 +141,12 @@ func (f *fakeCDNAPI) ListCDNCertificates(ctx context.Context, resourceID string)
 	}
 	return cdnResp(200, `{"certificates":[]}`), nil
 }
+func (f *fakeCDNAPI) ListAllCDNCertificates(ctx context.Context) (*http.Response, error) {
+	if f.listCertsFn != nil {
+		return f.listCertsFn(ctx, "")
+	}
+	return cdnResp(200, `{"certificates":[]}`), nil
+}
 func (f *fakeCDNAPI) ListCDNCertificateTasks(ctx context.Context, resourceID string) (*http.Response, error) {
 	if f.listTasksFn != nil {
 		return f.listTasksFn(ctx, resourceID)

@@ -87,6 +87,7 @@ type cdnAPI interface {
 	ClearCDNCache(ctx context.Context, id, purgeType string, paths []string) (*http.Response, error)
 	ListCDNPresets(ctx context.Context) (*http.Response, error)
 	ListCDNCertificates(ctx context.Context, resourceID string) (*http.Response, error)
+	ListAllCDNCertificates(ctx context.Context) (*http.Response, error)
 	ListCDNCertificateTasks(ctx context.Context, resourceID string) (*http.Response, error)
 	UploadCDNCertificate(ctx context.Context, certPEM, keyPEM string, resourceID int64) (*http.Response, error)
 	IssueCDNCertificate(ctx context.Context, resourceID int64) (*http.Response, error)
@@ -194,7 +195,7 @@ func (e *external) observeSSL(ctx context.Context, cr *cdnv1alpha1.Cdn, _ timewe
 		}
 	}
 
-	certs, err := e.listCertificates(ctx, id)
+	certs, err := e.certificatesForMode(ctx, id, cr.Spec.ForProvider.SSL.Mode)
 	if err != nil {
 		return false, err
 	}
@@ -354,9 +355,25 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, err
 	}
 
-	// One SSL action per reconcile takes precedence over settings PATCHes.
+	// Settings PATCH takes priority and converges INDEPENDENTLY of the
+	// certificate state. An unresolved SSL action must never starve settings —
+	// which also attach the delivery domains the LE/custom cert path depends on
+	// (a stuck cert would otherwise freeze cache/performance/security forever,
+	// live-reproduced 2026-07-13). One action per reconcile: settings first,
+	// then at most one SSL action once settings are converged. The settings
+	// PATCH omits security.certificate_id (desiredConfig never sets it), so it
+	// cannot clobber a bind.
+	patch, dirty := e.buildDesiredWrite(ctx, cr, res, cfg, sec)
+	if dirty {
+		if err := e.do(func() (*http.Response, error) { return e.tw.PatchCDNHTTPResource(ctx, id, patch) }); err != nil {
+			cr.SetConditions(shared.SyncedFalse(shared.ReasonUpstreamFailed, err.Error()))
+			return managed.ExternalUpdate{}, err
+		}
+		return managed.ExternalUpdate{}, nil
+	}
+
 	if cr.Spec.ForProvider.SSL != nil {
-		certs, cerr := e.listCertificates(ctx, id)
+		certs, cerr := e.certificatesForMode(ctx, id, cr.Spec.ForProvider.SSL.Mode)
 		if cerr != nil {
 			return managed.ExternalUpdate{}, cerr
 		}
@@ -369,15 +386,6 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 			resID, _ := shared.DecodeID(id)
 			return managed.ExternalUpdate{}, e.executeSSLAction(ctx, cr, out.action, sec.certPEM, sec.keyPEM, int64(resID))
 		}
-	}
-
-	patch, dirty := e.buildDesiredWrite(ctx, cr, res, cfg, sec)
-	if !dirty {
-		return managed.ExternalUpdate{}, nil
-	}
-	if err := e.do(func() (*http.Response, error) { return e.tw.PatchCDNHTTPResource(ctx, id, patch) }); err != nil {
-		cr.SetConditions(shared.SyncedFalse(shared.ReasonUpstreamFailed, err.Error()))
-		return managed.ExternalUpdate{}, err
 	}
 	return managed.ExternalUpdate{}, nil
 }

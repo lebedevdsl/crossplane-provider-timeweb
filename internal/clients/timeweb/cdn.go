@@ -330,9 +330,21 @@ type CDNCertificateTask struct {
 
 const cdnCertBase = "/api/v1/cdn/certificates"
 
-// ListCDNCertificates GETs the certificates of one CDN resource.
+// ListCDNCertificates GETs the certificates associated with one CDN resource
+// (resource-scoped). LE certs issued via IssueCDNCertificate carry a resource
+// association and appear here; UPLOADED (custom) certs do NOT — use
+// ListAllCDNCertificates for those.
 func (c *Client) ListCDNCertificates(ctx context.Context, resourceID string) (*http.Response, error) {
 	return c.doV2(ctx, http.MethodGet, cdnCertBase+"?resource_id="+resourceID, nil)
+}
+
+// ListAllCDNCertificates GETs ALL account certificates (no resource filter).
+// Uploaded custom certs are account-global with no resource association, so
+// they never appear under ?resource_id= — they must be discovered here
+// (panel-verified 2026-07-13: POST /cdn/certificates returns 204, then the
+// panel lists /cdn/certificates unfiltered to find the new cert's id).
+func (c *Client) ListAllCDNCertificates(ctx context.Context) (*http.Response, error) {
+	return c.doV2(ctx, http.MethodGet, cdnCertBase, nil)
 }
 
 // ListCDNCertificateTasks GETs the (accumulating) issuance task history.
