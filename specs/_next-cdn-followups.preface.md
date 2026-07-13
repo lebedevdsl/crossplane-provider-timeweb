@@ -40,6 +40,10 @@ technical domain (R-9 asymmetry). OPEN: capture the domains-drawer save-PATCH
 with customs present — does the write carry just the customs, or tech domain
 too? Spec surface: `domains: [{name}]` (MaxItems=2) + per-domain sslStatus in
 status; pairs with SSL (Let's Encrypt needs the CNAME live first).
+Synergy: as of v0.7.2 the Cdn publishes `technical_domain`/`url` to its
+connection Secret — a future **DNS record kind** can consume that Secret to
+manage the CNAME, closing the chain Cdn → DNS CNAME → custom domain → LE SSL
+with zero manual DNS steps.
 
 ## 2b. Secure token / signed URLs (panel-documented, wire shape pending)
 
@@ -49,8 +53,9 @@ algorithm (panel docs, captured 2026-07-13): token = urlsafe-b64(md5(
 `https://<cdn-domain>/md5(<token>,<expires>)/<path>`; ip/expires omitted from
 the string when their checks are off; the CDN domain is not part of the
 signature. Spec surface: `security.secureToken: {secretRef, bindClientIP}`
-(key from a Secret, never in spec/status). BLOCKED on one devtools capture:
-the save-PATCH body for `config.security.secure_token`.
+(key from a Secret, never in spec/status). Wire CAPTURED 2026-07-13:
+`config.security.secure_token = {"secret_key": "<key>", "restrict_by_ip": bool}`
+(null = off, per the cache-subfeature convention). READY to implement.
 
 ## 2c. Outbound traffic limit (panel-verified 2026-07-13)
 
@@ -58,9 +63,11 @@ Panel: enable toggle + limit in **GB/month**; on exceeding, the resource is
 SUSPENDED — with up to a **2-hour delay during which traffic keeps billing**
 (panel warning; ops-relevant). Wire: `traffic_limit_bytes` on the resource
 (null = off; read-mirrored in status already). Spec surface:
-`trafficLimitGBPerMonth *int64` (nil = off) → bytes conversion on write; the
-provider's `Ready=False reason=Suspended` mapping already covers the exceeded
-state. OPEN: one save-PATCH capture to confirm the write field name/units.
+`trafficLimitGBPerMonth *int64` (nil = off) → bytes on write; the provider's
+`Ready=False reason=Suspended` mapping already covers the exceeded state.
+Wire CAPTURED 2026-07-13: top-level PATCH `{"traffic_limit_bytes": N}` —
+panel "ГБ/мес" is GiB (3000 ГБ → 3221225472000 = 3000×2^30). READY to
+implement.
 
 ## 3. Upstream quirks to track (RU support ticket drafted 2026-07-12)
 
