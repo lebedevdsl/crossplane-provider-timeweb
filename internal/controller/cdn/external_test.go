@@ -791,25 +791,76 @@ func secretObj(name string, data map[string]string) *corev1.Secret {
 	return &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "web"}, Data: d}
 }
 
-func TestUpdateDomainsAlwaysIncludeTechnicalDomain(t *testing.T) {
+func TestUpdateDomainsExcludeTechnicalFromWrite(t *testing.T) {
+	// The write carries ONLY the declared custom domains — the technical
+	// domain is upstream-managed and counts inside the ≤2 aliases limit, so
+	// including it (2 customs + technical = 3) is rejected upstream.
+	// emptyConfiguration already has aliases = [technical] only.
 	tw := &fakeCDNAPI{}
+	cr := newCdn(withExternalName("22209"))
+	cr.Spec.ForProvider.Domains = []string{"cdn.example.com", "static.example.com"}
+	if _, err := testExternal(t, tw).Update(context.Background(), cr); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	al := tw.patchBodies[0].Config.Domains.Aliases
+	if len(al) != 2 || al[0] != "cdn.example.com" || al[1] != "static.example.com" {
+		t.Fatalf("write aliases must be the 2 declared customs (no technical), got %v", al)
+	}
+	for _, a := range al {
+		if strings.HasSuffix(a, ".cdn.twcstorage.ru") {
+			t.Fatalf("technical domain must NOT be in the write, got %v", al)
+		}
+	}
+}
+
+func TestUpdateDomainsCleanWhenCustomsMatch(t *testing.T) {
+	// Observed aliases already have the customs (+ technical) → no PATCH.
+	tw := &fakeCDNAPI{getCfgFn: func(context.Context, string) (*http.Response, error) {
+		return cdnResp(200, strings.Replace(emptyConfiguration,
+			`"domains":{"aliases":["abc.cdn.twcstorage.ru"]}`,
+			`"domains":{"aliases":["abc.cdn.twcstorage.ru","cdn.example.com"]}`, 1)), nil
+	}}
 	cr := newCdn(withExternalName("22209"))
 	cr.Spec.ForProvider.Domains = []string{"cdn.example.com"}
 	if _, err := testExternal(t, tw).Update(context.Background(), cr); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(tw.patchBodies) != 1 || tw.patchBodies[0].Config == nil || tw.patchBodies[0].Config.Domains == nil {
-		t.Fatalf("expected one PATCH with config.domains, got %+v", tw.patchBodies)
+	if len(tw.patchBodies) != 0 {
+		t.Fatalf("expected no domains PATCH when customs already match, got %+v", tw.patchBodies)
 	}
-	al := tw.patchBodies[0].Config.Domains.Aliases
-	foundTech := false
-	for _, a := range al {
-		if a == "abc.cdn.twcstorage.ru" {
-			foundTech = true
-		}
+}
+
+func TestUpdateDeliveryNeverSendsMP4Bool(t *testing.T) {
+	// Regression: a plain gzip/http3 change must NOT emit packaging.mp4 (which
+	// upstream 400s as "must be object or array" when sent as a bool). Off
+	// content-optimization → no packaging block at all.
+	tw := &fakeCDNAPI{}
+	cr := newCdn(withExternalName("22209"))
+	g := true
+	cr.Spec.ForProvider.Performance = &cdnv1alpha1.CdnPerformance{Gzip: &g}
+	if _, err := testExternal(t, tw).Update(context.Background(), cr); err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if !foundTech || len(al) != 2 {
-		t.Fatalf("aliases must be {technical}∪declared, got %v", al)
+	d := tw.patchBodies[0].Config.Delivery
+	if d == nil || d.Gzip == nil || !*d.Gzip {
+		t.Fatalf("expected gzip in delivery PATCH, got %+v", d)
+	}
+	if d.Packaging != nil {
+		t.Fatalf("packaging must be omitted for off content-optimization, got %s", d.Packaging.MP4)
+	}
+}
+
+func TestUpdateDeliveryVideoSendsMP4Object(t *testing.T) {
+	tw := &fakeCDNAPI{}
+	cr := newCdn(withExternalName("22209"))
+	mode := "video"
+	cr.Spec.ForProvider.Performance = &cdnv1alpha1.CdnPerformance{ContentOptimization: &mode}
+	if _, err := testExternal(t, tw).Update(context.Background(), cr); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	p := tw.patchBodies[0].Config.Delivery.Packaging
+	if p == nil || string(p.MP4) != "{}" {
+		t.Fatalf("video → packaging.mp4 must be an object, got %v", p)
 	}
 }
 

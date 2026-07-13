@@ -72,6 +72,22 @@ absorbed by the bounded retry budget. Certificate ids are per-resource/reused
 cross-checked against identity (type/cn), not trusted as globally unique.
 Live gate still excludes LE issuance (burns real LE quota on test domains).
 
+## R-9 — v0.8.1 post-release bugfixes (first real-resource apply)
+
+Two settings-WRITE shape bugs the gate under-sampled (both terminal 400s):
+- `config.delivery.packaging.mp4` must be an OBJECT or null, NEVER a bool.
+  The differ always emitted `mp4: <bool>` when a `performance` block was
+  declared. Fix: `MP4 json.RawMessage`; packaging sent only when video state
+  changes (enable → `{}`, disable → null), omitted otherwise.
+- `config.domains.aliases` must contain ≤2 entries and must NOT include the
+  technical domain — upstream manages it and counts it in the limit. The
+  differ wrote `{technical} ∪ declared` (2 customs + technical = 3 → reject).
+  Fix: write only the declared customs; diff against observed-minus-technical.
+Escape analysis: the v0.8.0 gate had NO `performance` block (delivery differ
+never ran) and only ONE custom domain (1 + technical = 2, at the limit) —
+each bug sits exactly one notch outside the gate's field combination. Lesson:
+sample the mundane settings-write matrix, not only the hard async paths.
+
 ## R-8 — live-gate findings (2026-07-13, relaxed gate on inyan-staging)
 
 Verified live under the dev build: traffic limit (100 GiB → 107374182400),

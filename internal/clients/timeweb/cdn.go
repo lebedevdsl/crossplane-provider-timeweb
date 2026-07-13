@@ -106,9 +106,17 @@ type CDNConfigCache struct {
 	QueryArgs    *CDNQueryArgs    `json:"query_args"`
 }
 
-// CDNPackaging is `config.delivery.packaging`.
+// CDNPackaging is `config.delivery.packaging`. `mp4` is an OBJECT (video
+// packaging enabled) or null (disabled) — NEVER a bool (upstream validator:
+// "property mp4 must be either object or array"). Modeled as RawMessage so we
+// can write null/object and tolerate whatever the read returns.
 type CDNPackaging struct {
-	MP4 *bool `json:"mp4,omitempty"`
+	MP4 json.RawMessage `json:"mp4"`
+}
+
+// MP4Enabled reports whether the read-side packaging has video on (non-null).
+func (p *CDNPackaging) MP4Enabled() bool {
+	return p != nil && len(p.MP4) > 0 && string(p.MP4) != "null"
 }
 
 // CDNConfigDelivery is the `config.delivery` section.
