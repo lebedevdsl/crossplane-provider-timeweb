@@ -136,8 +136,9 @@ type sslInputs struct {
 	managed         *cdnv1alpha1.CdnCertificateStatus // identity-checked owner marker
 	certificates    []timeweb.CDNCertificate
 	tasks           []timeweb.CDNCertificateTask
-	domainsAttached bool // declared delivery domains all present in aliases
-	budgetKey       string
+	domainsAttached bool   // declared delivery domains all present in aliases
+	prevState       string // status.ssl.state from the last reconcile
+	budgetKey       string // fingerprint (domains+ssl mode+cert identity)
 	prevBudgetKey   string
 	attempts        int64
 	lastAttempt     *time.Time
@@ -202,16 +203,13 @@ func computeSSL(in sslInputs) sslOutcome {
 			}
 		}
 		if match == nil {
-			// Uploads share the issue budget: spacing + cap prevent a
-			// terminally-rejected certificate (untrusted root, …) from being
-			// re-sent every reconcile and starving the settings PATCH
-			// (live-gate finding 2026-07-13). Budget resets on spec/Secret
-			// change (identity is part of the budget key) or retry-ssl.
-			if out.attempts >= maxIssueAttempts {
-				out.state = sslStateExhausted
-				return out
-			}
-			if out.attempts > 0 && in.lastAttempt != nil && in.now.Sub(*in.lastAttempt) < issueSpacing {
+			// Custom upload is deterministic: the same certificate always
+			// yields the same result. NO retry budget — upload ONCE per
+			// distinct cert identity; if it already failed for this identity
+			// (same budgetKey, prevState==failed), stay failed and wait for a
+			// Secret change (which rotates the budgetKey and re-enables upload)
+			// rather than re-uploading a rejected cert every reconcile.
+			if in.budgetKey == in.prevBudgetKey && in.prevState == sslStateFailed {
 				out.state = sslStateFailed
 				return out
 			}
@@ -390,23 +388,14 @@ func (e *external) executeSSLAction(ctx context.Context, cr *cdnv1alpha1.Cdn, ac
 	id := strconv.FormatInt(action.certID, 10)
 	switch action.kind {
 	case sslActionUpload:
-		now := metav1.Now()
-		ensureSSLStatus(cr)
-		attempts := int64(1)
-		if cr.Status.AtProvider.SSL.IssueAttempts != nil {
-			attempts = *cr.Status.AtProvider.SSL.IssueAttempts + 1
-		}
-		cr.Status.AtProvider.SSL.IssueAttempts = &attempts
-		cr.Status.AtProvider.SSL.LastIssueAttemptAt = &now
+		// Custom upload — NO budget (deterministic). A terminal rejection
+		// (e.g. 422 cert_add_root_not_trusted) sets state=failed and is NOT
+		// re-attempted until the Secret changes (computeSSL gates on
+		// budgetKey+prevState); a transient error requeues normally.
 		err := e.do(func() (*http.Response, error) {
 			return e.tw.UploadCDNCertificate(ctx, certPEM, keyPEM, resourceID)
 		})
 		if err != nil && !errors.Is(err, timeweb.ErrTransient) {
-			// Terminal rejection (e.g. 422 cert_add_root_not_trusted: the
-			// chain must end in a system-trusted root — self-signed refused,
-			// live-verified). Surfacing + settling into the failed state
-			// beats hammering an upload the platform will never accept; a
-			// Secret/spec change re-triggers naturally.
 			e.event(cr, "Warning", eventSSLUploadFailed, err.Error())
 			ensureSSLStatus(cr)
 			st := sslStateFailed
