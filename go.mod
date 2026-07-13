@@ -2,7 +2,7 @@ module github.com/lebedevdsl/crossplane-provider-timeweb
 
 go 1.26.0
 
-toolchain go1.26.4
+toolchain go1.26.5
 
 require (
 	github.com/crossplane/crossplane-runtime/v2 v2.3.1
