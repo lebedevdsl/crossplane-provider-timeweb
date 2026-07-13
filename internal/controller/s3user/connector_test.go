@@ -66,7 +66,7 @@ func TestResolveGrants_DuplicateBucketName(t *testing.T) {
 		objectstoragev1alpha1.BucketGrant{BucketName: ptr("dup"), AccessLevel: "read"},
 		objectstoragev1alpha1.BucketGrant{BucketName: ptr("dup"), AccessLevel: "admin"},
 	)
-	_, err := c.resolveGrants(context.Background(), cr)
+	_, _, err := c.resolveGrants(context.Background(), cr)
 	if !errors.Is(err, errDuplicateBucket) {
 		t.Fatalf("want errDuplicateBucket, got %v", err)
 	}
@@ -78,7 +78,7 @@ func TestResolveGrants_BucketNamesSorted(t *testing.T) {
 		objectstoragev1alpha1.BucketGrant{BucketName: ptr("zeta"), AccessLevel: "read"},
 		objectstoragev1alpha1.BucketGrant{BucketName: ptr("alpha"), AccessLevel: "admin"},
 	)
-	got, err := c.resolveGrants(context.Background(), cr)
+	got, _, err := c.resolveGrants(context.Background(), cr)
 	if err != nil {
 		t.Fatalf("resolveGrants: %v", err)
 	}
@@ -94,7 +94,7 @@ func TestResolveGrants_RefResolved(t *testing.T) {
 	cr := userWithGrants(objectstoragev1alpha1.BucketGrant{
 		BucketRef: &xpv2.Reference{Name: "ref-a"}, AccessLevel: "read-write",
 	})
-	got, err := c.resolveGrants(context.Background(), cr)
+	got, _, err := c.resolveGrants(context.Background(), cr)
 	if err != nil {
 		t.Fatalf("resolveGrants: %v", err)
 	}
@@ -110,7 +110,7 @@ func TestResolveGrants_RefNotReady(t *testing.T) {
 	cr := userWithGrants(objectstoragev1alpha1.BucketGrant{
 		BucketRef: &xpv2.Reference{Name: "ref-a"}, AccessLevel: "read",
 	})
-	if _, err := c.resolveGrants(context.Background(), cr); !errors.Is(err, errTargetNotReady) {
+	if _, _, err := c.resolveGrants(context.Background(), cr); !errors.Is(err, errTargetNotReady) {
 		t.Fatalf("want errTargetNotReady, got %v", err)
 	}
 }
@@ -121,7 +121,7 @@ func TestResolveGrants_RefNotFound(t *testing.T) {
 	cr := userWithGrants(objectstoragev1alpha1.BucketGrant{
 		BucketRef: &xpv2.Reference{Name: "missing"}, AccessLevel: "read",
 	})
-	if _, err := c.resolveGrants(context.Background(), cr); !errors.Is(err, errTargetNotFound) {
+	if _, _, err := c.resolveGrants(context.Background(), cr); !errors.Is(err, errTargetNotFound) {
 		t.Fatalf("want errTargetNotFound, got %v", err)
 	}
 }
@@ -144,7 +144,7 @@ func TestResolveGrants_DeletingSkipsUnresolvableRef(t *testing.T) {
 	now := metav1.Now()
 	cr.SetDeletionTimestamp(&now)
 
-	got, err := c.resolveGrants(context.Background(), cr)
+	got, _, err := c.resolveGrants(context.Background(), cr)
 	if err != nil {
 		t.Fatalf("resolveGrants while deleting must not error, got %v", err)
 	}
@@ -157,7 +157,7 @@ func TestResolveGrants_GrantSpecError(t *testing.T) {
 	c := &connector{}
 	// Neither bucketRef nor bucketName set.
 	cr := userWithGrants(objectstoragev1alpha1.BucketGrant{AccessLevel: "read"})
-	if _, err := c.resolveGrants(context.Background(), cr); !errors.Is(err, errGrantSpec) {
+	if _, _, err := c.resolveGrants(context.Background(), cr); !errors.Is(err, errGrantSpec) {
 		t.Fatalf("want errGrantSpec, got %v", err)
 	}
 }

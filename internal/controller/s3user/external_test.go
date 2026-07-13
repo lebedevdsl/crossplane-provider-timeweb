@@ -30,6 +30,7 @@ import (
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/rgwiam"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/rgwiam/rgwiamfakes"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
+	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared"
 )
 
 func newResp(code int, body string) *http.Response {
@@ -125,11 +126,11 @@ func TestObserve_UpToDate(t *testing.T) {
 	if !obs.ResourceExists || !obs.ResourceUpToDate {
 		t.Errorf("want exists+upToDate; got exists=%v upToDate=%v", obs.ResourceExists, obs.ResourceUpToDate)
 	}
-	if string(obs.ConnectionDetails[connKeyAccessKey]) != "AK" {
-		t.Errorf("connection access_key = %q, want AK", obs.ConnectionDetails[connKeyAccessKey])
-	}
-	if _, hasAdmin := obs.ConnectionDetails["region"]; hasAdmin {
-		t.Errorf("unexpected key in S3User connection secret")
+	// Create-only publishing (018 FR-004): Observe MUST return NO connection
+	// details — the single-user GET lacks the secret key, so republishing here
+	// would blank the Secret. The Create-published Secret is left untouched.
+	if len(obs.ConnectionDetails) != 0 {
+		t.Errorf("Observe must publish no connection details (create-only), got %v", obs.ConnectionDetails)
 	}
 }
 
@@ -137,7 +138,7 @@ func TestBuildConnection_Buckets(t *testing.T) {
 	u := timeweb.IAMUser{AccessKey: "AK", SecretKey: "SK"}
 
 	// Single bucket: `bucket` and `buckets` both name it.
-	single := buildConnection(u, []rgwiam.Grant{{Bucket: "only", Level: rgwiam.LevelRead}})
+	single := buildConnection(u, []rgwiam.Grant{{Bucket: "only", Level: rgwiam.LevelRead}}, "")
 	if got := string(single[connKeyBucket]); got != "only" {
 		t.Errorf("single bucket = %q, want only", got)
 	}
@@ -149,7 +150,7 @@ func TestBuildConnection_Buckets(t *testing.T) {
 	multi := buildConnection(u, []rgwiam.Grant{
 		{Bucket: "alpha", Level: rgwiam.LevelReadWrite},
 		{Bucket: "beta", Level: rgwiam.LevelRead},
-	})
+	}, "")
 	if got := string(multi[connKeyBucket]); got != "alpha" {
 		t.Errorf("multi primary bucket = %q, want alpha", got)
 	}
@@ -158,7 +159,7 @@ func TestBuildConnection_Buckets(t *testing.T) {
 	}
 
 	// No grants: empty, not absent (consumers can rely on the keys existing).
-	none := buildConnection(u, nil)
+	none := buildConnection(u, nil, "")
 	if got := string(none[connKeyBuckets]); got != "" {
 		t.Errorf("no-grant buckets = %q, want empty", got)
 	}
@@ -272,5 +273,59 @@ func TestDelete_AlreadyGone(t *testing.T) {
 	}}
 	if _, err := newExternal(tw, &rgwiamfakes.FakeClient{}).Delete(context.Background(), newUser("uuid")); err != nil {
 		t.Fatalf("Delete already-gone should succeed, got %v", err)
+	}
+}
+
+func TestCreate_AdoptedNoSecretKey_SurfacesCondition(t *testing.T) {
+	// An adopted user comes from the LIST endpoint, which omits the secret key.
+	// Create MUST NOT publish a blank credential — it surfaces a condition.
+	tw := &fakeUserAPI{listFn: func(context.Context) (*http.Response, error) {
+		return newResp(200, `{"iam_users":[{"id":"existing","name":"u","access_key":"AK","secret_key":"","status":"active"}]}`), nil
+	}}
+	cr := newUser("")
+	e := newExternal(tw, &rgwiamfakes.FakeClient{})
+	cre, err := e.Create(context.Background(), cr)
+	// MUST return an error so the failure is sticky (a nil return would be
+	// overwritten by the runtime with Synced=True/ReconcileSuccess). The real
+	// reason rides a Warning event; the condition surfaces as ReconcileError.
+	if err == nil {
+		t.Fatal("Create must return an error when the secret key is unobtainable (sticky failure)")
+	}
+	if len(cre.ConnectionDetails) != 0 {
+		t.Fatalf("must NOT publish connection details when secret key is unobtainable, got %v", cre.ConnectionDetails)
+	}
+	rec := e.recorder.(*record.FakeRecorder)
+	select {
+	case ev := <-rec.Events:
+		if !strings.Contains(ev, string(shared.ReasonSecretMissing)) {
+			t.Fatalf("want SecretMissing warning event, got %q", ev)
+		}
+	default:
+		t.Fatal("expected a SecretMissing warning event")
+	}
+}
+
+func TestUpdate_PublishesNoConnectionDetails(t *testing.T) {
+	// Create-only publishing: Update returns no connection details.
+	iam := &rgwiamfakes.FakeClient{}
+	upd, err := newExternal(&fakeUserAPI{}, iam).Update(context.Background(), newUser("uuid"))
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if len(upd.ConnectionDetails) != 0 {
+		t.Fatalf("Update must publish no connection details (create-only), got %v", upd.ConnectionDetails)
+	}
+}
+
+func TestBuildConnection_RegionFromPrimaryBucket(t *testing.T) {
+	u := timeweb.IAMUser{AccessKey: "AK", SecretKey: "SK"}
+	conn := buildConnection(u, []rgwiam.Grant{{Bucket: "b", Level: rgwiam.LevelRead}}, "ru-1")
+	if string(conn[connKeyRegion]) != "ru-1" {
+		t.Fatalf("region = %q, want ru-1", conn[connKeyRegion])
+	}
+	// Empty region → key omitted (not a blank value).
+	noRegion := buildConnection(u, []rgwiam.Grant{{Bucket: "b", Level: rgwiam.LevelRead}}, "")
+	if _, ok := noRegion[connKeyRegion]; ok {
+		t.Fatalf("region key must be omitted when unknown, got %v", noRegion[connKeyRegion])
 	}
 }

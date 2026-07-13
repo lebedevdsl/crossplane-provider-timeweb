@@ -77,49 +77,28 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, fmt.Errorf("s3user: build Timeweb client: %w", err)
 	}
 
-	ak, sk, err := deriveAdminKeys(ctx, tw)
-	if err != nil {
-		return nil, err
+	// Admin keys are only needed to write/remove the inline IAM policy. On the
+	// DELETE path the user is removed with the bearer token (DeleteStorageUserV2)
+	// and policy removal is best-effort, so a failure to derive admin keys must
+	// NOT hard-fail Connect — that would wedge the finalizer
+	// (project_ref_gate_must_not_block_delete). Tolerate it while deleting.
+	ak, sk, err := shared.DeriveAdminKeys(ctx, tw)
+	if err != nil && cr.GetDeletionTimestamp() == nil {
+		return nil, fmt.Errorf("s3user: %w", err)
 	}
 
-	grants, err := c.resolveGrants(ctx, cr)
+	grants, primaryRegion, err := c.resolveGrants(ctx, cr)
 	if err != nil {
 		return nil, err
 	}
 
 	return &external{
-		tw:       tw,
-		iam:      rgwiam.New(rgwiam.Config{AccessKeyID: ak, SecretAccessKey: sk}),
-		recorder: c.recorder,
-		grants:   grants,
+		tw:            tw,
+		iam:           rgwiam.New(rgwiam.Config{AccessKeyID: ak, SecretAccessKey: sk}),
+		recorder:      c.recorder,
+		grants:        grants,
+		primaryRegion: primaryRegion,
 	}, nil
-}
-
-// deriveAdminKeys reads the account super-user's S3 keys from the v1 endpoint.
-// Re-read every reconcile so an out-of-band key reset is picked up; never
-// cached across reconciles.
-func deriveAdminKeys(ctx context.Context, tw *timeweb.Client) (string, string, error) {
-	resp, err := tw.GetStorageUsers(ctx)
-	if err != nil {
-		return "", "", timeweb.ClassifyNetworkError(err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if err := timeweb.Classify(resp); err != nil {
-		return "", "", err
-	}
-	var env struct {
-		Users []struct {
-			AccessKey string `json:"access_key"`
-			SecretKey string `json:"secret_key"`
-		} `json:"users"`
-	}
-	if err := timeweb.DecodeBody(resp.Body, &env); err != nil {
-		return "", "", err
-	}
-	if len(env.Users) == 0 || env.Users[0].AccessKey == "" || env.Users[0].SecretKey == "" {
-		return "", "", fmt.Errorf("s3user: no account-admin S3 keys found at /api/v1/storages/users")
-	}
-	return env.Users[0].AccessKey, env.Users[0].SecretKey, nil
 }
 
 // resolveGrants resolves every bucketAccess entry to (bucketName, level),
@@ -130,51 +109,65 @@ func deriveAdminKeys(ctx context.Context, tw *timeweb.Client) (string, string, e
 // be gone or mid-delete. Hard-failing here would block Connect — and therefore
 // the final reconcile that removes the finalizer — wedging the S3User forever.
 // So when the resource is being deleted, skip refs that don't resolve.
-func (c *connector) resolveGrants(ctx context.Context, cr *objectstoragev1alpha1.S3User) ([]rgwiam.Grant, error) {
+func (c *connector) resolveGrants(ctx context.Context, cr *objectstoragev1alpha1.S3User) ([]rgwiam.Grant, string, error) {
 	deleting := cr.GetDeletionTimestamp() != nil
 	out := make([]rgwiam.Grant, 0, len(cr.Spec.ForProvider.BucketAccess))
 	seen := map[string]struct{}{}
+	region := map[string]string{}
 	for i := range cr.Spec.ForProvider.BucketAccess {
 		g := cr.Spec.ForProvider.BucketAccess[i]
-		name, err := c.resolveBucketName(ctx, cr.GetNamespace(), g)
+		name, reg, err := c.resolveBucketName(ctx, cr.GetNamespace(), g)
 		if err != nil {
 			if deleting {
 				continue
 			}
-			return nil, err
+			return nil, "", err
 		}
 		if _, dup := seen[name]; dup {
-			return nil, fmt.Errorf("%w: %q", errDuplicateBucket, name)
+			return nil, "", fmt.Errorf("%w: %q", errDuplicateBucket, name)
 		}
 		seen[name] = struct{}{}
+		region[name] = reg
 		out = append(out, rgwiam.Grant{Bucket: name, Level: g.AccessLevel})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Bucket < out[j].Bucket })
-	return out, nil
+	// Primary = first sorted bucket; its region (if any) is published as the
+	// singular `region` key (018 FR-006; per-bucket structure deferred).
+	primaryRegion := ""
+	if len(out) > 0 {
+		primaryRegion = region[out[0].Bucket]
+	}
+	return out, primaryRegion, nil
 }
 
-// resolveBucketName resolves one grant to a bucket name (by ref or direct name).
-func (c *connector) resolveBucketName(ctx context.Context, ns string, g objectstoragev1alpha1.BucketGrant) (string, error) {
+// resolveBucketName resolves one grant to a bucket name (by ref or direct name)
+// plus, for bucketRef grants, the referenced bucket's observed region (empty
+// for direct-name grants or when the bucket has none).
+func (c *connector) resolveBucketName(ctx context.Context, ns string, g objectstoragev1alpha1.BucketGrant) (string, string, error) {
 	switch {
 	case g.BucketName != nil && *g.BucketName != "" && g.BucketRef == nil:
-		return *g.BucketName, nil
+		return *g.BucketName, "", nil
 	case g.BucketRef != nil && (g.BucketName == nil || *g.BucketName == ""):
 		target := &objectstoragev1alpha1.S3Bucket{}
 		if err := c.kube.Get(ctx, types.NamespacedName{Namespace: ns, Name: g.BucketRef.Name}, target); err != nil {
 			if kerrors.IsNotFound(err) {
-				return "", fmt.Errorf("%w: S3Bucket %q", errTargetNotFound, g.BucketRef.Name)
+				return "", "", fmt.Errorf("%w: S3Bucket %q", errTargetNotFound, g.BucketRef.Name)
 			}
-			return "", fmt.Errorf("get S3Bucket %s/%s: %w", ns, g.BucketRef.Name, err)
+			return "", "", fmt.Errorf("get S3Bucket %s/%s: %w", ns, g.BucketRef.Name, err)
 		}
 		if target.GetCondition(xpv2.TypeReady).Status != corev1.ConditionTrue {
-			return "", fmt.Errorf("%w: S3Bucket %q (not Ready=True)", errTargetNotReady, g.BucketRef.Name)
+			return "", "", fmt.Errorf("%w: S3Bucket %q (not Ready=True)", errTargetNotReady, g.BucketRef.Name)
 		}
 		if target.Spec.ForProvider.Name == "" {
-			return "", fmt.Errorf("%w: S3Bucket %q (empty bucket name)", errTargetNotReady, g.BucketRef.Name)
+			return "", "", fmt.Errorf("%w: S3Bucket %q (empty bucket name)", errTargetNotReady, g.BucketRef.Name)
 		}
-		return target.Spec.ForProvider.Name, nil
+		region := ""
+		if target.Status.AtProvider.Location != nil {
+			region = *target.Status.AtProvider.Location
+		}
+		return target.Spec.ForProvider.Name, region, nil
 	default:
-		return "", fmt.Errorf("%w", errGrantSpec)
+		return "", "", fmt.Errorf("%w", errGrantSpec)
 	}
 }
 
