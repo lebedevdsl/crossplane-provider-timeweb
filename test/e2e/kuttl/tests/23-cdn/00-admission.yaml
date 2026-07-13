@@ -88,6 +88,53 @@ commands:
           cache: { queryStringCacheKeyMode: whitelist }
         providerConfigRef: { kind: ProviderConfig, name: e2e }
       EOF
+  # More than 2 custom delivery domains → rejected.
+  - script: |
+      ! kubectl apply --dry-run=server -n $NAMESPACE -f - <<'EOF'
+      apiVersion: cdn.m.timeweb.crossplane.io/v1alpha1
+      kind: Cdn
+      metadata: { name: e2e-cdn-invalid-domains }
+      spec:
+        forProvider:
+          origin: { domain: a.example.com }
+          domains: [a.cdn.example.com, b.cdn.example.com, c.cdn.example.com]
+        providerConfigRef: { kind: ProviderConfig, name: e2e }
+      EOF
+  # ssl mode custom without certificateSecretRef → rejected.
+  - script: |
+      ! kubectl apply --dry-run=server -n $NAMESPACE -f - <<'EOF'
+      apiVersion: cdn.m.timeweb.crossplane.io/v1alpha1
+      kind: Cdn
+      metadata: { name: e2e-cdn-invalid-sslcustom }
+      spec:
+        forProvider:
+          origin: { domain: a.example.com }
+          ssl: { mode: custom }
+        providerConfigRef: { kind: ProviderConfig, name: e2e }
+      EOF
+  # certificateSecretRef with mode letsEncrypt → rejected.
+  - script: |
+      ! kubectl apply --dry-run=server -n $NAMESPACE -f - <<'EOF'
+      apiVersion: cdn.m.timeweb.crossplane.io/v1alpha1
+      kind: Cdn
+      metadata: { name: e2e-cdn-invalid-sslle }
+      spec:
+        forProvider:
+          origin: { domain: a.example.com }
+          ssl: { mode: letsEncrypt, certificateSecretRef: { name: x } }
+        providerConfigRef: { kind: ProviderConfig, name: e2e }
+      EOF
+  # awsAuthSecretRef together with bucketRef → rejected.
+  - script: |
+      ! kubectl apply --dry-run=server -n $NAMESPACE -f - <<'EOF'
+      apiVersion: cdn.m.timeweb.crossplane.io/v1alpha1
+      kind: Cdn
+      metadata: { name: e2e-cdn-invalid-awsbucket }
+      spec:
+        forProvider:
+          origin: { bucketRef: { name: b }, awsAuthSecretRef: { name: k } }
+        providerConfigRef: { kind: ProviderConfig, name: e2e }
+      EOF
   # Duplicate request-header names → rejected.
   - script: |
       ! kubectl apply --dry-run=server -n $NAMESPACE -f - <<'EOF'
