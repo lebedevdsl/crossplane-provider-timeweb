@@ -61,21 +61,6 @@ commands:
             robots: { mode: deny, custom: "User-agent: *" }
         providerConfigRef: { kind: ProviderConfig, name: e2e }
       EOF
-  # queryStringInCacheKey together with queryStringCacheKeyMode → rejected.
-  - script: |
-      ! kubectl apply --dry-run=server -n $NAMESPACE -f - <<'EOF'
-      apiVersion: cdn.m.timeweb.crossplane.io/v1alpha1
-      kind: Cdn
-      metadata: { name: e2e-cdn-invalid-qsboth }
-      spec:
-        forProvider:
-          origin: { domain: a.example.com }
-          cache:
-            queryStringInCacheKey: true
-            queryStringCacheKeyMode: whitelist
-            queryStringCacheKeyParams: ["utm"]
-        providerConfigRef: { kind: ProviderConfig, name: e2e }
-      EOF
   # whitelist mode without params → rejected.
   - script: |
       ! kubectl apply --dry-run=server -n $NAMESPACE -f - <<'EOF'

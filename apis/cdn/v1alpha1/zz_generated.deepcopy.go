@@ -84,11 +84,6 @@ func (in *CdnCache) DeepCopyInto(out *CdnCache) {
 		*out = new(bool)
 		**out = **in
 	}
-	if in.QueryStringInCacheKey != nil {
-		in, out := &in.QueryStringInCacheKey, &out.QueryStringInCacheKey
-		*out = new(bool)
-		**out = **in
-	}
 	if in.QueryStringCacheKeyMode != nil {
 		in, out := &in.QueryStringCacheKeyMode, &out.QueryStringCacheKeyMode
 		*out = new(string)

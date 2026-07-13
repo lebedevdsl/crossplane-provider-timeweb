@@ -1062,13 +1062,13 @@ func settingsMirror(cfg timeweb.CDNConfig) *cdnv1alpha1.CdnSettingsMirror {
 		if cfg.Cache.Browser != nil {
 			browser = cfg.Cache.Browser.TTL
 		}
-		online, query := cfg.Cache.AlwaysOnline != nil, cfg.Cache.QueryArgs != nil
+		online := cfg.Cache.AlwaysOnline != nil
 		m.Cache = &cdnv1alpha1.CdnCache{
-			EdgeTTLSeconds:        &edge,
-			BrowserTTLSeconds:     &browser,
-			AlwaysOnline:          &online,
-			QueryStringInCacheKey: &query,
+			EdgeTTLSeconds:    &edge,
+			BrowserTTLSeconds: &browser,
+			AlwaysOnline:      &online,
 		}
+		// query_args is a single setting: mirror upstream mode + params directly.
 		if qa := cfg.Cache.QueryArgs; qa != nil {
 			mode := qa.Mode
 			m.Cache.QueryStringCacheKeyMode = &mode
@@ -1173,8 +1173,8 @@ func effectiveName(cr *cdnv1alpha1.Cdn) string {
 func defaultStaleConditions() []string { return []string{"error", "timeout"} }
 
 // desiredQueryArgs maps the declared query-string cache-key form to the wire:
-// bool → {mode:"all"}; mode+params → {mode, list} (panel-captured 2026-07-13);
-// neither → nil (explicit-null disable).
+// mode "all" → {mode:"all"}; whitelist/blacklist → {mode, list}
+// (panel-captured 2026-07-13); mode unset → nil (explicit-null disable).
 func desiredQueryArgs(c *cdnv1alpha1.CdnCache) *timeweb.CDNQueryArgs {
 	if c.QueryStringCacheKeyMode != nil {
 		qa := &timeweb.CDNQueryArgs{Mode: *c.QueryStringCacheKeyMode}
@@ -1183,9 +1183,6 @@ func desiredQueryArgs(c *cdnv1alpha1.CdnCache) *timeweb.CDNQueryArgs {
 			sort.Strings(qa.List)
 		}
 		return qa
-	}
-	if bDeref(c.QueryStringInCacheKey) {
-		return &timeweb.CDNQueryArgs{Mode: "all"}
 	}
 	return nil
 }

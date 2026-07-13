@@ -147,19 +147,16 @@ platform automatically and reject this field at admission.
 
 ## Query-string cache key
 
-Two forms, mutually exclusive (CEL-enforced):
+One setting, `queryStringCacheKeyMode`:
 
 ```yaml
 cache:
-  queryStringInCacheKey: true          # ALL parameters join the cache key
-# — or per-parameter control:
-cache:
-  queryStringCacheKeyMode: whitelist   # all | whitelist | blacklist
-  queryStringCacheKeyParams: ["utm_source", "ref", "v"]
+  queryStringCacheKeyMode: all         # all | whitelist | blacklist
+  # queryStringCacheKeyParams: ["utm_source", "ref", "v"]  # whitelist/blacklist only
 ```
 
-`whitelist` keys the cache only on the listed parameters; `blacklist` on all
-except them.
+`all` puts every query parameter in the cache key; `whitelist` keys the cache
+only on the listed parameters; `blacklist` on all except them.
 
 ## Signed URLs — the signing algorithm (app-side)
 

@@ -99,9 +99,9 @@ spec:
                       queryStringCacheKeyMode:
                         description: |-
                           QueryStringCacheKeyMode selects how query parameters join the cache
-                          key: all = every parameter; whitelist = only queryStringCacheKeyParams;
-                          blacklist = every parameter except queryStringCacheKeyParams
-                          (panel-verified wire: `query_args: {mode, list}`).
+                          key: all = every parameter (the panel's "Все" mode); whitelist = only
+                          queryStringCacheKeyParams; blacklist = every parameter except
+                          queryStringCacheKeyParams (panel-verified wire: `query_args: {mode, list}`).
                         enum:
                         - all
                         - whitelist
@@ -115,17 +115,8 @@ spec:
                           type: string
                         maxItems: 32
                         type: array
-                      queryStringInCacheKey:
-                        description: |-
-                          QueryStringInCacheKey includes ALL query parameters in the CDN cache
-                          key (the panel's "Все" mode). For per-parameter control use
-                          queryStringCacheKeyMode instead — the two are mutually exclusive.
-                        type: boolean
                     type: object
                     x-kubernetes-validations:
-                    - message: queryStringInCacheKey and queryStringCacheKeyMode are
-                        mutually exclusive
-                      rule: '!(has(self.queryStringInCacheKey) && has(self.queryStringCacheKeyMode))'
                     - message: queryStringCacheKeyParams requires queryStringCacheKeyMode
                         whitelist or blacklist
                       rule: '!has(self.queryStringCacheKeyParams) || (has(self.queryStringCacheKeyMode)
@@ -583,9 +574,9 @@ spec:
                           queryStringCacheKeyMode:
                             description: |-
                               QueryStringCacheKeyMode selects how query parameters join the cache
-                              key: all = every parameter; whitelist = only queryStringCacheKeyParams;
-                              blacklist = every parameter except queryStringCacheKeyParams
-                              (panel-verified wire: `query_args: {mode, list}`).
+                              key: all = every parameter (the panel's "Все" mode); whitelist = only
+                              queryStringCacheKeyParams; blacklist = every parameter except
+                              queryStringCacheKeyParams (panel-verified wire: `query_args: {mode, list}`).
                             enum:
                             - all
                             - whitelist
@@ -599,17 +590,8 @@ spec:
                               type: string
                             maxItems: 32
                             type: array
-                          queryStringInCacheKey:
-                            description: |-
-                              QueryStringInCacheKey includes ALL query parameters in the CDN cache
-                              key (the panel's "Все" mode). For per-parameter control use
-                              queryStringCacheKeyMode instead — the two are mutually exclusive.
-                            type: boolean
                         type: object
                         x-kubernetes-validations:
-                        - message: queryStringInCacheKey and queryStringCacheKeyMode
-                            are mutually exclusive
-                          rule: '!(has(self.queryStringInCacheKey) && has(self.queryStringCacheKeyMode))'
                         - message: queryStringCacheKeyParams requires queryStringCacheKeyMode
                             whitelist or blacklist
                           rule: '!has(self.queryStringCacheKeyParams) || (has(self.queryStringCacheKeyMode)

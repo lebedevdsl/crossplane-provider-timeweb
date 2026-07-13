@@ -642,12 +642,12 @@ func TestUpdateProceedsWhileProcessing(t *testing.T) {
 }
 
 func TestUpdateQueryStringCacheKey(t *testing.T) {
-	// queryStringInCacheKey: true must write cache.query_args={mode:"all"}
+	// queryStringCacheKeyMode: all must write cache.query_args={mode:"all"}
 	// (probe-verified wire shape); disabled sub-features stay explicit-null.
 	tw := &fakeCDNAPI{}
-	yes := true
+	all := "all"
 	cr := newCdn(withExternalName("22209"))
-	cr.Spec.ForProvider.Cache = &cdnv1alpha1.CdnCache{QueryStringInCacheKey: &yes}
+	cr.Spec.ForProvider.Cache = &cdnv1alpha1.CdnCache{QueryStringCacheKeyMode: &all}
 	if _, err := testExternal(t, tw).Update(context.Background(), cr); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
