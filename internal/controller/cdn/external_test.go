@@ -29,6 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -72,6 +73,14 @@ type fakeCDNAPI struct {
 	patchBodies  []timeweb.CDNResourceWrite
 	clearTypes   []string
 	clearPaths   [][]string
+
+	listCertsFn  func(ctx context.Context, resourceID string) (*http.Response, error)
+	listTasksFn  func(ctx context.Context, resourceID string) (*http.Response, error)
+	uploadFn     func(ctx context.Context, certPEM, keyPEM string, resourceID int64) (*http.Response, error)
+	issueFn      func(ctx context.Context, resourceID int64) (*http.Response, error)
+	deleteCertFn func(ctx context.Context, id string) (*http.Response, error)
+
+	uploadCalls, issueCalls, deleteCertCalls int
 }
 
 func (f *fakeCDNAPI) ListCDNHTTPResources(ctx context.Context) (*http.Response, error) {
@@ -126,6 +135,39 @@ func (f *fakeCDNAPI) ListCDNPresets(ctx context.Context) (*http.Response, error)
 	}
 	return cdnResp(200, `{"http_resource_presets":[{"id":3807,"cost":1,"rate_cost":0.6},{"id":4000,"cost":5,"rate_cost":1}]}`), nil
 }
+func (f *fakeCDNAPI) ListCDNCertificates(ctx context.Context, resourceID string) (*http.Response, error) {
+	if f.listCertsFn != nil {
+		return f.listCertsFn(ctx, resourceID)
+	}
+	return cdnResp(200, `{"certificates":[]}`), nil
+}
+func (f *fakeCDNAPI) ListCDNCertificateTasks(ctx context.Context, resourceID string) (*http.Response, error) {
+	if f.listTasksFn != nil {
+		return f.listTasksFn(ctx, resourceID)
+	}
+	return cdnResp(200, `{"certificate_tasks":[]}`), nil
+}
+func (f *fakeCDNAPI) UploadCDNCertificate(ctx context.Context, certPEM, keyPEM string, resourceID int64) (*http.Response, error) {
+	f.uploadCalls++
+	if f.uploadFn != nil {
+		return f.uploadFn(ctx, certPEM, keyPEM, resourceID)
+	}
+	return cdnResp(204, ``), nil
+}
+func (f *fakeCDNAPI) IssueCDNCertificate(ctx context.Context, resourceID int64) (*http.Response, error) {
+	f.issueCalls++
+	if f.issueFn != nil {
+		return f.issueFn(ctx, resourceID)
+	}
+	return cdnResp(202, `{}`), nil
+}
+func (f *fakeCDNAPI) DeleteCDNCertificate(ctx context.Context, id string) (*http.Response, error) {
+	f.deleteCertCalls++
+	if f.deleteCertFn != nil {
+		return f.deleteCertFn(ctx, id)
+	}
+	return cdnResp(204, ``), nil
+}
 
 func testScheme(t *testing.T) *runtime.Scheme {
 	t.Helper()
@@ -134,6 +176,9 @@ func testScheme(t *testing.T) *runtime.Scheme {
 		t.Fatal(err)
 	}
 	if err := objectstoragev1alpha1.AddToScheme(s); err != nil {
+		t.Fatal(err)
+	}
+	if err := clientgoscheme.AddToScheme(s); err != nil {
 		t.Fatal(err)
 	}
 	return s
@@ -733,5 +778,134 @@ func TestDeleteTransientError(t *testing.T) {
 func TestDeleteNoExternalName(t *testing.T) {
 	if _, err := testExternal(t, &fakeCDNAPI{}).Delete(context.Background(), newCdn()); err != nil {
 		t.Fatalf("expected no-op delete without external name, got %v", err)
+	}
+}
+
+// --- 017: domains / secure token / traffic limit / aws auth -----------------
+
+func secretObj(name string, data map[string]string) *corev1.Secret {
+	d := map[string][]byte{}
+	for k, v := range data {
+		d[k] = []byte(v)
+	}
+	return &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "web"}, Data: d}
+}
+
+func TestUpdateDomainsAlwaysIncludeTechnicalDomain(t *testing.T) {
+	tw := &fakeCDNAPI{}
+	cr := newCdn(withExternalName("22209"))
+	cr.Spec.ForProvider.Domains = []string{"cdn.example.com"}
+	if _, err := testExternal(t, tw).Update(context.Background(), cr); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(tw.patchBodies) != 1 || tw.patchBodies[0].Config == nil || tw.patchBodies[0].Config.Domains == nil {
+		t.Fatalf("expected one PATCH with config.domains, got %+v", tw.patchBodies)
+	}
+	al := tw.patchBodies[0].Config.Domains.Aliases
+	foundTech := false
+	for _, a := range al {
+		if a == "abc.cdn.twcstorage.ru" {
+			foundTech = true
+		}
+	}
+	if !foundTech || len(al) != 2 {
+		t.Fatalf("aliases must be {technical}∪declared, got %v", al)
+	}
+}
+
+func TestUpdateSecureTokenEnableAndDisable(t *testing.T) {
+	tw := &fakeCDNAPI{}
+	cr := newCdn(withExternalName("22209"))
+	cr.Spec.ForProvider.Security = &cdnv1alpha1.CdnSecurity{
+		SecureToken: &cdnv1alpha1.CdnSecureToken{
+			SecretRef:    cdnv1alpha1.CdnSecretRef{Name: "signing"},
+			RestrictByIP: func() *bool { b := true; return &b }(),
+		},
+	}
+	e := testExternal(t, tw, secretObj("signing", map[string]string{"secret": "k1234567890123456"}))
+	if _, err := e.Update(context.Background(), cr); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	body := tw.patchBodies[0].Config.Security
+	if body == nil || string(body.SecureToken) != `{"secret_key":"k1234567890123456","restrict_by_ip":true}` {
+		t.Fatalf("expected secure_token write, got %s", body.SecureToken)
+	}
+
+	// Disable: security owned, token omitted, upstream has one → explicit null.
+	twOff := &fakeCDNAPI{getCfgFn: func(context.Context, string) (*http.Response, error) {
+		return cdnResp(200, strings.Replace(emptyConfiguration,
+			`"security":{"redirect":false,"certificate_id":null,"secure_token":null}`,
+			`"security":{"redirect":false,"certificate_id":null,"secure_token":{"secret_key":"old","restrict_by_ip":false}}`, 1)), nil
+	}}
+	crOff := newCdn(withExternalName("22209"))
+	crOff.Spec.ForProvider.Security = &cdnv1alpha1.CdnSecurity{}
+	if _, err := testExternal(t, twOff).Update(context.Background(), crOff); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(twOff.patchBodies[0].Config.Security.SecureToken) != "null" {
+		t.Fatalf("expected explicit null disable, got %s", twOff.patchBodies[0].Config.Security.SecureToken)
+	}
+}
+
+func TestUpdateTrafficLimit(t *testing.T) {
+	tw := &fakeCDNAPI{}
+	cr := newCdn(withExternalName("22209"))
+	limit := int64(3000)
+	cr.Spec.ForProvider.TrafficLimitGBPerMonth = &limit
+	if _, err := testExternal(t, tw).Update(context.Background(), cr); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(tw.patchBodies[0].TrafficLimitBytes) != "3221225472000" {
+		t.Fatalf("expected GiB→bytes 3221225472000, got %s", tw.patchBodies[0].TrafficLimitBytes)
+	}
+
+	// Explicit 0 clears an existing limit with null.
+	twClr := &fakeCDNAPI{getFn: func(context.Context, string) (*http.Response, error) {
+		return cdnResp(200, strings.Replace(servingResource, `"traffic_limit_bytes":null`, `"traffic_limit_bytes":3221225472000`, 1)), nil
+	}}
+	crClr := newCdn(withExternalName("22209"))
+	zero := int64(0)
+	crClr.Spec.ForProvider.TrafficLimitGBPerMonth = &zero
+	if _, err := testExternal(t, twClr).Update(context.Background(), crClr); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(twClr.patchBodies[0].TrafficLimitBytes) != "null" {
+		t.Fatalf("expected null clear, got %s", twClr.patchBodies[0].TrafficLimitBytes)
+	}
+
+	// Omitted = unowned: observed limit present, no write.
+	twNo := &fakeCDNAPI{getFn: twClr.getFn}
+	if _, err := testExternal(t, twNo).Update(context.Background(), newCdn(withExternalName("22209"))); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(twNo.patchBodies) != 0 {
+		t.Fatal("expected no PATCH: unowned limit must not be fought")
+	}
+}
+
+func TestUpdateExternalAWSAuth(t *testing.T) {
+	tw := &fakeCDNAPI{}
+	cr := newCdn(withExternalName("22209"))
+	cr.Spec.ForProvider.Origin.AWSAuthSecretRef = &cdnv1alpha1.CdnSecretRef{Name: "ext-s3"}
+	e := testExternal(t, tw, secretObj("ext-s3", map[string]string{"access_key": "AKX", "secret_key": "SKX"}))
+	if _, err := e.Update(context.Background(), cr); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	body := tw.patchBodies[0].Config.Origin
+	if body == nil || string(body.AWS) != `{"access_key":"AKX","secret_key":"SKX"}` {
+		t.Fatalf("expected aws write, got %+v", body)
+	}
+}
+
+func TestObserveMissingSecretSurfacesCondition(t *testing.T) {
+	cr := newCdn(withExternalName("22209"))
+	cr.Spec.ForProvider.Security = &cdnv1alpha1.CdnSecurity{
+		SecureToken: &cdnv1alpha1.CdnSecureToken{SecretRef: cdnv1alpha1.CdnSecretRef{Name: "absent"}},
+	}
+	if _, err := testExternal(t, &fakeCDNAPI{}).Observe(context.Background(), cr); err == nil {
+		t.Fatal("expected error for missing secret")
+	}
+	if cr.GetCondition(xpv2.TypeSynced).Reason != shared.ReasonInvalidConfiguration {
+		t.Fatalf("expected InvalidConfiguration, got %v", cr.GetCondition(xpv2.TypeSynced).Reason)
 	}
 }

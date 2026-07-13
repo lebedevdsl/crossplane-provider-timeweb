@@ -30,6 +30,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -85,6 +86,11 @@ type cdnAPI interface {
 	DeleteCDNHTTPResource(ctx context.Context, id string) (*http.Response, error)
 	ClearCDNCache(ctx context.Context, id, purgeType string, paths []string) (*http.Response, error)
 	ListCDNPresets(ctx context.Context) (*http.Response, error)
+	ListCDNCertificates(ctx context.Context, resourceID string) (*http.Response, error)
+	ListCDNCertificateTasks(ctx context.Context, resourceID string) (*http.Response, error)
+	UploadCDNCertificate(ctx context.Context, certPEM, keyPEM string, resourceID int64) (*http.Response, error)
+	IssueCDNCertificate(ctx context.Context, resourceID int64) (*http.Response, error)
+	DeleteCDNCertificate(ctx context.Context, id string) (*http.Response, error)
 }
 
 // external implements managed.ExternalClient for Cdn.
@@ -153,9 +159,110 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 	cr.SetConditions(xpv2.Available())
 
-	_, dirty := e.buildDesiredWrite(ctx, cr, res, cfg)
-	return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: !dirty,
+	sec, err := e.resolveSpecSecrets(ctx, cr)
+	if err != nil {
+		cr.SetConditions(shared.SyncedFalse(shared.ReasonInvalidConfiguration, err.Error()))
+		return managed.ExternalObservation{}, err
+	}
+
+	sslDirty, err := e.observeSSL(ctx, cr, res, cfg, sec)
+	if err != nil {
+		return managed.ExternalObservation{}, err
+	}
+
+	_, dirty := e.buildDesiredWrite(ctx, cr, res, cfg, sec)
+	return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: !dirty && !sslDirty,
 		ConnectionDetails: connectionDetails(res)}, nil
+}
+
+// observeSSL mirrors certificate state and computes whether an SSL action is
+// pending. Reads the certificates/tasks endpoints only when the block is
+// declared. Also processes the retry-ssl annotation (budget reset).
+func (e *external) observeSSL(ctx context.Context, cr *cdnv1alpha1.Cdn, _ timeweb.CDNHTTPResource, cfg timeweb.CDNConfig, sec resolvedSecrets) (bool, error) {
+	if cr.Spec.ForProvider.SSL == nil {
+		return false, nil
+	}
+	id := meta.GetExternalName(cr)
+
+	if _, present := cr.GetAnnotations()[RetrySSLAnnotation]; present {
+		ensureSSLStatus(cr)
+		zero := int64(0)
+		cr.Status.AtProvider.SSL.IssueAttempts = &zero
+		cr.Status.AtProvider.SSL.LastIssueAttemptAt = nil
+		if err := e.removeAnnotation(ctx, cr, RetrySSLAnnotation); err != nil {
+			return false, err
+		}
+	}
+
+	certs, err := e.listCertificates(ctx, id)
+	if err != nil {
+		return false, err
+	}
+	tasks, err := e.listCertificateTasks(ctx, id)
+	if err != nil {
+		return false, err
+	}
+
+	out := computeSSL(e.sslInputsFor(cr, cfg, certs, tasks, sec))
+	mirrorSSL(cr, cfg, certs, out, sec)
+	return out.action.kind != sslActionNone, nil
+}
+
+// sslInputsFor assembles the pure-function inputs from live state.
+func (e *external) sslInputsFor(cr *cdnv1alpha1.Cdn, cfg timeweb.CDNConfig, certs []timeweb.CDNCertificate, tasks []timeweb.CDNCertificateTask, sec resolvedSecrets) sslInputs {
+	p := cr.Spec.ForProvider
+	in := sslInputs{
+		mode:            p.SSL.Mode,
+		desired:         sec.certIdentity,
+		certificates:    certs,
+		tasks:           tasks,
+		managed:         cr.Status.AtProvider.ManagedCertificate,
+		domainsAttached: domainsAttached(p.Domains, cfg),
+		budgetKey:       sslBudgetKey(p.Domains, p.SSL, sec.certIdentity),
+		now:             metav1.Now().Time,
+	}
+	if cfg.Security != nil {
+		in.boundID = cfg.Security.CertificateID
+	}
+	if st := cr.Status.AtProvider.SSL; st != nil {
+		if st.BudgetKey != nil {
+			in.prevBudgetKey = *st.BudgetKey
+		}
+		if st.IssueAttempts != nil {
+			in.attempts = *st.IssueAttempts
+		}
+		if st.LastIssueAttemptAt != nil {
+			t := st.LastIssueAttemptAt.Time
+			in.lastAttempt = &t
+		}
+	}
+	return in
+}
+
+// mirrorSSL writes the certificate + lifecycle bookkeeping into status.
+func mirrorSSL(cr *cdnv1alpha1.Cdn, cfg timeweb.CDNConfig, certs []timeweb.CDNCertificate, out sslOutcome, sec resolvedSecrets) {
+	ensureSSLStatus(cr)
+	key := sslBudgetKey(cr.Spec.ForProvider.Domains, cr.Spec.ForProvider.SSL, sec.certIdentity)
+	cr.Status.AtProvider.SSL.BudgetKey = &key
+	if out.state != "" {
+		st := out.state
+		cr.Status.AtProvider.SSL.State = &st
+	} else {
+		cr.Status.AtProvider.SSL.State = nil
+	}
+	att := out.attempts
+	cr.Status.AtProvider.SSL.IssueAttempts = &att
+	cr.Status.AtProvider.ManagedCertificate = out.managed
+
+	cr.Status.AtProvider.Certificate = nil
+	if cfg.Security != nil && cfg.Security.CertificateID != nil {
+		for i := range certs {
+			if certs[i].ID == *cfg.Security.CertificateID {
+				cr.Status.AtProvider.Certificate = markerFor(certs[i])
+				break
+			}
+		}
+	}
 }
 
 // Create provisions the CDN resource. It adopts a same-named orphan rather
@@ -238,7 +345,30 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, err
 	}
 
-	patch, dirty := e.buildDesiredWrite(ctx, cr, res, cfg)
+	sec, err := e.resolveSpecSecrets(ctx, cr)
+	if err != nil {
+		cr.SetConditions(shared.SyncedFalse(shared.ReasonInvalidConfiguration, err.Error()))
+		return managed.ExternalUpdate{}, err
+	}
+
+	// One SSL action per reconcile takes precedence over settings PATCHes.
+	if cr.Spec.ForProvider.SSL != nil {
+		certs, cerr := e.listCertificates(ctx, id)
+		if cerr != nil {
+			return managed.ExternalUpdate{}, cerr
+		}
+		tasks, terr := e.listCertificateTasks(ctx, id)
+		if terr != nil {
+			return managed.ExternalUpdate{}, terr
+		}
+		out := computeSSL(e.sslInputsFor(cr, cfg, certs, tasks, sec))
+		if out.action.kind != sslActionNone {
+			resID, _ := shared.DecodeID(id)
+			return managed.ExternalUpdate{}, e.executeSSLAction(ctx, cr, out.action, sec.certPEM, sec.keyPEM, int64(resID))
+		}
+	}
+
+	patch, dirty := e.buildDesiredWrite(ctx, cr, res, cfg, sec)
 	if !dirty {
 		return managed.ExternalUpdate{}, nil
 	}
@@ -341,20 +471,24 @@ func parsePurge(val string) (purgeType string, paths []string, err error) {
 	return "partial", paths, nil
 }
 
-// removePurgeAnnotation clears the trigger with a merge patch that touches
-// ONLY the annotation — no resourceVersion precondition, no clobbering of
-// concurrent runtime writes. Status (lastPurgedAt) is persisted by the
-// reconciler via the status subresource.
-func (e *external) removePurgeAnnotation(ctx context.Context, cr *cdnv1alpha1.Cdn) error {
+// removeAnnotation clears a trigger annotation with a merge patch that
+// touches ONLY the annotation — no resourceVersion precondition, no
+// clobbering of concurrent runtime writes. Status is preserved (Patch writes
+// the server object back; the reconciler persists status separately).
+func (e *external) removeAnnotation(ctx context.Context, cr *cdnv1alpha1.Cdn, key string) error {
 	orig := cr.DeepCopy()
-	meta.RemoveAnnotations(cr, PurgeAnnotation)
-	saved := cr.Status.DeepCopy() // Patch writes the server object back — keep the freshly computed status
+	meta.RemoveAnnotations(cr, key)
+	saved := cr.Status.DeepCopy()
 	err := e.kube.Patch(ctx, cr, client.MergeFrom(orig))
 	cr.Status = *saved
 	if err != nil {
-		return fmt.Errorf("cdn: remove purge annotation: %w", err)
+		return fmt.Errorf("cdn: remove %s annotation: %w", key, err)
 	}
 	return nil
+}
+
+func (e *external) removePurgeAnnotation(ctx context.Context, cr *cdnv1alpha1.Cdn) error {
+	return e.removeAnnotation(ctx, cr, PurgeAnnotation)
 }
 
 func (e *external) event(cr *cdnv1alpha1.Cdn, kind, reason, msg string) {
@@ -364,6 +498,78 @@ func (e *external) event(cr *cdnv1alpha1.Cdn, kind, reason, msg string) {
 }
 
 // --- origin resolution ---------------------------------------------------------
+
+// resolvedSecrets carries per-reconcile secret material (memory only — never
+// logged, evented, or mirrored).
+type resolvedSecrets struct {
+	secureTokenKey string
+	awsAccessKey   string
+	awsSecretKey   string
+	certPEM        string
+	keyPEM         string
+	certIdentity   *certIdentity
+}
+
+// resolveSpecSecrets resolves every Secret the declared spec references.
+// Failures return a clear error (surfaced as ReconcileError); the delete path
+// never calls this, so a missing Secret cannot wedge the finalizer.
+func (e *external) resolveSpecSecrets(ctx context.Context, cr *cdnv1alpha1.Cdn) (resolvedSecrets, error) {
+	var out resolvedSecrets
+	p := cr.Spec.ForProvider
+
+	if p.Security != nil && p.Security.SecureToken != nil {
+		key := "secret"
+		if p.Security.SecureToken.SecretRef.Key != nil {
+			key = *p.Security.SecureToken.SecretRef.Key
+		}
+		v, err := e.secretValue(ctx, cr.GetNamespace(), p.Security.SecureToken.SecretRef.Name, key)
+		if err != nil {
+			return out, fmt.Errorf("secureToken: %w", err)
+		}
+		out.secureTokenKey = v
+	}
+
+	if p.Origin.AWSAuthSecretRef != nil && p.Origin.BucketRef == nil {
+		ak, err := e.secretValue(ctx, cr.GetNamespace(), p.Origin.AWSAuthSecretRef.Name, "access_key")
+		if err != nil {
+			return out, fmt.Errorf("awsAuth: %w", err)
+		}
+		sk, err := e.secretValue(ctx, cr.GetNamespace(), p.Origin.AWSAuthSecretRef.Name, "secret_key")
+		if err != nil {
+			return out, fmt.Errorf("awsAuth: %w", err)
+		}
+		out.awsAccessKey, out.awsSecretKey = ak, sk
+	}
+
+	if p.SSL != nil && p.SSL.Mode == "custom" && p.SSL.CertificateSecretRef != nil {
+		crt, err := e.secretValue(ctx, cr.GetNamespace(), p.SSL.CertificateSecretRef.Name, "tls.crt")
+		if err != nil {
+			return out, fmt.Errorf("ssl certificate: %w", err)
+		}
+		key, err := e.secretValue(ctx, cr.GetNamespace(), p.SSL.CertificateSecretRef.Name, "tls.key")
+		if err != nil {
+			return out, fmt.Errorf("ssl certificate: %w", err)
+		}
+		id, err := parseTLSCertificate([]byte(crt))
+		if err != nil {
+			return out, fmt.Errorf("ssl certificate: %w", err)
+		}
+		out.certPEM, out.keyPEM, out.certIdentity = crt, key, &id
+	}
+	return out, nil
+}
+
+func (e *external) secretValue(ctx context.Context, ns, name, key string) (string, error) {
+	var sec corev1.Secret
+	if err := e.kube.Get(ctx, client.ObjectKey{Namespace: ns, Name: name}, &sec); err != nil {
+		return "", fmt.Errorf("secret %q: %w", name, err)
+	}
+	v, ok := sec.Data[key]
+	if !ok || len(v) == 0 {
+		return "", fmt.Errorf("secret %q: key %q missing or empty", name, key)
+	}
+	return string(v), nil
+}
 
 // resolvedOrigin carries the write-side origin: exactly one of server /
 // storageID is set.
@@ -421,7 +627,7 @@ func originPort(o cdnv1alpha1.CdnOrigin, https bool) int64 {
 // Only non-nil settings blocks are owned; sections the manifest omits are
 // never diffed or written (FR-010). Unowned upstream sections: domains,
 // origin.aws, certificates, secure token, allowed methods.
-func (e *external) buildDesiredWrite(ctx context.Context, cr *cdnv1alpha1.Cdn, res timeweb.CDNHTTPResource, cfg timeweb.CDNConfig) (timeweb.CDNResourceWrite, bool) {
+func (e *external) buildDesiredWrite(ctx context.Context, cr *cdnv1alpha1.Cdn, res timeweb.CDNHTTPResource, cfg timeweb.CDNConfig, sec resolvedSecrets) (timeweb.CDNResourceWrite, bool) {
 	var w timeweb.CDNResourceWrite
 	dirty := false
 	p := cr.Spec.ForProvider
@@ -450,7 +656,21 @@ func (e *external) buildDesiredWrite(ctx context.Context, cr *cdnv1alpha1.Cdn, r
 		}
 	}
 
-	if c := desiredConfig(p, cfg); c != nil {
+	// Traffic limit: owned when declared; 0 = explicitly no limit.
+	if p.TrafficLimitGBPerMonth != nil {
+		if *p.TrafficLimitGBPerMonth == 0 {
+			if res.TrafficLimitBytes != nil {
+				w.TrafficLimitBytes, dirty = timeweb.JSONNull, true
+			}
+		} else {
+			want := *p.TrafficLimitGBPerMonth << 30 // GiB → bytes (wire-verified)
+			if res.TrafficLimitBytes == nil || *res.TrafficLimitBytes != want {
+				w.TrafficLimitBytes, dirty = timeweb.JSONValue(want), true
+			}
+		}
+	}
+
+	if c := desiredConfig(p, cfg, sec); c != nil {
 		w.Config, dirty = c, true
 	}
 	return w, dirty
@@ -481,9 +701,40 @@ func originDrifted(want resolvedOrigin, res timeweb.CDNHTTPResource, cfg timeweb
 
 // desiredConfig returns the partial config PATCH for every owned-and-drifted
 // section, or nil when all owned sections match upstream.
-func desiredConfig(p cdnv1alpha1.CdnParameters, cfg timeweb.CDNConfig) *timeweb.CDNConfig {
-	out := &timeweb.CDNConfig{}
+func desiredConfig(p cdnv1alpha1.CdnParameters, cfg timeweb.CDNConfig, sec resolvedSecrets) *timeweb.CDNConfigPatch {
+	out := &timeweb.CDNConfigPatch{}
 	dirty := false
+
+	// Delivery-domain aliases: owned when declared; desired = {technical} ∪
+	// declared — the technical domain is ALWAYS included, never detached.
+	if p.Domains != nil {
+		obs := append([]string(nil), aliasesOf(cfg)...)
+		tech := technicalAlias(cfg)
+		want := append([]string(nil), p.Domains...)
+		if tech != "" {
+			want = append(want, tech)
+		}
+		sort.Strings(want)
+		sort.Strings(obs)
+		if !slicesEqual(want, obs) {
+			out.Domains = &timeweb.CDNConfigDomains{Aliases: want}
+			dirty = true
+		}
+	}
+
+	// AWS auth for EXTERNAL origins: owned only when the ref is declared
+	// (bucketRef origins auto-wire upstream; nil ref = unowned, never touched).
+	if p.Origin.AWSAuthSecretRef != nil && p.Origin.BucketRef == nil {
+		obs := cfg.Origin
+		match := obs != nil && obs.AWS != nil &&
+			obs.AWS.AccessKey == sec.awsAccessKey && obs.AWS.SecretKey == sec.awsSecretKey
+		if !match {
+			out.Origin = &timeweb.CDNConfigOriginPatch{
+				AWS: timeweb.JSONValue(timeweb.CDNAWSAuth{AccessKey: sec.awsAccessKey, SecretKey: sec.awsSecretKey}),
+			}
+			dirty = true
+		}
+	}
 
 	if p.Cache != nil {
 		wantEdge, wantBrowser := i64Deref(p.Cache.EdgeTTLSeconds), i64Deref(p.Cache.BrowserTTLSeconds)
@@ -526,10 +777,41 @@ func desiredConfig(p cdnv1alpha1.CdnParameters, cfg timeweb.CDNConfig) *timeweb.
 	}
 
 	if p.Security != nil {
+		secPatch := &timeweb.CDNConfigSecurityPatch{}
+		secDirty := false
+
 		want := bDeref(p.Security.ForceHTTPS)
 		obs := cfg.Security != nil && bDeref(cfg.Security.Redirect)
 		if want != obs {
-			out.Security = &timeweb.CDNConfigSecurity{Redirect: &want}
+			secPatch.Redirect = &want
+			secDirty = true
+		}
+
+		// Secure token: declared → converge {secret_key, restrict_by_ip};
+		// omitted (while the security block is owned) → explicit null when
+		// upstream has one. Diff on presence + restrict_by_ip (+ key when the
+		// readback echoes it); the key is otherwise write-through.
+		var obsToken *timeweb.CDNSecureToken
+		if cfg.Security != nil {
+			obsToken = cfg.Security.SecureToken
+		}
+		if p.Security.SecureToken != nil {
+			wantRestrict := bDeref(p.Security.SecureToken.RestrictByIP)
+			match := obsToken != nil && obsToken.RestrictByIP == wantRestrict &&
+				(obsToken.SecretKey == "" || obsToken.SecretKey == sec.secureTokenKey)
+			if !match {
+				secPatch.SecureToken = timeweb.JSONValue(timeweb.CDNSecureToken{
+					SecretKey: sec.secureTokenKey, RestrictByIP: wantRestrict,
+				})
+				secDirty = true
+			}
+		} else if obsToken != nil {
+			secPatch.SecureToken = timeweb.JSONNull
+			secDirty = true
+		}
+
+		if secDirty {
+			out.Security = secPatch
 			dirty = true
 		}
 	}
@@ -748,6 +1030,7 @@ func populateStatus(cr *cdnv1alpha1.Cdn, res timeweb.CDNHTTPResource, cfg timewe
 		lp := res.PresetID
 		cr.Status.AtProvider.LockedPresetID = &lp
 	}
+	cr.Status.AtProvider.TrafficLimitBytes = res.TrafficLimitBytes
 	if res.TrafficUsage != nil {
 		ratio := strconv.FormatFloat(res.TrafficUsage.CacheRatio, 'f', -1, 64)
 		cr.Status.AtProvider.TrafficUsage = &cdnv1alpha1.CdnTrafficUsage{
@@ -821,6 +1104,39 @@ func settingsMirror(cfg timeweb.CDNConfig) *cdnv1alpha1.CdnSettingsMirror {
 }
 
 // --- small helpers -------------------------------------------------------------
+
+// aliasesOf / technicalAlias read the delivery-domain set. The technical
+// domain is recognized by its fixed suffix.
+func aliasesOf(cfg timeweb.CDNConfig) []string {
+	if cfg.Domains == nil {
+		return nil
+	}
+	return cfg.Domains.Aliases
+}
+
+// domainsAttached reports whether every declared custom domain is already an
+// upstream alias (LE issuance requires them attached first).
+func domainsAttached(domains []string, cfg timeweb.CDNConfig) bool {
+	have := map[string]struct{}{}
+	for _, a := range aliasesOf(cfg) {
+		have[a] = struct{}{}
+	}
+	for _, d := range domains {
+		if _, ok := have[d]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func technicalAlias(cfg timeweb.CDNConfig) string {
+	for _, a := range aliasesOf(cfg) {
+		if strings.HasSuffix(a, ".cdn.twcstorage.ru") {
+			return a
+		}
+	}
+	return ""
+}
 
 func effectiveName(cr *cdnv1alpha1.Cdn) string {
 	if cr.Spec.ForProvider.Name != nil && *cr.Spec.ForProvider.Name != "" {

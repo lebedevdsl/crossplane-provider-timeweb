@@ -159,6 +159,16 @@ spec:
                     description: Description is an optional free-form comment. Mutable.
                     maxLength: 255
                     type: string
+                  domains:
+                    description: |-
+                      Domains are custom delivery subdomains (CNAME → the technical domain is
+                      the operator's DNS task). The technical domain is always present and
+                      never touched. Omitted = alias set unowned.
+                    items:
+                      type: string
+                    maxItems: 2
+                    type: array
+                    x-kubernetes-list-type: set
                   name:
                     description: |-
                       Name is the resource name shown in the dashboard. Defaults to the MR
@@ -172,6 +182,23 @@ spec:
                       selects the upstream wiring: bucket origins attach by storage id and
                       get AWS auth automatically; domain/ip origins are plain servers.
                     properties:
+                      awsAuthSecretRef:
+                        description: |-
+                          AWSAuthSecretRef enables AWS-signature auth against an EXTERNAL private
+                          S3-compatible origin (Secret keys: access_key, secret_key). Forbidden
+                          with bucketRef — in-account buckets are wired upstream automatically.
+                        properties:
+                          key:
+                            description: Key within the Secret, where a single value
+                              is needed.
+                            type: string
+                          name:
+                            description: Name of the Secret.
+                            minLength: 1
+                            type: string
+                        required:
+                        - name
+                        type: object
                       bucketRef:
                         description: |-
                           BucketRef points at an S3Bucket managed by this provider (same
@@ -215,6 +242,9 @@ spec:
                         : 0) + (has(self.ip) ? 1 : 0) == 1'
                     - message: port applies to domain/ip origins only
                       rule: '!(has(self.bucketRef) && has(self.port))'
+                    - message: awsAuthSecretRef applies to external origins only (in-account
+                        buckets auto-wire)
+                      rule: '!(has(self.bucketRef) && has(self.awsAuthSecretRef))'
                   performance:
                     description: Performance configures delivery optimizations and
                       robots.txt.
@@ -314,7 +344,80 @@ spec:
                         description: ForceHTTPS redirects all HTTP requests on delivery
                           domains to HTTPS.
                         type: boolean
+                      secureToken:
+                        description: |-
+                          SecureToken enables signed-URL access (see docs/cdn.md for the signing
+                          algorithm). Omitted while the security block is declared = disabled.
+                        properties:
+                          restrictByIP:
+                            description: RestrictByIP binds signatures to the client
+                              IP.
+                            type: boolean
+                          secretRef:
+                            description: SecretRef holds the signing key (Secret key
+                              name defaults to "secret").
+                            properties:
+                              key:
+                                description: Key within the Secret, where a single
+                                  value is needed.
+                                type: string
+                              name:
+                                description: Name of the Secret.
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            type: object
+                        required:
+                        - secretRef
+                        type: object
                     type: object
+                  ssl:
+                    description: SSL manages the resource's single certificate slot.
+                      See CdnSSL.
+                    properties:
+                      certificateSecretRef:
+                        description: |-
+                          CertificateSecretRef points at a kubernetes.io/tls Secret
+                          (tls.crt = full PEM chain, tls.key = private key).
+                        properties:
+                          key:
+                            description: Key within the Secret, where a single value
+                              is needed.
+                            type: string
+                          name:
+                            description: Name of the Secret.
+                            minLength: 1
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      mode:
+                        description: |-
+                          Mode: none = unbind and delete the provider-created certificate;
+                          letsEncrypt = issue automatically (UNVERIFIED upstream — see docs);
+                          custom = upload from certificateSecretRef.
+                        enum:
+                        - none
+                        - letsEncrypt
+                        - custom
+                        type: string
+                    required:
+                    - mode
+                    type: object
+                    x-kubernetes-validations:
+                    - message: certificateSecretRef is required for mode custom and
+                        forbidden otherwise
+                      rule: (self.mode == 'custom') == has(self.certificateSecretRef)
+                  trafficLimitGBPerMonth:
+                    description: |-
+                      TrafficLimitGBPerMonth caps monthly outbound traffic (GiB multiples
+                      upstream). 0 = explicitly no limit (clears an existing one); omitted =
+                      unowned. Exceeding the cap suspends the resource upstream (up to 2 h
+                      lag, traffic still billed meanwhile).
+                    format: int64
+                    minimum: 0
+                    type: integer
                 required:
                 - origin
                 type: object
@@ -383,6 +486,27 @@ spec:
                 description: CdnObservation is the observed state of a Timeweb CDN
                   resource.
                 properties:
+                  certificate:
+                    description: Certificate mirrors the upstream certificate bound
+                      or present.
+                    properties:
+                      cn:
+                        type: string
+                      domains:
+                        items:
+                          type: string
+                        maxItems: 16
+                        type: array
+                      expiresAt:
+                        type: string
+                      id:
+                        format: int64
+                        type: integer
+                      issuedAt:
+                        type: string
+                      type:
+                        type: string
+                    type: object
                   domains:
                     description: |-
                       Domains mirrors the upstream delivery-domain aliases (includes the
@@ -405,6 +529,30 @@ spec:
                     description: LockedPresetID is the CDN preset chosen at Create.
                     format: int64
                     type: integer
+                  managedCertificate:
+                    description: |-
+                      ManagedCertificate marks the certificate the PROVIDER created — mode
+                      none / rotation / deletion only ever delete a cert whose id AND
+                      identity (type, cn, expiry) both match this marker. Upstream reuses
+                      certificate ids (live-verified), so a bare id is not a safe owner mark.
+                    properties:
+                      cn:
+                        type: string
+                      domains:
+                        items:
+                          type: string
+                        maxItems: 16
+                        type: array
+                      expiresAt:
+                        type: string
+                      id:
+                        format: int64
+                        type: integer
+                      issuedAt:
+                        type: string
+                      type:
+                        type: string
+                    type: object
                   observedSettings:
                     description: ObservedSettings mirrors the upstream configuration
                       read-only.
@@ -556,19 +704,66 @@ spec:
                         type: array
                       security:
                         description: |-
-                          CdnSecurity is the security settings block. SSL certificates and secure
-                          tokens are deliberately absent (out of v1 scope — never touched upstream).
+                          CdnSecurity is the security settings block. The certificate slot is
+                          managed by spec.forProvider.ssl (not here); writes are per-key partial.
                         properties:
                           forceHTTPS:
                             description: ForceHTTPS redirects all HTTP requests on
                               delivery domains to HTTPS.
                             type: boolean
+                          secureToken:
+                            description: |-
+                              SecureToken enables signed-URL access (see docs/cdn.md for the signing
+                              algorithm). Omitted while the security block is declared = disabled.
+                            properties:
+                              restrictByIP:
+                                description: RestrictByIP binds signatures to the
+                                  client IP.
+                                type: boolean
+                              secretRef:
+                                description: SecretRef holds the signing key (Secret
+                                  key name defaults to "secret").
+                                properties:
+                                  key:
+                                    description: Key within the Secret, where a single
+                                      value is needed.
+                                    type: string
+                                  name:
+                                    description: Name of the Secret.
+                                    minLength: 1
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                            required:
+                            - secretRef
+                            type: object
                         type: object
                     type: object
                   source:
                     description: Source is the upstream-reported origin (bucket name
                       or host).
                     type: string
+                  ssl:
+                    description: SSL is the certificate-lifecycle state + LE retry
+                      budget.
+                    properties:
+                      budgetKey:
+                        description: |-
+                          BudgetKey fingerprints the domains+ssl declaration; a change resets the
+                          retry budget.
+                        type: string
+                      issueAttempts:
+                        format: int64
+                        type: integer
+                      lastIssueAttemptAt:
+                        format: date-time
+                        type: string
+                      state:
+                        description: 'State: pending | issuing | bound | failed |
+                          exhausted.'
+                        type: string
+                    type: object
                   state:
                     description: State is the upstream lifecycle status (e.g. "processing").
                     type: string
@@ -577,6 +772,11 @@ spec:
                       TechnicalDomain is the auto-assigned delivery domain
                       (`*.cdn.twcstorage.ru`).
                     type: string
+                  trafficLimitBytes:
+                    description: TrafficLimitBytes mirrors the upstream outbound-traffic
+                      cap.
+                    format: int64
+                    type: integer
                   trafficUsage:
                     description: TrafficUsage mirrors the upstream traffic counters.
                     properties:
