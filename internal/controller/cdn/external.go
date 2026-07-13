@@ -468,24 +468,27 @@ func desiredConfig(p cdnv1alpha1.CdnParameters, cfg timeweb.CDNConfig) *timeweb.
 
 	if p.Cache != nil {
 		wantEdge, wantBrowser := i64Deref(p.Cache.EdgeTTLSeconds), i64Deref(p.Cache.BrowserTTLSeconds)
-		wantOnline, wantQuery := bDeref(p.Cache.AlwaysOnline), bDeref(p.Cache.QueryStringInCacheKey)
+		wantOnline := bDeref(p.Cache.AlwaysOnline)
+		wantQA := desiredQueryArgs(p.Cache)
 		var obsEdge, obsBrowser int64
-		var obsOnline, obsQuery bool
+		var obsOnline bool
+		var obsQA *timeweb.CDNQueryArgs
 		if cfg.Cache != nil {
 			obsEdge = ttlOf(cfg.Cache.CDN)
 			if cfg.Cache.Browser != nil {
 				obsBrowser = cfg.Cache.Browser.TTL
 			}
-			// always_online / query_args: presence-only diff — the panel may
-			// hold a different stale-conditions set; enabled-vs-enabled is
-			// never fought over.
+			// always_online: presence-only diff — the panel may hold a
+			// different stale-conditions set; enabled-vs-enabled is never
+			// fought over. query_args IS compared exactly (mode + list are
+			// operator-declared).
 			obsOnline = cfg.Cache.AlwaysOnline != nil
-			obsQuery = cfg.Cache.QueryArgs != nil
+			obsQA = cfg.Cache.QueryArgs
 		}
-		if wantEdge != obsEdge || wantBrowser != obsBrowser || wantOnline != obsOnline || wantQuery != obsQuery {
+		if wantEdge != obsEdge || wantBrowser != obsBrowser || wantOnline != obsOnline || !queryArgsEqual(wantQA, obsQA) {
 			// Full-section replace: disabled sub-features marshal as explicit
 			// null (probe-verified wire contract).
-			c := &timeweb.CDNConfigCache{}
+			c := &timeweb.CDNConfigCache{QueryArgs: wantQA}
 			if wantEdge > 0 {
 				c.CDN = &timeweb.CDNCacheTTL{TTL: map[string]int64{"2xx": wantEdge}}
 			}
@@ -497,9 +500,6 @@ func desiredConfig(p cdnv1alpha1.CdnParameters, cfg timeweb.CDNConfig) *timeweb.
 				if cfg.Cache != nil && cfg.Cache.AlwaysOnline != nil {
 					c.AlwaysOnline.StaleConditions = cfg.Cache.AlwaysOnline.StaleConditions
 				}
-			}
-			if wantQuery {
-				c.QueryArgs = &timeweb.CDNQueryArgs{Mode: "all"}
 			}
 			out.Cache = c
 			dirty = true
@@ -758,6 +758,11 @@ func settingsMirror(cfg timeweb.CDNConfig) *cdnv1alpha1.CdnSettingsMirror {
 			AlwaysOnline:          &online,
 			QueryStringInCacheKey: &query,
 		}
+		if qa := cfg.Cache.QueryArgs; qa != nil {
+			mode := qa.Mode
+			m.Cache.QueryStringCacheKeyMode = &mode
+			m.Cache.QueryStringCacheKeyParams = append([]string(nil), qa.List...)
+		}
 	}
 	if cfg.Security != nil {
 		m.Security = &cdnv1alpha1.CdnSecurity{ForceHTTPS: cfg.Security.Redirect}
@@ -809,6 +814,39 @@ func effectiveName(cr *cdnv1alpha1.Cdn) string {
 // and the upstream has no set yet (probe-verified valid values). An existing
 // upstream set is preserved (presence-only ownership).
 func defaultStaleConditions() []string { return []string{"error", "timeout"} }
+
+// desiredQueryArgs maps the declared query-string cache-key form to the wire:
+// bool → {mode:"all"}; mode+params → {mode, list} (panel-captured 2026-07-13);
+// neither → nil (explicit-null disable).
+func desiredQueryArgs(c *cdnv1alpha1.CdnCache) *timeweb.CDNQueryArgs {
+	if c.QueryStringCacheKeyMode != nil {
+		qa := &timeweb.CDNQueryArgs{Mode: *c.QueryStringCacheKeyMode}
+		if qa.Mode != "all" {
+			qa.List = append([]string(nil), c.QueryStringCacheKeyParams...)
+			sort.Strings(qa.List)
+		}
+		return qa
+	}
+	if bDeref(c.QueryStringInCacheKey) {
+		return &timeweb.CDNQueryArgs{Mode: "all"}
+	}
+	return nil
+}
+
+func queryArgsEqual(a, b *timeweb.CDNQueryArgs) bool {
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if a == nil {
+		return true
+	}
+	if a.Mode != b.Mode {
+		return false
+	}
+	bl := append([]string(nil), b.List...)
+	sort.Strings(bl)
+	return slicesEqual(a.List, bl)
+}
 
 // ttlOf reads the 2xx-class TTL (0 = disabled / absent).
 func ttlOf(t *timeweb.CDNCacheTTL) int64 {

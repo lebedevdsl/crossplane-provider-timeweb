@@ -67,6 +67,9 @@ type CdnOrigin struct {
 
 // CdnCache is the caching settings block. When declared, the controller owns
 // every field in it (absent leaves mean "disabled").
+// +kubebuilder:validation:XValidation:rule="!(has(self.queryStringInCacheKey) && has(self.queryStringCacheKeyMode))",message="queryStringInCacheKey and queryStringCacheKeyMode are mutually exclusive"
+// +kubebuilder:validation:XValidation:rule="!has(self.queryStringCacheKeyParams) || (has(self.queryStringCacheKeyMode) && self.queryStringCacheKeyMode != 'all')",message="queryStringCacheKeyParams requires queryStringCacheKeyMode whitelist or blacklist"
+// +kubebuilder:validation:XValidation:rule="!has(self.queryStringCacheKeyMode) || self.queryStringCacheKeyMode == 'all' || has(self.queryStringCacheKeyParams)",message="whitelist/blacklist mode requires queryStringCacheKeyParams"
 type CdnCache struct {
 	// EdgeTTLSeconds is how long content stays cached on CDN nodes. 0 or
 	// absent disables CDN caching.
@@ -84,10 +87,25 @@ type CdnCache struct {
 	// +optional
 	AlwaysOnline *bool `json:"alwaysOnline,omitempty"`
 
-	// QueryStringInCacheKey includes query parameters in the CDN cache key
-	// (panel-verified, undocumented upstream setting).
+	// QueryStringInCacheKey includes ALL query parameters in the CDN cache
+	// key (the panel's "Все" mode). For per-parameter control use
+	// queryStringCacheKeyMode instead — the two are mutually exclusive.
 	// +optional
 	QueryStringInCacheKey *bool `json:"queryStringInCacheKey,omitempty"`
+
+	// QueryStringCacheKeyMode selects how query parameters join the cache
+	// key: all = every parameter; whitelist = only queryStringCacheKeyParams;
+	// blacklist = every parameter except queryStringCacheKeyParams
+	// (panel-verified wire: `query_args: {mode, list}`).
+	// +kubebuilder:validation:Enum=all;whitelist;blacklist
+	// +optional
+	QueryStringCacheKeyMode *string `json:"queryStringCacheKeyMode,omitempty"`
+
+	// QueryStringCacheKeyParams is the parameter list for whitelist /
+	// blacklist mode (e.g. ["utm_source","ref","v"]).
+	// +kubebuilder:validation:MaxItems=32
+	// +optional
+	QueryStringCacheKeyParams []string `json:"queryStringCacheKeyParams,omitempty"`
 }
 
 // CdnSecurity is the security settings block. SSL certificates and secure

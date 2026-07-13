@@ -614,6 +614,65 @@ func TestUpdateQueryStringCacheKey(t *testing.T) {
 	}
 }
 
+func TestUpdateQueryArgsWhitelist(t *testing.T) {
+	// mode+params must write query_args={mode:"whitelist",list:[...]} —
+	// panel-captured wire shape (2026-07-13).
+	tw := &fakeCDNAPI{}
+	mode := "whitelist"
+	cr := newCdn(withExternalName("22209"))
+	cr.Spec.ForProvider.Cache = &cdnv1alpha1.CdnCache{
+		QueryStringCacheKeyMode:   &mode,
+		QueryStringCacheKeyParams: []string{"v", "utm_source"},
+	}
+	if _, err := testExternal(t, tw).Update(context.Background(), cr); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(tw.patchBodies) != 1 {
+		t.Fatalf("expected one PATCH, got %d", len(tw.patchBodies))
+	}
+	qa := tw.patchBodies[0].Config.Cache.QueryArgs
+	if qa == nil || qa.Mode != "whitelist" || len(qa.List) != 2 || qa.List[0] != "utm_source" || qa.List[1] != "v" {
+		t.Fatalf("expected whitelist with sorted list, got %+v", qa)
+	}
+}
+
+func TestObserveQueryArgsModeDrift(t *testing.T) {
+	// Observed blacklist[utm] vs declared whitelist[utm] must be dirty;
+	// identical mode+list must be clean.
+	base := strings.Replace(emptyConfiguration,
+		`"cache":{"cdn":null,"browser":null,"always_online":null,"query_args":null}`,
+		`"cache":{"cdn":null,"browser":null,"always_online":null,"query_args":{"mode":"blacklist","list":["utm"]}}`, 1)
+	tw := &fakeCDNAPI{getCfgFn: func(context.Context, string) (*http.Response, error) {
+		return cdnResp(200, base), nil
+	}}
+	mode := "whitelist"
+	cr := newCdn(withExternalName("22209"))
+	cr.Spec.ForProvider.Cache = &cdnv1alpha1.CdnCache{
+		QueryStringCacheKeyMode:   &mode,
+		QueryStringCacheKeyParams: []string{"utm"},
+	}
+	obs, err := testExternal(t, &fakeCDNAPI{getCfgFn: tw.getCfgFn}).Observe(context.Background(), cr)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if obs.ResourceUpToDate {
+		t.Fatal("expected drift: whitelist declared vs blacklist observed")
+	}
+	blMode := "blacklist"
+	cr2 := newCdn(withExternalName("22209"))
+	cr2.Spec.ForProvider.Cache = &cdnv1alpha1.CdnCache{
+		QueryStringCacheKeyMode:   &blMode,
+		QueryStringCacheKeyParams: []string{"utm"},
+	}
+	obs2, err := testExternal(t, &fakeCDNAPI{getCfgFn: tw.getCfgFn}).Observe(context.Background(), cr2)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !obs2.ResourceUpToDate {
+		t.Fatal("expected clean: declared matches observed blacklist[utm]")
+	}
+}
+
 func TestUpdateSuspendedSkips(t *testing.T) {
 	tw := &fakeCDNAPI{getFn: func(context.Context, string) (*http.Response, error) {
 		return cdnResp(200, strings.Replace(servingResource, `"status":"active"`, `"status":"suspended"`, 1)), nil

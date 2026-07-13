@@ -96,12 +96,43 @@ spec:
                         format: int64
                         minimum: 0
                         type: integer
+                      queryStringCacheKeyMode:
+                        description: |-
+                          QueryStringCacheKeyMode selects how query parameters join the cache
+                          key: all = every parameter; whitelist = only queryStringCacheKeyParams;
+                          blacklist = every parameter except queryStringCacheKeyParams
+                          (panel-verified wire: `query_args: {mode, list}`).
+                        enum:
+                        - all
+                        - whitelist
+                        - blacklist
+                        type: string
+                      queryStringCacheKeyParams:
+                        description: |-
+                          QueryStringCacheKeyParams is the parameter list for whitelist /
+                          blacklist mode (e.g. ["utm_source","ref","v"]).
+                        items:
+                          type: string
+                        maxItems: 32
+                        type: array
                       queryStringInCacheKey:
                         description: |-
-                          QueryStringInCacheKey includes query parameters in the CDN cache key
-                          (panel-verified, undocumented upstream setting).
+                          QueryStringInCacheKey includes ALL query parameters in the CDN cache
+                          key (the panel's "Все" mode). For per-parameter control use
+                          queryStringCacheKeyMode instead — the two are mutually exclusive.
                         type: boolean
                     type: object
+                    x-kubernetes-validations:
+                    - message: queryStringInCacheKey and queryStringCacheKeyMode are
+                        mutually exclusive
+                      rule: '!(has(self.queryStringInCacheKey) && has(self.queryStringCacheKeyMode))'
+                    - message: queryStringCacheKeyParams requires queryStringCacheKeyMode
+                        whitelist or blacklist
+                      rule: '!has(self.queryStringCacheKeyParams) || (has(self.queryStringCacheKeyMode)
+                        && self.queryStringCacheKeyMode != ''all'')'
+                    - message: whitelist/blacklist mode requires queryStringCacheKeyParams
+                      rule: '!has(self.queryStringCacheKeyMode) || self.queryStringCacheKeyMode
+                        == ''all'' || has(self.queryStringCacheKeyParams)'
                   cors:
                     description: Cors configures Access-Control-Allow-Origin handling.
                     properties:
@@ -401,12 +432,43 @@ spec:
                             format: int64
                             minimum: 0
                             type: integer
+                          queryStringCacheKeyMode:
+                            description: |-
+                              QueryStringCacheKeyMode selects how query parameters join the cache
+                              key: all = every parameter; whitelist = only queryStringCacheKeyParams;
+                              blacklist = every parameter except queryStringCacheKeyParams
+                              (panel-verified wire: `query_args: {mode, list}`).
+                            enum:
+                            - all
+                            - whitelist
+                            - blacklist
+                            type: string
+                          queryStringCacheKeyParams:
+                            description: |-
+                              QueryStringCacheKeyParams is the parameter list for whitelist /
+                              blacklist mode (e.g. ["utm_source","ref","v"]).
+                            items:
+                              type: string
+                            maxItems: 32
+                            type: array
                           queryStringInCacheKey:
                             description: |-
-                              QueryStringInCacheKey includes query parameters in the CDN cache key
-                              (panel-verified, undocumented upstream setting).
+                              QueryStringInCacheKey includes ALL query parameters in the CDN cache
+                              key (the panel's "Все" mode). For per-parameter control use
+                              queryStringCacheKeyMode instead — the two are mutually exclusive.
                             type: boolean
                         type: object
+                        x-kubernetes-validations:
+                        - message: queryStringInCacheKey and queryStringCacheKeyMode
+                            are mutually exclusive
+                          rule: '!(has(self.queryStringInCacheKey) && has(self.queryStringCacheKeyMode))'
+                        - message: queryStringCacheKeyParams requires queryStringCacheKeyMode
+                            whitelist or blacklist
+                          rule: '!has(self.queryStringCacheKeyParams) || (has(self.queryStringCacheKeyMode)
+                            && self.queryStringCacheKeyMode != ''all'')'
+                        - message: whitelist/blacklist mode requires queryStringCacheKeyParams
+                          rule: '!has(self.queryStringCacheKeyMode) || self.queryStringCacheKeyMode
+                            == ''all'' || has(self.queryStringCacheKeyParams)'
                       cors:
                         description: CdnCors is the CORS settings block (`Access-Control-Allow-Origin`).
                         properties:

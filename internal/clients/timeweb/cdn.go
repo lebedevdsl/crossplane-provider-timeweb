@@ -85,10 +85,12 @@ type CDNAlwaysOnline struct {
 	StaleConditions []string `json:"stale_conditions"`
 }
 
-// CDNQueryArgs is `cache.query_args` — probe-verified `mode: "all"` includes
-// query parameters in the cache key; disabled = the whole object null.
+// CDNQueryArgs is `cache.query_args` — `mode: all|whitelist|blacklist` with
+// `list` carrying the parameters for the two list modes (panel-captured
+// 2026-07-13); disabled = the whole object null.
 type CDNQueryArgs struct {
-	Mode string `json:"mode"`
+	Mode string   `json:"mode"`
+	List []string `json:"list,omitempty"`
 }
 
 // CDNConfigCache is the `config.cache` section. Sub-features are objects when
