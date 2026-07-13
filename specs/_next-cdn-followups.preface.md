@@ -29,6 +29,18 @@ auto-wire upstream (officially: "Для приватных бакетов Timewe
 подставляются автоматически", panel AWS-auth drawer). External form =
 access/secret key pair → will need a secretRef surface.
 
+## 2a. Custom delivery domains (panel-verified 2026-07-13 on 22209)
+
+Up to **2 custom subdomains** + the immutable technical domain (3 total).
+Operator sets a CNAME → technical domain at their DNS provider (auto-updated
+when the domain is on Timeweb NS). Live example: `s3.inyan-rolly.ru`,
+`s3.volpepizza.ru` on 22209. Wire: `config.domains.aliases` — BUT the earlier
+capture showed the panel WRITING `aliases: []` while the read includes the
+technical domain (R-9 asymmetry). OPEN: capture the domains-drawer save-PATCH
+with customs present — does the write carry just the customs, or tech domain
+too? Spec surface: `domains: [{name}]` (MaxItems=2) + per-domain sslStatus in
+status; pairs with SSL (Let's Encrypt needs the CNAME live first).
+
 ## 2b. Secure token / signed URLs (panel-documented, wire shape pending)
 
 Panel form: secret key + "ограничение доступа по IP-адресу" checkbox. Signing
