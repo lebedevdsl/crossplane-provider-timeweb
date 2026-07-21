@@ -136,7 +136,7 @@ func TestFloatingIPObserve(t *testing.T) {
 
 	t.Run("NotFound", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.GetFloatingIpReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.GetFloatingIpReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		obs, err := fe(fake).Observe(ctx, newFloatingIP(true))
 		if err != nil || obs.ResourceExists {
 			t.Errorf("obs=%+v err=%v, want not-exists on 404", obs, err)
@@ -300,7 +300,7 @@ func TestFloatingIPDelete(t *testing.T) {
 
 	t.Run("NotFound_Idempotent", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.DeleteFloatingIPReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.DeleteFloatingIPReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		if _, err := fe(fake).Delete(ctx, newFloatingIP(true)); err != nil {
 			t.Errorf("Delete: %v, want nil on 404", err)
 		}

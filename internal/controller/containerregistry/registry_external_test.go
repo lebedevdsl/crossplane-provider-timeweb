@@ -151,7 +151,7 @@ func TestRegistryObserve(t *testing.T) {
 
 	t.Run("NotFound", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
-		fakeTW.GetRegistryReturns(httpResp(http.StatusNotFound, ""), nil)
+		fakeTW.GetRegistryReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		e := newExternal(fakeTW, nil)
 		obs, err := e.Observe(ctx, newRegistry(1047, 5))
 		if err != nil {
@@ -296,7 +296,7 @@ func TestRegistryUpdate(t *testing.T) {
 
 	t.Run("NotFound_OnInitialGET", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
-		fakeTW.GetRegistryReturns(httpResp(http.StatusNotFound, ""), nil)
+		fakeTW.GetRegistryReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		e := newExternal(fakeTW, nil)
 		_, err := e.Update(ctx, newRegistry(1047, 5))
 		if !errors.Is(err, timeweb.ErrNotFound) {
@@ -359,7 +359,7 @@ func TestRegistryDelete(t *testing.T) {
 
 	t.Run("NotFound_Idempotent", func(t *testing.T) {
 		fakeTW := &timeweb.FakeClient{}
-		fakeTW.DeleteRegistryReturns(httpResp(http.StatusNotFound, ""), nil)
+		fakeTW.DeleteRegistryReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		e := newExternal(fakeTW, nil)
 		if _, err := e.Delete(ctx, newRegistry(1047, 5)); err != nil {
 			t.Errorf("Delete on already-gone: %v, want nil", err)

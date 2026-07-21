@@ -90,7 +90,7 @@ func TestObserve(t *testing.T) {
 
 	t.Run("NotFound", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.GetProjectReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.GetProjectReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 
 		e := &external{tw: fake}
 		obs, err := e.Observe(ctx, newProject(12345))
@@ -188,7 +188,7 @@ func TestCreate(t *testing.T) {
 		// contract: the upstream may return 404 when the *parent* project group
 		// is missing. Treated as transient (the parent might appear later).
 		fake := &timeweb.FakeClient{}
-		fake.CreateProjectReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.CreateProjectReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 
 		e := &external{tw: fake}
 		_, err := e.Create(ctx, newProject(0))
@@ -240,7 +240,7 @@ func TestUpdate(t *testing.T) {
 
 	t.Run("NotFound", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.UpdateProjectReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.UpdateProjectReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 
 		e := &external{tw: fake}
 		_, err := e.Update(ctx, newProject(12345))
@@ -290,7 +290,7 @@ func TestDelete(t *testing.T) {
 	t.Run("NotFound", func(t *testing.T) {
 		// Already-gone upstream is success for Delete.
 		fake := &timeweb.FakeClient{}
-		fake.DeleteProjectReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.DeleteProjectReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 
 		e := &external{tw: fake}
 		_, err := e.Delete(ctx, newProject(12345))

@@ -242,7 +242,7 @@ func TestAddonDelete(t *testing.T) {
 
 	t.Run("NotFound_Idempotent", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.DeleteKubernetesAddonsReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.DeleteKubernetesAddonsReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		if _, err := addonE(fake).Delete(ctx, withAddonID(true)); err != nil {
 			t.Fatalf("Delete 404 should be idempotent, got %v", err)
 		}

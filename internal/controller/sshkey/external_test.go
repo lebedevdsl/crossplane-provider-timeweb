@@ -90,7 +90,7 @@ func TestObserve(t *testing.T) {
 
 	t.Run("NotFound", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.GetKeyReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.GetKeyReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 
 		e := &external{tw: fake}
 		obs, err := e.Observe(ctx, newSSHKey(777))
@@ -157,7 +157,7 @@ func TestCreate(t *testing.T) {
 
 	t.Run("NotFound", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.CreateKeyReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.CreateKeyReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 
 		e := &external{tw: fake}
 		_, err := e.Create(ctx, newSSHKey(0))
@@ -210,7 +210,7 @@ func TestUpdate(t *testing.T) {
 
 	t.Run("NotFound", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.GetKeyReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.GetKeyReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 
 		e := &external{tw: fake, recorder: record.NewFakeRecorder(8)}
 		_, err := e.Update(ctx, newSSHKey(777))
@@ -302,7 +302,7 @@ func TestDelete(t *testing.T) {
 
 	t.Run("NotFound", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.DeleteKeyReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.DeleteKeyReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 
 		e := &external{tw: fake}
 		if _, err := e.Delete(ctx, newSSHKey(777)); err != nil {

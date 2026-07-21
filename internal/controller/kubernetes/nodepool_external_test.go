@@ -217,7 +217,7 @@ func TestNodepoolObserve(t *testing.T) {
 
 	t.Run("NotFound_ReturnsNotExists", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.GetClusterNodeGroupReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		obs, err := nodepoolE(fake).Observe(ctx, newNodepool(true, 2))
 		if err != nil || obs.ResourceExists {
 			t.Fatalf("obs=%+v err=%v, want not-exists", obs, err)
@@ -372,7 +372,7 @@ func TestNodepoolDelete(t *testing.T) {
 
 	t.Run("NotFound_Idempotent", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.DeleteClusterNodeGroupReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.DeleteClusterNodeGroupReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		if _, err := nodepoolE(fake).Delete(ctx, newNodepool(true, 2)); err != nil {
 			t.Fatalf("Delete 404 should be idempotent, got %v", err)
 		}

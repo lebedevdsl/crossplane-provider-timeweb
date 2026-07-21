@@ -234,7 +234,7 @@ func TestRouterObserve(t *testing.T) {
 
 	t.Run("NotFound_NotExists", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.GetRouterReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.GetRouterReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		obs, err := routerE(fake, okRouterResolver()).Observe(ctx, newRouter(true))
 		if err != nil {
 			t.Fatalf("Observe: %v", err)
@@ -677,7 +677,7 @@ func TestRouterDelete(t *testing.T) {
 	t.Run("NotFound_Tolerated", func(t *testing.T) {
 		// Router already gone: DeleteRouter 404s → Delete returns nil.
 		fake := &timeweb.FakeClient{}
-		fake.DeleteRouterReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.DeleteRouterReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		if _, err := routerE(fake, okRouterResolver()).Delete(ctx, newRouter(true)); err != nil {
 			t.Errorf("Delete: %v, want nil on 404 (already gone)", err)
 		}
