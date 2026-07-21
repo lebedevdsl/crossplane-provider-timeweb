@@ -141,3 +141,21 @@ annotation retained) because purge completion on a fresh resource exceeds the
 240s kuttl ceiling (~2 min refusal window + poll pacing). A matured-resource
 purge landed live (bucketRef leg). Revisit if kuttl timeouts become tunable
 per-step.
+
+## 5. CDN 404 shape — verify the canonical not-found envelope (feature 019 FR-014)
+
+Feature 019 (v0.9.1) narrowed `timeweb.Classify`: a 404 is "deleted" only when it
+carries the canonical error envelope (`error_code` present); envelope-less 404s
+(HTML/empty) are transient → requeue, never recreate. All **documented** endpoints
+reference the envelope via `components/responses/404` → `not-found`, but **CDN**
+(`/api/v1/cdn/*`, hand-written `cdn.go`) is **absent from the OpenAPI spec**, so its
+genuine delete-404 shape is unverified.
+
+- Conservative default is SAFE: envelope-absent → transient means a CDN never gets
+  wrongly recreated. The only downside if CDN returns a *bare* 404 on real deletion:
+  the CR requeues instead of recognizing the deletion (drift-adoption stalls; Ready
+  isn't gated on CDN upstream status anyway).
+- ACTION: at the next CDN live gate, delete a CDN resource out-of-band and capture
+  the raw 404 (headers + body). If enveloped → FR-014 closed. If bare → add per-type
+  corroboration for CDN (second read / list before concluding deleted), keyed off the
+  same rule. Not run in the 019 e2e (the token got Qrator-banned mid-run).
