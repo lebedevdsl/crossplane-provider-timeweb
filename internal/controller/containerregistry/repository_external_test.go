@@ -167,7 +167,7 @@ func TestRepositoryObserve(t *testing.T) {
 		// T021: when the upstream registry list returns 404 (registry gone),
 		// repository must set ParentNotReady, not return a generic error.
 		fakeTW := &timeweb.FakeClient{}
-		fakeTW.GetRegistryRepositoriesReturns(httpResp(http.StatusNotFound, ""), nil)
+		fakeTW.GetRegistryRepositoriesReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		kube := newFakeKube(newRegistryWithReadyTrue()).Build()
 		e := &repositoryExternal{tw: fakeTW, kube: kube, recorder: record.NewFakeRecorder(8)}
 		cr := newRepository()

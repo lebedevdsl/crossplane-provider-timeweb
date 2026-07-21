@@ -1,5 +1,21 @@
 <!-- SPECKIT START -->
-Current feature: **018-stabilization** (release target **v0.9.0**, NON-BREAKING) — read the
+Current feature: **019-fix-false-notfound-recreate** (bugfix, NON-BREAKING) — read the plan at
+`specs/019-fix-false-notfound-recreate/plan.md`. Postmortem #124: a single flaky/edge 404
+recreated the live `staging` VPC (empty duplicate + orphaned prod). Root cause:
+`internal/clients/timeweb/errors.go` `Classify` maps **any** 404 to `ErrNotFound` by status
+code alone → `Observe` `ResourceExists:false` → Create, across ALL kinds (shared path). Fix =
+404→not-found **only** when the response carries the canonical Timeweb error envelope
+(`error_code` present; documented `not-found` schema, required `status_code`/`error_code`/
+`response_id`); envelope-less (HTML/empty/non-envelope) → `TransientError`→requeue. General
+rule (FR-009): canonical not-found signal, NEVER status-alone — `rgwiam` (`NoSuchEntity`)
+already compliant, unchanged (FR-013). Durability: amend Constitution Principle II (v1.0.0→1.1.0)
++ `docs/error-classification.md` + classifier contract test + source-scan bypass guard
+(`internal/controller/notfound_guard_test.go`). FR-014: all kinds inherit the envelope via
+documented endpoints EXCEPT **CDN** (absent from OpenAPI) → live 404 capture at the e2e gate.
+Prerelease dev-tag → staging e2e (Network/Router/Server/K8s/S3/CDN bundles). Artifacts in
+`specs/019-fix-false-notfound-recreate/`.
+
+Prior feature: **018-stabilization** (release target **v0.9.0**, NON-BREAKING) — read the
 plan at `specs/018-stabilization/plan.md`. A hardening slice of the 014 review round:
 (1) **shared rate budget** — `timeweb.New` is per-Connect in all 9 connectors so N reconciles
 get N independent 2 r/s limiters (the multiplication that trips Timeweb 429 / Qrator ban — the

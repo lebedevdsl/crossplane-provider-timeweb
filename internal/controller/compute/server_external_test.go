@@ -465,7 +465,7 @@ func TestObserve(t *testing.T) {
 
 	t.Run("NotFound", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.GetServerReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.GetServerReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
 		obs, err := e.Observe(ctx, newServer(1234567))
 		if err != nil {
@@ -550,7 +550,7 @@ func TestCreate(t *testing.T) {
 		// constitution §III demands the case. Synthesize 404 and assert
 		// we surface NotFound classification.
 		fake := &timeweb.FakeClient{}
-		fake.CreateServerReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.CreateServerReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		e := &serverExternal{tw: fake, resolver: resolverOK}
 		_, err := e.Create(ctx, newServer(0))
 		if !errors.Is(err, timeweb.ErrNotFound) {
@@ -622,7 +622,7 @@ func TestCreate(t *testing.T) {
 
 	t.Run("NetworkIDImport_VPCNotFound", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.GetVPCReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.GetVPCReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		e := &serverExternal{tw: fake, resolver: resolverOK}
 		cr := newServer(0)
 		nid := "vpc-ghost"
@@ -702,7 +702,7 @@ func TestUpdate(t *testing.T) {
 
 	t.Run("NotFound_OnInitialGET", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.GetServerReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.GetServerReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
 		_, err := e.Update(ctx, newServer(1234567))
 		if !errors.Is(err, timeweb.ErrNotFound) {
@@ -765,7 +765,7 @@ func TestDelete(t *testing.T) {
 
 	t.Run("NotFound_Idempotent", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.DeleteServerReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.DeleteServerReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		e := &serverExternal{tw: fake, resolver: &fakeResolver{}}
 		if _, err := e.Delete(ctx, newServer(1234567)); err != nil {
 			t.Errorf("Delete on already-gone: %v, want nil", err)

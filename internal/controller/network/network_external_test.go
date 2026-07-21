@@ -111,7 +111,7 @@ func TestNetworkObserve(t *testing.T) {
 
 	t.Run("NotFound_ReturnsNotExists", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.GetVPCReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.GetVPCReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		obs, err := e(fake).Observe(ctx, newNetwork(true))
 		if err != nil {
 			t.Fatalf("Observe: %v", err)
@@ -319,7 +319,7 @@ func TestNetworkDelete(t *testing.T) {
 
 	t.Run("NotFound_Idempotent", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.DeleteVPCReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.DeleteVPCReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		if _, err := e(fake).Delete(ctx, newNetwork(true)); err != nil {
 			t.Errorf("Delete: %v, want nil on 404 (idempotent)", err)
 		}

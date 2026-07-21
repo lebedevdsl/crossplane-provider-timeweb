@@ -193,7 +193,7 @@ func TestClusterObserve(t *testing.T) {
 
 	t.Run("NotFound_ReturnsNotExists", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.GetClusterReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.GetClusterReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		obs, err := clusterE(fake, okResolver()).Observe(ctx, newCluster(true))
 		if err != nil || obs.ResourceExists {
 			t.Fatalf("obs=%+v err=%v, want not-exists", obs, err)
@@ -648,7 +648,7 @@ func TestClusterDelete(t *testing.T) {
 
 	t.Run("NotFound_Idempotent", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.DeleteClusterReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.DeleteClusterReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		if _, err := clusterE(fake, okResolver()).Delete(ctx, newCluster(true)); err != nil {
 			t.Fatalf("Delete 404 should be idempotent, got %v", err)
 		}

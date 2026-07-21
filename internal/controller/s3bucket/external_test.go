@@ -142,7 +142,7 @@ func TestObserve(t *testing.T) {
 
 	t.Run("NotFound", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.GetStorageReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.GetStorageReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		e := newExternal(fake, nil)
 		obs, err := e.Observe(ctx, newBucket(42, 1))
 		if err != nil {
@@ -305,7 +305,7 @@ func TestUpdate(t *testing.T) {
 
 	t.Run("NotFound_OnInitialGET", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.GetStorageReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.GetStorageReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		e := newExternal(fake, nil)
 		_, err := e.Update(ctx, newBucket(42, 1))
 		if !errors.Is(err, timeweb.ErrNotFound) {
@@ -365,7 +365,7 @@ func TestDelete(t *testing.T) {
 
 	t.Run("NotFound_Idempotent", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.DeleteStorageReturns(httpResp(http.StatusNotFound, ""), nil)
+		fake.DeleteStorageReturns(httpResp(http.StatusNotFound, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil)
 		e := newExternal(fake, nil)
 		if _, err := e.Delete(ctx, newBucket(42, 1)); err != nil {
 			t.Errorf("Delete on already-gone: %v, want nil", err)

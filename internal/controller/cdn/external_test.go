@@ -284,7 +284,7 @@ func TestDeleteNameSeededExternalName(t *testing.T) {
 
 func TestObserveNotFound(t *testing.T) {
 	tw := &fakeCDNAPI{getFn: func(context.Context, string) (*http.Response, error) {
-		return cdnResp(404, `{}`), nil
+		return cdnResp(404, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil
 	}}
 	obs, err := testExternal(t, tw).Observe(context.Background(), newCdn(withExternalName("22209")))
 	if err != nil {
@@ -765,7 +765,7 @@ func TestDeleteSuccess(t *testing.T) {
 
 func TestDeleteAlreadyGone(t *testing.T) {
 	tw := &fakeCDNAPI{deleteFn: func(context.Context, string) (*http.Response, error) {
-		return cdnResp(404, `{}`), nil
+		return cdnResp(404, `{"error_code":"not_found","status_code":404,"response_id":"test"}`), nil
 	}}
 	if _, err := testExternal(t, tw).Delete(context.Background(), newCdn(withExternalName("22209"))); err != nil {
 		t.Fatalf("expected already-gone to succeed, got %v", err)

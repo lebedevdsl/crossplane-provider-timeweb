@@ -158,7 +158,7 @@ func TestObserve_NoExternalName(t *testing.T) {
 
 func TestObserve_NotFound(t *testing.T) {
 	tw := &fakeFirewallAPI{getGroupFn: func(context.Context, string) (*http.Response, error) {
-		return fwResp(404, `{"message":"not found"}`), nil
+		return fwResp(404, `{"error_code":"not_found","status_code":404,"message":"not found","response_id":"test"}`), nil
 	}}
 	cr := newFirewall("fw", nil, nil)
 	meta.SetExternalName(cr, "fw1")
@@ -402,7 +402,7 @@ func TestDelete_Success(t *testing.T) {
 
 func TestDelete_AlreadyGone(t *testing.T) {
 	tw := &fakeFirewallAPI{deleteGroupFn: func(context.Context, string) (*http.Response, error) {
-		return fwResp(404, `{"message":"gone"}`), nil
+		return fwResp(404, `{"error_code":"not_found","status_code":404,"message":"gone","response_id":"test"}`), nil
 	}}
 	cr := newFirewall("fw", nil, nil)
 	meta.SetExternalName(cr, "fw1")
