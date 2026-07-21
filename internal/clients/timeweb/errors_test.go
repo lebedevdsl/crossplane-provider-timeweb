@@ -40,10 +40,67 @@ func TestClassify(t *testing.T) {
 		}
 	})
 
-	t.Run("NotFound", func(t *testing.T) {
-		err := Classify(newResp(http.StatusNotFound, ""))
+	// A 404 is "deleted" ONLY when it carries the canonical Timeweb error
+	// envelope (error_code present). A bare/edge 404 (empty, HTML, or JSON
+	// without error_code) is a suspected upstream flap → transient, NEVER
+	// not-found — the postmortem-#124 fix that stops recreating live resources.
+	t.Run("NotFound_canonicalEnvelope", func(t *testing.T) {
+		cases := []string{
+			// C1: full envelope
+			`{"status_code":404,"error_code":"not_found","message":"Resource not found","response_id":"abc"}`,
+			// C5: minimal envelope (error_code only)
+			`{"error_code":"not_found"}`,
+		}
+		for _, body := range cases {
+			err := Classify(newResp(http.StatusNotFound, body))
+			if !errors.Is(err, ErrNotFound) {
+				t.Errorf("body %q: got %v, want errors.Is(_, ErrNotFound) = true", body, err)
+			}
+			if errors.Is(err, ErrTransient) {
+				t.Errorf("body %q: enveloped 404 must not be transient, got %v", body, err)
+			}
+		}
+	})
+
+	t.Run("NotFound_canonicalEnvelope_surfacesDetail", func(t *testing.T) {
+		// C1: message + response_id enrich the surfaced error (FR-003).
+		body := `{"status_code":404,"error_code":"not_found","message":"VPC not found","response_id":"req-42"}`
+		err := Classify(newResp(http.StatusNotFound, body))
 		if !errors.Is(err, ErrNotFound) {
-			t.Errorf("got %v, want errors.Is(_, ErrNotFound) = true", err)
+			t.Fatalf("got %v, want ErrNotFound", err)
+		}
+		for _, want := range []string{"VPC not found", "req-42"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("error %q missing %q", err.Error(), want)
+			}
+		}
+	})
+
+	t.Run("NotFound_bareOrEdge_isTransient", func(t *testing.T) {
+		// C2 empty, C3 HTML edge page, C4 JSON without error_code — all lack the
+		// canonical envelope → transient (requeue), never treated as deleted.
+		cases := map[string]string{
+			"empty":           "",
+			"html_edge":       "<html><body>404 Not Found</body></html>",
+			"json_no_code":    `{"foo":"bar"}`,
+			"json_empty_code": `{"error_code":"","message":"x"}`,
+		}
+		for name, body := range cases {
+			err := Classify(newResp(http.StatusNotFound, body))
+			if errors.Is(err, ErrNotFound) {
+				t.Errorf("%s: bare/edge 404 must NOT be ErrNotFound, got %v", name, err)
+			}
+			if !errors.Is(err, ErrTransient) {
+				t.Errorf("%s: want errors.Is(_, ErrTransient) = true, got %v", name, err)
+			}
+		}
+	})
+
+	t.Run("NotFound_transientReason_isDescriptive", func(t *testing.T) {
+		// FR-007: the reclassified-404 transient must be observable via reason.
+		err := Classify(newResp(http.StatusNotFound, ""))
+		if !strings.Contains(err.Error(), "canonical error envelope") {
+			t.Errorf("transient reason %q should name the cause (canonical error envelope)", err.Error())
 		}
 	})
 

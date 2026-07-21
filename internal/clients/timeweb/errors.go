@@ -110,12 +110,26 @@ func Classify(resp *http.Response) error {
 	case resp.StatusCode >= 200 && resp.StatusCode < 300:
 		return nil
 	case resp.StatusCode == http.StatusNotFound:
-		// Surface the upstream "what wasn't found" detail + response_id instead
-		// of a bare sentinel — a 404 on e.g. a configurator-based server create
-		// carries the actual missing-resource reason (Constitution §II: never
-		// swallow the upstream explanation). Wrap ErrNotFound so callers that
-		// tolerate 404 on delete (errors.Is) still match.
-		if detail := readErrorDetail(resp); detail != "" {
+		// A resource is "deleted" ONLY on a canonical, precisely-classified
+		// not-found — never on the HTTP status alone. A genuine Timeweb 404
+		// carries the documented error envelope (`not-found` response schema:
+		// status_code/error_code/response_id are required); an edge/Qrator/
+		// gateway 404 arrives as HTML or an empty body with no envelope.
+		// Treating a bare 404 as deleted recreated a live VPC (postmortem #124:
+		// Observe→ResourceExists:false→Create), so require the envelope here.
+		// Absent envelope ⇒ suspected upstream flap ⇒ transient ⇒ requeue,
+		// NEVER recreation. The envelope's `error_code` is the discriminator;
+		// when present, surface the upstream message + response_id (Constitution
+		// §II: never swallow the upstream explanation), wrapping ErrNotFound so
+		// callers that tolerate 404 on delete (errors.Is) still match.
+		code, detail := readNotFoundEnvelope(resp)
+		if code == "" {
+			return &TransientError{
+				StatusCode: http.StatusNotFound,
+				Reason:     "404 without canonical error envelope (suspected upstream flap; not treating as deleted)",
+			}
+		}
+		if detail != "" {
 			return fmt.Errorf("%w: %s", ErrNotFound, detail)
 		}
 		return ErrNotFound
@@ -224,37 +238,37 @@ func readErrorMessage(resp *http.Response) string {
 	return ""
 }
 
-// readErrorDetail extracts the upstream message AND response_id, formatted for
-// enriching an error reason (used for 404s, where the message names the missing
-// resource and the response_id correlates with a Timeweb support ticket).
-// Returns "" when nothing useful is present.
-func readErrorDetail(resp *http.Response) string {
+// readNotFoundEnvelope reads the response body once and reports the canonical
+// Timeweb error envelope for a 404: the `error_code` (empty when the body is
+// NOT the canonical JSON envelope — HTML edge page, empty body, or JSON lacking
+// error_code) and a formatted message+response_id detail for enrichment. A
+// non-empty code is the signal that a 404 is a genuine not-found rather than an
+// edge/gateway flap; the message names the missing resource and the response_id
+// correlates with a Timeweb support ticket. See Classify's 404 branch (#124).
+func readNotFoundEnvelope(resp *http.Response) (code, detail string) {
 	if resp == nil || resp.Body == nil {
-		return ""
+		return "", ""
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
 	if err != nil || len(body) == 0 {
-		return ""
+		return "", ""
 	}
 	var b errorResponseBody
-	if err := json.Unmarshal(body, &b); err == nil {
-		msg := stringifyMessage(b.Message)
-		switch {
-		case msg != "" && b.ResponseID != "":
-			return fmt.Sprintf("%s (response_id: %s)", msg, b.ResponseID)
-		case msg != "":
-			return msg
-		case b.ResponseID != "":
-			return "response_id: " + b.ResponseID
-		}
+	// Not the canonical JSON envelope (e.g. an HTML edge page) ⇒ no code ⇒ the
+	// caller treats it as a suspected flap, not a deletion.
+	if err := json.Unmarshal(body, &b); err != nil {
+		return "", ""
 	}
-	if s := strings.TrimSpace(string(body)); s != "" {
-		if len(s) > 300 {
-			s = s[:300]
-		}
-		return s
+	msg := stringifyMessage(b.Message)
+	switch {
+	case msg != "" && b.ResponseID != "":
+		detail = fmt.Sprintf("%s (response_id: %s)", msg, b.ResponseID)
+	case msg != "":
+		detail = msg
+	case b.ResponseID != "":
+		detail = "response_id: " + b.ResponseID
 	}
-	return ""
+	return b.ErrorCode, detail
 }
 
 // stringifyMessage flattens the oneOf<string, []string> message into a single
