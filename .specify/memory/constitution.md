@@ -1,37 +1,31 @@
 <!--
 Sync Impact Report
 ==================
-Version change: (uninitialized template) → 1.0.0
-Bump rationale: Initial ratification — all placeholders filled with concrete
-content for the first time. Semantic versioning begins at 1.0.0 per project
-convention for an adopted (non-draft) governing document.
+Version change: 1.0.0 → 1.1.0
+Bump rationale: MINOR — materially expanded normative guidance within an
+existing principle (II). Added the canonical-not-found sub-rule: a resource is
+reported absent only on a canonical, precisely-classified not-found signal for
+its API (Timeweb error envelope / rgwiam NoSuchEntity), never on the HTTP status
+alone. Motivated by postmortem #124 (feature 019). No principle added or removed.
 
 Modified principles:
-  - [PRINCIPLE_1_NAME] → I. CRD Contract Stability (NON-NEGOTIABLE)
-  - [PRINCIPLE_2_NAME] → II. Idempotent, Side-Effect-Aware Reconciliation
-  - [PRINCIPLE_3_NAME] → III. Controller Test Discipline
-Principles removed: [PRINCIPLE_4_NAME], [PRINCIPLE_5_NAME]
-  (intentional — 3-principle constitution requested)
+  - II. Idempotent, Side-Effect-Aware Reconciliation — added canonical-not-found
+    classification sub-rule + rationale.
 
-Added sections:
-  - Provider Constraints (replaces [SECTION_2_NAME])
-  - Development Workflow (replaces [SECTION_3_NAME])
-
+Added sections: none
 Removed sections: none
 
 Templates requiring updates:
   - ✅ .specify/templates/plan-template.md — Constitution Check is
-        principle-agnostic ("[Gates determined based on constitution file]");
-        no edit needed.
-  - ✅ .specify/templates/spec-template.md — no constitution references;
-        no edit needed.
-  - ✅ .specify/templates/tasks-template.md — no constitution references;
-        no edit needed.
-  - ✅ .specify/templates/checklist-template.md — generic scaffold;
-        no edit needed.
-  - ✅ CLAUDE.md — pointer-only file; no edit needed.
+        principle-agnostic; no edit needed.
+  - ✅ .specify/templates/spec-template.md — no constitution references.
+  - ✅ .specify/templates/tasks-template.md — no constitution references.
+  - ✅ docs/error-classification.md — new reference doc for the sub-rule.
 
 Follow-up TODOs: none
+
+Prior: (uninitialized template) → 1.0.0 (initial ratification 2026-05-18;
+3-principle constitution; Provider Constraints + Development Workflow sections).
 -->
 
 # Crossplane Provider Timeweb Constitution
@@ -65,10 +59,21 @@ Timeweb API MUST be explicitly classified as transient (trigger a requeue) or te
 (surface `Synced=False` with a reason on the CR); errors MUST NEVER be silently
 swallowed.
 
+A resource MUST be reported absent (`Observe` → `ResourceExists=false`) ONLY on a
+**canonical, precisely-classified not-found signal for that API** — never on the HTTP
+status code alone. For the Timeweb API that signal is the documented error envelope
+(`error_code` present; the `not-found` response requires `status_code`/`error_code`/
+`response_id`); for the RGW/AWS IAM path (`rgwiam`) it is the exact `NoSuchEntity` error
+code. An ambiguous 404 that lacks the canonical signal (an edge/DDoS/gateway page, an
+empty body, or non-envelope JSON) MUST be classified transient and requeued, NEVER treated
+as a deletion. Concluding "deleted" from a bare status recreates live infrastructure — see
+`docs/error-classification.md` and postmortem #124.
+
 **Rationale**: Crossplane invokes the reconciler on every Kubernetes event and on a
 periodic poll. Non-idempotent calls produce orphaned cloud resources, duplicate charges,
 and CRs stuck in inconsistent conditions — failure modes that are expensive to detect
-and to clean up.
+and to clean up. A single flaky 404 misread as a deletion orphaned a production VPC and
+created an empty duplicate (2026-07-20); the canonical-signal rule prevents that class.
 
 ### III. Controller Test Discipline
 
@@ -127,4 +132,4 @@ updates this document, increments the version per the policy below, and updates 
 - **Runtime guidance**: `CLAUDE.md` at the repo root remains the pointer to the current
   feature plan; this constitution governs the rules that any plan MUST respect.
 
-**Version**: 1.0.0 | **Ratified**: 2026-05-18 | **Last Amended**: 2026-05-18
+**Version**: 1.1.0 | **Ratified**: 2026-05-18 | **Last Amended**: 2026-07-21
