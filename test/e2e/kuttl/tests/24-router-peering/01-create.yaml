@@ -1,0 +1,77 @@
+# Step 1 — Router peering (feature 021 US1/US2): two routers sharing a transit
+# network (the official peering arrangement) + a floating IP for the NAT
+# release cycle. Router A also owns a private net (NAT target).
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata: {name: e2e-peer-net-a, namespace: timeweb-e2e}
+spec:
+  providerConfigRef: {kind: ProviderConfig, name: e2e}
+  forProvider:
+    name: e2e-peer-net-a
+    subnetCIDR: 10.44.0.0/24
+    location: ${TWE_LOCATION}
+    description: "kuttl 24 router-peering: A's own net"
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata: {name: e2e-peer-transit, namespace: timeweb-e2e}
+spec:
+  providerConfigRef: {kind: ProviderConfig, name: e2e}
+  forProvider:
+    name: e2e-peer-transit
+    subnetCIDR: 10.45.0.0/24
+    location: ${TWE_LOCATION}
+    description: "kuttl 24 router-peering: common transit net"
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata: {name: e2e-peer-net-b, namespace: timeweb-e2e}
+spec:
+  providerConfigRef: {kind: ProviderConfig, name: e2e}
+  forProvider:
+    name: e2e-peer-net-b
+    subnetCIDR: 10.46.0.0/24
+    location: ${TWE_LOCATION}
+    description: "kuttl 24 router-peering: B's own net (route destination — the upstream rejects routes to non-existent subnets with a misleading invalid_static_route_nexthop)"
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: FloatingIP
+metadata: {name: e2e-peer-egress, namespace: timeweb-e2e}
+spec:
+  providerConfigRef: {kind: ProviderConfig, name: e2e}
+  forProvider:
+    location: ${TWE_LOCATION}
+    availabilityZone: ${TWE_AZ}
+    isDDoSGuard: false
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Router
+metadata: {name: e2e-peer-a, namespace: timeweb-e2e}
+spec:
+  providerConfigRef: {kind: ProviderConfig, name: e2e}
+  forProvider:
+    name: e2e-peer-a
+    location: ${TWE_LOCATION}
+    availabilityZone: ${TWE_AZ}
+    presetName: ${TWE_ROUTER_PRESET}
+    networks:
+      - networkRef: {name: e2e-peer-net-a}
+        dhcp: true
+      - networkRef: {name: e2e-peer-transit}
+        dhcp: false
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Router
+metadata: {name: e2e-peer-b, namespace: timeweb-e2e}
+spec:
+  providerConfigRef: {kind: ProviderConfig, name: e2e}
+  forProvider:
+    name: e2e-peer-b
+    location: ${TWE_LOCATION}
+    availabilityZone: ${TWE_AZ}
+    presetName: ${TWE_ROUTER_PRESET}
+    networks:
+      - networkRef: {name: e2e-peer-transit}
+        dhcp: false
+      - networkRef: {name: e2e-peer-net-b}
+        dhcp: false

@@ -1,0 +1,25 @@
+# Step 3 — declare static routes both ways: A by `via` (nexthop resolved from
+# B's platform-assigned gateway in the transit net), B by literal (read A's
+# observed gateway here in the script — the same value the via-form resolver
+# would produce, exercising both declaration forms).
+#
+# QUIRK (live 2026-07-25): route destination subnets MUST be real existing
+# networks — a route to a fictional subnet is rejected with the misleading
+# error `invalid_static_route_nexthop: Nexthop is not available`.
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - timeout: 120
+    script: |
+      set -e
+      # Context lock (fail-closed): explicit E2E_KUBECONTEXT must match; without
+      # it only a single-context kubeconfig (the harness minified one) may run —
+      # a multi-context kubeconfig aborts rather than risk a non-e2e cluster.
+      cur=$(kubectl config current-context); n=$(kubectl config get-contexts -o name | wc -l | tr -d " ")
+      if [ -n "${E2E_KUBECONTEXT:-}" ]; then [ "$cur" = "$E2E_KUBECONTEXT" ] || { echo "FAIL: context $cur != $E2E_KUBECONTEXT"; exit 1; }
+      elif [ "$n" != "1" ]; then echo "FAIL: $n contexts available and E2E_KUBECONTEXT unset — refusing to guess (current: $cur)"; exit 1; fi
+      kubectl -n timeweb-e2e patch router/e2e-peer-a --type=merge -p '{"spec":{"forProvider":{"staticRoutes":[{"subnet":"10.46.0.0/24","via":{"routerRef":{"name":"e2e-peer-b"},"networkRef":{"name":"e2e-peer-transit"}}}]}}}'
+      tid=$(kubectl -n timeweb-e2e get network/e2e-peer-transit -o jsonpath='{.status.atProvider.upstreamID}')
+      agw=$(kubectl -n timeweb-e2e get router/e2e-peer-a -o jsonpath="{.status.atProvider.networks[?(@.id=='$tid')].gateway}")
+      [ -n "$agw" ] || { echo "FAIL: A has no observed transit gateway"; exit 1; }
+      kubectl -n timeweb-e2e patch router/e2e-peer-b --type=merge -p "{\"spec\":{\"forProvider\":{\"staticRoutes\":[{\"subnet\":\"10.44.0.0/24\",\"nexthop\":\"$agw\"}]}}}"

@@ -88,6 +88,31 @@ spec:
                     x-kubernetes-validations:
                     - message: availabilityZone is immutable
                       rule: self == oldSelf
+                  clusterNetworkCIDR:
+                    description: |-
+                      ClusterNetworkCIDR sets the cluster's internal pod/service ranges
+                      (feature 021 — distinct per-cluster ranges make cross-cluster
+                      debugging unambiguous). Create-only upstream: the whole block is
+                      immutable post-create and cannot be added or removed later. Omitted ⇒
+                      platform defaults. The upstream does not echo the ranges back, so
+                      there is no status mirror — the declaration is the record.
+                    properties:
+                      podsNetwork:
+                        description: PodsNetwork is the pod address range (CIDR).
+                        pattern: ^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$
+                        type: string
+                      servicesNetwork:
+                        description: ServicesNetwork is the service address range
+                          (CIDR).
+                        pattern: ^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$
+                        type: string
+                    required:
+                    - podsNetwork
+                    - servicesNetwork
+                    type: object
+                    x-kubernetes-validations:
+                    - message: clusterNetworkCIDR is immutable
+                      rule: self == oldSelf
                   description:
                     description: Description is a free-form note. Mutable (PATCH).
                     type: string
@@ -334,6 +359,9 @@ spec:
                 - name
                 - networkDriver
                 type: object
+                x-kubernetes-validations:
+                - message: clusterNetworkCIDR cannot be added or removed after creation
+                  rule: has(self.clusterNetworkCIDR) == has(oldSelf.clusterNetworkCIDR)
               managementPolicies:
                 default:
                 - '*'
@@ -407,6 +435,25 @@ spec:
                       deliberately — the provider does NOT delete it and does NOT sweep for it.
                       Empty when the cluster was given an explicit network.
                     type: string
+                  clusterNetworkCIDR:
+                    description: |-
+                      ClusterNetworkCIDR mirrors the upstream pod/service ranges (the GET
+                      echoes the create-time value under a different key; platform defaults
+                      appear here for clusters that declared nothing).
+                    properties:
+                      podsNetwork:
+                        description: PodsNetwork is the pod address range (CIDR).
+                        pattern: ^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$
+                        type: string
+                      servicesNetwork:
+                        description: ServicesNetwork is the service address range
+                          (CIDR).
+                        pattern: ^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$
+                        type: string
+                    required:
+                    - podsNetwork
+                    - servicesNetwork
+                    type: object
                   cpu:
                     description: CPU / RAM / Disk are the master sizing readout the
                       upstream returns.

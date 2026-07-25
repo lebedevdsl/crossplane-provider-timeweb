@@ -169,6 +169,68 @@ func resolveRouterRefs(ctx context.Context, kube client.Client, cr *networkv1alp
 	return attachments, projectID, nil
 }
 
+// resolvedRoute is one declared static route with the nexthop resolved to a
+// literal address (feature 021). Carried on the routerExternal, never written
+// back to spec (the established no-spec-mutation idiom).
+type resolvedRoute struct {
+	Subnet  string
+	Nexthop string
+}
+
+// resolveRouterStaticRoutes resolves the declared staticRoutes: literal
+// nexthops pass through; `via` pairs resolve to the neighbor Router's
+// observed gateway in the referenced common network. Called from Connect,
+// skipped on deletion (same rule as attachments).
+func resolveRouterStaticRoutes(ctx context.Context, kube client.Client, cr *networkv1alpha1.Router) ([]resolvedRoute, error) {
+	ns := cr.GetNamespace()
+	declared := cr.Spec.ForProvider.StaticRoutes
+	out := make([]resolvedRoute, 0, len(declared))
+	for i, r := range declared {
+		switch {
+		case r.Nexthop != nil && *r.Nexthop != "":
+			out = append(out, resolvedRoute{Subnet: r.Subnet, Nexthop: *r.Nexthop})
+		case r.Via != nil:
+			nh, err := resolveStaticRouteVia(ctx, kube, ns, r.Via)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, resolvedRoute{Subnet: r.Subnet, Nexthop: nh})
+		default:
+			// CEL enforces exactly-one-of; belt-and-braces.
+			return nil, fmt.Errorf("network/router: staticRoutes[%d]: one of nexthop or via must be set", i)
+		}
+	}
+	return out, nil
+}
+
+// resolveStaticRouteVia returns the neighbor Router's observed gateway in the
+// referenced common Network — the platform-assigned address a git-authored
+// spec cannot know. Gated on the neighbor being Ready with that gateway
+// observed (ErrTargetNotReady until then; converges via poll once the
+// neighbor's status carries it).
+func resolveStaticRouteVia(ctx context.Context, kube client.Client, ns string, via *networkv1alpha1.RouterStaticRouteVia) (string, error) {
+	netID, err := resolveRouterNetworkRef(ctx, kube, ns, &via.NetworkRef)
+	if err != nil {
+		return "", err
+	}
+	neighbor := &networkv1alpha1.Router{}
+	if err := kube.Get(ctx, types.NamespacedName{Namespace: ns, Name: via.RouterRef.Name}, neighbor); err != nil {
+		if kerrors.IsNotFound(err) {
+			return "", fmt.Errorf("%w: Router %q in namespace %q", ErrTargetNotFound, via.RouterRef.Name, ns)
+		}
+		return "", fmt.Errorf("get Router %s/%s: %w", ns, via.RouterRef.Name, err)
+	}
+	if neighbor.GetCondition(xpv2.TypeReady).Status != corev1.ConditionTrue {
+		return "", fmt.Errorf("%w: Router %q (not Ready=True)", ErrTargetNotReady, via.RouterRef.Name)
+	}
+	for _, n := range neighbor.Status.AtProvider.Networks {
+		if n.ID == netID && n.Gateway != nil && *n.Gateway != "" {
+			return *n.Gateway, nil
+		}
+	}
+	return "", fmt.Errorf("%w: Router %q has no observed gateway in network %s (not attached yet, or gateway not observed)", ErrTargetNotReady, via.RouterRef.Name, netID)
+}
+
 // resolveRouterNetworkRef returns the referenced Network's upstream VPC ID,
 // gated on the Network being provisioned AND Ready=True — attaching a
 // half-created VPC trips the upstream's settle-delay 403 far more often.

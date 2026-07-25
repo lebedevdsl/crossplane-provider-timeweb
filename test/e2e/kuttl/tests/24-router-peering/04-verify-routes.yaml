@@ -1,0 +1,24 @@
+# Step 4 — routes converge and the via-form nexthop equals B's observed
+# transit gateway (dynamic value: script assert, not declarative YAML).
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - timeout: 600
+    script: |
+      # Context lock (fail-closed): explicit E2E_KUBECONTEXT must match; without
+      # it only a single-context kubeconfig (the harness minified one) may run —
+      # a multi-context kubeconfig aborts rather than risk a non-e2e cluster.
+      cur=$(kubectl config current-context); n=$(kubectl config get-contexts -o name | wc -l | tr -d " ")
+      if [ -n "${E2E_KUBECONTEXT:-}" ]; then [ "$cur" = "$E2E_KUBECONTEXT" ] || { echo "FAIL: context $cur != $E2E_KUBECONTEXT"; exit 1; }
+      elif [ "$n" != "1" ]; then echo "FAIL: $n contexts available and E2E_KUBECONTEXT unset — refusing to guess (current: $cur)"; exit 1; fi
+      tid=$(kubectl -n timeweb-e2e get network/e2e-peer-transit -o jsonpath='{.status.atProvider.upstreamID}')
+      bgw=$(kubectl -n timeweb-e2e get router/e2e-peer-b -o jsonpath="{.status.atProvider.networks[?(@.id=='$tid')].gateway}")
+      agw=$(kubectl -n timeweb-e2e get router/e2e-peer-a -o jsonpath="{.status.atProvider.networks[?(@.id=='$tid')].gateway}")
+      for i in $(seq 1 55); do
+        ra=$(kubectl -n timeweb-e2e get router/e2e-peer-a -o jsonpath='{.status.atProvider.staticRoutes[0].nexthop}' 2>/dev/null)
+        rb=$(kubectl -n timeweb-e2e get router/e2e-peer-b -o jsonpath='{.status.atProvider.staticRoutes[0].nexthop}' 2>/dev/null)
+        echo "A route nexthop=$ra (want $bgw) · B route nexthop=$rb (want $agw)"
+        [ "$ra" = "$bgw" ] && [ "$rb" = "$agw" ] && exit 0
+        sleep 10
+      done
+      echo "FAIL: routes did not converge"; exit 1

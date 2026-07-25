@@ -30,6 +30,12 @@ spec:
     # REQUIRED — CNI plugin. Immutable post-create.
     # Choices: kuberouter, calico, flannel, cilium
     networkDriver: cilium
+    # Optional: distinct internal ranges per cluster (feature 021). Create-only
+    # (immutable, cannot be added/removed later); omitted => platform defaults.
+    # Subnets must fall in 10.0.0.0/8, 192.168.0.0/16 or 172.16.0.0/12.
+    clusterNetworkCIDR:
+      podsNetwork: 10.100.0.0/16
+      servicesNetwork: 10.101.0.0/16
     # REQUIRED — region code. Immutable post-create.
     # API codes: ru-1, ru-2, ru-3, nl-1, de-1, kz-1, us-4, pl-1
     location: ru-3

@@ -1,0 +1,41 @@
+# Step 5 — NAT on A's own net: bind-then-enable (v0.9.2 path), then removal
+# releases the floating IP (feature 021 US3 — declarative release).
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - timeout: 600
+    script: |
+      # Context lock (fail-closed): explicit E2E_KUBECONTEXT must match; without
+      # it only a single-context kubeconfig (the harness minified one) may run —
+      # a multi-context kubeconfig aborts rather than risk a non-e2e cluster.
+      cur=$(kubectl config current-context); n=$(kubectl config get-contexts -o name | wc -l | tr -d " ")
+      if [ -n "${E2E_KUBECONTEXT:-}" ]; then [ "$cur" = "$E2E_KUBECONTEXT" ] || { echo "FAIL: context $cur != $E2E_KUBECONTEXT"; exit 1; }
+      elif [ "$n" != "1" ]; then echo "FAIL: $n contexts available and E2E_KUBECONTEXT unset — refusing to guess (current: $cur)"; exit 1; fi
+      set -e
+      kubectl -n timeweb-e2e patch router/e2e-peer-a --type=json -p '[{"op":"replace","path":"/spec/forProvider/networks/0","value":{"networkRef":{"name":"e2e-peer-net-a"},"dhcp":true,"natFloatingIP":{"ref":{"name":"e2e-peer-egress"}}}}]'
+      ip=$(kubectl -n timeweb-e2e get floatingip/e2e-peer-egress -o jsonpath='{.status.atProvider.ip}')
+      for i in $(seq 1 55); do
+        nat=$(kubectl -n timeweb-e2e get router/e2e-peer-a -o jsonpath='{.status.atProvider.networks[?(@.name=="e2e-peer-net-a")].natIP}' 2>/dev/null)
+        echo "natIP=$nat (want $ip)"
+        [ "$nat" = "$ip" ] && exit 0
+        sleep 10
+      done
+      echo "FAIL: NAT did not converge"; exit 1
+  - timeout: 600
+    script: |
+      # Context lock (fail-closed): explicit E2E_KUBECONTEXT must match; without
+      # it only a single-context kubeconfig (the harness minified one) may run —
+      # a multi-context kubeconfig aborts rather than risk a non-e2e cluster.
+      cur=$(kubectl config current-context); n=$(kubectl config get-contexts -o name | wc -l | tr -d " ")
+      if [ -n "${E2E_KUBECONTEXT:-}" ]; then [ "$cur" = "$E2E_KUBECONTEXT" ] || { echo "FAIL: context $cur != $E2E_KUBECONTEXT"; exit 1; }
+      elif [ "$n" != "1" ]; then echo "FAIL: $n contexts available and E2E_KUBECONTEXT unset — refusing to guess (current: $cur)"; exit 1; fi
+      set -e
+      kubectl -n timeweb-e2e patch router/e2e-peer-a --type=json -p '[{"op":"replace","path":"/spec/forProvider/networks/0","value":{"networkRef":{"name":"e2e-peer-net-a"},"dhcp":true}}]'
+      for i in $(seq 1 55); do
+        nat=$(kubectl -n timeweb-e2e get router/e2e-peer-a -o jsonpath='{.status.atProvider.networks[?(@.name=="e2e-peer-net-a")].natIP}' 2>/dev/null)
+        bound=$(kubectl -n timeweb-e2e get floatingip/e2e-peer-egress -o jsonpath='{.status.atProvider.observedBoundSummary}' 2>/dev/null)
+        echo "natIP='$nat' bound='$bound' (want both empty — released)"
+        [ -z "$nat" ] && [ -z "$bound" ] && exit 0
+        sleep 10
+      done
+      echo "FAIL: NAT removal did not release the floating IP"; exit 1

@@ -1,5 +1,27 @@
 <!-- SPECKIT START -->
-Current feature: **020-fix-router-nat-update** (bugfix, target **v0.9.2**, NON-BREAKING,
+Current feature: **021-router-peering-routes** (feature, target **v0.10.0**, NON-BREAKING,
+released) — read the plan at `specs/021-router-peering-routes/plan.md`. Scope (owner-agreed,
+preface items 1–5+7): (1) **Router.staticRoutes** `[{subnet, nexthop|via{routerRef,networkRef}}]`
+— subnet-keyed set semantics, replace-on-nexthop-change (no upstream update op), drift repair,
+via-form resolves the neighbor Router's observed gateway in the common network at Connect
+(ErrTargetNotReady gate); status mirror. QUIRKS (live 2026-07-25): destination subnet MUST be a
+real existing network (else misleading `invalid_static_route_nexthop`); `…/static-routes/
+available` always empty — never consulted. (2) **multi-router networks** = official peering;
+controller is structurally own-router-scoped (pinned by test + live survivor gate); leaked
+post-detach reservations are inert. (3) **NAT declarative release** (supersedes 020
+leave-bound): the NAT disable/move transition also unbinds the address — guards: declared-
+elsewhere, DNAT read (`GetDnat`), bound-to-this-router; best-effort (Warning event, no retry);
+never-steal unchanged. (4) **KubernetesCluster.clusterNetworkCIDR** {podsNetwork,
+servicesNetwork} create-only (field CEL + params-level has()==has(); CEL needs MaxLength on
+compared strings — 32.2x budget hit, see memory); GET echoes it under `network_cidr` → status
+mirror. (5) x/text ≥0.39 (GO-2026-5970). (6) US5 valid-versions-in-error was already
+implemented (DimensionValueNotFoundError) — pinned. e2e: kuttl bundles 18/20 PASS + NEW
+**bundle 24-router-peering** (script-step asserts for dynamic gateways, fail-closed context
+locks); live gate on inyan-staging all green. Deferred (→ specs/_next-router-features.preface.md):
+virtual_router_id, trap guards, OpenAPI refresh, NAT-release opt-in variants. Artifacts in
+`specs/021-router-peering-routes/`.
+
+Prior feature: **020-fix-router-nat-update** (bugfix, released **v0.9.2**, NON-BREAKING,
 **Part 1 ONLY** after the 2026-07-25 descope) — read the plan at
 `specs/020-fix-router-nat-update/plan.md`. The #135 incident bug (timeweb-infra#132 rollout;
 handoff `specs/_next-router-nat-bind.preface.md`): Router update path calls `UpdateRouterNat`

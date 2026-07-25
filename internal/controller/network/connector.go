@@ -103,6 +103,11 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 			}
 			ext.resolvedNetworks = nets
 			ext.resolvedProjectID = pid
+			routes, err := resolveRouterStaticRoutes(ctx, c.kube, cr)
+			if err != nil {
+				return nil, fmt.Errorf("network/router: resolve references: %w", err)
+			}
+			ext.resolvedRoutes = routes
 		}
 		return ext, nil
 	case *networkv1alpha1.Firewall:

@@ -18,6 +18,7 @@ package network
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
@@ -222,6 +223,94 @@ func TestResolveRouterRefs_Selector(t *testing.T) {
 		}
 		if got[0].NetworkID != "network-dual" {
 			t.Errorf("id=%q, want network-dual", got[0].NetworkID)
+		}
+	})
+}
+
+// --- Feature 021: static-route via-resolution --------------------------------
+
+// viaRouter builds a neighbor Router with an observed gateway in networkID.
+func viaRouter(name, networkID, gateway string, ready bool) *networkv1alpha1.Router {
+	r := &networkv1alpha1.Router{
+		ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: name},
+	}
+	if gateway != "" {
+		g := gateway
+		r.Status.AtProvider.Networks = []networkv1alpha1.RouterNetworkStatus{{ID: networkID, Gateway: &g}}
+	}
+	if ready {
+		r.Status.SetConditions(xpv2.Available())
+	}
+	return r
+}
+
+func TestResolveRouterStaticRoutes(t *testing.T) {
+	ctx := context.Background()
+	nh := "10.13.0.3"
+
+	declaring := func(routes ...networkv1alpha1.RouterStaticRoute) *networkv1alpha1.Router {
+		r := selectorRouter(networkv1alpha1.RouterNetworkAttachment{NetworkID: strPtr("network-own")})
+		r.Spec.ForProvider.StaticRoutes = routes
+		return r
+	}
+
+	t.Run("LiteralNexthop_PassesThrough", func(t *testing.T) {
+		k := fake.NewClientBuilder().WithScheme(refsScheme(t)).Build()
+		got, err := resolveRouterStaticRoutes(ctx, k, declaring(
+			networkv1alpha1.RouterStaticRoute{Subnet: "10.12.0.0/24", Nexthop: &nh}))
+		if err != nil {
+			t.Fatalf("resolve: %v", err)
+		}
+		if len(got) != 1 || got[0] != (resolvedRoute{Subnet: "10.12.0.0/24", Nexthop: nh}) {
+			t.Errorf("got %+v", got)
+		}
+	})
+
+	t.Run("Via_ResolvesNeighborGateway", func(t *testing.T) {
+		k := fake.NewClientBuilder().WithScheme(refsScheme(t)).WithObjects(
+			netObj("transit", "network-transit", true, nil),
+			viaRouter("shared", "network-transit", "10.13.0.5", true),
+		).Build()
+		got, err := resolveRouterStaticRoutes(ctx, k, declaring(
+			networkv1alpha1.RouterStaticRoute{Subnet: "10.12.0.0/24", Via: &networkv1alpha1.RouterStaticRouteVia{
+				RouterRef:  xpv2.Reference{Name: "shared"},
+				NetworkRef: xpv2.Reference{Name: "transit"},
+			}}))
+		if err != nil {
+			t.Fatalf("resolve: %v", err)
+		}
+		if len(got) != 1 || got[0].Nexthop != "10.13.0.5" {
+			t.Errorf("got %+v, want nexthop 10.13.0.5 (neighbor gateway)", got)
+		}
+	})
+
+	t.Run("Via_NeighborNotReady_Gates", func(t *testing.T) {
+		k := fake.NewClientBuilder().WithScheme(refsScheme(t)).WithObjects(
+			netObj("transit", "network-transit", true, nil),
+			viaRouter("shared", "network-transit", "10.13.0.5", false),
+		).Build()
+		_, err := resolveRouterStaticRoutes(ctx, k, declaring(
+			networkv1alpha1.RouterStaticRoute{Subnet: "10.12.0.0/24", Via: &networkv1alpha1.RouterStaticRouteVia{
+				RouterRef:  xpv2.Reference{Name: "shared"},
+				NetworkRef: xpv2.Reference{Name: "transit"},
+			}}))
+		if !errors.Is(err, ErrTargetNotReady) {
+			t.Errorf("err = %v, want ErrTargetNotReady", err)
+		}
+	})
+
+	t.Run("Via_NoGatewayInNetwork_Gates", func(t *testing.T) {
+		k := fake.NewClientBuilder().WithScheme(refsScheme(t)).WithObjects(
+			netObj("transit", "network-transit", true, nil),
+			viaRouter("shared", "network-OTHER", "10.99.0.1", true),
+		).Build()
+		_, err := resolveRouterStaticRoutes(ctx, k, declaring(
+			networkv1alpha1.RouterStaticRoute{Subnet: "10.12.0.0/24", Via: &networkv1alpha1.RouterStaticRouteVia{
+				RouterRef:  xpv2.Reference{Name: "shared"},
+				NetworkRef: xpv2.Reference{Name: "transit"},
+			}}))
+		if !errors.Is(err, ErrTargetNotReady) {
+			t.Errorf("err = %v, want ErrTargetNotReady (no observed gateway in common network)", err)
 		}
 	})
 }

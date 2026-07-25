@@ -144,6 +144,14 @@ platform-side inconsistency, see timeweb-infra#135). Until the provider grows
 explicit guards for this trap (planned, see `specs/_next-router-features.preface.md`),
 create the network + router + NAT wiring first and the cluster after.
 
+**Internal ranges** (`clusterNetworkCIDR`, v0.10.0): optionally declare
+distinct pod/service CIDRs per cluster (`podsNetwork` / `servicesNetwork`,
+subnets within 10.0.0.0/8, 192.168.0.0/16 or 172.16.0.0/12) — distinct ranges
+make cross-cluster debugging (Hubble, logs) unambiguous. Create-only: the
+block is immutable and cannot be added or removed after creation; omitted
+clusters use platform defaults. The upstream does not echo the ranges — the
+declaration is the record.
+
 Sizing note: K8s presets carry a **hidden zone affinity** (the public docs
 omit it) — this provider resolves `presetName` only among presets of the
 cluster's `availabilityZone`, so a slug that exists only in another zone is

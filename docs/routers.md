@@ -65,9 +65,43 @@ spec:
   - The provider **never steals** an address bound to another resource — the
     Router reports `Ready=False NATIPUnavailable` naming the holder and
     converges by itself once the address is freed.
-  - Removing `natFloatingIP` disables NAT but **leaves the address bound to
-    the router** (it may be re-enabled or serve another attachment); unbind it
-    manually if you need it elsewhere.
+  - **Removing (or moving) `natFloatingIP` releases the address** (v0.10.0):
+    the same transition that disables NAT also unbinds the floating IP from
+    the router, so it is immediately reusable elsewhere — no manual unbind.
+    The release is strictly transition-scoped and skipped (with an event)
+    when the address is still declared on another attachment or a DNAT rule
+    forwards it; addresses parked on the router out-of-band are never
+    touched.
+
+## 2b. Static routes — declarative peering (v0.10.0)
+
+```yaml
+    staticRoutes:
+      - subnet: 10.12.0.0/24
+        nexthop: 10.13.0.3            # literal next-hop
+      - subnet: 10.14.0.0/24
+        via:                          # resolved from the neighbor router's
+          routerRef: {name: shared}   # observed gateway in the common network
+          networkRef: {name: transit}
+```
+
+- Set semantics keyed by `subnet`: added entries are created, removed entries
+  deleted, a changed nexthop is replaced, and out-of-band panel deletions are
+  re-created (single-writer drift repair). Mirrored at
+  `status.atProvider.staticRoutes`.
+- Upstream nexthop rule: a **neighbor router's gateway in a common network**
+  (network attached to both routers — the peering pattern) or a cloud server
+  in one of the router's own networks; managed-k8s nodes do not qualify.
+- The route's **destination subnet must be a real existing network** — a route
+  to a non-existent subnet is rejected with the misleading upstream error
+  `invalid_static_route_nexthop: Nexthop is not available` (live-verified
+  2026-07-25). If you hit that error with a correct-looking nexthop, check the
+  subnet first.
+- The `via` form waits (clear not-ready event) until the neighbor Router is
+  Ready with its gateway observed, then converges automatically.
+- A Network may be attached to **several routers simultaneously** — that is
+  the official peering arrangement; each Router CR converges only its own
+  attachment and never fights over the shared network.
 - `status.atProvider` answers everything the dashboard shows: per-network
   gateway / NAT address / DHCP state, the router's public IPs and what each
   NATs, and `parentServices` (e.g. a Kubernetes cluster running through it).

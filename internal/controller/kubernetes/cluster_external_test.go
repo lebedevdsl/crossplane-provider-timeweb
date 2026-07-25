@@ -803,3 +803,55 @@ func TestClusterPlacementRegionCoverage(t *testing.T) {
 		}
 	})
 }
+
+// Feature 021 US4: clusterNetworkCIDR is wired into the create body when
+// declared and omitted otherwise (create-only; upstream never echoes it).
+func TestClusterCreateNetworkCIDR(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Declared_CarriedInBody", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.CreateClusterReturns(httpResp(http.StatusCreated, clusterActiveJSON), nil)
+		cr := newCluster(false)
+		cr.Spec.ForProvider.ClusterNetworkCIDR = &kubernetesv1alpha1.ClusterNetworkCIDR{
+			PodsNetwork:     "10.100.0.0/16",
+			ServicesNetwork: "10.101.0.0/16",
+		}
+		if _, err := clusterE(fake, okResolver()).Create(ctx, cr); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		_, body, _ := fake.CreateClusterArgsForCall(0)
+		if body.ClusterNetworkCidr == nil ||
+			body.ClusterNetworkCidr.PodsNetwork == nil || *body.ClusterNetworkCidr.PodsNetwork != "10.100.0.0/16" ||
+			body.ClusterNetworkCidr.ServicesNetwork == nil || *body.ClusterNetworkCidr.ServicesNetwork != "10.101.0.0/16" {
+			t.Errorf("cluster_network_cidr = %+v, want the declared ranges", body.ClusterNetworkCidr)
+		}
+	})
+
+	t.Run("Absent_Omitted", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.CreateClusterReturns(httpResp(http.StatusCreated, clusterActiveJSON), nil)
+		if _, err := clusterE(fake, okResolver()).Create(ctx, newCluster(false)); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		_, body, _ := fake.CreateClusterArgsForCall(0)
+		if body.ClusterNetworkCidr != nil {
+			t.Errorf("cluster_network_cidr = %+v, want nil (platform defaults)", body.ClusterNetworkCidr)
+		}
+	})
+
+	t.Run("Observe_MirrorsNetworkCIDR", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK,
+			`{"cluster":{"id":777,"name":"demo","status":"active","k8s_version":"1.31.2","network_driver":"cilium","preset_id":5,"availability_zone":"msk-1","project_id":0,"network_cidr":{"pods_network":"10.100.0.0/16","services_network":"10.101.0.0/16"}}}`), nil)
+		fake.GetClusterKubeconfigReturns(httpResp(http.StatusOK, "apiVersion: v1\nkind: Config\n"), nil)
+		cr := newCluster(true)
+		if _, err := clusterE(fake, okResolver()).Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		got := cr.Status.AtProvider.ClusterNetworkCIDR
+		if got == nil || got.PodsNetwork != "10.100.0.0/16" || got.ServicesNetwork != "10.101.0.0/16" {
+			t.Errorf("status clusterNetworkCIDR = %+v, want the upstream echo", got)
+		}
+	})
+}
