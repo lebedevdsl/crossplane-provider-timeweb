@@ -1,4 +1,10 @@
-# Next feature preface: router surface completion (target v0.10.0)
+# Next feature preface: router/k8s remaining traps (post-v0.10.0)
+
+> **Trimmed 2026-07-25 after v0.10.0 shipped**: staticRoutes (§3), multi-router
+> peering (§4), clusterNetworkCIDR (§5), NAT declarative release (§6) and the
+> x/text vuln (§7) are RELEASED in 021/v0.10.0 — see
+> `specs/021-router-peering-routes/`. What remains below is the probe-blocked
+> trap-guard work (§1–§2) and the ticket/probe backlog.
 
 Everything router-related from the timeweb-infra#132/#135 rollout that did NOT
 ship in v0.9.2 (which carries only the Part 1 bind-before-NAT bugfix). Source:
@@ -135,7 +141,16 @@ Constraint carried from 0.9.2: never-steal stays absolute; whatever release
 mechanism lands must keep the blast radius at "IPs this reconcile is actively
 transitioning."
 
-## 7. Upstream tickets to file/track (quirk capture)
+## 7. Dependency hygiene: GO-2026-5970 (x/text) vuln bump
+
+The post-v0.9.2 `ci` run on main fails the govulncheck gate: **GO-2026-5970**
+— infinite loop on invalid input in `golang.org/x/text@v0.37.0`, fixed in
+**v0.39.0**; reachable via `timeweb.authTransport.RoundTrip` →
+`http.Transport.RoundTrip` → `norm.Form.*` (i.e. every API call). Fix is a
+plain `go get golang.org/x/text@v0.39.0` (deps float per project policy) —
+ship with 0.10.0; main CI stays red on the vuln gate until then.
+
+## 8. Upstream tickets to file/track (quirk capture)
 
 - Snapshot desync: NAT/DHCP added to a live router invisible to the k8s
   service's checks (response_ids e98f2f7b…, 490867cd…, f76e5d1b…).
