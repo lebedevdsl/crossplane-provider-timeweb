@@ -1,5 +1,26 @@
 <!-- SPECKIT START -->
-Current feature: **019-fix-false-notfound-recreate** (bugfix, NON-BREAKING) — read the plan at
+Current feature: **020-fix-router-nat-update** (bugfix, target **v0.9.2**, NON-BREAKING,
+**Part 1 ONLY** after the 2026-07-25 descope) — read the plan at
+`specs/020-fix-router-nat-update/plan.md`. The #135 incident bug (timeweb-infra#132 rollout;
+handoff `specs/_next-router-nat-bind.preface.md`): Router update path calls `UpdateRouterNat`
+with an address the router doesn't own (create ships `ips[]`, update has no attach) → endless
+404 `ip_not_found`. Fix = ownership precondition on observed `router.Ips` + auto-bind via
+`POST /floating-ips/{uuid}/bind {resource_type:"router", resource_id:<router UUID string>}`
+(undocumented enum value — probe-verified 204; json enum hand-patched + regen'd typed const).
+Bind is paced (`ops++`), NAT fires next reconcile (Observe-sole-authority). NEVER steal a
+bound IP (Ready=False `NATIPUnavailable` naming the holder, converge-on-freed, Observe owns
+the condition zone-echo-style and suppresses blocked rows from the drift diff); blocked
+attachment skips, does NOT abort the loop; NAT disable never unbinds. FIP identity via one
+`GET /floating-ips` list matched by address (ref + raw-ip forms). **Descoped to v0.10.0**
+(`specs/_next-router-features.preface.md`): the briefly-implemented-then-REVERTED Part 2
+(cluster wiring precondition / `routerLinked` / nodepool recreate-message — premises
+invalidated by `virtual_router_id` + post-attach snapshot desync findings) plus staticRoutes,
+multi-router scoping, clusterNetworkCIDR, k8sVersion drift. Philosophy for 021: fix provider
+gaps, GUARD platform traps (detect + name trap and exit; never paper over). Live gate on
+inyan-staging: the #135 shape (add NAT to existing router). Artifacts in
+`specs/020-fix-router-nat-update/`.
+
+Prior feature: **019-fix-false-notfound-recreate** (bugfix, NON-BREAKING) — read the plan at
 `specs/019-fix-false-notfound-recreate/plan.md`. Postmortem #124: a single flaky/edge 404
 recreated the live `staging` VPC (empty duplicate + orphaned prod). Root cause:
 `internal/clients/timeweb/errors.go` `Classify` maps **any** 404 to `ErrNotFound` by status
