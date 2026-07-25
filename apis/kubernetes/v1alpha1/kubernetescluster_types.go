@@ -38,6 +38,7 @@ type KubernetesResources struct {
 // managed control plane. See spec.md FR-004/FR-005 and
 // contracts/kubernetescluster-v1alpha1.md for the authoritative shape.
 // +kubebuilder:validation:XValidation:rule="has(self.clusterNetworkCIDR) == has(oldSelf.clusterNetworkCIDR)",message="clusterNetworkCIDR cannot be added or removed after creation"
+// +kubebuilder:validation:XValidation:rule="!(has(self.routerRef) && has(self.routerID))",message="at most one of routerRef or routerID may be set"
 type KubernetesClusterParameters struct {
 	// Name as it appears in the Timeweb dashboard. Mutable (PATCH).
 	// +kubebuilder:validation:MinLength=1
@@ -117,6 +118,17 @@ type KubernetesClusterParameters struct {
 	// +optional
 	NetworkID *string `json:"networkID,omitempty"`
 
+	// RouterRef / RouterID declare the Router this cluster integrates with
+	// (feature 022 — the panel's «Интеграция с роутерами», a day-2 op
+	// required for private worker pools). At most one MAY be set; declaring
+	// integrates after create and keeps the linkage converged, removing the
+	// declaration detaches, changing it moves. Readback is the router's
+	// parentServices (the cluster API echoes nothing).
+	// +optional
+	RouterRef *xpv2.Reference `json:"routerRef,omitempty"`
+	// +optional
+	RouterID *string `json:"routerID,omitempty"`
+
 	// ProjectRef / ProjectSelector / ProjectID assign the cluster to a
 	// Timeweb project. At most one MAY be set; all unset → default project.
 	// Immutable post-create.
@@ -174,6 +186,19 @@ type KubernetesClusterObservation struct {
 	// appear here for clusters that declared nothing).
 	// +optional
 	ClusterNetworkCIDR *ClusterNetworkCIDR `json:"clusterNetworkCIDR,omitempty"`
+
+	// RouterIntegrated mirrors whether the declared router's parent services
+	// contain this cluster (the only readback the integration op has). nil
+	// while no declaration/record exists or the router side is unreadable.
+	// +optional
+	RouterIntegrated *bool `json:"routerIntegrated,omitempty"`
+
+	// IntegratedRouterID records the router UUID the provider integrated
+	// this cluster with. Drives detach-on-removal: only a cluster whose
+	// declaration was recorded here is ever detached — panel-made
+	// integrations on undeclared clusters are never touched.
+	// +optional
+	IntegratedRouterID *string `json:"integratedRouterID,omitempty"`
 
 	// AutoCreatedNetworkID is the upstream id of the private network Timeweb
 	// AUTO-CREATES for a network-less cluster (no networkRef/Selector/ID in

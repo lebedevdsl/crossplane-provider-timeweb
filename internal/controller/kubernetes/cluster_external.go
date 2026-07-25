@@ -83,6 +83,9 @@ type clusterExternal struct {
 	// (which would trip the at-most-one CEL rule on persist).
 	resolvedNetworkID string
 	resolvedProjectID *int64
+	// resolvedRouterID is the routerRef/routerID declaration resolved to the
+	// router UUID (feature 022); "" = nothing declared. Empty while deleting.
+	resolvedRouterID string
 }
 
 // Observe fetches the upstream cluster and reports existence + up-to-date.
@@ -157,9 +160,13 @@ func (e *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 		}
 	}
 
+	// Feature 022: router-integration row (zero extra reads for clusters
+	// that never declared a router).
+	integrationDrift := e.observeRouterIntegration(ctx, cr, id)
+
 	return managed.ExternalObservation{
 		ResourceExists:    true,
-		ResourceUpToDate:  isClusterUpToDate(cr.Spec.ForProvider, cr.Status.AtProvider, env.Cluster),
+		ResourceUpToDate:  isClusterUpToDate(cr.Spec.ForProvider, cr.Status.AtProvider, env.Cluster) && !integrationDrift,
 		ConnectionDetails: cd,
 	}, nil
 }
@@ -324,6 +331,12 @@ func (e *clusterExternal) Update(ctx context.Context, mg resource.Managed) (mana
 	// rejected. Done before the name/description PATCH so a version bump still
 	// applies when name/description are unchanged.
 	if _, err := e.reconcileVersion(ctx, cr, id, observed.K8sVersion); err != nil {
+		return managed.ExternalUpdate{}, err
+	}
+
+	// Feature 022: converge the router integration (integrate / move /
+	// detach per the declaration vs the recorded state).
+	if err := e.convergeRouterIntegration(ctx, cr, id); err != nil {
 		return managed.ExternalUpdate{}, err
 	}
 

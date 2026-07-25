@@ -114,6 +114,36 @@ func resolveClusterDeps(ctx context.Context, kube client.Client, cr *kubernetesv
 	return networkID, projectID, nil
 }
 
+// resolveClusterRouterDecl resolves the optional routerRef/routerID
+// declaration (feature 022) to the router's upstream UUID. Empty string =
+// nothing declared. Ready-gated: a referenced Router that is not yet usable
+// gates the reconcile (ErrTargetNotReady) — Update never sees a half-state,
+// and detach can only ever fire on an EXPLICITLY removed declaration.
+func resolveClusterRouterDecl(ctx context.Context, kube client.Client, cr *kubernetesv1alpha1.KubernetesCluster) (string, error) {
+	fp := cr.Spec.ForProvider
+	switch {
+	case fp.RouterID != nil && *fp.RouterID != "":
+		return *fp.RouterID, nil
+	case fp.RouterRef != nil:
+		target := &networkv1alpha1.Router{}
+		ns := cr.GetNamespace()
+		if err := kube.Get(ctx, types.NamespacedName{Namespace: ns, Name: fp.RouterRef.Name}, target); err != nil {
+			if kerrors.IsNotFound(err) {
+				return "", fmt.Errorf("%w: Router %q in namespace %q", ErrTargetNotFound, fp.RouterRef.Name, ns)
+			}
+			return "", fmt.Errorf("get Router %s/%s: %w", ns, fp.RouterRef.Name, err)
+		}
+		if target.Status.AtProvider.UpstreamID == nil || *target.Status.AtProvider.UpstreamID == "" {
+			return "", fmt.Errorf("%w: Router %q (status.atProvider.upstreamID is empty)", ErrTargetNotReady, fp.RouterRef.Name)
+		}
+		if target.GetCondition(xpv2.TypeReady).Status != corev1.ConditionTrue {
+			return "", fmt.Errorf("%w: Router %q (not Ready=True)", ErrTargetNotReady, fp.RouterRef.Name)
+		}
+		return *target.Status.AtProvider.UpstreamID, nil
+	}
+	return "", nil
+}
+
 // resolveNetworkRef returns the referenced Network's upstream VPC ID. An empty
 // status.atProvider.upstreamID means the VPC is not yet provisioned →
 // ErrTargetNotReady (gates cluster Create until the Network is Ready).

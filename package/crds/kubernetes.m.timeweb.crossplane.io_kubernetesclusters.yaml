@@ -353,6 +353,48 @@ spec:
                     - diskGB
                     - ramGB
                     type: object
+                  routerID:
+                    type: string
+                  routerRef:
+                    description: |-
+                      RouterRef / RouterID declare the Router this cluster integrates with
+                      (feature 022 — the panel's «Интеграция с роутерами», a day-2 op
+                      required for private worker pools). At most one MAY be set; declaring
+                      integrates after create and keeps the linkage converged, removing the
+                      declaration detaches, changing it moves. Readback is the router's
+                      parentServices (the cluster API echoes nothing).
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
                 required:
                 - k8sVersion
                 - location
@@ -362,6 +404,8 @@ spec:
                 x-kubernetes-validations:
                 - message: clusterNetworkCIDR cannot be added or removed after creation
                   rule: has(self.clusterNetworkCIDR) == has(oldSelf.clusterNetworkCIDR)
+                - message: at most one of routerRef or routerID may be set
+                  rule: '!(has(self.routerRef) && has(self.routerID))'
               managementPolicies:
                 default:
                 - '*'
@@ -460,6 +504,13 @@ spec:
                     type: integer
                   disk:
                     type: integer
+                  integratedRouterID:
+                    description: |-
+                      IntegratedRouterID records the router UUID the provider integrated
+                      this cluster with. Drives detach-on-removal: only a cluster whose
+                      declaration was recorded here is ever detached — panel-made
+                      integrations on undeclared clusters are never touched.
+                    type: string
                   k8sVersion:
                     description: K8sVersion is the observed cluster version (drives
                       the upgrade diff).
@@ -487,6 +538,12 @@ spec:
                       cluster lives in.
                     format: int64
                     type: integer
+                  routerIntegrated:
+                    description: |-
+                      RouterIntegrated mirrors whether the declared router's parent services
+                      contain this cluster (the only readback the integration op has). nil
+                      while no declaration/record exists or the router side is unreadable.
+                    type: boolean
                   sizing:
                     description: |-
                       Sizing is the human-readable master sizing summary backing the SIZING

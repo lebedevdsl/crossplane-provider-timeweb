@@ -103,6 +103,13 @@ const (
 	// holder's binding; NAT converges automatically once the address becomes
 	// bindable (feature 020).
 	ReasonNATIPUnavailable xpv2.ConditionReason = "NATIPUnavailable"
+	// ReasonRouterNATRequired (feature 022) marks the router-integration wait
+	// state: a KubernetesCluster declaring routerRef whose router does not
+	// yet attach/NAT the cluster network (integration fires once observed),
+	// and the nodepool-side classification of the upstream
+	// router_required_…/router_must_have_… family — the FIXABLE
+	// missing-integration cause (never recreate).
+	ReasonRouterNATRequired xpv2.ConditionReason = "RouterNATRequired"
 )
 
 // SyncedFalse returns a Synced=False condition with the supplied reason and

@@ -136,13 +136,28 @@ gateway**, while they stay unreachable from outside. The router's
 `status.atProvider.parentServices` names the cluster once bound; deleting the
 Router while it serves the cluster is refused.
 
-**Order matters — wire the router (with NAT) before creating the cluster.**
-Networks attached to an already-live router have repeatedly been rejected by
-the k8s service for private worker groups (`router_required_…` /
-`router_must_have_nat_ip…` chains even with NAT and DHCP demonstrably on — a
-platform-side inconsistency, see timeweb-infra#135). Until the provider grows
-explicit guards for this trap (planned, see `specs/_next-router-features.preface.md`),
-create the network + router + NAT wiring first and the cluster after.
+**Router integration is explicit — declare it** (`routerRef`, v0.11.0). The
+platform links a cluster to a router only through a dedicated day-2 operation
+(the panel's «Интеграция с роутерами») — it is never automatic, not even for
+clusters created on router-wired networks, and private worker pools fail
+without it (`router_required_for_worker_groups_without_public_ip` and the
+`router_must_have_…` family). Declare it on the cluster:
+
+```yaml
+# KubernetesCluster
+    networkRef: {name: app-net}
+    routerRef:  {name: edge}      # integrates after create; day-2, mutable
+```
+
+- The provider integrates once the cluster exists and the router is Ready and
+  NATs the cluster network (`Ready=False RouterNATRequired` names the wait
+  state until then — self-resolving as the router converges); it repairs
+  panel-side detaches, moves the integration when the ref changes, and
+  detaches when the ref is removed.
+- `status.atProvider.routerIntegrated` mirrors the linkage (read back through
+  the router's `parentServices`).
+- On a non-integrated cluster, a private nodepool's condition names this
+  exact remedy — **recreating the cluster is never required**.
 
 **Internal ranges** (`clusterNetworkCIDR`, v0.10.0): optionally declare
 distinct pod/service CIDRs per cluster (`podsNetwork` / `servicesNetwork`,

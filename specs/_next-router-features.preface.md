@@ -1,10 +1,14 @@
 # Next feature preface: router/k8s remaining traps (post-v0.10.0)
 
-> **Trimmed 2026-07-25 after v0.10.0 shipped**: staticRoutes (§3), multi-router
-> peering (§4), clusterNetworkCIDR (§5), NAT declarative release (§6) and the
-> x/text vuln (§7) are RELEASED in 021/v0.10.0 — see
-> `specs/021-router-peering-routes/`. What remains below is the probe-blocked
-> trap-guard work (§1–§2) and the ticket/probe backlog.
+> **Trimmed 2026-07-25 (2)**: v0.10.0 shipped §3–§7 (see
+> `specs/021-router-peering-routes/`); **v0.11.0 shipped the §1–§2 core** —
+> cluster↔router integration turned out to be an explicit day-2 op
+> (`virtual_router_id` on the cluster PATCH; feature 022,
+> `specs/022-cluster-router-integration/`): `routerRef` declaration,
+> integrate/move/detach convergence, wait-condition, fixable nodepool
+> classification. The "frozen linkage" model is DISPROVEN. Remaining below:
+> only the ticket backlog and any post-attach desync retest on non-integrated
+> paths (the integrated happy path is live-verified clean).
 
 Everything router-related from the timeweb-infra#132/#135 rollout that did NOT
 ship in v0.9.2 (which carries only the Part 1 bind-before-NAT bugfix). Source:
