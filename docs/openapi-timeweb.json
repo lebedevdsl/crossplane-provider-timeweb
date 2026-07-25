@@ -52260,8 +52260,20 @@
       },
       "NodeGroupUpdate": {
         "type": "object",
-        "description": "Тело PATCH-запроса группы нод (hand-patched: undocumented verb, panel-verified 2026-07-10). Провайдер отправляет только name/labels/taints.",
+        "description": "Тело PATCH-запроса группы нод (hand-patched: undocumented verb, panel-verified 2026-07-10; autoscaling-поля live-verified 2026-07-26). Провайдер отправляет либо name/labels/taints, либо autoscaling-тройку — никогда вместе.",
         "properties": {
+          "is_autoscaling": {
+            "type": "boolean",
+            "description": "HAND-PATCH (live-verified 2026-07-26): day-2 переключение автоскейлинга; false обнуляет min/max"
+          },
+          "min_size": {
+            "type": "integer",
+            "description": "HAND-PATCH: нижняя граница автоскейлера (с is_autoscaling: true); отсутствие поля — не трогать (без nullable, чтобы omitempty не слал null в metadata-PATCH)"
+          },
+          "max_size": {
+            "type": "integer",
+            "description": "HAND-PATCH: верхняя граница автоскейлера (с is_autoscaling: true); отсутствие поля — не трогать"
+          },
           "name": {
             "type": "string",
             "description": "Название группы"
