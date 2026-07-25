@@ -50,11 +50,13 @@ type nodeGroupTaint struct {
 }
 
 type nodeGroupBody struct {
-	ID        int              `json:"id"`
-	PresetID  int              `json:"preset_id"`
-	NodeCount int              `json:"node_count"`
-	Labels    []nodeGroupKV    `json:"labels"`
-	Taints    []nodeGroupTaint `json:"taints"`
+	ID             int              `json:"id"`
+	Name           string           `json:"name"`
+	PresetID       int              `json:"preset_id"`
+	ConfiguratorID int              `json:"configurator_id"`
+	NodeCount      int              `json:"node_count"`
+	Labels         []nodeGroupKV    `json:"labels"`
+	Taints         []nodeGroupTaint `json:"taints"`
 }
 
 type nodeGroupEnvelope struct {
@@ -137,6 +139,14 @@ func (e *nodepoolExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 
 	groupID, err := shared.DecodeID(meta.GetExternalName(cr))
 	if err != nil {
+		// Identity-stomp defense (feature 023): an empty/garbage external-name
+		// on a resource whose status still remembers a live group means the
+		// provider-owned annotation was externally cleared/mangled (GitOps
+		// rendering it, incident 2026-07-25). Re-creating would duplicate —
+		// park with the conflict condition instead.
+		if remembered := shared.DerefString(cr.Status.AtProvider.UpstreamID); remembered != "" {
+			return e.parkExternalNameConflict(cr, meta.GetExternalName(cr), remembered), nil
+		}
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 	clusterID, err := e.clusterID(cr)
@@ -152,6 +162,14 @@ func (e *nodepoolExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 	defer func() { _ = resp.Body.Close() }()
 	if err := timeweb.Classify(resp); err != nil {
 		if errors.Is(err, timeweb.ErrNotFound) {
+			// Identity-stomp defense (feature 023): the external-name id is
+			// gone upstream, but status remembers a DIFFERENT group — the
+			// annotation was reverted to a stale pin (Argo selfHeal loop
+			// minted 3 duplicate groups live). Same-id 404 (genuine
+			// out-of-band deletion) keeps the normal recreate below.
+			if remembered := shared.DerefString(cr.Status.AtProvider.UpstreamID); remembered != "" && remembered != shared.EncodeID(groupID) {
+				return e.parkExternalNameConflict(cr, meta.GetExternalName(cr), remembered), nil
+			}
 			return managed.ExternalObservation{ResourceExists: false}, nil
 		}
 		return managed.ExternalObservation{}, err
@@ -182,6 +200,59 @@ func (e *nodepoolExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 		ResourceExists:   true,
 		ResourceUpToDate: upToDate,
 	}, nil
+}
+
+// findGroupsByIdentity lists the parent cluster's node groups and returns
+// those matching the FULL declared identity: name plus the resolved sizing
+// (preset id for preset-declared pools, configurator id for resources-
+// declared ones). Name alone is NOT unique — the 2026-07-25 incident held
+// three same-named groups (the cluster guard's T032 lesson).
+func (e *nodepoolExternal) findGroupsByIdentity(ctx context.Context, clusterID int, name string, presetID, configuratorID int) ([]nodeGroupBody, error) {
+	resp, err := e.tw.GetClusterNodeGroups(ctx, clusterID)
+	if err != nil {
+		return nil, timeweb.ClassifyNetworkError(err)
+	}
+	// Classify reads the body — must happen before Close (T029 idiom).
+	classifyErr := timeweb.Classify(resp)
+	if classifyErr != nil {
+		_ = resp.Body.Close()
+		return nil, classifyErr
+	}
+	var env struct {
+		NodeGroups []nodeGroupBody `json:"node_groups"`
+	}
+	decodeErr := timeweb.DecodeBody(resp.Body, &env)
+	_ = resp.Body.Close()
+	if decodeErr != nil {
+		return nil, fmt.Errorf("kubernetes/nodepool: node-groups list: %w", decodeErr)
+	}
+	var matches []nodeGroupBody
+	for _, g := range env.NodeGroups {
+		if g.Name != name {
+			continue
+		}
+		if presetID != 0 && g.PresetID != presetID {
+			continue
+		}
+		if configuratorID != 0 && g.ConfiguratorID != 0 && g.ConfiguratorID != configuratorID {
+			continue
+		}
+		matches = append(matches, g)
+	}
+	return matches, nil
+}
+
+// parkExternalNameConflict surfaces the stomped-identity contradiction and
+// parks the resource (exists+upToDate — the zone-echo idiom: no create, no
+// churn; self-clears once the external-name is restored or the status memory
+// is deliberately cleared).
+func (e *nodepoolExternal) parkExternalNameConflict(cr *kubernetesv1alpha1.KubernetesClusterNodepool, extName, remembered string) managed.ExternalObservation {
+	cond := shared.ReadyFalse(shared.ReasonExternalNameConflict, fmt.Sprintf(
+		"external-name %q does not match the group this resource created (status.atProvider.upstreamID=%s): the crossplane.io/external-name annotation is provider-owned and appears externally overwritten (GitOps pin?). Restore external-name to %s (and stop rendering the annotation in git), or clear status.atProvider.upstreamID to deliberately create a NEW group. Refusing to create a duplicate",
+		extName, remembered, remembered))
+	shared.RecordConditionChange(e.recorder, cr, cond)
+	cr.Status.SetConditions(cond)
+	return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true}
 }
 
 // Create resolves the worker preset and creates the upstream worker group. The
@@ -230,6 +301,37 @@ func (e *nodepoolExternal) Create(ctx context.Context, mg resource.Managed) (man
 		shared.RecordConditionChange(e.recorder, cr, cond)
 		cr.Status.SetConditions(cond)
 		return managed.ExternalCreation{}, err
+	}
+
+	// Error-yet-created / lost-result adoption guard (feature 023, mirrors
+	// the cluster's 006 D-2 guard): when a previous create ended ambiguously,
+	// list the parent cluster's groups and match the FULL declared identity
+	// before POSTing — a blind retry mints a duplicate (Constitution II).
+	if meta.ExternalCreateIncomplete(cr) || cr.GetAnnotations()[meta.AnnotationKeyExternalCreateFailed] != "" {
+		matches, err := e.findGroupsByIdentity(ctx, clusterID, cr.Spec.ForProvider.Name, presetID, configuratorID)
+		if err != nil {
+			return managed.ExternalCreation{}, err
+		}
+		switch len(matches) {
+		case 0:
+			// The earlier failure really failed — proceed to POST.
+		case 1:
+			// Adopt: record the identity; the next Observe takes over.
+			meta.SetExternalName(cr, shared.EncodeID(matches[0].ID))
+			cid := shared.EncodeID(clusterID)
+			cr.Status.AtProvider.ClusterID = &cid
+			return managed.ExternalCreation{}, nil
+		default:
+			ids := make([]string, 0, len(matches))
+			for _, m := range matches {
+				ids = append(ids, shared.EncodeID(m.ID))
+			}
+			msg := fmt.Sprintf("previous create ended ambiguously and %d upstream groups match the declared identity (%s): adopt ONE explicitly by setting the crossplane.io/external-name annotation and remove the extras — refusing to guess or create another", len(matches), strings.Join(ids, ", "))
+			cond := shared.SyncedFalse(shared.ReasonAdoptionAmbiguous, msg)
+			shared.RecordConditionChange(e.recorder, cr, cond)
+			cr.Status.SetConditions(cond)
+			return managed.ExternalCreation{}, fmt.Errorf("kubernetes/nodepool: %s", msg)
+		}
 	}
 
 	body := buildCreateNodeGroupBody(cr, presetID, configuratorID)

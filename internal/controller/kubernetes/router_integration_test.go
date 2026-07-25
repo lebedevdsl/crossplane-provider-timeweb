@@ -23,9 +23,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	corev1 "k8s.io/api/core/v1"
 
+	kubernetesv1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/kubernetes/v1alpha1"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb"
 	"github.com/lebedevdsl/crossplane-provider-timeweb/internal/controller/shared"
 )
@@ -249,6 +251,148 @@ func TestNodepoolRouterIntegrationClassification(t *testing.T) {
 		_, err := nodepoolE(fake).Create(ctx, cr)
 		if err == nil || strings.Contains(err.Error(), "routerRef") {
 			t.Errorf("unrelated 400 rewritten: %v", err)
+		}
+	})
+}
+
+// --- Feature 023: duplicate-create defenses ----------------------------------
+
+const canonical404 = `{"status_code":404,"error_code":"not_found","message":"gone","response_id":"r"}`
+
+func TestNodepoolStompDefense(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("DifferentID404_Parks", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusNotFound, canonical404), nil)
+		cr := newNodepool(true, 2) // external-name 42
+		remembered := "119639"
+		cr.Status.AtProvider.UpstreamID = &remembered
+		obs, err := nodepoolE(fake).Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if !obs.ResourceExists || !obs.ResourceUpToDate {
+			t.Error("stomp contradiction must PARK (exists+upToDate), not trigger create")
+		}
+		c := cr.Status.GetCondition(xpv2.TypeReady)
+		if c.Reason != shared.ReasonExternalNameConflict {
+			t.Fatalf("Ready reason = %s, want ExternalNameConflict", c.Reason)
+		}
+		for _, want := range []string{"42", "119639", "provider-owned"} {
+			if !strings.Contains(c.Message, want) {
+				t.Errorf("message %q missing %q", c.Message, want)
+			}
+		}
+	})
+
+	t.Run("SameID404_RecreatePathIntact", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusNotFound, canonical404), nil)
+		cr := newNodepool(true, 2)
+		remembered := "42" // same as external-name — genuine out-of-band deletion
+		cr.Status.AtProvider.UpstreamID = &remembered
+		obs, err := nodepoolE(fake).Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if obs.ResourceExists {
+			t.Error("same-id 404 must report not-exists (legitimate recreate)")
+		}
+	})
+
+	t.Run("EmptyExternalNameWithMemory_Parks", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		cr := newNodepool(false, 2) // no external-name
+		remembered := "119639"
+		cr.Status.AtProvider.UpstreamID = &remembered
+		obs, err := nodepoolE(fake).Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if !obs.ResourceExists || !obs.ResourceUpToDate {
+			t.Error("cleared external-name with status memory must park")
+		}
+		if c := cr.Status.GetCondition(xpv2.TypeReady); c.Reason != shared.ReasonExternalNameConflict {
+			t.Errorf("Ready reason = %s, want ExternalNameConflict", c.Reason)
+		}
+	})
+}
+
+func TestNodepoolAdoptionGuard(t *testing.T) {
+	ctx := context.Background()
+	ambiguous := func(nodeCount int) *kubernetesv1alpha1.KubernetesClusterNodepool {
+		cr := newNodepool(false, nodeCount)
+		cr.SetAnnotations(map[string]string{"crossplane.io/external-create-failed": "2026-07-25T17:41:46Z"})
+		return cr
+	}
+
+	t.Run("SingleMatch_AdoptsWithoutPOST", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
+		fake.GetClusterNodeGroupsReturns(httpResp(http.StatusOK,
+			`{"node_groups":[{"id":119639,"name":"workers","preset_id":9,"node_count":2}]}`), nil)
+		cr := ambiguous(2)
+		if _, err := nodepoolE(fake).Create(ctx, cr); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if fake.CreateClusterNodeGroupCallCount() != 0 {
+			t.Error("POST issued despite an adoptable match — duplicate minted")
+		}
+		if meta.GetExternalName(cr) != "119639" {
+			t.Errorf("external-name = %q, want adopted 119639", meta.GetExternalName(cr))
+		}
+	})
+
+	t.Run("ZeroMatch_CreatesOnce", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
+		fake.GetClusterNodeGroupsReturns(httpResp(http.StatusOK, `{"node_groups":[]}`), nil)
+		fake.CreateClusterNodeGroupReturns(httpResp(http.StatusCreated, nodeGroupJSON), nil)
+		if _, err := nodepoolE(fake).Create(ctx, ambiguous(2)); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if fake.CreateClusterNodeGroupCallCount() != 1 {
+			t.Errorf("POST count = %d, want 1", fake.CreateClusterNodeGroupCallCount())
+		}
+	})
+
+	t.Run("MultiMatch_RefusesToGuess", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
+		fake.GetClusterNodeGroupsReturns(httpResp(http.StatusOK,
+			`{"node_groups":[{"id":119639,"name":"workers","preset_id":9,"node_count":2},{"id":119641,"name":"workers","preset_id":9,"node_count":2}]}`), nil)
+		cr := ambiguous(2)
+		_, err := nodepoolE(fake).Create(ctx, cr)
+		if err == nil {
+			t.Fatal("Create returned nil, want refuse-to-guess error")
+		}
+		if fake.CreateClusterNodeGroupCallCount() != 0 {
+			t.Error("POST issued despite ambiguity")
+		}
+		c := cr.Status.GetCondition(xpv2.TypeSynced)
+		if c.Reason != shared.ReasonAdoptionAmbiguous {
+			t.Fatalf("Synced reason = %s, want AdoptionAmbiguous", c.Reason)
+		}
+		for _, want := range []string{"119639", "119641", "external-name"} {
+			if !strings.Contains(c.Message, want) {
+				t.Errorf("message %q missing %q", c.Message, want)
+			}
+		}
+	})
+
+	t.Run("CleanCreate_NoListRead", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterReturns(httpResp(http.StatusOK, clusterActiveJSON), nil)
+		fake.CreateClusterNodeGroupReturns(httpResp(http.StatusCreated, nodeGroupJSON), nil)
+		if _, err := nodepoolE(fake).Create(ctx, newNodepool(false, 2)); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if fake.GetClusterNodeGroupsCallCount() != 0 {
+			t.Error("group list read on a clean create — healthy path must be unchanged")
+		}
+		if fake.CreateClusterNodeGroupCallCount() != 1 {
+			t.Errorf("POST count = %d, want 1", fake.CreateClusterNodeGroupCallCount())
 		}
 	})
 }

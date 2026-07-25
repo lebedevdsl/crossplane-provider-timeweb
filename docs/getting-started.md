@@ -187,6 +187,44 @@ Common conditions:
 
 ---
 
+## GitOps hygiene — `crossplane.io/external-name` is provider-owned
+
+The `crossplane.io/external-name` annotation records the upstream identity of
+a resource and is written by the provider. **Never render it from git.** A
+GitOps tool that keeps re-applying a pinned (or stale) value fights the
+provider: a stale id observes as "resource missing" and each sync can mint a
+fresh upstream duplicate (live incident 2026-07-25: three billable node
+groups from one manifest).
+
+ArgoCD users: exclude the annotation from diffing/self-heal:
+
+```yaml
+# Application spec
+  ignoreDifferences:
+    - group: "*"
+      kind: "*"
+      jsonPointers:
+        - /metadata/annotations/crossplane.io~1external-name
+```
+
+The provider also defends itself (v0.11.1): when the external-name points at
+a missing resource while the resource's own status remembers a different live
+identity, it refuses to create and reports
+`Ready=False, reason=ExternalNameConflict` naming both ids — restore the
+annotation (and remove it from git), or clear
+`status.atProvider.upstreamID` to deliberately create anew.
+
+### Runbook: "cannot determine creation result"
+
+If the provider is restarted mid-create, crossplane-runtime wedges the
+resource with `cannot determine creation result - remove the
+crossplane.io/external-create-pending annotation if it is safe to proceed`.
+Recovery: check upstream whether the object was actually created — if yes,
+set `crossplane.io/external-name` to its id; then remove the
+`external-create-pending` annotation. Since v0.11.1 the retried create first
+looks for an existing match and adopts it (or refuses on ambiguity), so
+clearing the marker cannot mint duplicates.
+
 ## Next steps
 
 - **Server (VM)**: see [`examples/server.yaml`](../examples/server.yaml) and
