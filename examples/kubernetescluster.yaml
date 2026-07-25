@@ -36,6 +36,11 @@ spec:
     clusterNetworkCIDR:
       podsNetwork: 10.100.0.0/16
       servicesNetwork: 10.101.0.0/16
+    # Optional (v0.11.0): integrate the cluster with a Router — REQUIRED for
+    # private (publicIP: false) worker pools. Day-2 and mutable: add to
+    # integrate, change to move, remove to detach.
+    # routerRef:
+    #   name: edge
     # REQUIRED — region code. Immutable post-create.
     # API codes: ru-1, ru-2, ru-3, nl-1, de-1, kz-1, us-4, pl-1
     location: ru-3
