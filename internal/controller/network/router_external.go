@@ -84,6 +84,9 @@ type routerExternal struct {
 	// MR is being deleted (Connect skips resolution then).
 	resolvedNetworks  []resolvedAttachment
 	resolvedProjectID *int64
+	// resolvedRoutes are the declared static routes with `via` references
+	// collapsed to literal nexthops (feature 021). Empty while deleting.
+	resolvedRoutes []resolvedRoute
 }
 
 // Upstream envelopes (underscore forms, probe-verified — the router surface
@@ -184,6 +187,20 @@ func (e *routerExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 		cr.Status.SetConditions(cond)
 	}
 
+	// Static routes (feature 021): mirror the upstream routing table and fold
+	// its subnet-keyed diff into the up-to-date verdict.
+	routes, err := e.getStaticRoutes(ctx, id)
+	if err != nil {
+		return managed.ExternalObservation{}, err
+	}
+	statusRoutes := make([]networkv1alpha1.RouterStaticRouteStatus, 0, len(routes))
+	for _, r := range routes {
+		statusRoutes = append(statusRoutes, networkv1alpha1.RouterStaticRouteStatus{
+			ID: r.Id, Subnet: r.Subnet, Nexthop: r.Nexthop,
+		})
+	}
+	cr.Status.AtProvider.StaticRoutes = statusRoutes
+
 	upToDate, err := e.isRouterUpToDate(ctx, cr, router, nets, blockedNAT)
 	if err != nil {
 		// Map resolver errors (preset-not-found, etc.) to typed Synced conditions
@@ -192,6 +209,9 @@ func (e *routerExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 		shared.RecordConditionChange(e.recorder, cr, cond)
 		cr.Status.SetConditions(cond)
 		return managed.ExternalObservation{}, err
+	}
+	if upToDate && !staticRoutesUpToDate(e.resolvedRoutes, routes) {
+		upToDate = false
 	}
 	return managed.ExternalObservation{
 		ResourceExists:   true,
@@ -508,6 +528,13 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 				return managed.ExternalUpdate{}, classifyErr
 			}
 			ops++
+			// NAT moved off observedNAT (feature 021): release the old
+			// address as part of the same transition.
+			if observedNAT != "" && ops < maxRouterMutationsPerReconcile {
+				if e.releaseNATIP(ctx, cr, id, observedNAT) {
+					ops++
+				}
+			}
 		case a.NATIP == "" && observedNAT != "":
 			if ops >= maxRouterMutationsPerReconcile {
 				return managed.ExternalUpdate{}, nil // paced
@@ -524,7 +551,71 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 				return managed.ExternalUpdate{}, classifyErr
 			}
 			ops++
+			// NAT removed (feature 021): release the address as part of the
+			// same transition (declarative reuse — no manual unbind).
+			if ops < maxRouterMutationsPerReconcile {
+				if e.releaseNATIP(ctx, cr, id, observedNAT) {
+					ops++
+				}
+			}
 		}
+	}
+
+	// Static-route convergence (feature 021): subnet-keyed set semantics.
+	// Delete undeclared and changed-nexthop routes first, then create missing
+	// (a changed nexthop is a replace — the upstream has no update op). All
+	// under the same pacing budget as the attachment mutations above.
+	routes, err := e.getStaticRoutes(ctx, id)
+	if err != nil {
+		return managed.ExternalUpdate{}, err
+	}
+	declaredRoutes := make(map[string]string, len(e.resolvedRoutes))
+	for _, r := range e.resolvedRoutes {
+		declaredRoutes[r.Subnet] = r.Nexthop
+	}
+	observedRoutes := make(map[string]string, len(routes))
+	for _, r := range routes {
+		observedRoutes[r.Subnet] = r.Nexthop
+	}
+	for _, r := range routes {
+		if nh, ok := declaredRoutes[r.Subnet]; ok && nh == r.Nexthop {
+			continue
+		}
+		if ops >= maxRouterMutationsPerReconcile {
+			return managed.ExternalUpdate{}, nil // paced
+		}
+		resp, err := e.tw.DeleteStaticRoute(ctx, id, r.Id)
+		if err != nil {
+			return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
+		}
+		// T029: Classify reads the body — must happen before Close.
+		classifyErr := timeweb.Classify(resp)
+		_ = resp.Body.Close()
+		if classifyErr != nil {
+			return managed.ExternalUpdate{}, classifyErr
+		}
+		ops++
+		delete(observedRoutes, r.Subnet)
+	}
+	for _, d := range e.resolvedRoutes {
+		if nh, ok := observedRoutes[d.Subnet]; ok && nh == d.Nexthop {
+			continue
+		}
+		if ops >= maxRouterMutationsPerReconcile {
+			return managed.ExternalUpdate{}, nil // paced
+		}
+		resp, err := e.tw.PostStaticRoute(ctx, id,
+			twgen.PostStaticRouteJSONRequestBody{Subnet: d.Subnet, Nexthop: d.Nexthop})
+		if err != nil {
+			return managed.ExternalUpdate{}, timeweb.ClassifyNetworkError(err)
+		}
+		// T029: Classify reads the body — must happen before Close.
+		classifyErr := timeweb.Classify(resp)
+		_ = resp.Body.Close()
+		if classifyErr != nil {
+			return managed.ExternalUpdate{}, classifyErr
+		}
+		ops++
 	}
 
 	return managed.ExternalUpdate{}, nil
@@ -615,6 +706,50 @@ func (e *routerExternal) getRouter(ctx context.Context, id string) (twgen.Router
 		return twgen.RouterOut{}, nil, fmt.Errorf("network/router: %w", err)
 	}
 	return env.Router, netsEnv.RouterNetworks, nil
+}
+
+// getStaticRoutes fetches the router's upstream routing table (feature 021).
+// The known-unreliable `…/static-routes/available` listing is deliberately
+// never consulted.
+func (e *routerExternal) getStaticRoutes(ctx context.Context, id string) ([]twgen.StaticRouteOut, error) {
+	resp, err := e.tw.GetStaticRoutes(ctx, id)
+	if err != nil {
+		return nil, timeweb.ClassifyNetworkError(err)
+	}
+	// T029: Classify reads the body — must happen before Close.
+	classifyErr := timeweb.Classify(resp)
+	if classifyErr != nil {
+		_ = resp.Body.Close()
+		return nil, classifyErr
+	}
+	var env struct {
+		StaticRoutes []twgen.StaticRouteOut `json:"static_routes"`
+	}
+	decodeErr := timeweb.DecodeBody(resp.Body, &env)
+	_ = resp.Body.Close()
+	if decodeErr != nil {
+		return nil, fmt.Errorf("network/router: static-routes: %w", decodeErr)
+	}
+	return env.StaticRoutes, nil
+}
+
+// staticRoutesUpToDate diffs the declared route set (subnet-keyed) against
+// the observation. Same-subnet nexthop change is drift (converged by
+// replace — the upstream has no route update op).
+func staticRoutesUpToDate(declared []resolvedRoute, observed []twgen.StaticRouteOut) bool {
+	if len(declared) != len(observed) {
+		return false
+	}
+	obs := make(map[string]string, len(observed))
+	for _, r := range observed {
+		obs[r.Subnet] = r.Nexthop
+	}
+	for _, d := range declared {
+		if nh, ok := obs[d.Subnet]; !ok || nh != d.Nexthop {
+			return false
+		}
+	}
+	return true
 }
 
 // findRoutersByName lists the account's upstream routers and returns the
@@ -896,6 +1031,8 @@ const (
 	reasonAttachedNetwork = "AttachedNetwork"
 	reasonDetachedNetwork = "DetachedNetwork"
 	reasonBoundNATIP      = "BoundNATFloatingIP"
+	reasonReleasedNATIP   = "ReleasedNATFloatingIP"
+	reasonRetainedNATIP   = "RetainedNATFloatingIP"
 )
 
 // --- NAT floating-IP ownership + bind (feature 020, Part 1) -----------------
@@ -1019,6 +1156,95 @@ func (e *routerExternal) blockedNATRows(ctx context.Context, r twgen.RouterOut, 
 		blocked[a.NetworkID] = msg
 	}
 	return blocked, nil
+}
+
+// getDnatRules fetches the router's DNAT rules — read-only, used ONLY as the
+// release guard (feature 021): the provider does not manage DNAT, but must
+// not unbind an address a panel-managed rule forwards to.
+func (e *routerExternal) getDnatRules(ctx context.Context, id string) ([]twgen.DnatRuleOut, error) {
+	resp, err := e.tw.GetDnat(ctx, id)
+	if err != nil {
+		return nil, timeweb.ClassifyNetworkError(err)
+	}
+	// T029: Classify reads the body — must happen before Close.
+	classifyErr := timeweb.Classify(resp)
+	if classifyErr != nil {
+		_ = resp.Body.Close()
+		return nil, classifyErr
+	}
+	var env struct {
+		DnatRules []twgen.DnatRuleOut `json:"dnat_rules"`
+	}
+	decodeErr := timeweb.DecodeBody(resp.Body, &env)
+	_ = resp.Body.Close()
+	if decodeErr != nil {
+		return nil, fmt.Errorf("network/router: dnat-rules: %w", decodeErr)
+	}
+	return env.DnatRules, nil
+}
+
+// releaseNATIP is the second half of a NAT disable/move transition (feature
+// 021): unbind the address the provider just stopped NATing — the symmetric
+// counterpart of bindNATIP. Strictly transition-scoped: the provider never
+// sweeps idle addresses it merely finds on the router (panel-parked and
+// adopted addresses stay untouched). Skipped when the address is still
+// declared on another attachment, when a DNAT rule forwards it (guard read),
+// or when it is not (or no longer) bound to this router. Best-effort by
+// contract: failures emit a Warning event and never fail the pass — after the
+// transition the address is indistinguishable from a panel-parked one, so
+// there is no retry. Returns true when an unbind was issued (consumes ops).
+func (e *routerExternal) releaseNATIP(ctx context.Context, cr *networkv1alpha1.Router, routerID, addr string) bool {
+	for _, a := range e.resolvedNetworks {
+		if a.NATIP == addr {
+			return false // still declared intent on this router
+		}
+	}
+	rules, err := e.getDnatRules(ctx, routerID)
+	if err != nil {
+		e.emitReleaseEvent(cr, corev1.EventTypeWarning, reasonRetainedNATIP,
+			fmt.Sprintf("floating IP %s left bound: DNAT guard read failed (%v)", addr, err))
+		return false
+	}
+	for _, r := range rules {
+		if r.PublicIp == addr {
+			e.emitReleaseEvent(cr, corev1.EventTypeNormal, reasonRetainedNATIP,
+				fmt.Sprintf("floating IP %s left bound: a DNAT rule forwards it", addr))
+			return false
+		}
+	}
+	fipID, state, _, err := e.natIPBindability(ctx, routerID, addr)
+	if err != nil {
+		e.emitReleaseEvent(cr, corev1.EventTypeWarning, reasonRetainedNATIP,
+			fmt.Sprintf("floating IP %s left bound: lookup failed (%v)", addr, err))
+		return false
+	}
+	if state != natIPBoundToRouter {
+		return false // already gone, or held by someone else — nothing to release
+	}
+	resp, err := e.tw.UnbindFloatingIp(ctx, fipID)
+	if err != nil {
+		e.emitReleaseEvent(cr, corev1.EventTypeWarning, reasonRetainedNATIP,
+			fmt.Sprintf("floating IP %s left bound: unbind failed (%v)", addr, timeweb.ClassifyNetworkError(err)))
+		return false
+	}
+	// T029: Classify reads the body — must happen before Close.
+	classifyErr := timeweb.Classify(resp)
+	_ = resp.Body.Close()
+	if classifyErr != nil {
+		e.emitReleaseEvent(cr, corev1.EventTypeWarning, reasonRetainedNATIP,
+			fmt.Sprintf("floating IP %s left bound: unbind failed (%v)", addr, classifyErr))
+		return false
+	}
+	e.emitReleaseEvent(cr, corev1.EventTypeNormal, reasonReleasedNATIP,
+		fmt.Sprintf("released floating IP %s (NAT removed; address unbound from router)", addr))
+	return true
+}
+
+func (e *routerExternal) emitReleaseEvent(cr *networkv1alpha1.Router, eventType, reason, msg string) {
+	if e.recorder == nil {
+		return
+	}
+	e.recorder.Event(cr, eventType, reason, msg)
 }
 
 // bindNATIP binds the floating IP (by upstream uuid) to the router so a

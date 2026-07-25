@@ -152,6 +152,58 @@ type RouterParameters struct {
 	ProjectRef *xpv2.Reference `json:"projectRef,omitempty"`
 	// +optional
 	ProjectID *int64 `json:"projectID,omitempty"`
+
+	// StaticRoutes declares the router's static routes (feature 021 — the
+	// declarative form of the panel's routing table; the transit-network
+	// peering mechanism). Set semantics keyed by subnet: added entries are
+	// created, removed entries are deleted, an entry whose nexthop changed is
+	// replaced (the upstream has no update op), and out-of-band deletions are
+	// re-created (single-writer). Upstream nexthop rule: a neighbor router's
+	// gateway in a COMMON network, or a cloud server in one of this router's
+	// own networks (managed-k8s nodes do not qualify).
+	//
+	// MaxItems bounds the list so the per-entry CEL rules and the unique-
+	// subnet rule stay within the apiserver's CEL cost budget, and so route
+	// sets converge within the per-reconcile mutation pacing.
+	// +optional
+	// +kubebuilder:validation:MaxItems=32
+	// +kubebuilder:validation:XValidation:rule="self.all(i, self.filter(j, j.subnet == i.subnet).size() == 1)",message="staticRoutes subnets must be unique (subnet is the route identity)"
+	StaticRoutes []RouterStaticRoute `json:"staticRoutes,omitempty"`
+}
+
+// RouterStaticRoute is one declared static route. Exactly one nexthop form:
+// a literal address, or a by-reference pair resolved from the neighbor
+// router's platform-assigned gateway (unknowable in git at authoring time).
+// +kubebuilder:validation:XValidation:rule="(has(self.nexthop) ? 1 : 0) + (has(self.via) ? 1 : 0) == 1",message="exactly one of nexthop or via must be set"
+type RouterStaticRoute struct {
+	// Subnet is the destination network in CIDR form. Route identity: two
+	// entries may not share a subnet. MaxLength bounds the CEL cost of the
+	// unique-subnet rule (the apiserver estimates unbounded strings at
+	// worst-case cost and rejects the whole CRD — live-hit 2026-07-25).
+	// +kubebuilder:validation:MaxLength=18
+	// +kubebuilder:validation:Pattern=`^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$`
+	Subnet string `json:"subnet"`
+
+	// Nexthop is the literal IPv4 next-hop address.
+	// +optional
+	// +kubebuilder:validation:MaxLength=15
+	// +kubebuilder:validation:Pattern=`^([0-9]{1,3}\.){3}[0-9]{1,3}$`
+	Nexthop *string `json:"nexthop,omitempty"`
+
+	// Via resolves the nexthop from a neighbor Router's observed gateway in
+	// a common network: the referenced Router must be Ready and attached to
+	// the referenced Network; its gateway there becomes the nexthop.
+	// +optional
+	Via *RouterStaticRouteVia `json:"via,omitempty"`
+}
+
+// RouterStaticRouteVia names the neighbor router and the common network the
+// nexthop gateway is read from.
+type RouterStaticRouteVia struct {
+	// RouterRef references the neighbor Router MR (same namespace).
+	RouterRef xpv2.Reference `json:"routerRef"`
+	// NetworkRef references the common Network MR both routers attach.
+	NetworkRef xpv2.Reference `json:"networkRef"`
 }
 
 // RouterNetworkStatus mirrors one attached network as the dashboard shows it.
@@ -182,6 +234,16 @@ type RouterIPStatus struct {
 	// NATNetwork is the id of the network this address NATs, if any.
 	// +optional
 	NATNetwork *string `json:"natNetwork,omitempty"`
+}
+
+// RouterStaticRouteStatus is one upstream static route.
+type RouterStaticRouteStatus struct {
+	// ID is the upstream route id.
+	ID string `json:"id"`
+	// Subnet is the destination CIDR.
+	Subnet string `json:"subnet"`
+	// Nexthop is the effective next-hop address.
+	Nexthop string `json:"nexthop"`
 }
 
 // RouterParentService is an upstream service bound to this router (e.g. a
@@ -222,6 +284,10 @@ type RouterObservation struct {
 	// non-empty list blocks deletion (FR-012).
 	// +optional
 	ParentServices []RouterParentService `json:"parentServices,omitempty"`
+
+	// StaticRoutes mirrors the upstream routing table (feature 021).
+	// +optional
+	StaticRoutes []RouterStaticRouteStatus `json:"staticRoutes,omitempty"`
 
 	// ResolvedProjectID is the project the router landed in.
 	// +optional

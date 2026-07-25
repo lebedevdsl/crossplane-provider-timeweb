@@ -37,6 +37,7 @@ type KubernetesResources struct {
 // KubernetesClusterParameters is the operator-settable surface for the
 // managed control plane. See spec.md FR-004/FR-005 and
 // contracts/kubernetescluster-v1alpha1.md for the authoritative shape.
+// +kubebuilder:validation:XValidation:rule="has(self.clusterNetworkCIDR) == has(oldSelf.clusterNetworkCIDR)",message="clusterNetworkCIDR cannot be added or removed after creation"
 type KubernetesClusterParameters struct {
 	// Name as it appears in the Timeweb dashboard. Mutable (PATCH).
 	// +kubebuilder:validation:MinLength=1
@@ -54,6 +55,16 @@ type KubernetesClusterParameters struct {
 	// +kubebuilder:validation:Enum=kuberouter;calico;flannel;cilium
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="networkDriver is immutable"
 	NetworkDriver string `json:"networkDriver"`
+
+	// ClusterNetworkCIDR sets the cluster's internal pod/service ranges
+	// (feature 021 — distinct per-cluster ranges make cross-cluster
+	// debugging unambiguous). Create-only upstream: the whole block is
+	// immutable post-create and cannot be added or removed later. Omitted ⇒
+	// platform defaults. The upstream does not echo the ranges back, so
+	// there is no status mirror — the declaration is the record.
+	// +optional
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="clusterNetworkCIDR is immutable"
+	ClusterNetworkCIDR *ClusterNetworkCIDR `json:"clusterNetworkCIDR,omitempty"`
 
 	// Location is the Timeweb region code the cluster is placed in. Required
 	// and immutable post-create. Valid values: ru-1 (St. Petersburg), ru-2
@@ -117,6 +128,19 @@ type KubernetesClusterParameters struct {
 	ProjectID *int64 `json:"projectID,omitempty"`
 }
 
+// ClusterNetworkCIDR is the create-only pods/services range pair. Upstream
+// constraints: subnets must fall in 10.0.0.0/8, 192.168.0.0/16 or
+// 172.16.0.0/12; minimum size /28 (upstream-validated — the schema only
+// enforces CIDR shape).
+type ClusterNetworkCIDR struct {
+	// PodsNetwork is the pod address range (CIDR).
+	// +kubebuilder:validation:Pattern=`^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$`
+	PodsNetwork string `json:"podsNetwork"`
+	// ServicesNetwork is the service address range (CIDR).
+	// +kubebuilder:validation:Pattern=`^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$`
+	ServicesNetwork string `json:"servicesNetwork"`
+}
+
 // KubernetesClusterObservation is the observed state. Populated by Observe.
 type KubernetesClusterObservation struct {
 	// UpstreamID is the Timeweb cluster id (stored verbatim as external-name).
@@ -144,6 +168,12 @@ type KubernetesClusterObservation struct {
 	// attached to (resolved from networkRef/Selector/ID).
 	// +optional
 	ResolvedNetworkID *string `json:"resolvedNetworkID,omitempty"`
+
+	// ClusterNetworkCIDR mirrors the upstream pod/service ranges (the GET
+	// echoes the create-time value under a different key; platform defaults
+	// appear here for clusters that declared nothing).
+	// +optional
+	ClusterNetworkCIDR *ClusterNetworkCIDR `json:"clusterNetworkCIDR,omitempty"`
 
 	// AutoCreatedNetworkID is the upstream id of the private network Timeweb
 	// AUTO-CREATES for a network-less cluster (no networkRef/Selector/ID in

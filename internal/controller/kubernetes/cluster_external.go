@@ -56,6 +56,12 @@ type clusterBody struct {
 	AvailabilityZone string `json:"availability_zone"`
 	ProjectID        int    `json:"project_id"`
 	NetworkID        string `json:"network_id"`
+	// NetworkCidr is the GET echo of the create-time cluster_network_cidr
+	// (the read key differs from the create key — live-verified 2026-07-25).
+	NetworkCidr *struct {
+		PodsNetwork     string `json:"pods_network"`
+		ServicesNetwork string `json:"services_network"`
+	} `json:"network_cidr"`
 }
 
 type clustersEnvelope struct {
@@ -475,6 +481,15 @@ func buildCreateClusterBody(cr *kubernetesv1alpha1.KubernetesCluster, presetID, 
 		NetworkDriver:    twgen.ClusterInNetworkDriver(fp.NetworkDriver),
 		AvailabilityZone: &az,
 	}
+	// Create-only pod/service ranges (feature 021); the upstream does not
+	// echo them back — the declaration is the record.
+	if c := fp.ClusterNetworkCIDR; c != nil {
+		pods, svcs := c.PodsNetwork, c.ServicesNetwork
+		body.ClusterNetworkCidr = &struct {
+			PodsNetwork     *string `json:"pods_network,omitempty"`
+			ServicesNetwork *string `json:"services_network,omitempty"`
+		}{PodsNetwork: &pods, ServicesNetwork: &svcs}
+	}
 	if r := fp.Resources; r != nil {
 		// Custom sizing: emit the configuration block (configurator_id + cpu/
 		// ram/disk in upstream MB). XOR with preset_id.
@@ -524,6 +539,12 @@ func populateClusterStatus(cr *kubernetesv1alpha1.KubernetesCluster, c clusterBo
 	if c.K8sVersion != "" {
 		v := c.K8sVersion
 		cr.Status.AtProvider.K8sVersion = &v
+	}
+	if c.NetworkCidr != nil {
+		cr.Status.AtProvider.ClusterNetworkCIDR = &kubernetesv1alpha1.ClusterNetworkCIDR{
+			PodsNetwork:     c.NetworkCidr.PodsNetwork,
+			ServicesNetwork: c.NetworkCidr.ServicesNetwork,
+		}
 	}
 	if c.CPU != 0 {
 		cpu := c.CPU

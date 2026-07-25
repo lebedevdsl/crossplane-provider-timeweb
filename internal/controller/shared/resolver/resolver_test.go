@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -873,5 +874,25 @@ func TestResolver_MismatchedInputKind(t *testing.T) {
 	)
 	if !errors.Is(err, ErrInvalidInput) {
 		t.Errorf("err = %v, want ErrInvalidInput", err)
+	}
+}
+
+// Feature 021 (US5 pin): a drifted k8sVersion must fail with a message that
+// NAMES the currently valid upstream versions — the operator fixes the spec
+// in one step, no API probing (upstream lists drift: v1.35.4 vanished live).
+func TestDimensionValueNotFoundErrorNamesValidValues(t *testing.T) {
+	err := &DimensionValueNotFoundError{
+		Value:       "v1.35.4+k0s.0",
+		ValidValues: []string{"v1.34.7+k0s.0", "v1.35.6+k0s.0"},
+		DimensionID: DimKubernetesVersion,
+	}
+	msg := err.Error()
+	for _, want := range []string{"v1.35.4+k0s.0", "valid:", "v1.34.7+k0s.0", "v1.35.6+k0s.0"} {
+		if !strings.Contains(msg, want) {
+			t.Errorf("message %q missing %q", msg, want)
+		}
+	}
+	if !errors.Is(err, ErrDimensionValueNotFound) {
+		t.Error("must unwrap to ErrDimensionValueNotFound (condition mapping)")
 	}
 }

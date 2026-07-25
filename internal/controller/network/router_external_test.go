@@ -163,6 +163,8 @@ func TestRouterObserve(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		res := okRouterResolver()
 		cr := newRouter(true)
 		obs, err := routerE(fake, res).Observe(ctx, cr)
@@ -219,6 +221,8 @@ func TestRouterObserve(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("starting", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		e := routerE(fake, okRouterResolver())
 		// Inject drift that would otherwise flip upToDate=false.
 		e.resolvedNetworks = append(e.resolvedNetworks, resolvedAttachment{NetworkID: "network-bbb"})
@@ -263,6 +267,8 @@ func TestRouterObserve(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "ams-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		cr := newRouter(true)
 		obs, err := routerE(fake, okRouterResolver()).Observe(ctx, cr)
 		if err != nil {
@@ -284,6 +290,8 @@ func TestRouterObserve(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		// The (edited) slug now resolves to a different tier than the locked one.
 		res := &fakeRouterResolver{presets: map[string]int64{"router-1x1-1gb-ru-3": 3001}}
 		obs, err := routerE(fake, res).Observe(ctx, newRouter(true))
@@ -299,6 +307,8 @@ func TestRouterObserve(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		e := routerE(fake, okRouterResolver())
 		e.resolvedNetworks = append(e.resolvedNetworks, resolvedAttachment{NetworkID: "network-bbb"})
 		obs, err := e.Observe(ctx, newRouter(true))
@@ -314,6 +324,8 @@ func TestRouterObserve(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		e := routerE(fake, okRouterResolver())
 		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "203.0.113.7", DHCP: false}}
 		obs, err := e.Observe(ctx, newRouter(true))
@@ -444,6 +456,8 @@ func TestRouterUpdate(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("starting", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		e := routerE(fake, okRouterResolver())
 		e.resolvedNetworks = append(e.resolvedNetworks, resolvedAttachment{NetworkID: "network-bbb"}) // drift exists
 		cr := newRouter(true)
@@ -458,6 +472,8 @@ func TestRouterUpdate(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		res := &fakeRouterResolver{presets: map[string]int64{"router-1x1-1gb-ru-3": 3001}}
 		cr := newRouter(true)
 		_, err := routerE(fake, res).Update(ctx, cr)
@@ -474,6 +490,8 @@ func TestRouterUpdate(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		fake.AddNetworksReturns(httpResp(http.StatusCreated, `{"router_network":{"id":"network-bbb"}}`), nil)
 		e := routerE(fake, okRouterResolver())
 		gw := "10.1.0.1"
@@ -503,6 +521,8 @@ func TestRouterUpdate(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterTwoNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		fake.DeleteRouterNetworkReturns(httpResp(http.StatusNoContent, ""), nil)
 		if _, err := routerE(fake, okRouterResolver()).Update(ctx, newRouter(true)); err != nil {
 			t.Fatalf("Update: %v", err)
@@ -523,6 +543,8 @@ func TestRouterUpdate(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		fake.PatchNetworkReturns(httpResp(http.StatusOK, `{"router_network":{"id":"network-aaa"}}`), nil)
 		e := routerE(fake, okRouterResolver())
 		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "203.0.113.7", DHCP: false}}
@@ -547,7 +569,13 @@ func TestRouterUpdate(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		fake.UpdateRouterNatReturns(httpResp(http.StatusOK, `{}`), nil)
+		// Feature 021: moving NAT off 203.0.113.7 releases the old address.
+		fake.GetFloatingIpsReturns(httpResp(http.StatusOK,
+			`{"ips":[{"id":"fip-uuid-7","ip":"203.0.113.7","availability_zone":"ru-3a","is_ddos_guard":false,"resource_type":"router","resource_id":"rtr-uuid-1"}]}`), nil)
+		fake.UnbindFloatingIpReturns(httpResp(http.StatusNoContent, ""), nil)
 		e := routerE(fake, okRouterResolver())
 		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "203.0.113.99", DHCP: true}}
 		if _, err := e.Update(ctx, newRouter(true)); err != nil {
@@ -566,6 +594,10 @@ func TestRouterUpdate(t *testing.T) {
 		if fake.DeleteRouterNatCallCount() != 0 {
 			t.Error("DeleteRouterNat called, NAT was being enabled not disabled")
 		}
+		// Feature 021 US3: the old address is released in the same transition.
+		if fake.UnbindFloatingIpCallCount() != 1 {
+			t.Errorf("UnbindFloatingIp called %d times, want 1 (release of the old NAT address)", fake.UnbindFloatingIpCallCount())
+		}
 	})
 
 	t.Run("ConvergeNAT_DisableWhenRemoved", func(t *testing.T) {
@@ -573,7 +605,13 @@ func TestRouterUpdate(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		fake.DeleteRouterNatReturns(httpResp(http.StatusNoContent, ""), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
+		fake.GetFloatingIpsReturns(httpResp(http.StatusOK,
+			`{"ips":[{"id":"fip-uuid-7","ip":"203.0.113.7","availability_zone":"ru-3a","is_ddos_guard":false,"resource_type":"router","resource_id":"rtr-uuid-1"}]}`), nil)
+		fake.UnbindFloatingIpReturns(httpResp(http.StatusNoContent, ""), nil)
 		e := routerE(fake, okRouterResolver())
 		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "", DHCP: true}}
 		if _, err := e.Update(ctx, newRouter(true)); err != nil {
@@ -589,9 +627,15 @@ func TestRouterUpdate(t *testing.T) {
 		if fake.UpdateRouterNatCallCount() != 0 {
 			t.Error("UpdateRouterNat called, NAT was being disabled not enabled")
 		}
-		// Feature 020 US4: disabling NAT never detaches the IP from the router.
-		if fake.UnbindFloatingIpCallCount() != 0 {
-			t.Error("UnbindFloatingIp called — NAT disable must leave the IP bound")
+		// Feature 021 US3 (supersedes 020's leave-bound): the disable
+		// transition releases the address — unbind issued for the router-bound
+		// FIP after the DNAT guard passes.
+		if fake.UnbindFloatingIpCallCount() != 1 {
+			t.Errorf("UnbindFloatingIp called %d times, want 1 (declarative release)", fake.UnbindFloatingIpCallCount())
+		}
+		_, unboundID, _ := fake.UnbindFloatingIpArgsForCall(0)
+		if unboundID != "fip-uuid-7" {
+			t.Errorf("unbind fip id = %q, want fip-uuid-7", unboundID)
 		}
 	})
 
@@ -600,6 +644,8 @@ func TestRouterUpdate(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		// routerE's default resolvedNetworks already matches the observed
 		// nat_ip (203.0.113.7) — nothing to converge.
 		if _, err := routerE(fake, okRouterResolver()).Update(ctx, newRouter(true)); err != nil {
@@ -616,6 +662,8 @@ func TestRouterUpdate(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("starting", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		e := routerE(fake, okRouterResolver())
 		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "203.0.113.99", DHCP: true}}
 		if _, err := e.Update(ctx, newRouter(true)); err != nil {
@@ -717,6 +765,8 @@ func TestRouterT029_ClassifyBeforeClose(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		// Declare an extra network so AddNetworks is triggered.
 		fake.AddNetworksReturns(httpResp(http.StatusForbidden, mismatchBody), nil)
 		e := routerE(fake, okRouterResolver())
@@ -737,6 +787,8 @@ func TestRouterT029_ClassifyBeforeClose(t *testing.T) {
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		// Observed has extra network-bbb; declared only has network-aaa → detach bbb.
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterTwoNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		fake.DeleteRouterNetworkReturns(httpResp(http.StatusForbidden, forbiddenBody), nil)
 		_, err := routerE(fake, okRouterResolver()).Update(ctx, newRouter(true))
 		if err == nil {
@@ -753,6 +805,8 @@ func TestRouterT029_ClassifyBeforeClose(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		fake.UpdateRouterReturns(httpResp(http.StatusForbidden, forbiddenBody), nil)
 		cr := newRouter(true)
 		cr.Spec.ForProvider.Name = "renamed" // triggers the PATCH
@@ -800,6 +854,8 @@ func TestRouterT018_ResolverErrorMapsToCondition(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		rec := record.NewFakeRecorder(4)
 		e := routerE(fake, res)
 		e.recorder = rec
@@ -824,6 +880,8 @@ func TestRouterT020_ReadyConditionEvents(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("failed", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		rec := record.NewFakeRecorder(4)
 		e := routerE(fake, okRouterResolver())
 		e.recorder = rec
@@ -852,6 +910,8 @@ func TestRouterT020_ReadyConditionEvents(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("no_paid", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		rec := record.NewFakeRecorder(4)
 		e := routerE(fake, okRouterResolver())
 		e.recorder = rec
@@ -877,6 +937,8 @@ func TestRouterT020_ReadyConditionEvents(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		rec := record.NewFakeRecorder(4)
 		e := routerE(fake, okRouterResolver())
 		e.recorder = rec
@@ -900,6 +962,8 @@ func TestRouterT020_ReadyConditionEvents(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		rec := record.NewFakeRecorder(4)
 		e := routerE(fake, okRouterResolver())
 		e.recorder = rec
@@ -914,6 +978,8 @@ func TestRouterT020_ReadyConditionEvents(t *testing.T) {
 		// Second Observe — same state, no event.
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		if _, err := e.Observe(ctx, cr); err != nil {
 			t.Fatalf("Observe #2: %v", err)
 		}
@@ -1017,6 +1083,8 @@ func TestRouterUpdate_NeverDetachLast(t *testing.T) { // T017
 	fake := &timeweb.FakeClient{}
 	fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 	fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterTwoNetworksJSON), nil)
+	fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+	fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 
 	e := routerE(fake, okRouterResolver())
 	e.resolvedNetworks = nil // match set drained to zero
@@ -1050,6 +1118,8 @@ func TestRouterUpdate_PacesBulkMutations(t *testing.T) { // T018
 	fake := &timeweb.FakeClient{}
 	fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 	fake.GetNetworksReturns(httpResp(http.StatusOK, routerNetworksDHCPOffJSON(ids)), nil)
+	fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+	fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 	fake.PatchNetworkReturns(httpResp(http.StatusOK, ""), nil)
 
 	e := routerE(fake, okRouterResolver())
@@ -1069,6 +1139,8 @@ func TestRouterUpdate_EmitsAttachEvent(t *testing.T) { // feature 010: attach/de
 	fake := &timeweb.FakeClient{}
 	fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 	fake.GetNetworksReturns(httpResp(http.StatusOK, `{"router_networks":[]}`), nil) // nothing attached yet
+	fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+	fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 	fake.AddNetworksReturns(httpResp(http.StatusCreated, `{"router_network":{"id":"network-aaa"}}`), nil)
 
 	rec := record.NewFakeRecorder(10)
@@ -1110,6 +1182,8 @@ func TestRouterNATBind(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		fake.GetFloatingIpsReturns(httpResp(http.StatusOK, sampleFloatingIPsJSON), nil)
 		fake.BindFloatingIpReturns(httpResp(http.StatusNoContent, ""), nil)
 		e := routerE(fake, okRouterResolver())
@@ -1138,10 +1212,15 @@ func TestRouterNATBind(t *testing.T) {
 
 	t.Run("Update_OwnedAddress_NATDirect_NoFIPRead", func(t *testing.T) {
 		// Owned (but drifted) address keeps the existing direct NAT PATCH and
-		// never touches the floating-ip list.
+		// never touches the floating-ip list for the OWNERSHIP check. (The
+		// old address's release stops at the DNAT guard here, so the FIP list
+		// stays unread end-to-end.)
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK,
+			`{"dnat_rules":[{"id":"dn-1","local_ip":"10.0.0.9","protocol":"tcp","public_ip":"203.0.113.7","local_port":"80","public_port":"80"}]}`), nil)
 		fake.UpdateRouterNatReturns(httpResp(http.StatusOK, `{}`), nil)
 		e := routerE(fake, okRouterResolver())
 		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "203.0.113.99", DHCP: true}}
@@ -1165,6 +1244,8 @@ func TestRouterNATBind(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterTwoNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		fake.GetFloatingIpsReturns(httpResp(http.StatusOK, sampleFloatingIPsJSON), nil)
 		fake.PatchNetworkReturns(httpResp(http.StatusOK, `{"router_network":{"id":"network-bbb"}}`), nil)
 		e := routerE(fake, okRouterResolver())
@@ -1194,6 +1275,8 @@ func TestRouterNATBind(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		fake.GetFloatingIpsReturns(httpResp(http.StatusOK, sampleFloatingIPsJSON), nil)
 		fake.BindFloatingIpReturns(httpResp(http.StatusInternalServerError,
 			`{"status_code":500,"error_code":"internal_error","message":"boom","response_id":"r"}`), nil)
@@ -1211,6 +1294,8 @@ func TestRouterNATBind(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		fake.GetFloatingIpsReturns(httpResp(http.StatusOK, sampleFloatingIPsJSON), nil)
 		e := routerE(fake, okRouterResolver())
 		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "198.51.100.6", DHCP: true}}
@@ -1235,6 +1320,8 @@ func TestRouterNATBind(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		fake.GetFloatingIpsReturns(httpResp(http.StatusOK, sampleFloatingIPsJSON), nil)
 		e := routerE(fake, okRouterResolver())
 		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "192.0.2.250", DHCP: true}}
@@ -1258,6 +1345,8 @@ func TestRouterNATBind(t *testing.T) {
 		fake := &timeweb.FakeClient{}
 		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
 		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
 		fake.GetFloatingIpsReturns(httpResp(http.StatusOK, sampleFloatingIPsJSON), nil)
 		e := routerE(fake, okRouterResolver())
 		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "198.51.100.5", DHCP: true}}
@@ -1271,6 +1360,254 @@ func TestRouterNATBind(t *testing.T) {
 		}
 		if c := cr.Status.GetCondition(xpv2.TypeReady); c.Reason == shared.ReasonNATIPUnavailable {
 			t.Error("NATIPUnavailable set for a bindable address")
+		}
+	})
+}
+
+// --- Feature 021: static-route convergence -----------------------------------
+
+func TestRouterStaticRoutes(t *testing.T) {
+	ctx := context.Background()
+	routesFake := func(routesJSON string) *timeweb.FakeClient {
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, routesJSON), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
+		return fake
+	}
+
+	t.Run("Update_CreatesMissing", func(t *testing.T) {
+		fake := routesFake(`{"static_routes":[]}`)
+		fake.PostStaticRouteReturns(httpResp(http.StatusCreated, `{"static_route":{"id":"sr-1","subnet":"10.12.0.0/24","nexthop":"10.13.0.3"}}`), nil)
+		e := routerE(fake, okRouterResolver())
+		e.resolvedRoutes = []resolvedRoute{{Subnet: "10.12.0.0/24", Nexthop: "10.13.0.3"}}
+		if _, err := e.Update(ctx, newRouter(true)); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.PostStaticRouteCallCount() != 1 {
+			t.Fatalf("PostStaticRoute called %d times, want 1", fake.PostStaticRouteCallCount())
+		}
+		_, id, body, _ := fake.PostStaticRouteArgsForCall(0)
+		if id != "rtr-uuid-1" || body.Subnet != "10.12.0.0/24" || body.Nexthop != "10.13.0.3" {
+			t.Errorf("create args = (%q, %+v)", id, body)
+		}
+		if fake.GetAvailableStaticRoutesCallCount() != 0 {
+			t.Error("GetAvailableStaticRoutes consulted — known-unreliable, must never be called")
+		}
+	})
+
+	t.Run("Update_DeletesUndeclared", func(t *testing.T) {
+		fake := routesFake(`{"static_routes":[{"id":"sr-9","subnet":"10.99.0.0/24","nexthop":"10.13.0.9"}]}`)
+		fake.DeleteStaticRouteReturns(httpResp(http.StatusNoContent, ""), nil)
+		e := routerE(fake, okRouterResolver())
+		if _, err := e.Update(ctx, newRouter(true)); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.DeleteStaticRouteCallCount() != 1 {
+			t.Fatalf("DeleteStaticRoute called %d times, want 1", fake.DeleteStaticRouteCallCount())
+		}
+		_, id, routeID, _ := fake.DeleteStaticRouteArgsForCall(0)
+		if id != "rtr-uuid-1" || routeID != "sr-9" {
+			t.Errorf("delete args = (%q, %q), want (rtr-uuid-1, sr-9)", id, routeID)
+		}
+	})
+
+	t.Run("Update_ReplacesChangedNexthop", func(t *testing.T) {
+		fake := routesFake(`{"static_routes":[{"id":"sr-1","subnet":"10.12.0.0/24","nexthop":"10.13.0.OLD"}]}`)
+		fake.DeleteStaticRouteReturns(httpResp(http.StatusNoContent, ""), nil)
+		fake.PostStaticRouteReturns(httpResp(http.StatusCreated, `{"static_route":{"id":"sr-2","subnet":"10.12.0.0/24","nexthop":"10.13.0.3"}}`), nil)
+		e := routerE(fake, okRouterResolver())
+		e.resolvedRoutes = []resolvedRoute{{Subnet: "10.12.0.0/24", Nexthop: "10.13.0.3"}}
+		if _, err := e.Update(ctx, newRouter(true)); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.DeleteStaticRouteCallCount() != 1 || fake.PostStaticRouteCallCount() != 1 {
+			t.Errorf("replace = delete(%d) + create(%d), want 1 + 1",
+				fake.DeleteStaticRouteCallCount(), fake.PostStaticRouteCallCount())
+		}
+	})
+
+	t.Run("Observe_DriftAndMirror", func(t *testing.T) {
+		fake := routesFake(`{"static_routes":[{"id":"sr-1","subnet":"10.12.0.0/24","nexthop":"10.13.0.3"}]}`)
+		e := routerE(fake, okRouterResolver())
+		// Declared set differs (extra route) → drift; mirror populated.
+		e.resolvedRoutes = []resolvedRoute{
+			{Subnet: "10.12.0.0/24", Nexthop: "10.13.0.3"},
+			{Subnet: "10.14.0.0/24", Nexthop: "10.13.0.3"},
+		}
+		cr := newRouter(true)
+		obs, err := e.Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if obs.ResourceUpToDate {
+			t.Error("ResourceUpToDate = true, want false (missing declared route)")
+		}
+		sr := cr.Status.AtProvider.StaticRoutes
+		if len(sr) != 1 || sr[0].ID != "sr-1" || sr[0].Subnet != "10.12.0.0/24" || sr[0].Nexthop != "10.13.0.3" {
+			t.Errorf("status mirror = %+v", sr)
+		}
+	})
+
+	t.Run("Observe_ConvergedRoutes_UpToDate", func(t *testing.T) {
+		fake := routesFake(`{"static_routes":[{"id":"sr-1","subnet":"10.12.0.0/24","nexthop":"10.13.0.3"}]}`)
+		e := routerE(fake, okRouterResolver())
+		e.resolvedRoutes = []resolvedRoute{{Subnet: "10.12.0.0/24", Nexthop: "10.13.0.3"}}
+		obs, err := e.Observe(ctx, newRouter(true))
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if !obs.ResourceUpToDate {
+			t.Error("ResourceUpToDate = false, want true (routes converged)")
+		}
+	})
+}
+
+// Feature 021 US2 pin: a fully-converged attachment (the shared-network case —
+// the same network may legitimately sit on OTHER routers too) produces ZERO
+// mutations: the controller only ever reads/writes its own router's
+// attachment sub-resource, so a neighbor router's attachment of the same
+// network can never register as drift here.
+func TestRouterUpdate_ConvergedSharedNetwork_NoOps(t *testing.T) {
+	ctx := context.Background()
+	fake := &timeweb.FakeClient{}
+	fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+	fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+	fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+	fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
+	e := routerE(fake, okRouterResolver()) // declared == observed (network-aaa, NAT .7, DHCP on)
+	if _, err := e.Update(ctx, newRouter(true)); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	for name, n := range map[string]int{
+		"AddNetworks":         fake.AddNetworksCallCount(),
+		"DeleteRouterNetwork": fake.DeleteRouterNetworkCallCount(),
+		"PatchNetwork":        fake.PatchNetworkCallCount(),
+		"UpdateRouterNat":     fake.UpdateRouterNatCallCount(),
+		"DeleteRouterNat":     fake.DeleteRouterNatCallCount(),
+		"BindFloatingIp":      fake.BindFloatingIpCallCount(),
+		"UnbindFloatingIp":    fake.UnbindFloatingIpCallCount(),
+		"PostStaticRoute":     fake.PostStaticRouteCallCount(),
+		"DeleteStaticRoute":   fake.DeleteStaticRouteCallCount(),
+	} {
+		if n != 0 {
+			t.Errorf("%s called %d times on a converged router, want 0", name, n)
+		}
+	}
+}
+
+// --- Feature 021 US3: NAT declarative release --------------------------------
+
+func TestRouterNATRelease(t *testing.T) {
+	ctx := context.Background()
+	base := func() *timeweb.FakeClient {
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterTwoNetworksJSON), nil)
+		fake.GetStaticRoutesReturns(httpResp(http.StatusOK, `{"static_routes":[]}`), nil)
+		fake.DeleteRouterNatReturns(httpResp(http.StatusNoContent, ""), nil)
+		fake.UpdateRouterNatReturns(httpResp(http.StatusOK, `{}`), nil)
+		fake.PatchNetworkReturns(httpResp(http.StatusOK, `{"router_network":{"id":"network-bbb"}}`), nil)
+		fake.GetDnatReturns(httpResp(http.StatusOK, `{"dnat_rules":[]}`), nil)
+		fake.GetFloatingIpsReturns(httpResp(http.StatusOK,
+			`{"ips":[{"id":"fip-uuid-7","ip":"203.0.113.7","availability_zone":"ru-3a","is_ddos_guard":false,"resource_type":"router","resource_id":"rtr-uuid-1"}]}`), nil)
+		fake.UnbindFloatingIpReturns(httpResp(http.StatusNoContent, ""), nil)
+		return fake
+	}
+	// two-networks fixture: aaa NATs 203.0.113.7, bbb has none.
+
+	t.Run("Retained_WhenDeclaredOnAnotherAttachment", func(t *testing.T) {
+		fake := base()
+		e := routerE(fake, okRouterResolver())
+		e.resolvedNetworks = []resolvedAttachment{
+			{NetworkID: "network-aaa", NATIP: "", DHCP: true},             // NAT removed here
+			{NetworkID: "network-bbb", NATIP: "203.0.113.7", DHCP: false}, // …but declared here
+		}
+		if _, err := e.Update(ctx, newRouter(true)); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.UnbindFloatingIpCallCount() != 0 {
+			t.Error("UnbindFloatingIp called — address still declared on another attachment")
+		}
+	})
+
+	t.Run("Retained_WhenDNATForwardsIt", func(t *testing.T) {
+		fake := base()
+		fake.GetDnatReturns(httpResp(http.StatusOK,
+			`{"dnat_rules":[{"id":"dn-1","local_ip":"10.0.0.9","protocol":"tcp","public_ip":"203.0.113.7","local_port":"80","public_port":"80"}]}`), nil)
+		rec := record.NewFakeRecorder(10)
+		e := routerE(fake, okRouterResolver())
+		e.recorder = rec
+		e.resolvedNetworks = []resolvedAttachment{
+			{NetworkID: "network-aaa", NATIP: "", DHCP: true},
+			{NetworkID: "network-bbb", NATIP: "", DHCP: false},
+		}
+		if _, err := e.Update(ctx, newRouter(true)); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.UnbindFloatingIpCallCount() != 0 {
+			t.Error("UnbindFloatingIp called — a DNAT rule forwards the address")
+		}
+		found := false
+		for len(rec.Events) > 0 {
+			if ev := <-rec.Events; strings.Contains(ev, reasonRetainedNATIP) && strings.Contains(ev, "DNAT") {
+				found = true
+			}
+		}
+		if !found {
+			t.Error("no RetainedNATFloatingIP event explaining the DNAT guard")
+		}
+	})
+
+	t.Run("UnbindFailure_BestEffort_NoError", func(t *testing.T) {
+		fake := base()
+		fake.UnbindFloatingIpReturns(httpResp(http.StatusInternalServerError,
+			`{"status_code":500,"error_code":"internal_error","message":"boom","response_id":"r"}`), nil)
+		rec := record.NewFakeRecorder(10)
+		e := routerE(fake, okRouterResolver())
+		e.recorder = rec
+		e.resolvedNetworks = []resolvedAttachment{
+			{NetworkID: "network-aaa", NATIP: "", DHCP: true},
+			{NetworkID: "network-bbb", NATIP: "", DHCP: false},
+		}
+		if _, err := e.Update(ctx, newRouter(true)); err != nil {
+			t.Fatalf("Update returned %v — unbind failures are best-effort (event only)", err)
+		}
+		found := false
+		for len(rec.Events) > 0 {
+			if ev := <-rec.Events; strings.Contains(ev, reasonRetainedNATIP) && strings.Contains(ev, "unbind failed") {
+				found = true
+			}
+		}
+		if !found {
+			t.Error("no Warning event for the failed unbind")
+		}
+	})
+
+	t.Run("Released_EmitsEvent", func(t *testing.T) {
+		fake := base()
+		rec := record.NewFakeRecorder(10)
+		e := routerE(fake, okRouterResolver())
+		e.recorder = rec
+		e.resolvedNetworks = []resolvedAttachment{
+			{NetworkID: "network-aaa", NATIP: "", DHCP: true},
+			{NetworkID: "network-bbb", NATIP: "", DHCP: false},
+		}
+		if _, err := e.Update(ctx, newRouter(true)); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.UnbindFloatingIpCallCount() != 1 {
+			t.Fatalf("UnbindFloatingIp called %d times, want 1", fake.UnbindFloatingIpCallCount())
+		}
+		found := false
+		for len(rec.Events) > 0 {
+			if ev := <-rec.Events; strings.Contains(ev, reasonReleasedNATIP) {
+				found = true
+			}
+		}
+		if !found {
+			t.Error("no ReleasedNATFloatingIP event")
 		}
 	})
 }
