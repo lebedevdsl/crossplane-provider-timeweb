@@ -110,6 +110,19 @@ const (
 	// router_required_…/router_must_have_… family — the FIXABLE
 	// missing-integration cause (never recreate).
 	ReasonRouterNATRequired xpv2.ConditionReason = "RouterNATRequired"
+	// ReasonExternalNameConflict (feature 023) parks a resource whose
+	// external-name points at a missing upstream object while
+	// status.atProvider still records a DIFFERENT live identity — the
+	// signature of an externally stomped/pinned external-name (e.g. GitOps
+	// rendering the annotation; incident 2026-07-25: 3 duplicate node
+	// groups). Blind re-creation would mint duplicates; the condition names
+	// both identities and the remedies instead.
+	ReasonExternalNameConflict xpv2.ConditionReason = "ExternalNameConflict"
+	// ReasonAdoptionAmbiguous (feature 023): an ambiguous previous create
+	// (lost result) found SEVERAL upstream candidates matching the declared
+	// identity — the provider refuses to guess; the operator adopts
+	// explicitly by external-name and removes the extras.
+	ReasonAdoptionAmbiguous xpv2.ConditionReason = "AdoptionAmbiguous"
 )
 
 // SyncedFalse returns a Synced=False condition with the supplied reason and
