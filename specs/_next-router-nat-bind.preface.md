@@ -110,7 +110,69 @@ deployed provider (v0.9.1) converged on its own. No provider restart needed.
 
 ---
 
-# Part 3 (2026-07-24, late): the REAL nodepool↔router mechanism — `virtual_router_id`
+# Part 3 — RESOLVED 2026-07-25: cluster↔router integration is an explicit op
+
+**The definitive mechanism, panel-captured and effect-verified live:**
+
+```
+PATCH /api/v1/k8s/clusters/{clusterId}
+{"virtual_router_id": "160dc3fa-e03a-4550-9de7-8fc359b4d644"}   → 200
+```
+
+- It is a first-class op on the CLUSTER (panel: cluster → Сеть → «Интеграция с
+  роутерами» → Подключить). NOT automatic at cluster create — not even for a
+  cluster created on a router-create-body network (verified: cluster 1101699,
+  network in the production router's create body, still born "Не подключен").
+- `GET /k8s/clusters/{id}` does NOT echo the field (no router keys in the
+  response) — readback is the ROUTER's `parent_services` gaining
+  `{id: <clusterId>, type: "k8s"}` (observed to appear immediately).
+- Effect: private worker groups (publicIP=false) that had failed for a full
+  day with `router_required_for_worker_groups_without_public_ip` /
+  `router_must_have_nat_ip…` / `…dhcp…` began creating within seconds of the
+  PATCH, with NO other change. The per-group `virtual_router_id` seen in the
+  panel's group-create body is evidently secondary/optional once the cluster
+  itself is integrated.
+
+Provider design (supersedes earlier speculation in this file):
+- `KubernetesCluster.spec.forProvider.routerRef` (optional reference) →
+  after create (and on drift) PATCH `virtual_router_id`; Observe the linkage
+  via the referenced Router's `parent_services` (provider already mirrors it
+  in Router status) — declaration-is-the-record on the cluster side.
+
+  *** SEMANTICS: full-declarative, designed for user ergonomics (not any
+  transient migration state) ***
+  The field is optional; treat it as a normal Crossplane declarative field —
+  the spec fully describes desired linkage, drift corrected BOTH ways:
+    - set routerRef   → ensure linked: PATCH virtual_router_id to the ref'd
+      router's id if not already; adopt an existing matching link by value
+      (no churn / no re-PATCH when already linked, like staticRoutes adoption).
+    - unset routerRef → ensure NOT linked (the cluster is not router-managed;
+      if upstream shows a link the provider did not set, it is not adopted).
+  This is the least-surprising model ("what I declare is what I get, including
+  absence") and needs no leave-alone/mirror-only special case.
+
+  Why this is safe for the ONE live cluster (timeweb-infra#132) without a hack:
+  we simply DON'T pre-link it by hand. Sequence — provider bump lands while the
+  prod cluster is UNLINKED (no manual PATCH); the existing CR carries no
+  routerRef ⇒ unset = unlinked = matches reality ⇒ no-op, no detach. Then we
+  ADD routerRef to the CR ⇒ provider converges to linked ⇒ private nodepools
+  come up. Zero manual steps, fully git-driven, and no transient-unlink window
+  because the cluster was never manually pre-linked.
+
+  Mirror the observed link as `status.atProvider.virtualRouterId` (from the
+  router's parent_services) regardless. Guard: unlinking a cluster that has
+  live private nodepools is destructive — surface it (Warning/condition) but
+  still honor the declaration; do not silently refuse (declarative contract).
+- Nodepool controller: no change needed beyond the friendly classification of
+  `router_required_…` → "cluster is not router-integrated; set
+  spec.routerRef / PATCH virtual_router_id" (the Part 2 trap-guard text
+  updates accordingly: the state is NOT unfixable, no recreation needed).
+- The Part 2 "create-precondition" softens to: cluster with a routerRef on a
+  NAT-less router → requeue until NAT exists (the snapshot-desync probes from
+  2026-07-24 were run WITHOUT cluster integration; re-verify whether they
+  still apply once integration is a first-class op).
+
+# Part 3 ORIGINAL (2026-07-24, late): the nodepool `virtual_router_id` capture
 
 Panel capture of a node-group create on the affected cluster shows the dashboard
 sends an undocumented field in the create body:
