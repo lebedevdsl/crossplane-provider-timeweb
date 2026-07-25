@@ -35,6 +35,8 @@ controllers set, with its meaning and remediation. Generic runtime reasons
 | `NoNetworksResolved` | Ready=False | (Router) the network attachments resolved to zero networks. Ensure ≥1 matching Network is Ready. |
 | `NATIPUnavailable` | Ready=False | (Router) a declared NAT floating IP can't be bound: it is held by another resource (never stolen) or doesn't exist. Free/fix the address — NAT then converges automatically. |
 | `RouterNATRequired` | Ready=False / Synced=False | (KubernetesCluster) the declared `routerRef` router doesn't yet attach/NAT the cluster network — integration waits and fires automatically. (Nodepool) private pool rejected because the cluster isn't router-integrated: set `routerRef` on the cluster; recreation is never required. |
+| `ExternalNameConflict` | Ready=False | The external-name points at a missing upstream object while status remembers a different live one (externally stomped/pinned annotation — often GitOps). Restore the external-name to the remembered id (and stop rendering it in git), or clear `status.atProvider.upstreamID` to create anew. Nothing is created meanwhile. |
+| `AdoptionAmbiguous` | Synced=False | A retried create found several upstream objects matching the declaration. Adopt one explicitly via the external-name annotation and remove the extras — the provider refuses to guess. |
 | `ServiceConflict` | Synced=False | (Firewall) a declared service is already attached to a different rule group (1:1 exclusivity). Detach it first. |
 | `RepositoryNotPushed` | Ready=False | (ContainerRegistryRepository) no image has been pushed yet. Push an image. |
 | `BucketQuarantined` | Ready=False | (S3Bucket) the bucket is quarantined upstream. Resolve in the panel. |
