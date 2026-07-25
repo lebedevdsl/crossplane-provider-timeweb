@@ -182,6 +182,11 @@ kubectl patch kubernetesclusternodepool/demo-workers --type merge \
   -p '{"spec":{"forProvider":{"nodeCount":4}}}'
 ```
 
+Autoscaling is fully day-2 (v0.11.2): adding, removing, or retuning the
+`autoscaling` block on a live pool converges — disable is applied before any
+node-count change, and the controller never scales while the upstream
+autoscaler is still observed enabled (no fighting, even mid-transition).
+
 The controller adds/removes nodes via relative deltas (the group is never
 recreated) and `status.atProvider.observedNodeCount` converges. While a delta
 is in flight the pool reports `Ready=False, reason=Reconciling`.

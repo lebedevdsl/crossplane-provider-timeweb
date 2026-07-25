@@ -1,0 +1,18 @@
+# Step 4 — the observed count converges to 1 with autoscaling off. The
+# provider's ordering guarantee (disable before count) is unit-covered; here
+# the end state proves the day-2 transition works against the real API.
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - timeout: 900
+    script: |
+      cur=$(kubectl config current-context); n=$(kubectl config get-contexts -o name | wc -l | tr -d " ")
+      if [ -n "${E2E_KUBECONTEXT:-}" ]; then [ "$cur" = "$E2E_KUBECONTEXT" ] || { echo "FAIL: context $cur != $E2E_KUBECONTEXT"; exit 1; }
+      elif [ "$n" != "1" ]; then echo "FAIL: $n contexts and E2E_KUBECONTEXT unset — refusing to guess (current: $cur)"; exit 1; fi
+      for i in $(seq 1 85); do
+        c=$(kubectl -n timeweb-e2e get kubernetesclusternodepool/e2e-as-pool -o jsonpath='{.status.atProvider.observedNodeCount}' 2>/dev/null)
+        echo "observedNodeCount=$c (want 1)"
+        [ "$c" = "1" ] && exit 0
+        sleep 10
+      done
+      echo "FAIL: count never converged to 1 (autoscaler fight?)"; exit 1

@@ -57,6 +57,12 @@ type nodeGroupBody struct {
 	NodeCount      int              `json:"node_count"`
 	Labels         []nodeGroupKV    `json:"labels"`
 	Taints         []nodeGroupTaint `json:"taints"`
+	// Autoscaling state — present in live payloads though absent from the
+	// published NodeGroupOut schema (live-verified 2026-07-26, the
+	// public_ip_enabled pattern). min/max are null while the flag is off.
+	IsAutoscaling bool `json:"is_autoscaling"`
+	MinSize       *int `json:"min_size"`
+	MaxSize       *int `json:"max_size"`
 }
 
 type nodeGroupEnvelope struct {
@@ -200,6 +206,22 @@ func (e *nodepoolExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 		ResourceExists:   true,
 		ResourceUpToDate: upToDate,
 	}, nil
+}
+
+// patchNodeGroup issues one owned-fields group PATCH (metadata OR the
+// autoscaling trio — never mixed, per the 015 owned-fields rule).
+func (e *nodepoolExternal) patchNodeGroup(ctx context.Context, clusterID, groupID int, body twgen.UpdateClusterNodeGroupJSONRequestBody) error {
+	resp, err := e.tw.UpdateClusterNodeGroup(ctx, clusterID, groupID, body)
+	if err != nil {
+		return timeweb.ClassifyNetworkError(err)
+	}
+	// Classify reads the body — must happen before Close (T029 idiom).
+	classifyErr := timeweb.Classify(resp)
+	_ = resp.Body.Close()
+	if classifyErr != nil {
+		return fmt.Errorf("kubernetes/nodepool: group patch: %w", classifyErr)
+	}
+	return nil
 }
 
 // findGroupsByIdentity lists the parent cluster's node groups and returns
@@ -433,8 +455,38 @@ func (e *nodepoolExternal) Update(ctx context.Context, mg resource.Managed) (man
 		}
 	}
 
-	// Autoscaling owns the count — don't fight it.
-	if cr.Spec.ForProvider.Autoscaling != nil && cr.Spec.ForProvider.Autoscaling.Enabled {
+	// Day-2 autoscaling convergence (feature 024; op live-verified
+	// 2026-07-26: the group PATCH accepts is_autoscaling[+min/max], the GET
+	// echoes them). The flag converges BEFORE any count logic, and count
+	// deltas are gated on the OBSERVED flag — never the declared state — so
+	// the provider can never fight a still-enabled upstream autoscaler.
+	declaredOn := cr.Spec.ForProvider.Autoscaling != nil && cr.Spec.ForProvider.Autoscaling.Enabled
+	if declaredOn {
+		a := cr.Spec.ForProvider.Autoscaling
+		boundsDrift := observed.MinSize == nil || *observed.MinSize != a.MinSize ||
+			observed.MaxSize == nil || *observed.MaxSize != a.MaxSize
+		if !observed.IsAutoscaling || boundsDrift {
+			t := true
+			minS, maxS := a.MinSize, a.MaxSize
+			if err := e.patchNodeGroup(ctx, clusterID, groupID, twgen.UpdateClusterNodeGroupJSONRequestBody{
+				IsAutoscaling: &t, MinSize: &minS, MaxSize: &maxS,
+			}); err != nil {
+				return managed.ExternalUpdate{}, err
+			}
+		}
+		// Autoscaling owns the count — never touched while declared on.
+		return managed.ExternalUpdate{}, nil
+	}
+	if observed.IsAutoscaling {
+		// Declared off but still on upstream: disable and RETURN — the count
+		// converges on a later pass once the disable is observed
+		// (Observe-sole-authority; no same-pass count writes).
+		f := false
+		if err := e.patchNodeGroup(ctx, clusterID, groupID, twgen.UpdateClusterNodeGroupJSONRequestBody{
+			IsAutoscaling: &f,
+		}); err != nil {
+			return managed.ExternalUpdate{}, err
+		}
 		return managed.ExternalUpdate{}, nil
 	}
 
@@ -707,8 +759,21 @@ func isNodepoolUpToDate(spec kubernetesv1alpha1.KubernetesClusterNodepoolParamet
 	if !nodepoolMetadataUpToDate(spec, g) {
 		return false
 	}
+	// Autoscaling drift, both directions (feature 024): the observed flag and
+	// bounds are compared against the declaration — day-2 on/off and min/max
+	// edits are real drift now.
 	if spec.Autoscaling != nil && spec.Autoscaling.Enabled {
-		return true
+		if !g.IsAutoscaling {
+			return false
+		}
+		if g.MinSize == nil || *g.MinSize != spec.Autoscaling.MinSize ||
+			g.MaxSize == nil || *g.MaxSize != spec.Autoscaling.MaxSize {
+			return false
+		}
+		return true // autoscaler owns the count
+	}
+	if g.IsAutoscaling {
+		return false // declared off (or absent) but still on upstream
 	}
 	return spec.NodeCount == g.NodeCount
 }

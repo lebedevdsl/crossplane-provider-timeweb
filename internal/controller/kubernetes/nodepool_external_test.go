@@ -18,7 +18,9 @@ package kubernetes
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -336,7 +338,9 @@ func TestNodepoolUpdate(t *testing.T) {
 
 	t.Run("AutoscalingOn_SkipsCountReconcile", func(t *testing.T) {
 		fake := &timeweb.FakeClient{}
-		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		// Observed converged autoscaling (feature 024: the flag is real now).
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK,
+			`{"node_group":{"id":42,"name":"workers","preset_id":9,"node_count":2,"is_autoscaling":true,"min_size":2,"max_size":6}}`), nil)
 		cr := newNodepool(true, 9) // desired wildly different
 		cr.Spec.ForProvider.Autoscaling = &kubernetesv1alpha1.NodepoolAutoscaling{Enabled: true, MinSize: 2, MaxSize: 6}
 		if _, err := nodepoolE(fake).Update(ctx, cr); err != nil {
@@ -344,6 +348,9 @@ func TestNodepoolUpdate(t *testing.T) {
 		}
 		if fake.IncreaseCountOfNodesInGroupCallCount()+fake.ReduceCountOfNodesInGroupCallCount() != 0 {
 			t.Error("scale call issued while autoscaling enabled")
+		}
+		if fake.UpdateClusterNodeGroupCallCount() != 0 {
+			t.Error("PATCH issued for converged autoscaling")
 		}
 	})
 
@@ -656,9 +663,11 @@ func TestNodepoolTaintsLabels(t *testing.T) {
 	t.Run("Update_AutoscalingOn_StillConvergesMetadata", func(t *testing.T) {
 		// The metadata leg runs BEFORE the autoscaling early-return: tainted
 		// autoscaled pools must stay correctable, while the count is left to
-		// the autoscaler.
+		// the autoscaler. Observed autoscaling converged (feature 024) so the
+		// single PATCH here is the metadata one.
 		fake := &timeweb.FakeClient{}
-		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupJSON), nil)
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK,
+			`{"node_group":{"id":42,"name":"workers","preset_id":9,"node_count":2,"is_autoscaling":true,"min_size":2,"max_size":6}}`), nil)
 		fake.UpdateClusterNodeGroupReturns(httpResp(http.StatusOK, nodeGroupTaintedJSON), nil)
 		cr := taintedSpec(newNodepool(true, 9))
 		cr.Spec.ForProvider.Autoscaling = &kubernetesv1alpha1.NodepoolAutoscaling{Enabled: true, MinSize: 2, MaxSize: 6}
@@ -688,6 +697,118 @@ func TestNodepoolTaintsLabels(t *testing.T) {
 		fake.UpdateClusterNodeGroupReturns(nil, errors.New("timeout"))
 		if _, err := nodepoolE(fake).Update(ctx, taintedSpec(newNodepool(true, 2))); err == nil {
 			t.Fatal("want error on PATCH transport failure")
+		}
+	})
+}
+
+// --- Feature 024: autoscaling day-2 convergence ------------------------------
+
+func TestNodepoolAutoscalingDay2(t *testing.T) {
+	ctx := context.Background()
+	groupJSON := func(auto bool, minS, maxS, count int) string {
+		if auto {
+			return fmt.Sprintf(`{"node_group":{"id":42,"name":"workers","preset_id":9,"node_count":%d,"is_autoscaling":true,"min_size":%d,"max_size":%d}}`, count, minS, maxS)
+		}
+		return fmt.Sprintf(`{"node_group":{"id":42,"name":"workers","preset_id":9,"node_count":%d,"is_autoscaling":false,"min_size":null,"max_size":null}}`, count)
+	}
+
+	t.Run("Update_DeclaredOff_ObservedOn_DisablesFirstNoCount", func(t *testing.T) {
+		// The incident shape: autoscaling off + lower count in one edit.
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(true, 2, 3, 2)), nil)
+		fake.UpdateClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(false, 0, 0, 2)), nil)
+		cr := newNodepool(true, 1)
+		if _, err := nodepoolE(fake).Update(ctx, cr); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.UpdateClusterNodeGroupCallCount() != 1 {
+			t.Fatalf("PATCH count = %d, want 1 (the disable)", fake.UpdateClusterNodeGroupCallCount())
+		}
+		_, _, _, body, _ := fake.UpdateClusterNodeGroupArgsForCall(0)
+		if body.IsAutoscaling == nil || *body.IsAutoscaling || body.MinSize != nil || body.MaxSize != nil || body.Name != nil {
+			t.Errorf("disable body = %+v, want exactly {is_autoscaling: false}", body)
+		}
+		if fake.ReduceCountOfNodesInGroupCallCount()+fake.IncreaseCountOfNodesInGroupCallCount() != 0 {
+			t.Error("count write in the same pass as the disable — must wait for re-observation")
+		}
+	})
+
+	t.Run("Update_ObservedOff_CountConverges", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(false, 0, 0, 2)), nil)
+		fake.ReduceCountOfNodesInGroupReturns(httpResp(http.StatusNoContent, ""), nil)
+		cr := newNodepool(true, 1)
+		if _, err := nodepoolE(fake).Update(ctx, cr); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.ReduceCountOfNodesInGroupCallCount() != 1 {
+			t.Errorf("reduce count = %d, want 1", fake.ReduceCountOfNodesInGroupCallCount())
+		}
+	})
+
+	t.Run("Update_DeclaredOn_ObservedOff_EnablesWithBounds", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(false, 0, 0, 2)), nil)
+		fake.UpdateClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(true, 2, 6, 2)), nil)
+		cr := newNodepool(true, 2)
+		cr.Spec.ForProvider.Autoscaling = &kubernetesv1alpha1.NodepoolAutoscaling{Enabled: true, MinSize: 2, MaxSize: 6}
+		if _, err := nodepoolE(fake).Update(ctx, cr); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		_, _, _, body, _ := fake.UpdateClusterNodeGroupArgsForCall(0)
+		if body.IsAutoscaling == nil || !*body.IsAutoscaling ||
+			body.MinSize == nil || *body.MinSize != 2 || body.MaxSize == nil || *body.MaxSize != 6 {
+			t.Errorf("enable body = %+v, want {true, 2, 6}", body)
+		}
+		if fake.ReduceCountOfNodesInGroupCallCount()+fake.IncreaseCountOfNodesInGroupCallCount() != 0 {
+			t.Error("count write while declared autoscaled")
+		}
+	})
+
+	t.Run("Update_BoundsDrift_Reapplied", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(true, 2, 3, 2)), nil)
+		fake.UpdateClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(true, 2, 6, 2)), nil)
+		cr := newNodepool(true, 2)
+		cr.Spec.ForProvider.Autoscaling = &kubernetesv1alpha1.NodepoolAutoscaling{Enabled: true, MinSize: 2, MaxSize: 6}
+		if _, err := nodepoolE(fake).Update(ctx, cr); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.UpdateClusterNodeGroupCallCount() != 1 {
+			t.Errorf("PATCH count = %d, want 1 (bounds re-apply)", fake.UpdateClusterNodeGroupCallCount())
+		}
+	})
+
+	t.Run("UpToDate_DriftRows", func(t *testing.T) {
+		on := func() *kubernetesv1alpha1.KubernetesClusterNodepool {
+			cr := newNodepool(true, 2)
+			cr.Spec.ForProvider.Autoscaling = &kubernetesv1alpha1.NodepoolAutoscaling{Enabled: true, MinSize: 2, MaxSize: 6}
+			return cr
+		}
+		var g nodeGroupBody
+		mustJSON := func(s string) nodeGroupBody {
+			var env nodeGroupEnvelope
+			if err := json.Unmarshal([]byte(s), &env); err != nil {
+				t.Fatal(err)
+			}
+			return env.NodeGroup
+		}
+		g = mustJSON(groupJSON(false, 0, 0, 2))
+		if isNodepoolUpToDate(on().Spec.ForProvider, on().Status.AtProvider, g) {
+			t.Error("declared-on observed-off must be drift (off->on was invisible before 024)")
+		}
+		g = mustJSON(groupJSON(true, 2, 3, 2))
+		if isNodepoolUpToDate(on().Spec.ForProvider, on().Status.AtProvider, g) {
+			t.Error("bounds mismatch must be drift")
+		}
+		g = mustJSON(groupJSON(true, 2, 6, 2))
+		if !isNodepoolUpToDate(on().Spec.ForProvider, on().Status.AtProvider, g) {
+			t.Error("converged autoscaling must be up-to-date")
+		}
+		off := newNodepool(true, 2)
+		g = mustJSON(groupJSON(true, 2, 3, 2))
+		if isNodepoolUpToDate(off.Spec.ForProvider, off.Status.AtProvider, g) {
+			t.Error("declared-off observed-on must be drift")
 		}
 	})
 }

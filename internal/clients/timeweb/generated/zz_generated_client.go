@@ -1236,10 +1236,19 @@ type NodeGroupResponse struct {
 	ResponseId *string `json:"response_id,omitempty"`
 }
 
-// NodeGroupUpdate Тело PATCH-запроса группы нод (hand-patched: undocumented verb, panel-verified 2026-07-10). Провайдер отправляет только name/labels/taints.
+// NodeGroupUpdate Тело PATCH-запроса группы нод (hand-patched: undocumented verb, panel-verified 2026-07-10; autoscaling-поля live-verified 2026-07-26). Провайдер отправляет либо name/labels/taints, либо autoscaling-тройку — никогда вместе.
 type NodeGroupUpdate struct {
+	// IsAutoscaling HAND-PATCH (live-verified 2026-07-26): day-2 переключение автоскейлинга; false обнуляет min/max
+	IsAutoscaling *bool `json:"is_autoscaling,omitempty"`
+
 	// Labels Лейблы для группы нод
 	Labels *[]SetLabels `json:"labels,omitempty"`
+
+	// MaxSize HAND-PATCH: верхняя граница автоскейлера (с is_autoscaling: true); отсутствие поля — не трогать
+	MaxSize *int `json:"max_size,omitempty"`
+
+	// MinSize HAND-PATCH: нижняя граница автоскейлера (с is_autoscaling: true); отсутствие поля — не трогать (без nullable, чтобы omitempty не слал null в metadata-PATCH)
+	MinSize *int `json:"min_size,omitempty"`
 
 	// Name Название группы
 	Name *string `json:"name,omitempty"`

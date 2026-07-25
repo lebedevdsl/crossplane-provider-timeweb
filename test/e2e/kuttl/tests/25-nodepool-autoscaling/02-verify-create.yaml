@@ -1,0 +1,18 @@
+# Step 2 — cluster Ready; the pool exists upstream with autoscaling on.
+# (Node VMs may still be installing — the flag flow doesn't depend on them.)
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: kubectl -n timeweb-e2e wait --for=condition=Ready --timeout=1800s kubernetescluster/e2e-as-cl
+    timeout: 1860
+  - timeout: 600
+    script: |
+      cur=$(kubectl config current-context); n=$(kubectl config get-contexts -o name | wc -l | tr -d " ")
+      if [ -n "${E2E_KUBECONTEXT:-}" ]; then [ "$cur" = "$E2E_KUBECONTEXT" ] || { echo "FAIL: context $cur != $E2E_KUBECONTEXT"; exit 1; }
+      elif [ "$n" != "1" ]; then echo "FAIL: $n contexts and E2E_KUBECONTEXT unset — refusing to guess (current: $cur)"; exit 1; fi
+      for i in $(seq 1 55); do
+        ext=$(kubectl -n timeweb-e2e get kubernetesclusternodepool/e2e-as-pool -o jsonpath='{.metadata.annotations.crossplane\.io/external-name}' 2>/dev/null)
+        case "$ext" in ''|*[!0-9]*) ;; *) echo "pool group id=$ext"; exit 0;; esac
+        sleep 10
+      done
+      echo "FAIL: pool never recorded a numeric external-name"; exit 1
