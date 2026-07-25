@@ -33,6 +33,7 @@ controllers set, with its meaning and remediation. Generic runtime reasons
 | `ParentNotReady` | Ready=False | A dependent (nodepool/addon) is waiting on its parent to be Ready before CREATE. Wait for the parent. |
 | `OriginNotReady` | Ready=False | (Cdn) the `bucketRef` origin S3Bucket is missing or not Ready. Wait for / fix the bucket. |
 | `NoNetworksResolved` | Ready=False | (Router) the network attachments resolved to zero networks. Ensure ≥1 matching Network is Ready. |
+| `NATIPUnavailable` | Ready=False | (Router) a declared NAT floating IP can't be bound: it is held by another resource (never stolen) or doesn't exist. Free/fix the address — NAT then converges automatically. |
 | `ServiceConflict` | Synced=False | (Firewall) a declared service is already attached to a different rule group (1:1 exclusivity). Detach it first. |
 | `RepositoryNotPushed` | Ready=False | (ContainerRegistryRepository) no image has been pushed yet. Push an image. |
 | `BucketQuarantined` | Ready=False | (S3Bucket) the bucket is quarantined upstream. Resolve in the panel. |

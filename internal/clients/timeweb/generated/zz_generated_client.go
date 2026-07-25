@@ -167,6 +167,7 @@ const (
 	BindFloatingIpResourceTypeBalancer BindFloatingIpResourceType = "balancer"
 	BindFloatingIpResourceTypeDatabase BindFloatingIpResourceType = "database"
 	BindFloatingIpResourceTypeNetwork  BindFloatingIpResourceType = "network"
+	BindFloatingIpResourceTypeRouter   BindFloatingIpResourceType = "router"
 	BindFloatingIpResourceTypeServer   BindFloatingIpResourceType = "server"
 )
 

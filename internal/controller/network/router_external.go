@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -163,7 +164,27 @@ func (e *routerExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 		}, nil
 	}
 
-	upToDate, err := e.isRouterUpToDate(ctx, cr, router, nets)
+	// Blocked NAT rows (feature 020): declared NAT addresses the router does
+	// not own and that are not currently bindable (held elsewhere / missing).
+	// Surfaced as a Ready condition here (Observe owns conditions — the
+	// zone-echo idiom) and EXCLUDED from the drift diff below so the blocked
+	// state does not churn Update with writes that cannot succeed. Once the
+	// address becomes bindable the row re-enters the diff and Update binds it.
+	blockedNAT, err := e.blockedNATRows(ctx, router, nets)
+	if err != nil {
+		return managed.ExternalObservation{}, err
+	}
+	if len(blockedNAT) > 0 {
+		msgs := make([]string, 0, len(blockedNAT))
+		for _, id := range sortedKeys(blockedNAT) {
+			msgs = append(msgs, blockedNAT[id])
+		}
+		cond := shared.ReadyFalse(shared.ReasonNATIPUnavailable, strings.Join(msgs, "; "))
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
+	}
+
+	upToDate, err := e.isRouterUpToDate(ctx, cr, router, nets, blockedNAT)
 	if err != nil {
 		// Map resolver errors (preset-not-found, etc.) to typed Synced conditions
 		// so they appear in kubectl describe rather than as generic ReconcileError.
@@ -418,6 +439,7 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 
 	// Per-attachment convergence on already-attached networks: PATCH drifted
 	// DHCP, then converge NAT via the official per-network NAT ops. Paced.
+	ownedIPs := routerOwnedIPs(router)
 	for _, a := range e.resolvedNetworks {
 		n, ok := observed[a.NetworkID]
 		if !ok {
@@ -446,6 +468,30 @@ func (e *routerExternal) Update(ctx context.Context, mg resource.Managed) (manag
 		observedNAT := shared.DerefString(n.NatIp)
 		switch {
 		case a.NATIP != "" && a.NATIP != observedNAT:
+			// Ownership precondition (feature 020): the NAT op only accepts an
+			// address the router already owns — it never attaches (404
+			// ip_not_found otherwise). Unowned → bind the floating IP to the
+			// router instead; the NAT enable follows next reconcile once the
+			// ownership is observed. Unbindable (held elsewhere / missing) →
+			// skip: Observe surfaces the condition; issuing nothing here keeps
+			// one blocked attachment from wedging the rest of the pass.
+			if !ownedIPs[a.NATIP] {
+				fipID, state, _, err := e.natIPBindability(ctx, id, a.NATIP)
+				if err != nil {
+					return managed.ExternalUpdate{}, err
+				}
+				if state != natIPFree {
+					continue // blocked or already bound — nothing to write
+				}
+				if ops >= maxRouterMutationsPerReconcile {
+					return managed.ExternalUpdate{}, nil // paced
+				}
+				if err := e.bindNATIP(ctx, cr, fipID, id, a.NATIP); err != nil {
+					return managed.ExternalUpdate{}, err
+				}
+				ops++
+				continue // NAT enable next reconcile (Observe-sole-authority)
+			}
 			if ops >= maxRouterMutationsPerReconcile {
 				return managed.ExternalUpdate{}, nil // paced
 			}
@@ -623,8 +669,11 @@ func (e *routerExternal) resolveTier(ctx context.Context, slug, resolvedZone str
 
 // isRouterUpToDate compares the FULL declared state against the observation
 // (Observe-only — see the type doc). Gateway/reservedIPs drift is ignored by
-// design (create-only fields, data-model.md).
-func (e *routerExternal) isRouterUpToDate(ctx context.Context, cr *networkv1alpha1.Router, r twgen.RouterOut, nets []twgen.NetworkOut) (bool, error) {
+// design (create-only fields, data-model.md). natBlocked rows (declared NAT
+// address currently unbindable — feature 020) are excluded from the NAT drift
+// row: they are surfaced as a condition by Observe instead, and treating them
+// as drift would churn Update with writes that cannot succeed.
+func (e *routerExternal) isRouterUpToDate(ctx context.Context, cr *networkv1alpha1.Router, r twgen.RouterOut, nets []twgen.NetworkOut, natBlocked map[string]string) (bool, error) {
 	fp := cr.Spec.ForProvider
 
 	if fp.Name != r.Name {
@@ -652,10 +701,12 @@ func (e *routerExternal) isRouterUpToDate(ctx context.Context, cr *networkv1alph
 		if observedDHCPEnabled(n) != a.DHCP {
 			return false, nil
 		}
-		// NAT drift: declared resolved address vs observed natIP. Detection
-		// lives here; live convergence is pending the upstream NAT-toggle
-		// capture (Update emits an Event instead of failing).
+		// NAT drift: declared resolved address vs observed natIP — except rows
+		// blocked on an unbindable address (condition-surfaced, not drift).
 		if a.NATIP != shared.DerefString(n.NatIp) {
+			if _, blocked := natBlocked[a.NetworkID]; blocked {
+				continue
+			}
 			return false, nil
 		}
 	}
@@ -844,4 +895,157 @@ func (e *routerExternal) emitNetworkEvent(cr *networkv1alpha1.Router, reason, ne
 const (
 	reasonAttachedNetwork = "AttachedNetwork"
 	reasonDetachedNetwork = "DetachedNetwork"
+	reasonBoundNATIP      = "BoundNATFloatingIP"
 )
+
+// --- NAT floating-IP ownership + bind (feature 020, Part 1) -----------------
+//
+// The NAT enable op (`PATCH .../networks/{net}/nat`) only accepts an address
+// the router already owns — it never attaches (404 ip_not_found otherwise,
+// probe-verified 2026-07-24). Create ships declared NAT addresses in the
+// create body `ips[]`; the update path attaches them by binding the floating
+// IP to the router (`POST /floating-ips/{id}/bind`, resource_type "router" —
+// undocumented enum value, router UUID as the string resource_id).
+
+// natIPState classifies whether a declared NAT address can be bound.
+type natIPState int
+
+const (
+	natIPFree           natIPState = iota // unbound floating IP — bindable
+	natIPBoundToRouter                    // already bound to THIS router (observation catches up)
+	natIPBoundElsewhere                   // held by another resource — never stolen
+	natIPMissing                          // no floating IP with this address
+)
+
+// routerOwnedIPs returns the set of addresses the router currently owns.
+func routerOwnedIPs(r twgen.RouterOut) map[string]bool {
+	owned := make(map[string]bool, len(r.Ips))
+	for _, ip := range r.Ips {
+		owned[ip.Ip] = true
+	}
+	return owned
+}
+
+// sortedKeys returns the map's keys in sorted order (stable condition text).
+func sortedKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// natIPBindability resolves a declared NAT address against the account's
+// floating-IP list: the FIP upstream id (uuid) plus a bindability state and,
+// for boundElsewhere, a "type/id" holder tag for the condition message.
+// Read-only — safe from Observe.
+func (e *routerExternal) natIPBindability(ctx context.Context, routerID, addr string) (fipID string, state natIPState, holder string, err error) {
+	resp, err := e.tw.GetFloatingIps(ctx)
+	if err != nil {
+		return "", 0, "", timeweb.ClassifyNetworkError(err)
+	}
+	// T029: Classify reads the body — must happen before Close.
+	classifyErr := timeweb.Classify(resp)
+	if classifyErr != nil {
+		_ = resp.Body.Close()
+		return "", 0, "", classifyErr
+	}
+	var env struct {
+		IPs []twgen.FloatingIp `json:"ips"`
+	}
+	decodeErr := timeweb.DecodeBody(resp.Body, &env)
+	_ = resp.Body.Close()
+	if decodeErr != nil {
+		return "", 0, "", fmt.Errorf("network/router: floating-ips list: %w", decodeErr)
+	}
+	for _, fip := range env.IPs {
+		if shared.DerefString(fip.Ip) != addr {
+			continue
+		}
+		if fip.ResourceType == nil {
+			return fip.Id, natIPFree, "", nil
+		}
+		rtype := string(*fip.ResourceType)
+		rid := ""
+		if fip.ResourceId != nil {
+			if s, err := fip.ResourceId.AsFloatingIpResourceId1(); err == nil && s != "" {
+				rid = s
+			} else if n, err := fip.ResourceId.AsFloatingIpResourceId0(); err == nil {
+				rid = strconv.FormatInt(int64(n), 10)
+			}
+		}
+		if rtype == "router" && rid == routerID {
+			return fip.Id, natIPBoundToRouter, "", nil
+		}
+		return fip.Id, natIPBoundElsewhere, rtype + "/" + rid, nil
+	}
+	return "", natIPMissing, "", nil
+}
+
+// blockedNATRows returns, for every declared attachment whose NAT address the
+// router does not own, the ones that are NOT currently bindable
+// (boundElsewhere / missing), keyed by network id with a ready-to-surface
+// message. Bindable (free / bound-to-this-router) rows are excluded — the
+// Update pass converges those. Read-only.
+func (e *routerExternal) blockedNATRows(ctx context.Context, r twgen.RouterOut, nets []twgen.NetworkOut) (map[string]string, error) {
+	owned := routerOwnedIPs(r)
+	observed := make(map[string]twgen.NetworkOut, len(nets))
+	for _, n := range nets {
+		observed[n.Id] = n
+	}
+	var blocked map[string]string
+	for _, a := range e.resolvedNetworks {
+		n, ok := observed[a.NetworkID]
+		if !ok || a.NATIP == "" || owned[a.NATIP] || a.NATIP == shared.DerefString(n.NatIp) {
+			continue
+		}
+		_, state, holder, err := e.natIPBindability(ctx, r.Id, a.NATIP)
+		if err != nil {
+			return nil, err
+		}
+		var msg string
+		switch state {
+		case natIPBoundElsewhere:
+			msg = fmt.Sprintf("natFloatingIP %s (network %s): bound to %s — free it (or change the declaration); NAT converges automatically once the address is bindable", a.NATIP, a.NetworkID, holder)
+		case natIPMissing:
+			msg = fmt.Sprintf("natFloatingIP %s (network %s): no floating IP with this address exists", a.NATIP, a.NetworkID)
+		default:
+			continue // free / bound-to-this-router — Update converges
+		}
+		if blocked == nil {
+			blocked = make(map[string]string)
+		}
+		blocked[a.NetworkID] = msg
+	}
+	return blocked, nil
+}
+
+// bindNATIP binds the floating IP (by upstream uuid) to the router so a
+// subsequent NAT enable can reference the address. The NAT PATCH itself is
+// left to the next reconcile: Observe is the sole convergence authority and
+// must see the ownership before the enable is issued.
+func (e *routerExternal) bindNATIP(ctx context.Context, cr *networkv1alpha1.Router, fipID, routerID, addr string) error {
+	var rid twgen.BindFloatingIp_ResourceId
+	if err := rid.FromBindFloatingIpResourceId1(routerID); err != nil {
+		return fmt.Errorf("network/router: build bind resource_id: %w", err)
+	}
+	resp, err := e.tw.BindFloatingIp(ctx, fipID, twgen.BindFloatingIpJSONRequestBody{
+		ResourceId:   rid,
+		ResourceType: twgen.BindFloatingIpResourceTypeRouter,
+	})
+	if err != nil {
+		return timeweb.ClassifyNetworkError(err)
+	}
+	// T029: Classify reads the body — must happen before Close.
+	classifyErr := timeweb.Classify(resp)
+	_ = resp.Body.Close()
+	if classifyErr != nil {
+		return classifyErr
+	}
+	if e.recorder != nil {
+		e.recorder.Event(cr, corev1.EventTypeNormal, reasonBoundNATIP,
+			fmt.Sprintf("bound floating IP %s to router for NAT", addr))
+	}
+	return nil
+}

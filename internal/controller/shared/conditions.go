@@ -97,6 +97,12 @@ const (
 	// paused/suspended (e.g. a CDN over its traffic limit) — distinguishes a
 	// billing/limit stop from transient provisioning.
 	ReasonSuspended xpv2.ConditionReason = "Suspended"
+	// ReasonNATIPUnavailable is set on a Router whose declared NAT floating IP
+	// cannot be bound to it: the address is bound to another resource, or no
+	// floating IP with that address exists. The provider never breaks another
+	// holder's binding; NAT converges automatically once the address becomes
+	// bindable (feature 020).
+	ReasonNATIPUnavailable xpv2.ConditionReason = "NATIPUnavailable"
 )
 
 // SyncedFalse returns a Synced=False condition with the supplied reason and

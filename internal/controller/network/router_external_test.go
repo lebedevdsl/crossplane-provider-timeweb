@@ -119,7 +119,7 @@ func sampleRouterJSON(status, zone string) string {
     "status": %q,
     "zone": %q,
     "project_id": 123,
-    "ips": [{"ip": "203.0.113.7", "nat": {"id": "network-aaa"}}],
+    "ips": [{"ip": "203.0.113.7", "nat": {"id": "network-aaa"}}, {"ip": "203.0.113.99", "nat": null}],
     "parent_services": [{"id": 42, "type": "k8s"}, {"id": 7, "type": "balancer"}]
   }
 }`, status, zone)
@@ -188,8 +188,11 @@ func TestRouterObserve(t *testing.T) {
 		if at.Networks[0].DHCPEnabled == nil || !*at.Networks[0].DHCPEnabled {
 			t.Errorf("Networks[0].DHCPEnabled = %v, want true", at.Networks[0].DHCPEnabled)
 		}
-		if len(at.IPs) != 1 || at.IPs[0].IP != "203.0.113.7" || at.IPs[0].NATNetwork == nil || *at.IPs[0].NATNetwork != "network-aaa" {
-			t.Errorf("IPs = %+v, want [{203.0.113.7 network-aaa}]", at.IPs)
+		if len(at.IPs) != 2 || at.IPs[0].IP != "203.0.113.7" || at.IPs[0].NATNetwork == nil || *at.IPs[0].NATNetwork != "network-aaa" {
+			t.Errorf("IPs = %+v, want [{203.0.113.7 network-aaa} {203.0.113.99 <nil>}]", at.IPs)
+		}
+		if len(at.IPs) == 2 && (at.IPs[1].IP != "203.0.113.99" || at.IPs[1].NATNetwork != nil) {
+			t.Errorf("IPs[1] = %+v, want {203.0.113.99 <nil>}", at.IPs[1])
 		}
 		// Upstream sends the parent-service id as a number; status mirrors it
 		// in the string form.
@@ -585,6 +588,10 @@ func TestRouterUpdate(t *testing.T) {
 		}
 		if fake.UpdateRouterNatCallCount() != 0 {
 			t.Error("UpdateRouterNat called, NAT was being disabled not enabled")
+		}
+		// Feature 020 US4: disabling NAT never detaches the IP from the router.
+		if fake.UnbindFloatingIpCallCount() != 0 {
+			t.Error("UnbindFloatingIp called — NAT disable must leave the IP bound")
 		}
 	})
 
@@ -1080,4 +1087,190 @@ func TestRouterUpdate_EmitsAttachEvent(t *testing.T) { // feature 010: attach/de
 	default:
 		t.Errorf("no event emitted, want %s", reasonAttachedNetwork)
 	}
+}
+
+// --- Feature 020: NAT floating-IP auto-bind on update -----------------------
+
+// sampleFloatingIPsJSON mirrors the {ips: […]} list envelope: one free IP and
+// one bound to a server.
+const sampleFloatingIPsJSON = `{
+  "ips": [
+    {"id": "fip-uuid-9", "ip": "198.51.100.5", "availability_zone": "ru-3a", "is_ddos_guard": false, "resource_type": null, "resource_id": null},
+    {"id": "fip-uuid-8", "ip": "198.51.100.6", "availability_zone": "ru-3a", "is_ddos_guard": false, "resource_type": "server", "resource_id": 42}
+  ]
+}`
+
+func TestRouterNATBind(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Update_UnownedFree_BindsInsteadOfNAT", func(t *testing.T) {
+		// Declared NAT address the router does NOT own and a free FIP with
+		// that address → BindFloatingIp(router uuid, string arm); the NAT
+		// PATCH waits for the next reconcile (Observe-sole-authority).
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetFloatingIpsReturns(httpResp(http.StatusOK, sampleFloatingIPsJSON), nil)
+		fake.BindFloatingIpReturns(httpResp(http.StatusNoContent, ""), nil)
+		e := routerE(fake, okRouterResolver())
+		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "198.51.100.5", DHCP: true}}
+		if _, err := e.Update(ctx, newRouter(true)); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.BindFloatingIpCallCount() != 1 {
+			t.Fatalf("BindFloatingIp called %d times, want 1", fake.BindFloatingIpCallCount())
+		}
+		_, fipID, body, _ := fake.BindFloatingIpArgsForCall(0)
+		if fipID != "fip-uuid-9" {
+			t.Errorf("bind fip id = %q, want fip-uuid-9", fipID)
+		}
+		if string(body.ResourceType) != "router" {
+			t.Errorf("bind resource_type = %q, want router", string(body.ResourceType))
+		}
+		rid, err := body.ResourceId.AsBindFloatingIpResourceId1()
+		if err != nil || rid != "rtr-uuid-1" {
+			t.Errorf("bind resource_id = (%q, %v), want the router uuid string rtr-uuid-1", rid, err)
+		}
+		if fake.UpdateRouterNatCallCount() != 0 {
+			t.Error("UpdateRouterNat called in the same pass as the bind — must wait for re-observation")
+		}
+	})
+
+	t.Run("Update_OwnedAddress_NATDirect_NoFIPRead", func(t *testing.T) {
+		// Owned (but drifted) address keeps the existing direct NAT PATCH and
+		// never touches the floating-ip list.
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.UpdateRouterNatReturns(httpResp(http.StatusOK, `{}`), nil)
+		e := routerE(fake, okRouterResolver())
+		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "203.0.113.99", DHCP: true}}
+		if _, err := e.Update(ctx, newRouter(true)); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.UpdateRouterNatCallCount() != 1 {
+			t.Fatalf("UpdateRouterNat called %d times, want 1", fake.UpdateRouterNatCallCount())
+		}
+		if fake.GetFloatingIpsCallCount() != 0 {
+			t.Error("GetFloatingIps read for an owned address — ownership check must short-circuit")
+		}
+		if fake.BindFloatingIpCallCount() != 0 {
+			t.Error("BindFloatingIp called for an owned address")
+		}
+	})
+
+	t.Run("Update_BoundElsewhere_SkipsButConvergesOthers", func(t *testing.T) {
+		// Attachment A's NAT address is held by server/42 → no bind, no steal,
+		// no error; attachment B's DHCP drift still converges in the SAME pass.
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterTwoNetworksJSON), nil)
+		fake.GetFloatingIpsReturns(httpResp(http.StatusOK, sampleFloatingIPsJSON), nil)
+		fake.PatchNetworkReturns(httpResp(http.StatusOK, `{"router_network":{"id":"network-bbb"}}`), nil)
+		e := routerE(fake, okRouterResolver())
+		e.resolvedNetworks = []resolvedAttachment{
+			{NetworkID: "network-aaa", NATIP: "198.51.100.6", DHCP: true}, // bound to server/42
+			{NetworkID: "network-bbb", NATIP: "", DHCP: true},             // observed DHCP off → drift
+		}
+		if _, err := e.Update(ctx, newRouter(true)); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.BindFloatingIpCallCount() != 0 {
+			t.Error("BindFloatingIp called — must never steal a held binding")
+		}
+		if fake.UpdateRouterNatCallCount() != 0 {
+			t.Error("UpdateRouterNat called for an unowned address")
+		}
+		if fake.PatchNetworkCallCount() != 1 {
+			t.Fatalf("PatchNetwork called %d times, want 1 — the blocked attachment must not wedge the pass", fake.PatchNetworkCallCount())
+		}
+		_, _, netID, body, _ := fake.PatchNetworkArgsForCall(0)
+		if netID != "network-bbb" || !body.IsDhcpEnabled {
+			t.Errorf("PatchNetwork args = (%q, dhcp=%v), want (network-bbb, true)", netID, body.IsDhcpEnabled)
+		}
+	})
+
+	t.Run("Update_BindError_Classified", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetFloatingIpsReturns(httpResp(http.StatusOK, sampleFloatingIPsJSON), nil)
+		fake.BindFloatingIpReturns(httpResp(http.StatusInternalServerError,
+			`{"status_code":500,"error_code":"internal_error","message":"boom","response_id":"r"}`), nil)
+		e := routerE(fake, okRouterResolver())
+		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "198.51.100.5", DHCP: true}}
+		if _, err := e.Update(ctx, newRouter(true)); err == nil {
+			t.Fatal("Update returned nil, want the classified bind error")
+		}
+	})
+
+	t.Run("Observe_BoundElsewhere_ConditionAndNoChurn", func(t *testing.T) {
+		// Blocked NAT row → Ready=False/NATIPUnavailable naming the holder,
+		// and ResourceUpToDate=true so Update is not spammed with a write
+		// that cannot succeed.
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetFloatingIpsReturns(httpResp(http.StatusOK, sampleFloatingIPsJSON), nil)
+		e := routerE(fake, okRouterResolver())
+		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "198.51.100.6", DHCP: true}}
+		cr := newRouter(true)
+		obs, err := e.Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if !obs.ResourceUpToDate {
+			t.Error("ResourceUpToDate = false — a blocked NAT row must not churn Update")
+		}
+		c := cr.Status.GetCondition(xpv2.TypeReady)
+		if c.Status != corev1.ConditionFalse || c.Reason != shared.ReasonNATIPUnavailable {
+			t.Fatalf("Ready = (%s, %s), want (False, NATIPUnavailable)", c.Status, c.Reason)
+		}
+		if !strings.Contains(c.Message, "server/42") || !strings.Contains(c.Message, "198.51.100.6") {
+			t.Errorf("condition message %q must name the holder and the address", c.Message)
+		}
+	})
+
+	t.Run("Observe_MissingFIP_Condition", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetFloatingIpsReturns(httpResp(http.StatusOK, sampleFloatingIPsJSON), nil)
+		e := routerE(fake, okRouterResolver())
+		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "192.0.2.250", DHCP: true}}
+		cr := newRouter(true)
+		obs, err := e.Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if !obs.ResourceUpToDate {
+			t.Error("ResourceUpToDate = false, want true (blocked row only)")
+		}
+		c := cr.Status.GetCondition(xpv2.TypeReady)
+		if c.Reason != shared.ReasonNATIPUnavailable || !strings.Contains(c.Message, "no floating IP") {
+			t.Errorf("Ready = (%s, %q), want NATIPUnavailable / no-floating-IP message", c.Reason, c.Message)
+		}
+	})
+
+	t.Run("Observe_FreeFIP_DriftNotBlocked", func(t *testing.T) {
+		// A free (bindable) address is actionable drift: Update must run
+		// (bind), and the blocked condition must NOT appear.
+		fake := &timeweb.FakeClient{}
+		fake.GetRouterReturns(httpResp(http.StatusOK, sampleRouterJSON("started", "msk-1")), nil)
+		fake.GetNetworksReturns(httpResp(http.StatusOK, sampleRouterNetworksJSON), nil)
+		fake.GetFloatingIpsReturns(httpResp(http.StatusOK, sampleFloatingIPsJSON), nil)
+		e := routerE(fake, okRouterResolver())
+		e.resolvedNetworks = []resolvedAttachment{{NetworkID: "network-aaa", NATIP: "198.51.100.5", DHCP: true}}
+		cr := newRouter(true)
+		obs, err := e.Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if obs.ResourceUpToDate {
+			t.Error("ResourceUpToDate = true, want false (bindable drift → Update binds)")
+		}
+		if c := cr.Status.GetCondition(xpv2.TypeReady); c.Reason == shared.ReasonNATIPUnavailable {
+			t.Error("NATIPUnavailable set for a bindable address")
+		}
+	})
 }

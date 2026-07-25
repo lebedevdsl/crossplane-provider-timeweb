@@ -136,6 +136,14 @@ gateway**, while they stay unreachable from outside. The router's
 `status.atProvider.parentServices` names the cluster once bound; deleting the
 Router while it serves the cluster is refused.
 
+**Order matters — wire the router (with NAT) before creating the cluster.**
+Networks attached to an already-live router have repeatedly been rejected by
+the k8s service for private worker groups (`router_required_…` /
+`router_must_have_nat_ip…` chains even with NAT and DHCP demonstrably on — a
+platform-side inconsistency, see timeweb-infra#135). Until the provider grows
+explicit guards for this trap (planned, see `specs/_next-router-features.preface.md`),
+create the network + router + NAT wiring first and the cluster after.
+
 Sizing note: K8s presets carry a **hidden zone affinity** (the public docs
 omit it) — this provider resolves `presetName` only among presets of the
 cluster's `availabilityZone`, so a slug that exists only in another zone is
