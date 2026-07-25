@@ -49612,7 +49612,8 @@
               "server",
               "balancer",
               "database",
-              "network"
+              "network",
+              "router"
             ],
             "example": "server"
           },

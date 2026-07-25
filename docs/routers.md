@@ -58,6 +58,16 @@ spec:
   always converges NAT after create by re-observing `status.atProvider` until
   the observed NAT address matches the declared one.) Attach/detach/DHCP
   converge in the same pass.
+- **Adding NAT to an existing router auto-binds the IP** (v0.9.2). The NAT
+  toggle only accepts addresses the router already owns, so when a declared
+  NAT address is not on the router yet the provider first binds the floating
+  IP to the router, then enables NAT on the next pass. Two rules:
+  - The provider **never steals** an address bound to another resource — the
+    Router reports `Ready=False NATIPUnavailable` naming the holder and
+    converges by itself once the address is freed.
+  - Removing `natFloatingIP` disables NAT but **leaves the address bound to
+    the router** (it may be re-enabled or serve another attachment); unbind it
+    manually if you need it elsewhere.
 - `status.atProvider` answers everything the dashboard shows: per-network
   gateway / NAT address / DHCP state, the router's public IPs and what each
   NATs, and `parentServices` (e.g. a Kubernetes cluster running through it).
@@ -89,3 +99,4 @@ spec:
 | transient `networks_location_mismatch` events | new network still settling upstream | wait — retried automatically; persistent ⇒ genuine region mismatch |
 | `Ready=False UpstreamFailed` naming two zones | upstream placed the router elsewhere than requested | delete and recreate (upstream mis-placement) |
 | deletion pending, event names a k8s service | a bound k8s service blocks router deletion | delete/unbind the cluster first |
+| `Ready=False NATIPUnavailable` naming `type/id` | the declared NAT address is bound to another resource (never stolen) or no floating IP has it | free the address (or reference another); NAT converges automatically |
