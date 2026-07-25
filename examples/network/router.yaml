@@ -62,3 +62,16 @@ spec:
           ref:
             name: egress-ip
         dhcp: true
+    # Static routes (feature 021): declarative peering. Nexthop either
+    # literal, or resolved from a neighbor Router's observed gateway in a
+    # common network (`via`) — gateways are platform-assigned, unknowable in
+    # git. Subnet is the route identity (unique).
+    staticRoutes:
+      - subnet: 10.12.0.0/24
+        nexthop: 10.13.0.3
+      - subnet: 10.14.0.0/24
+        via:
+          routerRef:
+            name: neighbor
+          networkRef:
+            name: transit-net

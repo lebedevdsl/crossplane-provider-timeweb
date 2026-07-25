@@ -1,0 +1,27 @@
+# Step 6 — deleting router B leaves the shared transit net attached to A
+# (survivor guarantee, US2) with A Ready and quiet.
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - timeout: 660
+    script: |
+      cur=$(kubectl config current-context); n=$(kubectl config get-contexts -o name | wc -l | tr -d " ")
+      if [ -n "${E2E_KUBECONTEXT:-}" ]; then [ "$cur" = "$E2E_KUBECONTEXT" ] || { echo "FAIL: context $cur != $E2E_KUBECONTEXT"; exit 1; }
+      elif [ "$n" != "1" ]; then echo "FAIL: $n contexts available and E2E_KUBECONTEXT unset — refusing to guess (current: $cur)"; exit 1; fi
+      kubectl -n timeweb-e2e delete router/e2e-peer-b --wait=true --timeout=600s
+  - timeout: 300
+    script: |
+      # Context lock (fail-closed): explicit E2E_KUBECONTEXT must match; without
+      # it only a single-context kubeconfig (the harness minified one) may run —
+      # a multi-context kubeconfig aborts rather than risk a non-e2e cluster.
+      cur=$(kubectl config current-context); n=$(kubectl config get-contexts -o name | wc -l | tr -d " ")
+      if [ -n "${E2E_KUBECONTEXT:-}" ]; then [ "$cur" = "$E2E_KUBECONTEXT" ] || { echo "FAIL: context $cur != $E2E_KUBECONTEXT"; exit 1; }
+      elif [ "$n" != "1" ]; then echo "FAIL: $n contexts available and E2E_KUBECONTEXT unset — refusing to guess (current: $cur)"; exit 1; fi
+      tid=$(kubectl -n timeweb-e2e get network/e2e-peer-transit -o jsonpath='{.status.atProvider.upstreamID}')
+      for i in $(seq 1 25); do
+        a=$(kubectl -n timeweb-e2e get router/e2e-peer-a -o jsonpath='{.status.atProvider.networks[*].id}')
+        ready=$(kubectl -n timeweb-e2e get router/e2e-peer-a -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}')
+        case "$a" in *"$tid"*) [ "$ready" = "True" ] && { echo "transit survived on A"; exit 0; };; esac
+        sleep 10
+      done
+      echo "FAIL: transit gone from A (or A not Ready) after B's deletion"; exit 1
