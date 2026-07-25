@@ -239,7 +239,9 @@ func (e *nodepoolExternal) Create(ctx context.Context, mg resource.Managed) (man
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if err := timeweb.Classify(resp); err != nil {
-		return managed.ExternalCreation{}, err
+		// Feature 022: the router-required family names the FIXABLE cause
+		// (set routerRef) instead of surfacing a raw 400 retry loop.
+		return managed.ExternalCreation{}, e.explainRouterIntegration(cr, err)
 	}
 
 	var env nodeGroupEnvelope

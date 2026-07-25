@@ -94,6 +94,11 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 			}
 			ext.resolvedNetworkID = nid
 			ext.resolvedProjectID = pid
+			rid, err := resolveClusterRouterDecl(ctx, c.kube, cr)
+			if err != nil {
+				return nil, fmt.Errorf("kubernetes/cluster: resolve references: %w", err)
+			}
+			ext.resolvedRouterID = rid
 		}
 		return ext, nil
 

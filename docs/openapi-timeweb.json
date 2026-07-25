@@ -42578,6 +42578,13 @@
         "title": "ClusterEdit",
         "type": "object",
         "properties": {
+          "virtual_router_id": {
+            "title": "VirtualRouterId",
+            "type": "string",
+            "nullable": true,
+            "description": "HAND-PATCH (undocumented, panel-captured 2026-07-25): UUID роутера для интеграции кластер-роутер; null отключает интеграцию. Readback — parent_services роутера.",
+            "example": "160dc3fa-e03a-4550-9de7-8fc359b4d644"
+          },
           "name": {
             "title": "Name",
             "type": "string",

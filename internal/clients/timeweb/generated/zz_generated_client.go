@@ -746,6 +746,9 @@ type ClusterEdit struct {
 		// UsernameClaim Поле в JSON Web Token (JWT), используемое для идентификации пользователя
 		UsernameClaim *string `json:"username_claim,omitempty"`
 	} `json:"oidc_provider,omitempty"`
+
+	// VirtualRouterId HAND-PATCH (undocumented, panel-captured 2026-07-25): UUID роутера для интеграции кластер-роутер; null отключает интеграцию. Readback — parent_services роутера.
+	VirtualRouterId *string `json:"virtual_router_id"`
 }
 
 // ClusterIn defines model for ClusterIn.

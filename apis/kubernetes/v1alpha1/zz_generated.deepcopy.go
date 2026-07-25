@@ -900,6 +900,16 @@ func (in *KubernetesClusterObservation) DeepCopyInto(out *KubernetesClusterObser
 		*out = new(ClusterNetworkCIDR)
 		**out = **in
 	}
+	if in.RouterIntegrated != nil {
+		in, out := &in.RouterIntegrated, &out.RouterIntegrated
+		*out = new(bool)
+		**out = **in
+	}
+	if in.IntegratedRouterID != nil {
+		in, out := &in.IntegratedRouterID, &out.IntegratedRouterID
+		*out = new(string)
+		**out = **in
+	}
 	if in.AutoCreatedNetworkID != nil {
 		in, out := &in.AutoCreatedNetworkID, &out.AutoCreatedNetworkID
 		*out = new(string)
@@ -987,6 +997,16 @@ func (in *KubernetesClusterParameters) DeepCopyInto(out *KubernetesClusterParame
 	}
 	if in.NetworkID != nil {
 		in, out := &in.NetworkID, &out.NetworkID
+		*out = new(string)
+		**out = **in
+	}
+	if in.RouterRef != nil {
+		in, out := &in.RouterRef, &out.RouterRef
+		*out = new(v2.Reference)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.RouterID != nil {
+		in, out := &in.RouterID, &out.RouterID
 		*out = new(string)
 		**out = **in
 	}
