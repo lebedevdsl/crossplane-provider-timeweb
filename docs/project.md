@@ -1,5 +1,7 @@
 # `Project` (v1alpha1) — Timeweb Cloud project
 
+> Stuck? Start at [docs/troubleshooting.md](troubleshooting.md) — the get→describe→events→logs path, then the [condition reference](conditions.md).
+
 A logical grouping container in Timeweb Cloud. Resources (servers, buckets,
 container registries, …) can be assigned to a project via their own
 `spec.forProvider.projectID` field once it's published.

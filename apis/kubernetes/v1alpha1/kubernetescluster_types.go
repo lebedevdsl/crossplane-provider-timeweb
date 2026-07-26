@@ -39,6 +39,14 @@ type KubernetesResources struct {
 // contracts/kubernetescluster-v1alpha1.md for the authoritative shape.
 // +kubebuilder:validation:XValidation:rule="has(self.clusterNetworkCIDR) == has(oldSelf.clusterNetworkCIDR)",message="clusterNetworkCIDR cannot be added or removed after creation"
 // +kubebuilder:validation:XValidation:rule="!(has(self.routerRef) && has(self.routerID))",message="at most one of routerRef or routerID may be set"
+// Feature 025 (audit): network/project selection is create-only upstream and
+// was documented as immutable but never enforced — edits were accepted,
+// silently ignored, and still reported Synced=True. Enforced at admission now.
+// (routerRef is deliberately NOT here: router integration is a day-2 op.)
+// +kubebuilder:validation:XValidation:rule="has(self.networkRef) == has(oldSelf.networkRef) && (!has(self.networkRef) || self.networkRef == oldSelf.networkRef)",message="networkRef is create-only; revert the change or delete and recreate the resource"
+// +kubebuilder:validation:XValidation:rule="has(self.networkID) == has(oldSelf.networkID) && (!has(self.networkID) || self.networkID == oldSelf.networkID)",message="networkID is create-only; revert the change or delete and recreate the resource"
+// +kubebuilder:validation:XValidation:rule="has(self.projectRef) == has(oldSelf.projectRef) && (!has(self.projectRef) || self.projectRef == oldSelf.projectRef)",message="projectRef is create-only; revert the change or delete and recreate the resource"
+// +kubebuilder:validation:XValidation:rule="has(self.projectID) == has(oldSelf.projectID) && (!has(self.projectID) || self.projectID == oldSelf.projectID)",message="projectID is create-only; revert the change or delete and recreate the resource"
 type KubernetesClusterParameters struct {
 	// Name as it appears in the Timeweb dashboard. Mutable (PATCH).
 	// +kubebuilder:validation:MinLength=1
@@ -249,6 +257,7 @@ type KubernetesClusterStatus struct {
 // +kubebuilder:printcolumn:name="SIZING",type="string",JSONPath=".status.atProvider.sizing"
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.state"
 // +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
+// +kubebuilder:printcolumn:name="MESSAGE",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].message",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.networkRef)?1:0) + (has(self.spec.forProvider.networkSelector)?1:0) + (has(self.spec.forProvider.networkID)?1:0) <= 1",message="at most one of networkRef, networkSelector, networkID may be set"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.projectRef)?1:0) + (has(self.spec.forProvider.projectSelector)?1:0) + (has(self.spec.forProvider.projectID)?1:0) <= 1",message="at most one of projectRef, projectSelector, projectID may be set"

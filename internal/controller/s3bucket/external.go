@@ -400,15 +400,20 @@ func isUpToDate(spec objectstoragev1alpha1.S3BucketParameters, b generated.Bucke
 // Crossplane Ready condition (T017). A ready bucket reports `created` (the
 // value the live API returns — verified on twc-staging; `active` is also
 // accepted defensively). `quarantined` surfaces as a terminal Ready=False;
-// any other value (e.g. `new`, `transfer`, `no_paid`) is treated as Creating.
+// `no_paid` surfaces as PaymentRequired (feature 025: it previously fell into
+// Creating, so an unfunded bucket sat there forever with no visible reason —
+// the upstream does return it, `BucketStatusNoPaid` exists in the client).
+// Any other value (e.g. `new`, `transfer`) is treated as Creating.
 func setBucketReadyCondition(recorder record.EventRecorder, cr *objectstoragev1alpha1.S3Bucket, state generated.BucketStatus) {
 	var cond xpv2.Condition
-	switch strings.ToLower(string(state)) {
-	case "created", "active":
-		cond = xpv2.Available()
-	case "quarantined":
+	switch {
+	case strings.EqualFold(string(state), "quarantined"):
 		cond = shared.ReadyFalse(shared.ReasonBucketQuarantined,
 			"bucket is in quarantine — check Timeweb panel for remediation steps")
+	case shared.ClassifyUpstreamState(string(state)) == shared.StateUnfunded:
+		cond = shared.ReadyFalse(shared.ReasonPaymentRequired, shared.UnfundedMessage("bucket"))
+	case shared.ClassifyUpstreamState(string(state)) == shared.StateActive:
+		cond = xpv2.Available()
 	default:
 		cond = xpv2.Creating()
 	}

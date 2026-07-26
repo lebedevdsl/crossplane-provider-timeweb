@@ -138,9 +138,11 @@ TW_API="https://api.timeweb.cloud"
 
 echo "[e2e] preparing namespace + credential Secret + ProviderConfig"
 $KCTL create namespace "$E2E_NAMESPACE" --dry-run=client -o yaml | $KCTL apply -f -
+# Token via stdin, never argv: /proc/<pid>/cmdline is world-readable on Linux,
+# so --from-literal exposes the credential to any local/co-tenant process for
+# the lifetime of the call (feature 025 audit L-7).
 $KCTL -n "$E2E_NAMESPACE" create secret generic timeweb-credentials \
-  --from-literal=token="$TIMEWEB_CLOUD_TOKEN" \
-  --dry-run=client -o yaml | $KCTL apply -f -
+  --from-file=token=/dev/stdin --dry-run=client -o yaml <<<"$TIMEWEB_CLOUD_TOKEN" | $KCTL apply -f -
 cat <<EOF | $KCTL apply -f -
 apiVersion: timeweb.crossplane.io/v1alpha1
 kind: ProviderConfig
@@ -169,9 +171,9 @@ E2E_SECONDARY_NS="e2e-team-b"
 if [ -n "${TIMEWEB_E2E_TOKEN:-}" ]; then
   echo "[e2e] TIMEWEB_E2E_TOKEN set → provisioning secondary namespace + dual-PC pair (multi-PC bundle ENABLED)"
   $KCTL create namespace "$E2E_SECONDARY_NS" --dry-run=client -o yaml | $KCTL apply -f -
+  # stdin, not argv (feature 025 audit L-7)
   $KCTL -n "$E2E_SECONDARY_NS" create secret generic timeweb-credentials \
-    --from-literal=token="$TIMEWEB_E2E_TOKEN" \
-    --dry-run=client -o yaml | $KCTL apply -f -
+    --from-file=token=/dev/stdin --dry-run=client -o yaml <<<"$TIMEWEB_E2E_TOKEN" | $KCTL apply -f -
   cat <<EOF | $KCTL apply -f -
 apiVersion: timeweb.crossplane.io/v1alpha1
 kind: ProviderConfig

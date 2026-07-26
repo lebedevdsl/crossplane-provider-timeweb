@@ -1,5 +1,7 @@
 # `S3User` (v1alpha1) — scoped object-storage credentials
 
+> Stuck? Start at [docs/troubleshooting.md](troubleshooting.md) — the get→describe→events→logs path, then the [condition reference](conditions.md).
+
 A scoped, least-privilege object-storage IAM user. This is the credentials
 counterpart to [`S3Bucket`](./s3bucket.md): the bucket kind provisions storage
 and publishes non-secret metadata; the `S3User` grants access to specific

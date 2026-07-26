@@ -34,10 +34,18 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
 
+      # Pinned download, NOT `curl … main/install.sh | sh` (feature 025 audit
+      # M-4): this job holds packages:write AND id-token:write, so arbitrary
+      # code here could publish AND validly sign a backdoored package. Mirrors
+      # the pattern ci.yaml already uses.
       - name: Install Crossplane CLI
+        env:
+          XP_VERSION: v2.1.3
         run: |
-          curl -sL https://raw.githubusercontent.com/crossplane/crossplane/main/install.sh | sh
-          sudo mv crossplane /usr/local/bin/
+          curl -fsSL "https://releases.crossplane.io/stable/${XP_VERSION}/bin/linux_amd64/crank" -o /tmp/crossplane
+          chmod +x /tmp/crossplane
+          sudo mv /tmp/crossplane /usr/local/bin/crossplane
+          crossplane --help >/dev/null && echo "crossplane CLI ${XP_VERSION} installed"
 
       - name: Log in to ghcr.io
         uses: docker/login-action@v3
@@ -61,6 +69,25 @@ jobs:
           make release \
             IMAGE_REPO=ghcr.io/lebedevdsl/provider-timeweb \
             VERSION="${VERSION}"
+
+      # SBOM + attestation (feature 025 audit M-5): signing alone tells a
+      # consumer nothing about contents. The SBOM is attested against the same
+      # DIGEST `make release` signed, so verification covers both.
+      - name: Generate SBOM and attest it to the published digest
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          IMAGE_REPO=ghcr.io/lebedevdsl/provider-timeweb
+          digest=$(crossplane xpkg extract --help >/dev/null 2>&1; \
+            docker buildx imagetools inspect "${IMAGE_REPO}:${VERSION}" --format '{{json .Manifest}}' | jq -r .digest)
+          echo "attesting SBOM for ${IMAGE_REPO}@${digest}"
+          curl -fsSL https://raw.githubusercontent.com/anchore/syft/v1.18.1/install.sh -o /tmp/syft-install.sh
+          echo "  (syft installer pinned to v1.18.1)"
+          sh /tmp/syft-install.sh -b /usr/local/bin v1.18.1
+          syft "${IMAGE_REPO}@${digest}" -o spdx-json=/tmp/sbom.spdx.json
+          cosign attest --yes --predicate /tmp/sbom.spdx.json \
+            --type spdxjson "${IMAGE_REPO}@${digest}"
 
       # Publish the GitHub release: notes (docs/release-notes/<tag>.md) + a
       # standard one-command Install section, with install.yaml attached as an

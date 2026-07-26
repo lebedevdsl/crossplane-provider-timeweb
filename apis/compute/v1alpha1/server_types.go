@@ -69,6 +69,17 @@ type ServerResources struct {
 // `name`, `presetName`, `location`, `os`. Everything else is optional.
 // See spec.md FR-003/FR-004 and contracts/server-v1alpha1.md for the
 // authoritative shape.
+// Feature 025 (audit): these create-only reference fields were previously
+// documented as immutable but NOT enforced — an edit was accepted, silently
+// ignored, and still reported Synced=True, so git and the cloud diverged with
+// every dashboard green. Enforced at admission now; the failure is loud and
+// immediate instead of invisible.
+// +kubebuilder:validation:XValidation:rule="has(self.sshKeyRefs) == has(oldSelf.sshKeyRefs) && (!has(self.sshKeyRefs) || self.sshKeyRefs == oldSelf.sshKeyRefs)",message="sshKeyRefs is create-only (Timeweb cannot change a server's key list after provisioning); revert the change or delete and recreate the resource"
+// +kubebuilder:validation:XValidation:rule="has(self.sshKeyIDs) == has(oldSelf.sshKeyIDs) && (!has(self.sshKeyIDs) || self.sshKeyIDs == oldSelf.sshKeyIDs)",message="sshKeyIDs is create-only (Timeweb cannot change a server's key list after provisioning); revert the change or delete and recreate the resource"
+// +kubebuilder:validation:XValidation:rule="has(self.networkRef) == has(oldSelf.networkRef) && (!has(self.networkRef) || self.networkRef == oldSelf.networkRef)",message="networkRef is create-only; revert the change or delete and recreate the resource"
+// +kubebuilder:validation:XValidation:rule="has(self.networkID) == has(oldSelf.networkID) && (!has(self.networkID) || self.networkID == oldSelf.networkID)",message="networkID is create-only; revert the change or delete and recreate the resource"
+// +kubebuilder:validation:XValidation:rule="has(self.projectRef) == has(oldSelf.projectRef) && (!has(self.projectRef) || self.projectRef == oldSelf.projectRef)",message="projectRef is create-only; revert the change or delete and recreate the resource"
+// +kubebuilder:validation:XValidation:rule="has(self.projectID) == has(oldSelf.projectID) && (!has(self.projectID) || self.projectID == oldSelf.projectID)",message="projectID is create-only; revert the change or delete and recreate the resource"
 type ServerParameters struct {
 	// Name as it appears in the Timeweb dashboard. Max 255 chars. Mutable.
 	// +kubebuilder:validation:MinLength=1
@@ -274,6 +285,7 @@ type ServerStatus struct {
 // +kubebuilder:printcolumn:name="PUBLIC-IP",type="string",JSONPath=".status.atProvider.publicIP"
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.state"
 // +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
+// +kubebuilder:printcolumn:name="MESSAGE",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].message",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.networkRef)?1:0) + (has(self.spec.forProvider.networkSelector)?1:0) + (has(self.spec.forProvider.networkID)?1:0) <= 1",message="at most one of networkRef, networkSelector, networkID may be set"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.projectRef)?1:0) + (has(self.spec.forProvider.projectSelector)?1:0) + (has(self.spec.forProvider.projectID)?1:0) <= 1",message="at most one of projectRef, projectSelector, projectID may be set"

@@ -66,12 +66,15 @@ spec:
     # literal, or resolved from a neighbor Router's observed gateway in a
     # common network (`via`) — gateways are platform-assigned, unknowable in
     # git. Subnet is the route identity (unique).
+    # NOTE: destination subnets must be REAL existing networks (the upstream
+    # rejects routes to non-existent subnets with a misleading
+    # `invalid_static_route_nexthop`). The `via` form is shown commented out
+    # because it needs a second Router + a shared network, which this
+    # single-router example does not define — see docs/routers.md.
     staticRoutes:
       - subnet: 10.12.0.0/24
         nexthop: 10.13.0.3
-      - subnet: 10.14.0.0/24
-        via:
-          routerRef:
-            name: neighbor
-          networkRef:
-            name: transit-net
+      # - subnet: 10.14.0.0/24
+      #   via:
+      #     routerRef: {name: neighbor}      # a second Router CR
+      #     networkRef: {name: transit-net}  # a network attached to BOTH

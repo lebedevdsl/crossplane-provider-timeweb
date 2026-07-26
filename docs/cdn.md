@@ -1,5 +1,7 @@
 # `Cdn` (v1alpha1) — Timeweb Cloud CDN resource
 
+> Stuck? Start at [docs/troubleshooting.md](troubleshooting.md) — the get→describe→events→logs path, then the [condition reference](conditions.md).
+
 One resource = one Timeweb CDN resource: a single origin served through an
 auto-assigned technical delivery domain, with the declared settings blocks
 kept in sync (single-writer — dashboard edits to declared fields are reverted

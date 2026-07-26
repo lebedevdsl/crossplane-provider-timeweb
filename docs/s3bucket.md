@@ -1,5 +1,7 @@
 # `S3Bucket` (v1alpha1) — Timeweb Cloud S3-compatible bucket
 
+> Stuck? Start at [docs/troubleshooting.md](troubleshooting.md) — the get→describe→events→logs path, then the [condition reference](conditions.md).
+
 An S3-compatible object-storage bucket. The controller publishes an Opaque
 connection Secret with `endpoint`, `bucket`, and `region` — non-secret
 metadata only. **Credentials are NOT emitted** (since v0.4.0): they were the

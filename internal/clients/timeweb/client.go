@@ -28,6 +28,7 @@ package timeweb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -166,11 +167,29 @@ func New(cfg Config) (*Client, error) {
 		transport = sharedTransport(baseURL)
 	}
 
+	// Bind the credential to the API host and refuse cross-host redirects
+	// (feature 025 audit M-2): defense in depth — the transport already
+	// withholds the header off-host, and CheckRedirect stops the request from
+	// leaving the API host at all.
+	var apiHost string
+	if u, err := url.Parse(baseURL); err == nil {
+		apiHost = u.Host
+	}
 	httpClient := &http.Client{
 		Timeout: timeout,
 		Transport: &authTransport{
 			token: cfg.Token,
+			host:  apiHost,
 			next:  transport,
+		},
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if apiHost != "" && !strings.EqualFold(req.URL.Host, apiHost) {
+				return fmt.Errorf("timeweb: refusing cross-host redirect to %q (credential is bound to %q)", req.URL.Host, apiHost)
+			}
+			if len(via) >= 10 {
+				return errors.New("timeweb: stopped after 10 redirects")
+			}
+			return nil
 		},
 	}
 
@@ -266,13 +285,23 @@ func newDefaultTransport() *http.Transport {
 // safe by accident as well as by intention.
 type authTransport struct {
 	token string
-	next  http.RoundTripper
+	// host is the API host the token belongs to. The header is attached ONLY
+	// for this host (feature 025 audit M-2): net/http strips Authorization on
+	// a cross-host redirect, but only for headers set on the ORIGINAL request
+	// — a header set inside a RoundTripper is re-applied on every redirect
+	// hop, defeating that protection. A 30x from the API, the Qrator edge, or
+	// an env-configured proxy could otherwise hand the account token to
+	// another host.
+	host string
+	next http.RoundTripper
 }
 
 // RoundTrip implements http.RoundTripper.
 func (t *authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	clone := req.Clone(req.Context())
-	clone.Header.Set("Authorization", "Bearer "+t.token)
+	if t.host == "" || strings.EqualFold(clone.URL.Host, t.host) {
+		clone.Header.Set("Authorization", "Bearer "+t.token)
+	}
 	clone.Header.Set("Accept", "application/json")
 	return t.next.RoundTrip(clone)
 }

@@ -243,6 +243,10 @@ func setAddonReadyCondition(cr *kubernetesv1alpha1.KubernetesClusterAddon, statu
 	case strings.Contains(s, "error") || strings.Contains(s, "fail"):
 		cond = shared.ReadyFalse(shared.ReasonUpstreamFailed,
 			fmt.Sprintf("upstream addon status is %q: installation failed — delete and recreate the KubernetesClusterAddon", status))
+	case shared.ClassifyUpstreamState(status) == shared.StateUnfunded:
+		// Feature 025: previously fell into Creating — an unfunded addon sat
+		// there forever with no operator-visible reason.
+		cond = shared.ReadyFalse(shared.ReasonPaymentRequired, shared.UnfundedMessage("addon"))
 	case strings.Contains(s, "active") || strings.Contains(s, "running") || s == "installed":
 		cond = xpv2.Available()
 	default:

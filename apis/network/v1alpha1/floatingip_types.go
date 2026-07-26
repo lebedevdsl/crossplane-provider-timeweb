@@ -123,6 +123,7 @@ type FloatingIPStatus struct {
 // +kubebuilder:printcolumn:name="IP",type="string",JSONPath=".status.atProvider.ip"
 // +kubebuilder:printcolumn:name="BOUND-TO",type="string",JSONPath=".status.atProvider.observedBoundSummary"
 // +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
+// +kubebuilder:printcolumn:name="MESSAGE",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].message",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
 // FloatingIP is a Timeweb floating IPv4 address — pure allocation. The

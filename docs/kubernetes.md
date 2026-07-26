@@ -1,5 +1,7 @@
 # Managed Kubernetes — operator guide
 
+> Stuck? Start at [docs/troubleshooting.md](troubleshooting.md) — the get→describe→events→logs path, then the [condition reference](conditions.md).
+
 Covers the three `kubernetes.m.timeweb.crossplane.io/v1alpha1` kinds:
 `KubernetesCluster`, `KubernetesClusterNodepool`, `KubernetesClusterAddon`.
 Assumes the provider is installed and a `ProviderConfig` named `default`

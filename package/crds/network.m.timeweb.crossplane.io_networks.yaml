@@ -39,6 +39,10 @@ spec:
       name: ID
       priority: 1
       type: string
+    - jsonPath: .status.conditions[?(@.type=='Ready')].message
+      name: MESSAGE
+      priority: 1
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date

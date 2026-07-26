@@ -1,5 +1,7 @@
 # `ContainerRegistryRepository` (v1alpha1, observe-only)
 
+> Stuck? Start at [docs/troubleshooting.md](troubleshooting.md) — the get→describe→events→logs path, then the [condition reference](conditions.md).
+
 A repository (image namespace) inside a parent `ContainerRegistry`.
 
 | Property | Value |

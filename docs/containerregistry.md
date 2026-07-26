@@ -1,5 +1,7 @@
 # `ContainerRegistry` (v1alpha1) — Timeweb-hosted Docker registry
 
+> Stuck? Start at [docs/troubleshooting.md](troubleshooting.md) — the get→describe→events→logs path, then the [condition reference](conditions.md).
+
 A managed Docker registry on Timeweb. The controller publishes a
 `kubernetes.io/dockerconfigjson` connection Secret operators can drop into
 workloads as `imagePullSecrets`.
@@ -83,42 +85,51 @@ spec:
     image: demo-prod.registry.twcstorage.ru/mygroup/myimage:v1
 ```
 
-### Credentials caveat
+### Credentials — READ THIS BEFORE USING THE PULL SECRET
 
-Timeweb has no separate credential API for container registries — the
-dashboard shows that docker login uses the **registry name as the username
-and the account API token as the password**, and the controller synthesizes
-the Secret from exactly that pair (no upstream lookup). Confirmed against the
-dashboard's registry detail page.
+Timeweb has no per-registry credential API: docker login uses the **registry
+name as the username and a Timeweb API token as the password**, and the
+controller synthesizes the Secret from exactly that pair (no upstream lookup).
 
-Consequence: the Secret embeds the same API token the provider itself uses.
-Anyone who can read the pull Secret can call the Timeweb API with the
-account's rights — scope access to the Secret's namespace accordingly. When
-Timeweb ships per-registry credentials, the controller will switch to
-fetching those instead.
+**The password is whatever token the serving ProviderConfig holds.** Anyone who
+can read the pull Secret — every node that schedules the pod, and everyone with
+`get secrets` in that namespace — can call the Timeweb API with that token's
+rights. If it is your account-wide token, that means deleting servers,
+clusters, VPCs and buckets.
 
-## Conditions
+**Recommended setup: give the registry its own scoped token.**
 
-| Condition | True meaning | False reasons |
-| --------- | ------------ | -------------- |
-| `Synced` | Reconciliation reached upstream cleanly. | `ImmutableFieldChange`, `PresetNotFound`, `APIError`, `RateLimited`. |
-| `Ready` | Registry exists upstream. | `RegistryNotFound`, `Reconciling`. |
+1. In the Timeweb account admin panel, create an API token **scoped to the
+   registry** (narrowest scope the panel offers for this project).
+2. Put it in its own Secret, and give it a dedicated ProviderConfig:
 
-## Immutable-field handling
+   ```yaml
+   apiVersion: v1
+   kind: Secret
+   metadata: {name: timeweb-registry-token, namespace: cloud-infra}
+   type: Opaque
+   stringData: {token: "<registry-scoped token>"}
+   ---
+   apiVersion: timeweb.crossplane.io/v1alpha1
+   kind: ProviderConfig
+   metadata: {name: registry, namespace: cloud-infra}
+   spec:
+     credentials:
+       source: Secret
+       secretRef: {name: timeweb-registry-token, key: token}
+   ```
 
-`name` and `initialSizeGB` (the tariff tier) are immutable. Editing either
-triggers reject-and-surface:
+3. Point the ContainerRegistry (and its repositories) at it:
 
-1. Controller detects the diff against the live upstream.
-2. `Synced=False, reason=ImmutableFieldChange` with a message naming the field.
-3. Kubernetes Event (type `Warning`).
-4. Upstream is NOT modified.
+   ```yaml
+   spec:
+     providerConfigRef: {kind: ProviderConfig, name: registry}
+   ```
 
-## Lifecycle
+Now the pull Secret can only ever carry the scoped credential. Everything else
+in this guide works unchanged — this is purely which ProviderConfig serves the
+registry resources.
 
-| Operation | Upstream call | Notes |
-| --------- | ------------- | ----- |
-| Observe | `GET /api/v1/container-registry/{id}` | Connection Secret is synthesized locally (name + API token). |
-| Create | `POST /api/v1/container-registry` | Resolves `initialSizeGB` → `preset_id` first. |
-| Update | `PATCH /api/v1/container-registry/{id}` | Mutable subset only. |
-| Delete | `DELETE /api/v1/container-registry/{id}` | 404 treated as success. |
+The provider cannot verify how broad a token is, so it does not warn: the scope
+is your decision, and the default (whatever ProviderConfig you happen to use)
+is not automatically safe.
