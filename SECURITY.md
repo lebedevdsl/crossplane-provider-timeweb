@@ -18,6 +18,29 @@ version, a description, and reproduction steps. You will get an acknowledgement
 within a few days; fixes ship in a patch or minor release with a note in the
 release notes (and a GHSA where warranted).
 
+## Verifying a release
+
+Releases are cosign-signed by digest (keyless, GitHub OIDC) and carry an SPDX
+SBOM attestation. Verification is only meaningful with identity constraints —
+`cosign verify` without them accepts any signature:
+
+```bash
+IMAGE=ghcr.io/lebedevdsl/provider-timeweb
+TAG=v0.12.0
+
+cosign verify "${IMAGE}:${TAG}" \
+  --certificate-identity-regexp '^https://github.com/lebedevdsl/crossplane-provider-timeweb/\.github/workflows/release\.yaml@refs/tags/' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+
+# SBOM attestation (same digest)
+cosign verify-attestation "${IMAGE}:${TAG}" --type spdxjson \
+  --certificate-identity-regexp '^https://github.com/lebedevdsl/crossplane-provider-timeweb/\.github/workflows/release\.yaml@refs/tags/' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+To enforce this cluster-side, Crossplane's `ImageConfig` can require signature
+verification before a package is installed.
+
 ## Scope notes
 
 - The provider authenticates to Timeweb Cloud with a bearer token sourced only
