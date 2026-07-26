@@ -1,5 +1,7 @@
 # `SSHKey` (v1alpha1) — Timeweb Cloud SSH key
 
+> Stuck? Start at [docs/troubleshooting.md](troubleshooting.md) — the get→describe→events→logs path, then the [condition reference](conditions.md).
+
 An SSH public key registered on the Timeweb account. The key body and display
 name are immutable; key rotation is delete-and-recreate.
 

@@ -1,5 +1,7 @@
 # `Firewall` (v1alpha1) — Timeweb Cloud firewall rule group
 
+> Stuck? Start at [docs/troubleshooting.md](troubleshooting.md) — the get→describe→events→logs path, then the [condition reference](conditions.md).
+
 One resource = one Timeweb firewall **rule group** plus its inline rules and
 service attachments. The resource is the single writer of its group: dashboard
 edits are reverted to the declared state on the next reconcile.

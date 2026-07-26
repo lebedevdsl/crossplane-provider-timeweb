@@ -1,5 +1,7 @@
 # Routers
 
+> Stuck? Start at [docs/troubleshooting.md](troubleshooting.md) — the get→describe→events→logs path, then the [condition reference](conditions.md).
+
 `Router` (`network.m.timeweb.crossplane.io/v1alpha1`) manages Timeweb's
 NAT/DHCP router appliance for private networks. The upstream API is
 undocumented; every operation this provider uses was verified live —

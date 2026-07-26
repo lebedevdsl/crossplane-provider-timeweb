@@ -1,0 +1,82 @@
+# Private Kubernetes cluster — the complete arrangement in one file.
+#
+# Worker nodes get NO public addresses; outbound internet egresses through the
+# router's NAT. Five objects have to line up, which is why they are here
+# together rather than spread across examples/:
+#
+#   Network ─┬─ Router (attachment WITH natFloatingIP)  → egress
+#            └─ KubernetesCluster (networkRef + routerRef)
+#                 └─ Nodepool (publicIP: false)
+#
+# Order matters only for speed, not correctness — every reference gates itself
+# with a clear condition until its target is usable. See docs/kubernetes.md
+# ("Worker node networking") and docs/gitops.md (sync waves).
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Network
+metadata: {name: app-net, namespace: default}
+spec:
+  providerConfigRef: {kind: ProviderConfig, name: default}
+  forProvider:
+    name: app-net
+    subnetCIDR: 10.20.0.0/24
+    location: ru-3
+---
+# Egress address for the router's NAT. The Router never orders IPs itself.
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: FloatingIP
+metadata: {name: app-egress, namespace: default}
+spec:
+  providerConfigRef: {kind: ProviderConfig, name: default}
+  forProvider:
+    location: ru-3
+    availabilityZone: msk-1
+    isDDoSGuard: false
+---
+apiVersion: network.m.timeweb.crossplane.io/v1alpha1
+kind: Router
+metadata: {name: edge, namespace: default}
+spec:
+  providerConfigRef: {kind: ProviderConfig, name: default}
+  forProvider:
+    name: edge
+    location: ru-3
+    availabilityZone: msk-1
+    presetName: router-1x1-1gb
+    networks:
+      - networkRef: {name: app-net}
+        dhcp: true
+        # Presence of natFloatingIP IS the NAT switch for this network.
+        natFloatingIP:
+          ref: {name: app-egress}
+---
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesCluster
+metadata: {name: app, namespace: default}
+spec:
+  providerConfigRef: {kind: ProviderConfig, name: default}
+  writeConnectionSecretToRef: {name: app-kubeconfig}
+  forProvider:
+    name: app
+    k8sVersion: "v1.34.x+k0s.0"     # EXACT entry from /api/v1/k8s/k8s-versions
+    networkDriver: cilium
+    location: ru-3
+    availabilityZone: msk-1
+    presetName: k8s-base-1675
+    masterNodesCount: 1
+    networkRef: {name: app-net}
+    # REQUIRED for private worker pools: integrates the cluster with the
+    # router (day-2 op; never automatic). Without it, private nodepools fail
+    # with router_required_for_worker_groups_without_public_ip.
+    routerRef: {name: edge}
+---
+apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+kind: KubernetesClusterNodepool
+metadata: {name: app-workers, namespace: default}
+spec:
+  providerConfigRef: {kind: ProviderConfig, name: default}
+  forProvider:
+    name: workers
+    clusterRef: {name: app}
+    presetName: k8s-1-2-30-1679
+    nodeCount: 2
+    publicIP: false                  # create-time immutable

@@ -1,5 +1,7 @@
 # Cloud Servers, Networks & Floating IPs
 
+> Stuck? Start at [docs/troubleshooting.md](troubleshooting.md) — the get→describe→events→logs path, then the [condition reference](conditions.md).
+
 Operator guide for the compute/network kinds: **`Server`** (cloud VM),
 **`Network`** (VPC), and **`FloatingIP`** (floating IPv4). For the storage-class
 kinds (`S3Bucket`, `ContainerRegistry`) see [`presets.md`](./presets.md).
@@ -52,9 +54,16 @@ spec:
   (typically ≤10 min for the smallest preset).
 
 Mutable post-create: `name`, `hostname`, `comment`, `cloudInit`. Everything
-else (`presetName`, `location`, `os`, `availabilityZone`, the SSH-key /
-network / project fields) is immutable — editing it surfaces `Synced=False,
-reason=ImmutableFieldChange`. Resizing is a delete-and-recreate.
+else is create-only and rejected **at admission** (`kubectl apply` fails with
+the field named and the remedy stated): `presetName`, `location`, `os`,
+`availabilityZone`, and the SSH-key / network / project reference fields.
+Resizing is a delete-and-recreate.
+
+> Before v0.12.0 the reference fields (`sshKeyRefs`/`sshKeyIDs`,
+> `networkRef`/`networkID`, `projectRef`/`projectID`) were documented as
+> immutable but not enforced — an edit was accepted, silently ignored, and the
+> resource still reported `Synced=True`, so git and the cloud diverged with
+> nothing to show for it. They now fail loudly at apply time.
 
 ## Custom sizing (configurators)
 
@@ -109,7 +118,7 @@ spec:
 spec:
   forProvider:
     networkRef:
-      name: shared                    # at most one of networkRef / networkSelector / networkID
+      name: shared                    # networkRef or networkID (networkSelector is NOT implemented in v0.x)
 ```
 
 - The Server controller blocks `Create` until the Network is `Ready=True`,
@@ -153,7 +162,7 @@ spec:
 # 2. Bind by referencing it FROM the Server:
 spec:
   forProvider:
-    floatingIPRefs:                   # at most one of floatingIPRefs / floatingIPSelector / floatingIPIDs
+    floatingIPRefs:                   # refs or IDs (floatingIPSelector is NOT implemented in v0.x)
     - name: web-01-ip
 ```
 
@@ -197,7 +206,7 @@ a known default, set `forProvider.availabilityZone` explicitly.
 spec:
   forProvider:
     projectRef:
-      name: team-a-production         # → existing Project MR; at most one of projectRef/Selector/projectID
+      name: team-a-production         # → existing Project MR; projectRef or projectID (projectSelector NOT implemented in v0.x)
 ```
 
 Resolves to the Project's `upstreamID` and passes it as `project_id` on create.

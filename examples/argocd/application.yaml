@@ -1,0 +1,36 @@
+# ArgoCD Application managing Timeweb provider resources.
+#
+# The ignoreDifferences stanza is REQUIRED: crossplane.io/external-name is
+# written by the provider and records the upstream object's identity. If Argo
+# self-heals it back to a git-rendered value, every sync can create a new cloud
+# object (live incident 2026-07-25: three billable node groups from one
+# manifest). See docs/gitops.md.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: timeweb-infra
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://git.example.com/infra/timeweb-infra.git
+    targetRevision: main
+    path: manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cloud-infra
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+  ignoreDifferences:
+    # Provider-owned identity + create-tracking annotations.
+    - group: "*"
+      kind: "*"
+      jsonPointers:
+        - /metadata/annotations/crossplane.io~1external-name
+        - /metadata/annotations/crossplane.io~1external-create-pending
+        - /metadata/annotations/crossplane.io~1external-create-succeeded
+        - /metadata/annotations/crossplane.io~1external-create-failed
