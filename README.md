@@ -40,6 +40,17 @@ service under `<svc>.m.timeweb.crossplane.io` (`compute`, `network`,
 — it walks: API token → Kubernetes Secret → ProviderConfig → first resource →
 `kubectl get` in under 5 minutes.
 
+**Something's wrong?** [`docs/troubleshooting.md`](./docs/troubleshooting.md)
+is the single entry point (fleet view → conditions → events → logs), backed by
+the [condition reference](./docs/conditions.md).
+
+**Using ArgoCD or Flux?** Read [`docs/gitops.md`](./docs/gitops.md) *before*
+writing the Application — `crossplane.io/external-name` is provider-owned, and
+a self-healing sync that reverts it can create duplicate cloud resources.
+
+**Upgrading?** [`docs/upgrading.md`](./docs/upgrading.md) — checklist,
+rollback limits, and `make preflight` (read-only, production-safe).
+
 See [`docs/servers.md`](./docs/servers.md) for the `Server` / `Network` /
 `FloatingIP` operator guide, [`docs/kubernetes.md`](./docs/kubernetes.md)
 for the managed-Kubernetes guide (cluster + nodepool + addon, scaling, version
