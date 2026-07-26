@@ -103,8 +103,14 @@ type KubernetesClusterAddonStatus struct {
 // +kubebuilder:printcolumn:name="VERSION",type="string",JSONPath=".spec.forProvider.version"
 // +kubebuilder:printcolumn:name="INSTALLED-VERSION",type="string",JSONPath=".status.atProvider.installedVersion"
 // +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
+// +kubebuilder:printcolumn:name="MESSAGE",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].message",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.clusterRef)?1:0) + (has(self.spec.forProvider.clusterSelector)?1:0) + (has(self.spec.forProvider.clusterID)?1:0) == 1",message="exactly one of clusterRef, clusterSelector, clusterID must be set"
+// Feature 025 (audit): clusterSelector is CRD-declared but not implemented in
+// v0.x — counting it toward this REQUIRED one-of made a selector-only manifest
+// admission-valid yet permanently unreconcilable. It is excluded from the
+// satisfying set and rejected outright until implemented.
+// +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.clusterRef)?1:0) + (has(self.spec.forProvider.clusterID)?1:0) == 1",message="exactly one of clusterRef or clusterID must be set"
+// +kubebuilder:validation:XValidation:rule="!has(self.spec.forProvider.clusterSelector)",message="clusterSelector is not implemented in v0.x — use clusterRef or clusterID"
 
 // KubernetesClusterAddon is one installed Timeweb managed-Kubernetes addon.
 type KubernetesClusterAddon struct {

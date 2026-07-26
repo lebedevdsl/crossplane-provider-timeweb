@@ -94,6 +94,7 @@ type NetworkStatus struct {
 // +kubebuilder:printcolumn:name="CIDR",type="string",JSONPath=".spec.forProvider.subnetCIDR"
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.state",priority=1
 // +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
+// +kubebuilder:printcolumn:name="MESSAGE",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].message",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Network is a Timeweb VPC (private network). Created via the v2

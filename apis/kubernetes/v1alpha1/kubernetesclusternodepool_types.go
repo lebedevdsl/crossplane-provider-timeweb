@@ -248,8 +248,13 @@ type KubernetesClusterNodepoolStatus struct {
 // +kubebuilder:printcolumn:name="DESIRED",type="integer",JSONPath=".spec.forProvider.nodeCount"
 // +kubebuilder:printcolumn:name="OBSERVED",type="integer",JSONPath=".status.atProvider.observedNodeCount"
 // +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
+// +kubebuilder:printcolumn:name="MESSAGE",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].message",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.clusterRef)?1:0) + (has(self.spec.forProvider.clusterSelector)?1:0) + (has(self.spec.forProvider.clusterID)?1:0) == 1",message="exactly one of clusterRef, clusterSelector, clusterID must be set"
+// Feature 025 (audit): clusterSelector is CRD-declared but unimplemented in
+// v0.x — it must not satisfy this REQUIRED one-of (a selector-only manifest
+// was admission-valid yet could never reconcile).
+// +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.clusterRef)?1:0) + (has(self.spec.forProvider.clusterID)?1:0) == 1",message="exactly one of clusterRef or clusterID must be set"
+// +kubebuilder:validation:XValidation:rule="!has(self.spec.forProvider.clusterSelector)",message="clusterSelector is not implemented in v0.x — use clusterRef or clusterID"
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.presetName)?1:0) + (has(self.spec.forProvider.resources)?1:0) == 1",message="exactly one of presetName or resources must be set"
 // +kubebuilder:validation:XValidation:rule="has(self.spec.forProvider.presetName) == has(oldSelf.spec.forProvider.presetName)",message="switching between presetName and resources requires recreate"
 // +kubebuilder:validation:XValidation:rule="has(self.spec.forProvider.publicIP) == has(oldSelf.spec.forProvider.publicIP)",message="publicIP is immutable (set/unset requires recreate)"

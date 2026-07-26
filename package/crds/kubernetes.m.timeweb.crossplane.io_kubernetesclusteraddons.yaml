@@ -45,6 +45,10 @@ spec:
       name: ID
       priority: 1
       type: string
+    - jsonPath: .status.conditions[?(@.type=='Ready')].message
+      name: MESSAGE
+      priority: 1
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
@@ -338,9 +342,12 @@ spec:
         - spec
         type: object
         x-kubernetes-validations:
-        - message: exactly one of clusterRef, clusterSelector, clusterID must be set
-          rule: (has(self.spec.forProvider.clusterRef)?1:0) + (has(self.spec.forProvider.clusterSelector)?1:0)
-            + (has(self.spec.forProvider.clusterID)?1:0) == 1
+        - message: exactly one of clusterRef or clusterID must be set
+          rule: (has(self.spec.forProvider.clusterRef)?1:0) + (has(self.spec.forProvider.clusterID)?1:0)
+            == 1
+        - message: clusterSelector is not implemented in v0.x — use clusterRef or
+            clusterID
+          rule: '!has(self.spec.forProvider.clusterSelector)'
     served: true
     storage: true
     subresources:

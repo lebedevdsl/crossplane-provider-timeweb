@@ -161,6 +161,7 @@ type FirewallStatus struct {
 // +kubebuilder:printcolumn:name="RULES",type="integer",JSONPath=".status.atProvider.ruleCount"
 // +kubebuilder:printcolumn:name="ATTACHED",type="integer",JSONPath=".status.atProvider.attachedCount"
 // +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
+// +kubebuilder:printcolumn:name="MESSAGE",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].message",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Firewall is a Timeweb Cloud firewall rule group: an allow-list (policy=DROP)

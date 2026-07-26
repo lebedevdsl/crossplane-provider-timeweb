@@ -439,6 +439,7 @@ type CdnStatus struct {
 // +kubebuilder:printcolumn:name="DOMAIN",type="string",JSONPath=".status.atProvider.technicalDomain"
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.state"
 // +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
+// +kubebuilder:printcolumn:name="MESSAGE",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].message",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Cdn is a Timeweb Cloud CDN resource: one origin (S3 bucket by reference,

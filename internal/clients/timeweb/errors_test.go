@@ -197,3 +197,58 @@ func TestAPIErrorString(t *testing.T) {
 		}
 	})
 }
+
+// Feature 025 (audit M-3): the transient raw-body fallback must never carry
+// credential material into a condition/Event. Secret-bearing writes (CDN cert
+// upload, config PATCHes with S3 keys / secure tokens) can be echoed back by
+// an upstream 5xx.
+func TestScrubSecretsInRawSnippet(t *testing.T) {
+	cases := []struct {
+		name, body string
+		mustNot    []string
+		must       []string
+	}{
+		{
+			name:    "PEM private key echoed back",
+			body:    "upstream error while processing -----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBg\n-----END PRIVATE KEY-----",
+			mustNot: []string{"BEGIN PRIVATE KEY", "MIIEvQIBADANBg"},
+			must:    []string{"[PEM block redacted]"},
+		},
+		{
+			name:    "S3 keys in an echoed json payload",
+			body:    `{"origin":{"aws":{"access_key":"AKIAEXAMPLE","secret_key":"s3cr3tv4lue"}},"err":"gateway timeout"}`,
+			mustNot: []string{"AKIAEXAMPLE", "s3cr3tv4lue"},
+			must:    []string{"[redacted]", "gateway timeout"},
+		},
+		{
+			name:    "secure token secret",
+			body:    `{"secure_token":{"secret_key":"topsecret"},"status":502}`,
+			mustNot: []string{"topsecret"},
+			must:    []string{"[redacted]"},
+		},
+		{
+			name: "ordinary diagnostic text is preserved",
+			body: "upstream gateway is unavailable, retry later",
+			must: []string{"upstream gateway is unavailable"},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			resp := &http.Response{
+				StatusCode: http.StatusBadGateway,
+				Body:       io.NopCloser(strings.NewReader(tc.body)),
+			}
+			got := readErrorMessage(resp)
+			for _, s := range tc.mustNot {
+				if strings.Contains(got, s) {
+					t.Errorf("message %q leaked %q", got, s)
+				}
+			}
+			for _, s := range tc.must {
+				if !strings.Contains(got, s) {
+					t.Errorf("message %q missing %q", got, s)
+				}
+			}
+		})
+	}
+}

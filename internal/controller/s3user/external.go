@@ -326,10 +326,16 @@ func populateStatus(cr *objectstoragev1alpha1.S3User, u timeweb.IAMUser, desired
 }
 
 // setReadyCondition maps the upstream user status to the Ready condition.
+// An empty status means the API omitted the field — treated as Available (the
+// user object exists). `no_paid` surfaces as PaymentRequired (feature 025).
 func setReadyCondition(recorder record.EventRecorder, cr *objectstoragev1alpha1.S3User, status string) {
 	var cond xpv2.Condition
-	switch strings.ToLower(status) {
-	case "active", "":
+	switch {
+	case strings.TrimSpace(status) == "":
+		cond = xpv2.Available()
+	case shared.ClassifyUpstreamState(status) == shared.StateUnfunded:
+		cond = shared.ReadyFalse(shared.ReasonPaymentRequired, shared.UnfundedMessage("object-storage user"))
+	case shared.ClassifyUpstreamState(status) == shared.StateActive:
 		cond = xpv2.Available()
 	default:
 		cond = xpv2.Creating()

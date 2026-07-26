@@ -41,6 +41,10 @@ spec:
       name: ID
       priority: 1
       type: string
+    - jsonPath: .status.conditions[?(@.type=='Ready')].message
+      name: MESSAGE
+      priority: 1
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
@@ -78,6 +82,11 @@ spec:
                   `name`, `presetName`, `location`, `os`. Everything else is optional.
                   See spec.md FR-003/FR-004 and contracts/server-v1alpha1.md for the
                   authoritative shape.
+                  Feature 025 (audit): these create-only reference fields were previously
+                  documented as immutable but NOT enforced — an edit was accepted, silently
+                  ignored, and still reported Synced=True, so git and the cloud diverged with
+                  every dashboard green. Enforced at admission now; the failure is loud and
+                  immediate instead of invisible.
                 properties:
                   availabilityZone:
                     description: |-
@@ -543,6 +552,33 @@ spec:
                 - name
                 - os
                 type: object
+                x-kubernetes-validations:
+                - message: sshKeyRefs is create-only (Timeweb cannot change a server's
+                    key list after provisioning); revert the change or delete and
+                    recreate the resource
+                  rule: has(self.sshKeyRefs) == has(oldSelf.sshKeyRefs) && (!has(self.sshKeyRefs)
+                    || self.sshKeyRefs == oldSelf.sshKeyRefs)
+                - message: sshKeyIDs is create-only (Timeweb cannot change a server's
+                    key list after provisioning); revert the change or delete and
+                    recreate the resource
+                  rule: has(self.sshKeyIDs) == has(oldSelf.sshKeyIDs) && (!has(self.sshKeyIDs)
+                    || self.sshKeyIDs == oldSelf.sshKeyIDs)
+                - message: networkRef is create-only; revert the change or delete
+                    and recreate the resource
+                  rule: has(self.networkRef) == has(oldSelf.networkRef) && (!has(self.networkRef)
+                    || self.networkRef == oldSelf.networkRef)
+                - message: networkID is create-only; revert the change or delete and
+                    recreate the resource
+                  rule: has(self.networkID) == has(oldSelf.networkID) && (!has(self.networkID)
+                    || self.networkID == oldSelf.networkID)
+                - message: projectRef is create-only; revert the change or delete
+                    and recreate the resource
+                  rule: has(self.projectRef) == has(oldSelf.projectRef) && (!has(self.projectRef)
+                    || self.projectRef == oldSelf.projectRef)
+                - message: projectID is create-only; revert the change or delete and
+                    recreate the resource
+                  rule: has(self.projectID) == has(oldSelf.projectID) && (!has(self.projectID)
+                    || self.projectID == oldSelf.projectID)
               managementPolicies:
                 default:
                 - '*'

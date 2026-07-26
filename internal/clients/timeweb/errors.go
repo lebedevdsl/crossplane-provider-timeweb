@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 )
 
@@ -228,14 +229,36 @@ func readErrorMessage(resp *http.Response) string {
 			return m
 		}
 	}
-	// Not the expected JSON shape — return a trimmed raw snippet.
+	// Not the expected JSON shape — return a trimmed raw snippet, SCRUBBED.
+	// Feature 025 (audit M-3): this fallback fires on transient upstream
+	// errors, and some writes carry secrets (CDN certificate upload sends a
+	// private key; config PATCHes carry S3 keys and secure tokens). The
+	// upstream demonstrably reflects request structure back, so an echoing
+	// 5xx could otherwise land key material in a condition or Event.
 	if s := strings.TrimSpace(string(body)); s != "" {
+		s = scrubSecrets(s)
 		if len(s) > 300 {
 			s = s[:300]
 		}
 		return s
 	}
 	return ""
+}
+
+// secretKeyPattern matches a JSON member whose NAME suggests secret material,
+// capturing through its value so the value can be replaced.
+var secretKeyPattern = regexp.MustCompile(`(?i)"(private_key|secret_key|access_key|secret|password|token)"\s*:\s*"[^"]*"`)
+
+// scrubSecrets removes credential material from a raw response snippet before
+// it can reach a condition, Event, or log line: PEM blocks are dropped whole
+// (a private key echoed back must never be quoted, not even truncated), and
+// secret-named JSON values are replaced. Non-secret content is preserved so
+// the snippet keeps its diagnostic value.
+func scrubSecrets(s string) string {
+	if i := strings.Index(s, "-----BEGIN"); i >= 0 {
+		s = strings.TrimSpace(s[:i]) + " [PEM block redacted]"
+	}
+	return secretKeyPattern.ReplaceAllString(s, `"$1":"[redacted]"`)
 }
 
 // readNotFoundEnvelope reads the response body once and reports the canonical

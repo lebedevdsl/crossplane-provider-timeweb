@@ -80,6 +80,7 @@ type ContainerRegistryRepositoryStatus struct {
 // +kubebuilder:printcolumn:name="NAME",type="string",JSONPath=".spec.forProvider.name"
 // +kubebuilder:printcolumn:name="TAGS",type="integer",JSONPath=".status.atProvider.tagCount"
 // +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name",priority=1
+// +kubebuilder:printcolumn:name="MESSAGE",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].message",priority=1
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 
 // ContainerRegistryRepository represents a single repository inside a

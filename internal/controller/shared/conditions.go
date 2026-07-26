@@ -18,6 +18,7 @@ package shared
 
 import (
 	"fmt"
+	"strings"
 
 	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	corev1 "k8s.io/api/core/v1"
@@ -157,7 +158,48 @@ func ImmutableMessage(field string) string {
 	return fmt.Sprintf("field %q is immutable; revert the change or delete and recreate the resource", field)
 }
 
-// TODO(007 P3-3): centralize isActiveState/isFailedState per-controller helpers
-// into shared functions here. Deferred: controllers were recently swept with
-// inline state checks and re-churning them now would add noise without value.
-// Revisit in the next maintenance round once more controllers share the pattern.
+// UpstreamState is the category an upstream status string falls into. It
+// exists so every kind agrees on what "active" and "unfunded" mean; the
+// per-kind CONDITION MESSAGE stays with the kind (those messages are
+// deliberately specific and that is correct).
+//
+// Closes the 007 P3-3 TODO: four hand-written vocabularies had already
+// diverged (one accepted "on", another added "ready", a third neither), and
+// three kinds silently lacked the billing state entirely — an unfunded
+// S3Bucket sat in Creating forever with no operator-visible reason.
+type UpstreamState int
+
+const (
+	// StateProvisioning — transient; the resource is still coming up.
+	StateProvisioning UpstreamState = iota
+	// StateActive — the resource is up.
+	StateActive
+	// StateUnfunded — the account lacks funds/quota (Timeweb `no_paid`).
+	// Not a controller failure: the resource proceeds once payment clears.
+	StateUnfunded
+	// StateFailed — terminal upstream failure.
+	StateFailed
+)
+
+// ClassifyUpstreamState maps a raw upstream status string to its category.
+// Matching is case-insensitive; unknown values are provisioning (the
+// conservative default — an unrecognized state must never read as Ready).
+func ClassifyUpstreamState(status string) UpstreamState {
+	s := strings.ToLower(strings.TrimSpace(status))
+	switch s {
+	case "no_paid":
+		return StateUnfunded
+	case "active", "started", "running", "on", "ready", "installed", "created":
+		return StateActive
+	}
+	if strings.Contains(s, "error") || strings.Contains(s, "fail") {
+		return StateFailed
+	}
+	return StateProvisioning
+}
+
+// UnfundedMessage is the shared wording for the `no_paid` billing state; the
+// caller supplies the kind noun (e.g. "bucket", "cluster").
+func UnfundedMessage(kind string) string {
+	return fmt.Sprintf("the Timeweb account lacks the funds/quota for this %s — top up the account; it proceeds once payment clears", kind)
+}
