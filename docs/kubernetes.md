@@ -193,7 +193,8 @@ The controller adds/removes nodes via relative deltas (the group is never
 recreated) and `status.atProvider.observedNodeCount` converges. While a delta
 is in flight the pool reports `Ready=False, reason=Reconciling`.
 
-Autoscaling instead of manual scaling (`minSize`/`maxSize` ≥ 2):
+Autoscaling instead of manual scaling (`minSize` ≥ 0, `maxSize` ≥ 1,
+`maxSize` ≥ `minSize`):
 
 ```yaml
     autoscaling: { enabled: true, minSize: 2, maxSize: 6 }
@@ -201,7 +202,38 @@ Autoscaling instead of manual scaling (`minSize`/`maxSize` ≥ 2):
 ```
 
 When autoscaling is on the controller stops reconciling `nodeCount` — the
-upstream autoscaler owns the count.
+upstream autoscaler owns the count. `status.atProvider.autoscaling` mirrors
+the flag and bounds the upstream group actually reports.
+
+#### Scale-to-zero (`minSize: 0`)
+
+A pool with `minSize: 0` is drained to **zero nodes** (zero cost) while idle:
+
+```yaml
+    autoscaling: { enabled: true, minSize: 0, maxSize: 3 }
+```
+
+The pool reports `Ready=True` at zero nodes — that is its desired steady
+state (only when the declaration has converged, autoscaling is enabled, and
+the declared floor is 0; every other zero-node situation still reports
+not-ready).
+
+Upstream requirements (documented, **not** checked by the provider — see
+[Timeweb's scale-to-zero guide](https://timeweb.cloud/docs/k8s/kubernetes-autoscaling/autoscaling-to-zero-nodes)):
+
+- The cluster needs **≥ 2 permanently active nodes in other pools** for
+  system components. A `minSize: 0` pool as the cluster's only capacity never
+  drains — it keeps working, just not at zero cost.
+- **Scale-up from zero** triggers only for pending pods that target the pool
+  explicitly via `nodeSelector`/`nodeAffinity` (group id or the pool's
+  `labels`). Untargeted pending pods will not wake the pool.
+- **Drain can be blocked by the workload**: pods annotated
+  `cluster-autoscaler.kubernetes.io/safe-to-evict: "false"`, restrictive
+  PodDisruptionBudgets, or pods without a controller keep the last node
+  alive.
+- Timing: idle detection ~5 min, then a `DeletionCandidateOfClusterAutoscaler`
+  taint and node deletion ~2 min later; first-node provisioning on scale-up
+  has an upstream budget of 600 s.
 
 ### Dedicated pools: taints & labels
 
