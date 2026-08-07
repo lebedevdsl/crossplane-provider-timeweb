@@ -4,8 +4,9 @@
 # parent KubernetesCluster via `clusterRef`.
 #
 # IMMUTABLE FIELDS: name, presetName (or resources), clusterRef, publicIP,
-#   autohealing, autoscaling.enabled.
-# Mutable: nodeCount (when autoscaling is off), labels, taints.
+#   autohealing.
+# Mutable: nodeCount (when autoscaling is off), labels, taints, autoscaling
+#   (on/off and min/max are day-2).
 #
 # See docs/kubernetes.md for scaling, private-cluster config, and troubleshooting.
 ---
@@ -31,10 +32,13 @@ spec:
     # Optional: give workers public IP addresses (default: true — public).
     # Set false for private nodes behind a NAT router. Immutable post-create.
     # publicIP: false
-    # Optional: autoscaling (min/max ≥ 2). Immutable post-create.
+    # Optional: autoscaling (minSize ≥ 0, maxSize ≥ 1, maxSize ≥ minSize).
+    # Day-2 mutable. minSize: 0 = scale-to-zero — requires ≥ 2 permanently
+    # active nodes in OTHER pools, and pods must target this pool via
+    # nodeSelector/nodeAffinity to wake it (see docs/kubernetes.md).
     # autoscaling:
     #   enabled: true
-    #   minSize: 2
+    #   minSize: 0
     #   maxSize: 6
     # Optional: auto-recover failed nodes. Immutable post-create.
     # autohealing: true

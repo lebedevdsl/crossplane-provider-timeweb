@@ -70,16 +70,29 @@ type NodepoolTaint struct {
 
 // NodepoolAutoscaling configures the upstream cluster-autoscaler for a
 // worker group. When Enabled, the controller does NOT reconcile NodeCount
-// against the observed count (the autoscaler owns it). Upstream requires
-// MinSize/MaxSize >= 2 when autoscaling is enabled (enforced by a CEL rule
-// on KubernetesClusterNodepool rather than unconditional field minimums so
-// that disabled autoscaling blocks don't trip a spurious validation error).
+// against the observed count (the autoscaler owns it). MinSize 0 enables
+// scale-to-zero (the published swagger's >= 2 floor is stale — wire-verified
+// 2026-08-07 and documented upstream); it requires >= 2 permanently active
+// nodes in OTHER pools to actually drain, which is deliberately not guarded
+// here (a non-draining pool is functional; see docs/kubernetes.md).
 type NodepoolAutoscaling struct {
 	Enabled bool `json:"enabled"`
-	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Minimum=0
 	MinSize int `json:"minSize"`
 	// +kubebuilder:validation:Minimum=1
 	MaxSize int `json:"maxSize"`
+}
+
+// NodepoolAutoscalingStatus mirrors the upstream group's autoscaler state as
+// reported by the last observation (is_autoscaling/min_size/max_size; bounds
+// omitted when upstream nulls them with autoscaling off). Mirror-only — never
+// an input to convergence.
+type NodepoolAutoscalingStatus struct {
+	Enabled bool `json:"enabled"`
+	// +optional
+	MinSize *int `json:"minSize,omitempty"`
+	// +optional
+	MaxSize *int `json:"maxSize,omitempty"`
 }
 
 // KubernetesClusterNodepoolParameters is the operator-settable surface for
@@ -208,6 +221,11 @@ type KubernetesClusterNodepoolObservation struct {
 	// the value omitted).
 	// +optional
 	Taints []NodepoolTaint `json:"taints,omitempty"`
+
+	// Autoscaling mirrors the upstream group's autoscaler flag and bounds as
+	// reported by the last observation.
+	// +optional
+	Autoscaling *NodepoolAutoscalingStatus `json:"autoscaling,omitempty"`
 }
 
 // NodepoolNode is one worker node of the group as reported upstream.
@@ -258,7 +276,7 @@ type KubernetesClusterNodepoolStatus struct {
 // +kubebuilder:validation:XValidation:rule="(has(self.spec.forProvider.presetName)?1:0) + (has(self.spec.forProvider.resources)?1:0) == 1",message="exactly one of presetName or resources must be set"
 // +kubebuilder:validation:XValidation:rule="has(self.spec.forProvider.presetName) == has(oldSelf.spec.forProvider.presetName)",message="switching between presetName and resources requires recreate"
 // +kubebuilder:validation:XValidation:rule="has(self.spec.forProvider.publicIP) == has(oldSelf.spec.forProvider.publicIP)",message="publicIP is immutable (set/unset requires recreate)"
-// +kubebuilder:validation:XValidation:rule="!has(self.spec.forProvider.autoscaling) || !self.spec.forProvider.autoscaling.enabled || (self.spec.forProvider.autoscaling.minSize >= 2 && self.spec.forProvider.autoscaling.maxSize >= 2 && self.spec.forProvider.autoscaling.maxSize >= self.spec.forProvider.autoscaling.minSize)",message="when autoscaling is enabled: minSize and maxSize must each be >= 2 and maxSize must be >= minSize"
+// +kubebuilder:validation:XValidation:rule="!has(self.spec.forProvider.autoscaling) || !self.spec.forProvider.autoscaling.enabled || self.spec.forProvider.autoscaling.maxSize >= self.spec.forProvider.autoscaling.minSize",message="when autoscaling is enabled: maxSize must be >= minSize"
 // +kubebuilder:validation:XValidation:rule="!has(self.spec.forProvider.taints) || self.spec.forProvider.taints.all(t, self.spec.forProvider.taints.filter(u, u.key == t.key && u.effect == t.effect).size() == 1)",message="taints must not repeat the same key+effect pair"
 
 // KubernetesClusterNodepool is one Timeweb managed-Kubernetes worker group.

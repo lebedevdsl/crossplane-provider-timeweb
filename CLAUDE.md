@@ -1,5 +1,28 @@
 <!-- SPECKIT START -->
-Current feature: **021-router-peering-routes** (feature, target **v0.10.0**, NON-BREAKING,
+Current feature: **026-nodepool-min-zero** (feature, target **v0.13.0**, NON-BREAKING) — read
+the plan at `specs/026-nodepool-min-zero/plan.md`. Scale-to-zero autoscaled nodepools: wire
+capture 2026-08-07 (panel PATCH, cluster 1096397 group 117127 `ci`) proves upstream accepts
+`min_size: 0` — the swagger `minimum: 2` floor is stale. Three deltas: (1) admission relax —
+`autoscaling.minSize` Minimum=0, `maxSize` floor 1 (P-2-gated), CEL reduced to
+`maxSize >= minSize`; (2) zero-state readiness — Available at 0 nodes IFF converged +
+autoscaling enabled + declared minSize==0 (carve-out from the 024 T034 guard, which stays
+otherwise); (3) additive `status.atProvider.autoscaling {enabled,minSize,maxSize}` mirror
+(delivers 024's deferred US3; the assertable surface for bounds-converged-to-0). No wire
+changes (bounds already `*int`; `&zero` serializes — unit-pinned). Swagger hand-patch doc-only.
+CLARIFIED 2026-08-07 (+ official scale-to-zero doc pinned in spec.md): the upstream
+prerequisite (≥2 permanently active nodes in OTHER pools, else the pool never drains) and the
+drain blockers (safe-to-evict:"false", PDBs, controller-less pods) are DOCUMENT-ONLY — no
+admission rule/condition/Warning; scale-up-from-zero needs pods pinned via
+nodeSelector/nodeAffinity. Open probes at the inyan-staging live gate: P-1 create-path
+`min_size: 0` (doc-supported), P-2 `max_size: 1`, P-3 pinned-Deployment drain-to-0 (~5 min idle
++ ~2 min taint-to-delete; fallbacks in research.md). Live gate shape: pre-existing Ready
+staging cluster by flat `clusterID` + nodeSelector-pinned Deployment drain/scale-up — NO fresh
+cluster. e2e: extend kuttl bundle 25 (admission matrix + day-2 min→0 asserted via the new
+mirror). Live-gate finding: cluster 1096397 = **inyan-staging** (not infra); its `ci` pool is
+panel-managed (no MR) so the panel's `min_size: 0` stands unfought. Artifacts in
+`specs/026-nodepool-min-zero/`.
+
+Prior feature: **021-router-peering-routes** (feature, target **v0.10.0**, NON-BREAKING,
 released) — read the plan at `specs/021-router-peering-routes/plan.md`. Scope (owner-agreed,
 preface items 1–5+7): (1) **Router.staticRoutes** `[{subnet, nexthop|via{routerRef,networkRef}}]`
 — subnet-keyed set semantics, replace-on-nexthop-change (no upstream update op), drift repair,

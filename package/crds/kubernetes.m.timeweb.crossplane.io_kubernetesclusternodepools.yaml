@@ -103,7 +103,7 @@ spec:
                         minimum: 1
                         type: integer
                       minSize:
-                        minimum: 1
+                        minimum: 0
                         type: integer
                     required:
                     - enabled
@@ -380,6 +380,20 @@ spec:
                 description: KubernetesClusterNodepoolObservation is the observed
                   state.
                 properties:
+                  autoscaling:
+                    description: |-
+                      Autoscaling mirrors the upstream group's autoscaler flag and bounds as
+                      reported by the last observation.
+                    properties:
+                      enabled:
+                        type: boolean
+                      maxSize:
+                        type: integer
+                      minSize:
+                        type: integer
+                    required:
+                    - enabled
+                    type: object
                   clusterID:
                     description: |-
                       ClusterID is the resolved parent cluster id, persisted so Observe and
@@ -562,11 +576,9 @@ spec:
           rule: has(self.spec.forProvider.presetName) == has(oldSelf.spec.forProvider.presetName)
         - message: publicIP is immutable (set/unset requires recreate)
           rule: has(self.spec.forProvider.publicIP) == has(oldSelf.spec.forProvider.publicIP)
-        - message: 'when autoscaling is enabled: minSize and maxSize must each be
-            >= 2 and maxSize must be >= minSize'
+        - message: 'when autoscaling is enabled: maxSize must be >= minSize'
           rule: '!has(self.spec.forProvider.autoscaling) || !self.spec.forProvider.autoscaling.enabled
-            || (self.spec.forProvider.autoscaling.minSize >= 2 && self.spec.forProvider.autoscaling.maxSize
-            >= 2 && self.spec.forProvider.autoscaling.maxSize >= self.spec.forProvider.autoscaling.minSize)'
+            || self.spec.forProvider.autoscaling.maxSize >= self.spec.forProvider.autoscaling.minSize'
         - message: taints must not repeat the same key+effect pair
           rule: '!has(self.spec.forProvider.taints) || self.spec.forProvider.taints.all(t,
             self.spec.forProvider.taints.filter(u, u.key == t.key && u.effect == t.effect).size()

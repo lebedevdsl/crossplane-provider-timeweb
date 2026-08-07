@@ -1187,10 +1187,10 @@ type NodeGroupIn struct {
 	// Labels Лейблы для группы нод
 	Labels *[]SetLabels `json:"labels,omitempty"`
 
-	// MaxSize Максимальное количество нод. Передавать в связке с параметрами `is_autoscaling` и `min_size`. Максимальное количество нод ограничено тарифом кластера. (Spec names this `max-size` with a dash, but the API only accepts `max_size`.)
+	// MaxSize Максимальное количество нод. Передавать в связке с параметрами `is_autoscaling` и `min_size`. Максимальное количество нод ограничено тарифом кластера. (Spec names this `max-size` with a dash, but the API only accepts `max_size`. HAND-PATCH feature 026: published minimum 2 stale alongside min_size; max_size:1 probe P-2 at the live gate.)
 	MaxSize *int `json:"max_size,omitempty"`
 
-	// MinSize Минимальное количество нод. Передавать в связке с параметрами `is_autoscaling` и `max_size`. (Spec names this `min-size` with a dash, but the API only accepts `min_size`.)
+	// MinSize Минимальное количество нод. Передавать в связке с параметрами `is_autoscaling` и `max_size`. (Spec names this `min-size` with a dash, but the API only accepts `min_size`. HAND-PATCH feature 026: published minimum 2 is stale — live PATCH probe 2026-08-07 accepts min_size:0, official scale-to-zero doc concurs.)
 	MinSize *int `json:"min_size,omitempty"`
 
 	// Name Название группы
@@ -1247,7 +1247,7 @@ type NodeGroupUpdate struct {
 	// MaxSize HAND-PATCH: верхняя граница автоскейлера (с is_autoscaling: true); отсутствие поля — не трогать
 	MaxSize *int `json:"max_size,omitempty"`
 
-	// MinSize HAND-PATCH: нижняя граница автоскейлера (с is_autoscaling: true); отсутствие поля — не трогать (без nullable, чтобы omitempty не слал null в metadata-PATCH)
+	// MinSize HAND-PATCH: нижняя граница автоскейлера (с is_autoscaling: true); отсутствие поля — не трогать (без nullable, чтобы omitempty не слал null в metadata-PATCH). Feature 026: 0 допустим (scale-to-zero, live-verified 2026-08-07).
 	MinSize *int `json:"min_size,omitempty"`
 
 	// Name Название группы

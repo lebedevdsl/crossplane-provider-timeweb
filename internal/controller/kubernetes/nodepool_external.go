@@ -200,7 +200,14 @@ func (e *nodepoolExternal) Observe(ctx context.Context, mg resource.Managed) (ma
 		return managed.ExternalObservation{}, err
 	}
 	publishNodeList(cr, nodes)
-	setNodepoolReadyCondition(cr, upToDate, env.NodeGroup.NodeCount, nodes, e.recorder)
+	// Scale-to-zero (feature 026): 0 actual nodes is the desired steady state
+	// ONLY for a converged pool whose declaration enables autoscaling with a
+	// zero floor. upToDate already implies the observed flag+bounds match the
+	// declaration, so no extra observed-state plumbing is needed.
+	fp := cr.Spec.ForProvider
+	zeroOK := upToDate && fp.Autoscaling != nil && fp.Autoscaling.Enabled &&
+		fp.Autoscaling.MinSize == 0
+	setNodepoolReadyCondition(cr, upToDate, zeroOK, env.NodeGroup.NodeCount, nodes, e.recorder)
 
 	return managed.ExternalObservation{
 		ResourceExists:   true,
@@ -729,6 +736,19 @@ func populateNodepoolStatus(cr *kubernetesv1alpha1.KubernetesClusterNodepool, g 
 		}
 		cr.Status.AtProvider.Taints = ts
 	}
+	// Mirror the observed autoscaler state (feature 026, 024's deferred US3).
+	// Always rebuilt from the GET so a day-2 disable clears stale bounds
+	// (upstream nulls min/max when the flag is off).
+	as := &kubernetesv1alpha1.NodepoolAutoscalingStatus{Enabled: g.IsAutoscaling}
+	if g.MinSize != nil {
+		v := *g.MinSize
+		as.MinSize = &v
+	}
+	if g.MaxSize != nil {
+		v := *g.MaxSize
+		as.MaxSize = &v
+	}
+	cr.Status.AtProvider.Autoscaling = as
 	// SIZING print column: one readable summary regardless of which sizing
 	// variant the spec uses (presetName leaves a resources-shaped column
 	// blank and vice versa).
@@ -826,10 +846,13 @@ func nodeIsActive(status string) bool {
 // API echoes the requested count within a second of create, long before any
 // worker VM boots (caught by the T028 canary: Ready=True one second after
 // create). A node in a failed/error state surfaces ReasonUpstreamFailed.
+// Exception (feature 026): zeroOK marks a converged autoscaling-enabled pool
+// with a declared zero floor — for it, 0 nodes IS the desired steady state
+// and reports Available; every other 0-node path keeps the 024 T034 guard.
 // Events fire only on meaningful transitions (Available, UpstreamFailed);
 // in-progress reconciliation is silent — status.atProvider.nodes already carries
 // the per-node states, so an Event per count change is redundant noise.
-func setNodepoolReadyCondition(cr *kubernetesv1alpha1.KubernetesClusterNodepool, upToDate bool, declared int, nodes []groupNodeBody, recorder record.EventRecorder) {
+func setNodepoolReadyCondition(cr *kubernetesv1alpha1.KubernetesClusterNodepool, upToDate, zeroOK bool, declared int, nodes []groupNodeBody, recorder record.EventRecorder) {
 	var cond xpv2.Condition
 	for _, n := range nodes {
 		s := strings.ToLower(n.Status)
@@ -851,9 +874,14 @@ func setNodepoolReadyCondition(cr *kubernetesv1alpha1.KubernetesClusterNodepool,
 	}
 	// T034: a nodepool with 0 declared OR 0 actual nodes must NOT report
 	// Available — the "0 < 0 = false" path previously fell through to
-	// Available() silently.
+	// Available() silently. Feature-026 carve-out: a scale-to-zero pool
+	// (zeroOK) drained by the autoscaler is converged and healthy at 0.
 	if declared == 0 && len(nodes) == 0 {
-		cond = xpv2.Creating()
+		if zeroOK {
+			cond = xpv2.Available()
+		} else {
+			cond = xpv2.Creating()
+		}
 		shared.RecordConditionChange(recorder, cr, cond)
 		cr.Status.SetConditions(cond)
 		return

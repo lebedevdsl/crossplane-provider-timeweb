@@ -1,0 +1,23 @@
+# Step 7 — feature 026: day-2 floor drop 2→0 converges upstream, asserted via
+# the new status.atProvider.autoscaling mirror (which reports what the group
+# GET actually returns — not the spec). The DRAIN to zero nodes is deliberately
+# not exercised here: this bundle's cluster has no other pool, so the upstream
+# prerequisite (>=2 permanently active nodes elsewhere) isn't met and the pool
+# will simply hold its nodes — bounds convergence is the provider's part.
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - timeout: 660
+    script: |
+      cur=$(kubectl config current-context); n=$(kubectl config get-contexts -o name | wc -l | tr -d " ")
+      if [ -n "${E2E_KUBECONTEXT:-}" ]; then [ "$cur" = "$E2E_KUBECONTEXT" ] || { echo "FAIL: context $cur != $E2E_KUBECONTEXT"; exit 1; }
+      elif [ "$n" != "1" ]; then echo "FAIL: $n contexts and E2E_KUBECONTEXT unset — refusing to guess (current: $cur)"; exit 1; fi
+      kubectl -n timeweb-e2e patch kubernetesclusternodepool/e2e-as-pool --type=merge -p '{"spec":{"forProvider":{"autoscaling":{"enabled":true,"minSize":0,"maxSize":3}}}}'
+      kubectl -n timeweb-e2e wait --for=condition=Synced --timeout=600s kubernetesclusternodepool/e2e-as-pool
+      for i in $(seq 1 55); do
+        m=$(kubectl -n timeweb-e2e get kubernetesclusternodepool/e2e-as-pool -o jsonpath='{.status.atProvider.autoscaling.enabled}/{.status.atProvider.autoscaling.minSize}/{.status.atProvider.autoscaling.maxSize}' 2>/dev/null)
+        echo "autoscaling mirror=$m (want true/0/3)"
+        [ "$m" = "true/0/3" ] && exit 0
+        sleep 10
+      done
+      echo "FAIL: upstream never echoed min_size 0 in the status mirror"; exit 1

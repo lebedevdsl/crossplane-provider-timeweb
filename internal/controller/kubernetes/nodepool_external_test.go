@@ -17,6 +17,7 @@ limitations under the License.
 package kubernetes
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -809,6 +810,190 @@ func TestNodepoolAutoscalingDay2(t *testing.T) {
 		g = mustJSON(groupJSON(true, 2, 3, 2))
 		if isNodepoolUpToDate(off.Spec.ForProvider, off.Status.AtProvider, g) {
 			t.Error("declared-off observed-on must be drift")
+		}
+	})
+}
+
+// --- Feature 026: scale-to-zero (minSize: 0) ---------------------------------
+
+func TestNodepoolScaleToZero(t *testing.T) {
+	ctx := context.Background()
+	groupJSON := func(auto bool, minS, maxS, count int) string {
+		if auto {
+			return fmt.Sprintf(`{"node_group":{"id":42,"name":"workers","preset_id":9,"node_count":%d,"is_autoscaling":true,"min_size":%d,"max_size":%d}}`, count, minS, maxS)
+		}
+		return fmt.Sprintf(`{"node_group":{"id":42,"name":"workers","preset_id":9,"node_count":%d,"is_autoscaling":false,"min_size":null,"max_size":null}}`, count)
+	}
+	zeroPool := func() *kubernetesv1alpha1.KubernetesClusterNodepool {
+		cr := newNodepool(true, 1)
+		cr.Spec.ForProvider.Autoscaling = &kubernetesv1alpha1.NodepoolAutoscaling{Enabled: true, MinSize: 0, MaxSize: 3}
+		return cr
+	}
+
+	t.Run("Observe_DrainedZeroConverged_Available", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(true, 0, 3, 0)), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesEmptyJSON), nil)
+		cr := zeroPool()
+		obs, err := nodepoolE(fake).Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if !obs.ResourceExists || !obs.ResourceUpToDate {
+			t.Errorf("obs=%+v, want exists+upToDate (drained pool is converged)", obs)
+		}
+		if cr.GetCondition(xpv2.TypeReady).Status != corev1.ConditionTrue {
+			t.Errorf("Ready=%v, want True — 0 nodes is the desired steady state at minSize 0",
+				cr.GetCondition(xpv2.TypeReady).Status)
+		}
+		as := cr.Status.AtProvider.Autoscaling
+		if as == nil || !as.Enabled || as.MinSize == nil || *as.MinSize != 0 || as.MaxSize == nil || *as.MaxSize != 3 {
+			t.Errorf("status mirror=%+v, want {enabled true 0 3}", as)
+		}
+	})
+
+	t.Run("Observe_Floor2DrainedToZero_NotAvailable", func(t *testing.T) {
+		// Transitional state: the autoscaler will restore the floor; the T034
+		// guard must keep holding Ready=False here.
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(true, 2, 3, 0)), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesEmptyJSON), nil)
+		cr := newNodepool(true, 1)
+		cr.Spec.ForProvider.Autoscaling = &kubernetesv1alpha1.NodepoolAutoscaling{Enabled: true, MinSize: 2, MaxSize: 3}
+		if _, err := nodepoolE(fake).Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		cond := cr.GetCondition(xpv2.TypeReady)
+		if cond.Status != corev1.ConditionFalse {
+			t.Errorf("Ready=%v, want False — zero nodes with a non-zero floor is transitional", cond.Status)
+		}
+	})
+
+	t.Run("Observe_ZeroDeclared_BoundsDrift_NotAvailable", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(true, 2, 3, 0)), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesEmptyJSON), nil)
+		cr := zeroPool()
+		obs, err := nodepoolE(fake).Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if obs.ResourceUpToDate {
+			t.Error("bounds drift (declared 0, observed 2) must not be up-to-date")
+		}
+		if cr.GetCondition(xpv2.TypeReady).Status != corev1.ConditionFalse {
+			t.Error("Ready=True while the zero floor hasn't converged upstream")
+		}
+	})
+
+	t.Run("Observe_FailedNode_TrumpsZeroOK", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(true, 0, 3, 0)), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, `{"nodes":[{"id":1,"status":"failed"}]}`), nil)
+		cr := zeroPool()
+		if _, err := nodepoolE(fake).Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		cond := cr.GetCondition(xpv2.TypeReady)
+		if cond.Status != corev1.ConditionFalse || cond.Reason != shared.ReasonUpstreamFailed {
+			t.Errorf("Ready=%v/%v, want False/UpstreamFailed — node failure outranks scale-to-zero", cond.Status, cond.Reason)
+		}
+	})
+
+	t.Run("Observe_ScaleUpFromZeroInProgress_Reconciling", func(t *testing.T) {
+		// The autoscaler ordered the first node (count 1) but no VM is listed
+		// yet: converged declaration, provisioning readiness.
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(true, 0, 3, 1)), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesEmptyJSON), nil)
+		cr := zeroPool()
+		obs, err := nodepoolE(fake).Observe(ctx, cr)
+		if err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		if !obs.ResourceUpToDate {
+			t.Error("autoscaler-owned count change must not read as drift")
+		}
+		if cr.GetCondition(xpv2.TypeReady).Status != corev1.ConditionFalse {
+			t.Error("Ready=True before the scaled-up node exists")
+		}
+	})
+
+	t.Run("Observe_MirrorsDisabledState", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(false, 0, 0, 2)), nil)
+		fake.GetClusterNodesFromGroupReturns(httpResp(http.StatusOK, groupNodesActiveJSON), nil)
+		cr := newNodepool(true, 2)
+		if _, err := nodepoolE(fake).Observe(ctx, cr); err != nil {
+			t.Fatalf("Observe: %v", err)
+		}
+		as := cr.Status.AtProvider.Autoscaling
+		if as == nil || as.Enabled || as.MinSize != nil || as.MaxSize != nil {
+			t.Errorf("status mirror=%+v, want {enabled false, bounds omitted} for nulled upstream bounds", as)
+		}
+	})
+
+	t.Run("CreateBody_SerializesMinSizeZero", func(t *testing.T) {
+		cr := zeroPool()
+		body := buildCreateNodeGroupBody(cr, 9, 0)
+		if body.MinSize == nil || *body.MinSize != 0 || body.MaxSize == nil || *body.MaxSize != 3 {
+			t.Fatalf("bounds = %v/%v, want 0/3", body.MinSize, body.MaxSize)
+		}
+		raw, err := json.Marshal(body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// D-5 pin: a pointer-to-0 must reach the wire as an explicit 0 —
+		// omitempty on *int checks nil, not the pointee.
+		if !bytes.Contains(raw, []byte(`"min_size":0`)) {
+			t.Errorf("create body %s lacks explicit \"min_size\":0", raw)
+		}
+	})
+
+	t.Run("Update_ConvergesFloorToZero", func(t *testing.T) {
+		fake := &timeweb.FakeClient{}
+		fake.GetClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(true, 2, 3, 2)), nil)
+		fake.UpdateClusterNodeGroupReturns(httpResp(http.StatusOK, groupJSON(true, 0, 3, 2)), nil)
+		cr := zeroPool()
+		if _, err := nodepoolE(fake).Update(ctx, cr); err != nil {
+			t.Fatalf("Update: %v", err)
+		}
+		if fake.UpdateClusterNodeGroupCallCount() != 1 {
+			t.Fatalf("PATCH count = %d, want 1", fake.UpdateClusterNodeGroupCallCount())
+		}
+		_, _, _, body, _ := fake.UpdateClusterNodeGroupArgsForCall(0)
+		if body.IsAutoscaling == nil || !*body.IsAutoscaling ||
+			body.MinSize == nil || *body.MinSize != 0 || body.MaxSize == nil || *body.MaxSize != 3 {
+			t.Errorf("bounds body = %+v, want {true, 0, 3}", body)
+		}
+		raw, err := json.Marshal(body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Contains(raw, []byte(`"min_size":0`)) {
+			t.Errorf("PATCH body %s lacks explicit \"min_size\":0", raw)
+		}
+		if fake.ReduceCountOfNodesInGroupCallCount()+fake.IncreaseCountOfNodesInGroupCallCount() != 0 {
+			t.Error("count write while declared autoscaled")
+		}
+	})
+
+	t.Run("UpToDate_ZeroBoundsRows", func(t *testing.T) {
+		mustJSON := func(s string) nodeGroupBody {
+			var env nodeGroupEnvelope
+			if err := json.Unmarshal([]byte(s), &env); err != nil {
+				t.Fatal(err)
+			}
+			return env.NodeGroup
+		}
+		if !isNodepoolUpToDate(zeroPool().Spec.ForProvider, zeroPool().Status.AtProvider, mustJSON(groupJSON(true, 0, 3, 0))) {
+			t.Error("declared {0,3} == observed {0,3} must be up-to-date")
+		}
+		if isNodepoolUpToDate(zeroPool().Spec.ForProvider, zeroPool().Status.AtProvider, mustJSON(groupJSON(true, 2, 3, 0))) {
+			t.Error("declared 0 vs observed 2 must be drift")
+		}
+		if isNodepoolUpToDate(zeroPool().Spec.ForProvider, zeroPool().Status.AtProvider, mustJSON(groupJSON(false, 0, 0, 0))) {
+			t.Error("declared-on observed-off must be drift regardless of the zero floor")
 		}
 	})
 }

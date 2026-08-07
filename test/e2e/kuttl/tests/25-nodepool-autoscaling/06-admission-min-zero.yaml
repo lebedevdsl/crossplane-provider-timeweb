@@ -1,0 +1,42 @@
+# Step 6 — feature 026: admission matrix for scale-to-zero bounds
+# (fail-closed: any unexpected accept/reject fails the step). Server dry-run
+# so the CEL rules actually evaluate; nothing is created.
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - timeout: 120
+    script: |
+      cur=$(kubectl config current-context); n=$(kubectl config get-contexts -o name | wc -l | tr -d " ")
+      if [ -n "${E2E_KUBECONTEXT:-}" ]; then [ "$cur" = "$E2E_KUBECONTEXT" ] || { echo "FAIL: context $cur != $E2E_KUBECONTEXT"; exit 1; }
+      elif [ "$n" != "1" ]; then echo "FAIL: $n contexts and E2E_KUBECONTEXT unset — refusing to guess (current: $cur)"; exit 1; fi
+      pool() {
+        cat <<EOF
+      apiVersion: kubernetes.m.timeweb.crossplane.io/v1alpha1
+      kind: KubernetesClusterNodepool
+      metadata: {name: e2e-as-admission, namespace: timeweb-e2e}
+      spec:
+        providerConfigRef: {kind: ProviderConfig, name: e2e}
+        forProvider:
+          name: e2e-as-admission
+          presetName: ${TWE_K8S_WORKER_PRESET}
+          nodeCount: 1
+          autoscaling: {enabled: true, minSize: $1, maxSize: $2}
+          clusterRef: {name: e2e-as-cl}
+      EOF
+      }
+      expect_accept() {
+        if pool "$1" "$2" | kubectl apply --dry-run=server -f - >/dev/null 2>&1; then
+          echo "OK: {$1,$2} accepted"
+        else echo "FAIL: {$1,$2} rejected but must be valid"; exit 1; fi
+      }
+      expect_reject() {
+        if pool "$1" "$2" | kubectl apply --dry-run=server -f - >/dev/null 2>&1; then
+          echo "FAIL: {$1,$2} accepted but must be rejected"; exit 1
+        else echo "OK: {$1,$2} rejected"; fi
+      }
+      expect_accept 0 3      # scale-to-zero (feature 026)
+      expect_accept 0 1      # single-node burst pool
+      expect_accept 2 3      # pre-026 shape stays valid (SC-004)
+      expect_reject 2 1      # maxSize must be >= minSize (CEL)
+      expect_reject 0 0      # maxSize floor 1
+      expect_reject -1 3     # minSize floor 0
