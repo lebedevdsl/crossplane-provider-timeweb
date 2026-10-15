@@ -8,7 +8,7 @@
 ## Summary
 
 Target **v0.14.0** (minor — new enum value), NON-BREAKING, bugfix for
-infra/timeweb-infra#255. Timeweb rotated the S3 preset catalog on 2026-10-13:
+a live incident. Timeweb rotated the S3 preset catalog on 2026-10-13:
 a third class `standard` (the panel's "Standard", successor of the old `hot`
 tier) exists, `hot` now means "Premium" and is `409 sold out`, `cold` only at
 1 GB. The provider's enum (`hot;cold`) cannot order anything sellable, and a
@@ -39,8 +39,8 @@ generated Timeweb client (`internal/clients/timeweb`), catalog resolver
 **Storage**: N/A (state lives in the CR + upstream API)
 
 **Testing**: `go test` with fake Timeweb client + fake resolver (Constitution
-III), kuttl bundle 04 on `standard`, live gates on `inyan-staging` then
-`inyan-infra` post-release
+III), kuttl bundle 04 on `standard`, live gates on the validation cluster then
+the production cluster post-release
 
 **Target Platform**: Kubernetes (Crossplane provider), amd64 image
 
@@ -90,7 +90,7 @@ regen + 6 docs + 1 kuttl bundle; 12-bucket production fleet in 3 namespaces
   `resolvePresetID` + `PresetId` in body + refresh `LockedPresetID`;
   (iii) else body without `PresetId`, no resolver call, lock untouched
   (table in data-model.md). `lockedPresetID` is never an input (R-1: stale
-  on `gitlab-backup`).
+  on a resized bucket).
 - **D-4 Observe drift** (`external.go` new `setStorageClassDriftCondition`,
   called after `populateStatus`): condition type
   `objectstoragev1alpha1.TypeStorageClassDrift = "StorageClassDrift"` (declared
@@ -175,7 +175,7 @@ test file (`match_size_test.go`) if none exists for that unit.
 - **Unit** (Constitution III): the D-7 matrix; `make reviewable` (regen clean,
   lint, race tests).
 - **kuttl 04** on `standard` + description-patch step.
-- **Staging live gate** (`inyan-staging`, dev tag `make xpkg.push
+- **Staging live gate** (the validation cluster, dev tag `make xpkg.push
   VERSION=dev-$(date +%s)`, annotation bump to re-pull): create
   `standard`/10 → Ready; edit description → tier unchanged by re-observation,
   provider logs clean (read-logs-in-validation convention); apply `hot`/10 →
@@ -183,10 +183,10 @@ test file (`match_size_test.go`) if none exists for that unit.
   delete all.
 - **Release**: tag `v0.14.0`; notes example-first; `docs/upgrading.md` gets
   the one-line "align legacy `hot` manifests to `standard`" step.
-- **Production rollout** (timeweb-infra, direct-push-to-main repo):
-  provider bump → preflight → `flick-media.yaml` → `standard` → 10 legacy
+- **Production rollout** (GitOps repo):
+  provider bump → preflight → the incident manifest → `standard` → 10 legacy
   manifests → `standard`; verify `StorageClassDrift` True→False and 0 PATCH
-  calls in logs. Incident #255 closes when `flick-media-staging` is Ready.
+  calls in logs. The incident closes when the incident bucket is Ready.
 
 ## Risks
 

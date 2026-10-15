@@ -1,6 +1,6 @@
 # Wire contract: Timeweb S3 storage catalog + bucket PATCH (feature 028)
 
-All facts observed live 2026-10-14/15 (provider v0.13.1, account inyan).
+All facts observed live 2026-10-14/15 (provider v0.13.1, the account).
 
 ## `GET /api/v1/presets/storages`
 

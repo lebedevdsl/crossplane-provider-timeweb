@@ -1,6 +1,6 @@
 <!-- SPECKIT START -->
 Current feature: **028-s3-storage-classes** (bugfix, target **v0.14.0**, NON-BREAKING) — read
-the plan at `specs/028-s3-storage-classes/plan.md`. Incident infra/timeweb-infra#255: Timeweb
+the plan at `specs/028-s3-storage-classes/plan.md`. Live incident 2026-10-14: Timeweb
 rotated the S3 preset catalog 2026-10-13 — third class `standard` (= panel "Standard",
 successor of old `hot`), `hot` = "Premium" and `409 sold out`, `cold` 1 GB only; old presets
 2667/2669/2671/4613 gone. CRD enum `hot;cold` cannot order anything sellable; live read
@@ -9,7 +9,7 @@ successor of old `hot`), `hot` = "Premium" and `409 sold out`, `cold` 1 GB only;
 `storage_class` enums) + regen; (2) Update sends `preset_id` ONLY for a within-class resize
 (upstream `disk_stats.size` KB/1048576 ≠ `initialSizeGB`); declared class ≠ upstream class
 → fail-closed `StorageClassMismatch` (clarify Q1 = A), `lockedPresetID` never consulted
-(stale on `gitlab-backup`); (3) Observe sets own condition type `StorageClassDrift`
+(stale on a resized bucket); (3) Observe sets own condition type `StorageClassDrift`
 (`True/UpstreamReclassified` → `False/Aligned`), Ready/Synced untouched, `isUpToDate` still
 ignores class, NO auto-repair; (4) docs/example/kuttl 04 on `standard`; resolver hint already
 class-bearing — pin by test. 409 stays transient. HARD BOUNDARY: no cross-class moves, no

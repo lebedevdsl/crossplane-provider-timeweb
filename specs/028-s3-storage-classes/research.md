@@ -5,31 +5,19 @@ Phase 0 output. Decisions R-1..R-10; every one is code- or live-verified on
 
 ## R-1: Fleet impact is larger than the preface says (live read 2026-10-15)
 
-`kubectl --context inyan-infra get s3buckets -A` (read-only):
+Read-only `kubectl get s3buckets -A` on the production cluster: 12 `S3Bucket`
+MRs across three namespaces — 10 Ready buckets reclassified upstream to
+`standard` (old presets 2667 ×1 at 1 GB, 2669 ×6 at 10 GB, 2671 ×3 at
+100 GB; all `disk_stats.size` binary KB), 1 bucket bought 2026-08-31 on preset
+4613 still `hot`, and the incident bucket never created.
 
-| ns | bucket | spec | atProvider.storageClass | lockedPresetID | sizeKB |
-|---|---|---|---|---|---|
-| cloud-infra | flick-media-staging | hot/10 | — (never created) | — | — |
-| cloud-infra | flick-static | hot/10 | **hot** | 4613 | 10485760 |
-| cloud-infra | inyan-grafana-dashboards | hot/10 | standard | 2669 | 10485760 |
-| cloud-infra | inyan-rolly-images | hot/10 | standard | 2669 | 10485760 |
-| cloud-infra | inyan-static | hot/10 | standard | 2669 | 10485760 |
-| cloud-infra | volpepizza-images | hot/10 | standard | 2669 | 10485760 |
-| loki | loki | hot/100 | standard | 2671 | 104857600 |
-| s3-provisioning | bagetter | hot/10 | standard | 2669 | 10485760 |
-| s3-provisioning | gitlab-backup | hot/100 | standard | **2669** | 104857600 |
-| s3-provisioning | inyan-production-db-backup | hot/100 | standard | 2671 | 104857600 |
-| s3-provisioning | inyan-staging-db-backup | hot/100 | standard | 2671 | 104857600 |
-| s3-provisioning | vault-file-backup | hot/1 | standard | 2667 | 1048576 |
-
-- **Decision**: the rollout aligns **10** legacy manifests (3 namespaces, sizes
-  1/10/100 GB; old presets 2667/2669/2671), not 4. Spec wire facts + SC-003
-  amended.
-- **`lockedPresetID` is NOT a size signal**: `gitlab-backup` holds 2669 (the
-  10 GB preset) while upstream is 100 GB — a past within-class resize left the
-  lock stale (the lock is only refreshed by Update, and the 100 GB resize may
-  have happened in the panel). The Update rule therefore compares against the
-  upstream observation, never the lock (deviation from the preface's "or
+- **Decision**: the rollout aligns **10** legacy manifests, not 4. Spec wire
+  facts + SC-003 amended.
+- **`lockedPresetID` is NOT a size signal**: one 100 GB bucket still holds
+  2669 (the 10 GB preset) — a past within-class resize left the lock stale
+  (the lock is only refreshed by Update; the resize may have happened in the
+  panel). The Update rule therefore compares against the upstream
+  observation, never the lock (deviation from the preface's "or
   lockedPresetID unset" clause — the clause is dropped).
 - **Size unit pinned**: `disk_stats.size` is KB (generated doc comment) and the
   live values are binary: 1 GB ↔ 1048576, 10 GB ↔ 10485760, 100 GB ↔ 104857600.
@@ -165,18 +153,18 @@ size edits re-resolve + PATCH (true). After 028:
 
 ## R-9: Live gates
 
-- **Staging** (`inyan-staging`, e2e context pinned): dev-tag build → kuttl 04 →
+- **Validation cluster** (e2e context pinned): dev-tag build → kuttl 04 →
   manual: create `standard`/10, edit description (tier unchanged by
   re-observation + provider logs clean), apply `hot`/10 and confirm the
   condition shows the upstream `sold out` text and no object appears in the
   panel, delete.
-- **Production** (`inyan-infra`, after v0.14.0 + timeweb-infra provider bump):
-  `make preflight KUBECONTEXT=inyan-infra` (CRD enum shows `standard`); the 10
-  legacy buckets show `StorageClassDrift=True`; `flick-media-staging` manifest
-  → `standard` converges; then align the 10 manifests → `Aligned`, provider
-  logs show 0 PATCH calls for them.
+- **Production** (after v0.14.0 + the GitOps provider bump): `make preflight`
+  (CRD enum shows `standard`); the 10 legacy buckets show
+  `StorageClassDrift=True`; the incident manifest → `standard` converges; then
+  align the 10 manifests → `Aligned`, provider logs show 0 PATCH calls for
+  them.
 
-## R-9 results (staging gate, 2026-10-15, dev tag `dev-1792091653` on `inyan-staging`)
+## R-9 results (validation-cluster gate, 2026-10-15, dev tag `dev-1792091653`)
 
 - Provider revision healthy in ~20 s; CRD enum on the cluster reads
   `["hot","standard","cold"]`.
@@ -195,10 +183,9 @@ size edits re-resolve + PATCH (true). After 028:
 - Harness note: kuttl renames the rendered single context to `cluster` for
   command steps — the 04 step-02 context lock accepts a single-context
   kubeconfig (bundle-24 idiom would fail with `E2E_KUBECONTEXT` exported).
-- Staging was left on the dev tag (previously `ghcr.io/…:v0.13.1`); the
-  production rollout bumps it to `v0.14.0` via timeweb-infra.
+- The validation cluster stays on the dev tag until the release is published.
 
-## Support ticket draft (RU, project flick — owner action, T027)
+## Support ticket draft (RU — owner action, T027)
 
 > После ротации каталога S3 (13.10.2026) прошу уточнить: (1) класс `hot`
 > (Premium) снят с продажи или временно недоступен? `POST /api/v1/buckets` с
@@ -218,9 +205,9 @@ size edits re-resolve + PATCH (true). After 028:
 will conflict in those files — expected; resolve by re-applying 027's
 project-field edits on top (they touch `projectID` lines, not the tier code).
 
-## Open upstream questions (support ticket, project flick — not blocking)
+## Open upstream questions (support ticket — not blocking)
 
 - Premium (`hot`) sold out temporarily or withdrawn?
 - Tariff now billed for the reclassified 2667/2669/2671 buckets; is the 4613
-  bucket (`flick-static`) billed as Premium?
+  bucket billed as Premium?
 - Does PATCH `preset_id` across classes perform a move? (Never exercised.)

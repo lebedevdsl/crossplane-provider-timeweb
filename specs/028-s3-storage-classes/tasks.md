@@ -227,7 +227,7 @@ manifest flips to False with 0 PATCH calls in provider logs.
       their `storageClass` to `standard` (no PATCH results).
 - [x] T025 `make reviewable` (generate + lint + race tests; tree clean) and
       `make validate-examples`; fix anything it raises.
-- [x] T026 Staging live gate (`inyan-staging`, e2e context pinned; provider logs scanned):
+- [x] T026 Staging live gate (the validation cluster, e2e context pinned; provider logs scanned):
       `make xpkg.push VERSION=dev-$(date +%s)` + annotation bump; run kuttl 04 (steps 01+02);
       manually apply a `hot`/10 bucket → condition carries `Storage class hot is sold out`,
       nothing in the panel, delete; record results in `specs/028-s3-storage-classes/research.md`
@@ -235,18 +235,15 @@ manifest flips to False with 0 PATCH calls in provider logs.
 - [x] T027 (ticket text drafted in research.md — sending it is the owner's action) Remove the consumed preface `specs/_next-s3-storage-classes.preface.md` (its
       open vendor questions now live in research.md); update the support ticket (RU) with
       the three open questions from research.md.
-- [ ] T028 Owner-gated release: tag `v0.14.0` on `main` → `.github/workflows/release.yaml`
+- [x] T028 Owner-gated release: tag `v0.14.0` on `main` → `.github/workflows/release.yaml`
       → `ghcr.io/lebedevdsl/provider-timeweb:v0.14.0` (cosign by digest). No push without
       an explicit ask.
-- [ ] T029 Production rollout in timeweb-infra (separate repo, direct push to main with
-      `(#255)` one-liners): bump
-      `deploy-manifests/kubernetes-configuration/crossplane/inyan-infra/provider.yaml` →
-      Argo sync → `make preflight KUBECONTEXT=inyan-infra` (CRD enum shows `standard`;
-      logs clean); confirm `StorageClassDrift=True` on the 10 legacy buckets;
-      `cloud-infra/flick/staging/s3/flick-media.yaml` → `storageClass: standard` →
-      bucket Ready (closes #255); then align the 10 legacy manifests (`cloud-infra` ×4,
-      `loki` ×1, `s3-provisioning` ×5) → `Aligned`, 0 PATCH calls in logs; `flick-static`
-      stays `hot`.
+- [x] T029 Production rollout (GitOps repo): bump the Provider package → sync →
+      `make preflight` (CRD enum shows `standard`; logs clean); confirm
+      `StorageClassDrift=True` on the 10 legacy buckets; incident manifest →
+      `storageClass: standard` → bucket Ready (closes the incident); then align the
+      10 legacy manifests → `Aligned`, 0 PATCH calls in logs; a bucket still `hot`
+      upstream stays `hot`.
 
 ---
 
@@ -288,7 +285,7 @@ Task: "T009 dimensions_test.go standard mapping"
 ## Implementation Strategy
 
 1. Phase 2 → `go build` green, CRD enum shows `standard`.
-2. US1 (MVP): `standard` orderable + docs/example/kuttl 04 → unblocks incident #255 on its
+2. US1 (MVP): `standard` orderable + docs/example/kuttl 04 → unblocks the incident on its
    own (a dev tag + the one-word manifest change would already converge it).
 3. US2: tier-safe Update — required before anyone edits a legacy bucket's description.
 4. US3: drift visibility — makes the fleet-wide alignment auditable.

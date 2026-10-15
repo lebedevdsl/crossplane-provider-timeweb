@@ -8,12 +8,12 @@
 
 **Input**: User description: "S3 bucket storage classes catalog rotation (bugfix, NON-BREAKING,
 target v0.14.0)" from `specs/_next-s3-storage-classes.preface.md` — live incident
-infra/timeweb-infra#255 (2026-10-14): the first `S3Bucket` created after 2026-09 loops forever
+a live incident (2026-10-14): the first `S3Bucket` created after 2026-09 loops forever
 on `409 Storage class hot is sold out`; ten of eleven live buckets were silently moved by the
 vendor to a class the provider cannot even name.
 
 **Source**: preface (observed live 2026-10-14/15 against the real API, provider v0.13.1 on
-inyan-infra) + support ticket pending (project flick).
+the production cluster) + support ticket pending.
 
 ## Wire facts (authoritative, captured live 2026-10-15)
 
@@ -36,7 +36,7 @@ bucket's `Synced` condition flipped at 12:01–12:03Z). The full current catalog
 - A **third class `standard`** exists. It is the successor of the old `hot` tier (what the
   five live buckets were bought as) and what the panel sells today as "Standard".
 - The API value **`hot` now means the panel's "Premium"** tier. `cold` exists only at 1 GB.
-- The old presets 2667/2669/2671 (the 2026-07 buckets, 1/10/100 GB) and 4613 (`flick-static`)
+- The old presets 2667/2669/2671 (the 2026-07 buckets, 1/10/100 GB) and 4613
   are gone.
 - `POST /api/v1/buckets` with preset 5129 (Premium 10GB) and 5143 (Cold 1GB) both answer
   `409 Conflict: Storage class <class> is sold out` since 2026-10-14 14:43Z. Whether Premium is
@@ -44,7 +44,7 @@ bucket's `Synced` condition flipped at 12:01–12:03Z). The full current catalog
   only class the panel sells today.
 - Live fleet read 2026-10-15 (plan phase, read-only): **10 of 11 Ready buckets** across
   three namespaces (old presets 2667/2669/2671 — 1/10/100 GB) are reported upstream as
-  `storage_class: standard` while their manifests still say `hot`; `flick-static` (4613)
+  `storage_class: standard` while their manifests still say `hot`; the 2026-08 bucket (preset 4613)
   still reports `hot`; the incident bucket was never created. The preface's "four" was an
   undercount. Their tariff after the reclassification is an open question for support.
 
@@ -149,7 +149,7 @@ blocks nothing.
 
 **Independent Test**: unit-level: Observe with `spec: hot` and upstream `standard` sets the
 drift condition and emits a Warning event; with equal classes the condition is cleared.
-Live on inyan-infra after the upgrade: the ten legacy buckets show the condition; aligning
+Live on the production cluster after the upgrade: the ten legacy buckets show the condition; aligning
 their manifests to `standard` clears it with no update request sent.
 
 **Acceptance Scenarios**:
@@ -255,7 +255,7 @@ their manifests to `standard` clears it with no update request sent.
 ### Measurable Outcomes
 
 - **SC-001**: A `standard` bucket declared on the staging cluster is Ready within 5 minutes
-  of apply, and the incident bucket (infra/timeweb-infra#255) converges after the rollout
+  of apply, and the incident bucket (a live incident) converges after the rollout
   with no manual intervention beyond the one-word class change.
 - **SC-002**: 0 tier selections are sent for updates that change only description, type or
   project (pinned by unit tests; confirmed by a live description edit on staging leaving the
@@ -290,7 +290,7 @@ their manifests to `standard` clears it with no update request sent.
   tariff now billed for the reclassified 2669 buckets and for the 4613 bucket) are tracked in
   the support ticket and do not block this feature; the documentation words `hot` as
   "Premium — may be unavailable to order" until support answers.
-- The ten legacy manifests live in the GitOps repo (timeweb-infra), outside this
+- The ten legacy manifests live in the GitOps repo (the GitOps repo), outside this
   repository; their alignment is a rollout step, not provider code.
 - No vendor assignment/transfer APIs and no automatic tier repair are introduced (consistent
   with the hard boundary set in feature 027).

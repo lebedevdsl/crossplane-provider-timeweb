@@ -75,12 +75,13 @@ Event Warning StorageClassMismatch
 
 Cross-class moves on an existing bucket are not supported by the provider.
 
-## Rollout (this account)
+## Rollout
 
-1. Tag `v0.14.0` → release workflow → `ghcr.io/lebedevdsl/provider-timeweb:v0.14.0`.
-2. timeweb-infra: bump `provider.yaml` → Argo → `make preflight
-   KUBECONTEXT=inyan-infra` (CRD enum must list `standard`).
-3. `cloud-infra/flick/staging/s3/flick-media.yaml` → `storageClass: standard`.
-4. Align the 10 legacy manifests (`cloud-infra` ×4, `loki` ×1,
-   `s3-provisioning` ×5) to `standard`; confirm `StorageClassDrift=False` and
-   0 PATCH calls in provider logs. `flick-static` (preset 4613) stays `hot`.
+1. Tag the release → release workflow → published package.
+2. GitOps repo: bump the Provider package → sync → `make preflight` (CRD enum
+   must list `standard`).
+3. Switch the incident manifest to `storageClass: standard` (nothing exists
+   upstream yet, so no recreate).
+4. Align the legacy manifests to `standard`; confirm `StorageClassDrift=False`
+   and 0 PATCH calls in provider logs. A bucket whose upstream class is still
+   `hot` stays `hot`.
