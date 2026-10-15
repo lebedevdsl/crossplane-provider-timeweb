@@ -112,15 +112,15 @@ an integer restricted to the tariff tiers Timeweb publishes. The provider
 resolves it to the matching upstream `preset_id` internally, so the spec
 never references preset slugs or configurator IDs.
 
-| MR                  | Allowed `initialSizeGB`         |
-|---------------------|---------------------------------|
-| `ContainerRegistry` | `5`, `10`, `25`, `50`, `75`, `100` |
-| `S3Bucket`          | `1`, `10`, `100`, `250`         |
+| MR                  | Allowed `initialSizeGB`         | Notes |
+|---------------------|---------------------------------|-------|
+| `ContainerRegistry` | `5`, `10`, `25`, `50`, `75`, `100` | |
+| `S3Bucket`          | `1`, `10`, `100`, `250`         | `storageClass: standard` (recommended) or `hot` (Premium); `cold` is `1` only |
 
 The CRD enforces the enum at admission time. See [`docs/presets.md`](./docs/presets.md)
-for the full operator guide, including the optional `location` field, the
-mapping to upstream `preset_id`, and condition-reason vocabulary on
-resolution failures.
+for the full operator guide, including the S3 storage-class table, the optional
+`location` field, the mapping to upstream `preset_id`, and condition-reason
+vocabulary on resolution failures.
 
 ## Object-storage credentials — `S3User`
 

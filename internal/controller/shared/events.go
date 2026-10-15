@@ -30,10 +30,11 @@ import (
 // upstream xpv2 reason constants. ParentNotReady is a dependency-wait, not a
 // failure, so it is also Normal.
 var normalReasons = map[xpv2.ConditionReason]struct{}{
-	xpv2.ReasonAvailable: {},
-	xpv2.ReasonCreating:  {},
-	xpv2.ReasonDeleting:  {},
-	ReasonParentNotReady: {},
+	xpv2.ReasonAvailable:      {},
+	xpv2.ReasonCreating:       {},
+	xpv2.ReasonDeleting:       {},
+	ReasonParentNotReady:      {},
+	ReasonStorageClassAligned: {},
 }
 
 // RecordConditionChange emits an Event on recorder if and only if

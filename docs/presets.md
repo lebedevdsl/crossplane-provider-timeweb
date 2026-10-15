@@ -8,10 +8,26 @@ never need to look up an opaque preset slug or configurator ID.
 | MR kind                                  | Allowed `initialSizeGB` values | Source of truth                                |
 |------------------------------------------|--------------------------------|------------------------------------------------|
 | `kubernetes.m.timeweb.crossplane.io/ContainerRegistry` | `5`, `10`, `25`, `50`, `75`, `100` | Timeweb dashboard → Container Registry → "Фиксированная" tiers |
-| `objectstorage.m.timeweb.crossplane.io/S3Bucket`              | `1`, `10`, `100`, `250`            | Timeweb dashboard → S3 Storage → tier picker   |
+| `objectstorage.m.timeweb.crossplane.io/S3Bucket`              | `1`, `10`, `100`, `250` (see per-class table) | Timeweb dashboard → S3 Storage → tier picker   |
 
 Both values are also encoded as a CEL `+kubebuilder:validation:Enum=…` on
 the CRD, so applying an out-of-list value is rejected at admission time.
+
+### S3 storage classes (`storageClass`)
+
+An `S3Bucket` picks its tier by `(initialSizeGB, storageClass)`. The class
+values follow the Timeweb panel names (catalog as of 2026-10-15; Timeweb
+rotated it on 2026-10-13):
+
+| `storageClass` | Panel name | Sizes (GB) | Note |
+|---|---|---|---|
+| `standard` | Standard | `1`, `10`, `100`, `250` | **Recommended** — what the panel sells today. |
+| `hot` | Premium | `1`, `10`, `100`, `250` | Not orderable since 2026-10-14: the API answers `409 … Storage class hot is sold out`. Buckets bought as `hot` before 2026-09 were moved upstream to `standard` — see [`docs/s3bucket.md`](./s3bucket.md#vendor-reclassification-storageclassdrift). |
+| `cold` | Cold pay-as-you-go | `1` | Only the 1 GB tier exists. |
+
+The class is not enforced against the size by the CRD — an unavailable
+combination (e.g. `cold` + `10`) fails at reconcile time with the
+class-bearing hint shown below.
 
 ## Examples
 
@@ -44,7 +60,7 @@ spec:
   forProvider:
     name: my-bucket
     type: private
-    storageClass: hot
+    storageClass: standard
     initialSizeGB: 1
   providerConfigRef:
     kind: ProviderConfig
@@ -80,12 +96,20 @@ When no preset matches the requested combination, the MR transitions to:
 
 ```
 Synced=False reason=ReconcileError
-Message: resolver: preset not found: slug "size=5GB,location=\"<your-loc>\",storageClass=\"\"" in dimension "ContainerRegistryPreset" does not match any upstream entry (valid: 5GB/ru-1, 10GB/ru-1, 25GB/ru-1, 50GB/ru-1, 75GB/ru-1, 100GB/ru-1)
+Message: resolver: preset not found: slug "size=10GB,location=\"\",storageClass=\"cold\"" in dimension "S3BucketPreset" does not match any upstream entry (valid: 1GB/ru-1/hot, 1GB/ru-1/standard, 1GB/ru-1/cold, 10GB/ru-1/hot, 10GB/ru-1/standard, 100GB/ru-1/hot, 100GB/ru-1/standard, 250GB/ru-1/hot, 250GB/ru-1/standard)
 ```
 
 The `(valid: …)` suffix enumerates every size/location/storageClass combo
 the resolver saw on the most recent catalog fetch — copy-paste a valid
 combination back into the manifest.
+
+### Sold-out class
+
+A class the vendor no longer sells is refused at create time with
+`409 Conflict: Storage class <class> is sold out`. The provider keeps the
+error transient (capped retries, nothing is created upstream) and surfaces
+the vendor text in the `Synced` message. Switch `storageClass` (typically to
+`standard`) — no recreate is needed because the bucket never existed.
 
 ## What about the dashboard's "Произвольная" (Custom) path?
 
@@ -148,11 +172,20 @@ behavior as `PresetNotFound`).
 
 After the first successful Create:
 
-- `status.atProvider.lockedPresetID` holds the resolved upstream ID.
+- `status.atProvider.lockedPresetID` holds the resolved upstream ID. It is
+  a historical snapshot: it may name a preset that has since left the
+  catalog and the controller never consults it for decisions.
 - Editing `spec.forProvider.initialSizeGB` on a live MR causes the
   controller to re-resolve the new tier and PATCH the upstream resource
-  (within-account tier moves are supported by Timeweb).
+  (within-class resizes are supported by Timeweb). For `S3Bucket` the
+  `preset_id` is sent **only** when the observed upstream size differs from
+  the declared one — edits to description/type/project never carry a tier
+  (feature 028).
 - Editing `spec.forProvider.location` similarly re-resolves.
+- `S3Bucket.storageClass` is a create-time choice: if the declared class
+  differs from the upstream-reported one, updates are refused
+  (`StorageClassMismatch`) until the spec is aligned — see
+  [`docs/s3bucket.md`](./s3bucket.md#tier-changes).
 - Deleting the CR with the default `managementPolicies: ['*']` cascades
   upstream Delete. Set `managementPolicies: [Observe]` to keep the
   upstream resource alive (e.g. for the `Project` import pattern).

@@ -15,12 +15,17 @@ limitations under the License.
 */
 
 // Package s3bucket implements the Crossplane managed-resource controller for
-// Timeweb Cloud S3-compatible buckets. Sizing is preset-only:
-// `forProvider.presetName` is required, the controller resolves it via the
-// catalog resolver to the upstream `preset_id`, and that ID is recorded in
-// `status.atProvider.lockedPresetID` for change detection on subsequent
-// reconciles. `name` is immutable; everything else (`type`, `description`,
-// `presetName`, `projectID`) is mutable.
+// Timeweb Cloud S3-compatible buckets. Sizing is preset-only: the controller
+// resolves `(initialSizeGB, location?, storageClass)` via the catalog
+// resolver to the upstream `preset_id`; the chosen ID is recorded in
+// `status.atProvider.lockedPresetID` as a historical snapshot only (never an
+// input — feature 028). `name` is immutable; `type`, `description` and
+// `projectID` are mutable and never carry a tier; `initialSizeGB` is mutable
+// within the same storage class (a resize re-resolves and PATCHes
+// `preset_id`); `storageClass` is a create-time choice — when the upstream
+// reports a different class (vendor reclassification), Update is refused
+// fail-closed and Observe surfaces the drift via the `StorageClassDrift`
+// condition.
 package s3bucket
 
 import (
@@ -34,6 +39,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 
 	objectstoragev1alpha1 "github.com/lebedevdsl/crossplane-provider-timeweb/apis/objectstorage/v1alpha1"
@@ -45,6 +52,17 @@ import (
 )
 
 var errNotS3Bucket = errors.New("managed resource is not a S3Bucket")
+
+// ErrStorageClassMismatch is returned by Update when the declared
+// `storageClass` differs from the upstream-reported one (feature 028). The
+// update is refused fail-closed — any PATCH that re-resolved the tier from
+// the declared class would silently re-tier (paid move) or loop on a
+// sold-out class. The operator aligns the spec to the upstream value.
+var ErrStorageClassMismatch = errors.New("s3bucket: storage class mismatch")
+
+// kbPerGB converts the upstream `disk_stats.size` (KB, binary — live
+// 2026-10-15: 10 GB = 10485760) to the operator-typed `initialSizeGB`.
+const kbPerGB = 1024 * 1024
 
 // Connection-Secret keys produced by the controller. Feature 012 removed
 // access_key/secret_key — see buildConnection.
@@ -103,6 +121,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	populateStatus(cr, bucket)
 	e.populateAttachedUsers(ctx, cr)
 	setBucketReadyCondition(e.recorder, cr, bucket.Status)
+	setStorageClassDriftCondition(e.recorder, cr, string(bucket.StorageClass))
 
 	return managed.ExternalObservation{
 		ResourceExists:    true,
@@ -220,6 +239,14 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 // Update PATCHes mutable fields; rejects edits to immutable `name`.
+//
+// Tier rule (feature 028, clarified fail-closed): a tier (`preset_id`) is
+// sent ONLY for a within-class resize — when the upstream-observed disk size
+// differs from `initialSizeGB` while the classes match. Declared class ≠
+// upstream class refuses the whole update (`StorageClassMismatch`) and sends
+// nothing. Description/type-only edits carry no `preset_id` and consult no
+// catalog. `lockedPresetID` is never consulted (it goes stale on panel-side
+// resizes).
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	cr, ok := mg.(*objectstoragev1alpha1.S3Bucket)
 	if !ok {
@@ -250,20 +277,36 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, shared.RejectImmutableChange(cr, e.recorder, changed)
 	}
 
-	presetID, err := e.resolvePresetID(ctx, cr)
-	if err != nil {
-		return managed.ExternalUpdate{}, err
+	if observed := string(bucket.StorageClass); observed != "" && observed != cr.Spec.ForProvider.StorageClass {
+		msg := fmt.Sprintf("storage class mismatch: spec declares %q but upstream reports %q; set spec.forProvider.storageClass to %q to align (cross-class moves are not supported day-2)",
+			cr.Spec.ForProvider.StorageClass, observed, observed)
+		cond := shared.SyncedFalse(shared.ReasonStorageClassMismatch, msg)
+		shared.RecordConditionChange(e.recorder, cr, cond)
+		cr.Status.SetConditions(cond)
+		return managed.ExternalUpdate{}, ErrStorageClassMismatch
 	}
-	presetF := float32(presetID)
 
-	body := generated.UpdateStorageJSONRequestBody{
-		PresetId: &presetF,
-	}
+	body := generated.UpdateStorageJSONRequestBody{}
 	if cr.Spec.ForProvider.Description != nil {
 		body.Description = cr.Spec.ForProvider.Description
 	}
 	bucketType := generated.UpdateStorageJSONBodyBucketType(cr.Spec.ForProvider.Type)
 	body.BucketType = &bucketType
+
+	// Within-class resize: the only path that carries a tier.
+	var resized *int64
+	if sizeKnown := !bucket.DiskStats.IsUnlimited && bucket.DiskStats.Size > 0; sizeKnown {
+		if observedGB := int64(bucket.DiskStats.Size) / kbPerGB; observedGB != cr.Spec.ForProvider.InitialSizeGB {
+			presetID, err := e.resolvePresetID(ctx, cr)
+			if err != nil {
+				return managed.ExternalUpdate{}, err
+			}
+			presetF := float32(presetID)
+			body.PresetId = &presetF
+			pid := int64(presetID)
+			resized = &pid
+		}
+	}
 
 	resp, err := e.tw.UpdateStorage(ctx, id, body)
 	if err != nil {
@@ -274,10 +317,10 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, err
 	}
 
-	// Re-lock to the freshly-resolved preset (within-preset moves are
-	// the only mutable sizing change S3 supports today).
-	pid := int64(presetID)
-	cr.Status.AtProvider.LockedPresetID = &pid
+	if resized != nil {
+		// Refresh the snapshot to the freshly-resolved preset.
+		cr.Status.AtProvider.LockedPresetID = resized
+	}
 
 	return managed.ExternalUpdate{ConnectionDetails: buildConnection(cr, bucket)}, nil
 }
@@ -416,6 +459,51 @@ func setBucketReadyCondition(recorder record.EventRecorder, cr *objectstoragev1a
 		cond = xpv2.Available()
 	default:
 		cond = xpv2.Creating()
+	}
+	shared.RecordConditionChange(recorder, cr, cond)
+	cr.Status.SetConditions(cond)
+}
+
+// setStorageClassDriftCondition (feature 028) maintains the ADDITIONAL
+// `StorageClassDrift` condition type — it never gates Ready or Synced and
+// never triggers a write: a vendor-side reclassification (the 2026-10-13
+// catalog rotation moved every pre-2026-09 `hot` bucket to `standard`) is
+// a paid-tier decision that stays with the operator.
+//
+//   - upstream class non-empty and ≠ spec → True/UpstreamReclassified
+//     (Warning Event on transition);
+//   - classes match and the condition is already present → False/Aligned
+//     (Normal Event on transition);
+//   - classes match and no condition yet → nothing (a never-drifted bucket
+//     carries no extra condition).
+//
+// An empty upstream class yields no verdict either way.
+func setStorageClassDriftCondition(recorder record.EventRecorder, cr *objectstoragev1alpha1.S3Bucket, observed string) {
+	if observed == "" {
+		return
+	}
+	declared := cr.Spec.ForProvider.StorageClass
+	var cond xpv2.Condition
+	switch {
+	case observed != declared:
+		cond = xpv2.Condition{
+			Type:               objectstoragev1alpha1.TypeStorageClassDrift,
+			Status:             corev1.ConditionTrue,
+			LastTransitionTime: metav1.Now(),
+			Reason:             shared.ReasonUpstreamReclassified,
+			Message: fmt.Sprintf("declared %q, upstream reports %q; set spec.forProvider.storageClass to %q to align (no automatic re-tiering — a class change is a paid move)",
+				declared, observed, observed),
+		}
+	case cr.GetCondition(objectstoragev1alpha1.TypeStorageClassDrift).Reason != "":
+		cond = xpv2.Condition{
+			Type:               objectstoragev1alpha1.TypeStorageClassDrift,
+			Status:             corev1.ConditionFalse,
+			LastTransitionTime: metav1.Now(),
+			Reason:             shared.ReasonStorageClassAligned,
+			Message:            "spec and upstream storage class match",
+		}
+	default:
+		return
 	}
 	shared.RecordConditionChange(recorder, cr, cond)
 	cr.Status.SetConditions(cond)

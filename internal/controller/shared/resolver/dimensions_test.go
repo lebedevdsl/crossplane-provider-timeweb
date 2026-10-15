@@ -18,8 +18,11 @@ package resolver
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
+
+	twgen "github.com/lebedevdsl/crossplane-provider-timeweb/internal/clients/timeweb/generated"
 )
 
 // TestDefaultRegistry_Discoverable locks the registry shape per
@@ -108,5 +111,33 @@ func TestDefaultRegistry_Discoverable(t *testing.T) {
 		if !errors.Is(err, ErrDimensionFetcherUnwired) {
 			t.Errorf("%s: forward-compat fetch err = %v, want ErrDimensionFetcherUnwired", tc.name, err)
 		}
+	}
+}
+
+// TestFetchS3BucketPresets_StandardClass (feature 028) pins the fetcher
+// against the rotated catalog shape: `storage_class: standard` flows through
+// as-is and `disk` (MB) is normalised to GB.
+func TestFetchS3BucketPresets_StandardClass(t *testing.T) {
+	resp := &twgen.GetStoragesPresetsResponse{}
+	body := `{"meta":{"total":2},"response_id":"8f4a1c2e-7b3d-4e5f-9a6b-0c1d2e3f4a5b","storages_presets":[
+	  {"id":5137,"description":"","description_short":"Standard 10GB","disk":10240,"location":"ru-1","price":79,"storage_class":"standard","tags":[]},
+	  {"id":5143,"description":"","description_short":"Cold pay-as-you-go","disk":1024,"location":"ru-1","price":2.2,"storage_class":"cold","tags":[]}
+	]}`
+	if err := json.Unmarshal([]byte(body), &resp.JSON200); err != nil {
+		t.Fatalf("fixture: %v", err)
+	}
+	out, err := fetchS3BucketPresets(context.Background(), &fakeCatalog{storPresets: resp})
+	if err != nil {
+		t.Fatalf("fetch: %v", err)
+	}
+	entries, ok := out.([]PresetEntry)
+	if !ok || len(entries) != 2 {
+		t.Fatalf("out = %T len %d, want 2 PresetEntry", out, len(entries))
+	}
+	if e := entries[0]; e.UpstreamID != 5137 || e.DiskGB != 10 || e.StorageClass != "standard" || e.Location != "ru-1" {
+		t.Errorf("entry[0] = %+v, want 5137/10GB/ru-1/standard", e)
+	}
+	if e := entries[1]; e.UpstreamID != 5143 || e.DiskGB != 1 || e.StorageClass != "cold" {
+		t.Errorf("entry[1] = %+v, want 5143/1GB/cold", e)
 	}
 }

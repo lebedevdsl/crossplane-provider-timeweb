@@ -31,7 +31,7 @@ type PresetEntry struct {
 	DescShort    string // upstream description_short (or equivalent)
 	Location     string // upstream location code (e.g. "ru-1", "pl-1"); "" if not applicable
 	DiskGB       int64  // upstream disk size in GB; 0 if the dimension is not size-keyed
-	StorageClass string // upstream storage class (S3: "hot" | "cold"); "" for non-storage dimensions
+	StorageClass string // upstream storage class (S3: "hot" | "standard" | "cold"); "" for non-storage dimensions
 	// Zone is a FILTER-ONLY placement key (availability zone, e.g. "msk-1");
 	// it is NOT part of the slug, so existing slugs keep matching unchanged.
 	// When both PresetInput.Zone and this field are non-empty and differ, the

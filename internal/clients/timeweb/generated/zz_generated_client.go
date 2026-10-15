@@ -180,8 +180,9 @@ const (
 
 // Defines values for BucketStorageClass.
 const (
-	BucketStorageClassCold BucketStorageClass = "cold"
-	BucketStorageClassHot  BucketStorageClass = "hot"
+	BucketStorageClassCold     BucketStorageClass = "cold"
+	BucketStorageClassHot      BucketStorageClass = "hot"
+	BucketStorageClassStandard BucketStorageClass = "standard"
 )
 
 // Defines values for BucketType.
@@ -285,8 +286,9 @@ const (
 
 // Defines values for PresetsStorageStorageClass.
 const (
-	PresetsStorageStorageClassCold PresetsStorageStorageClass = "cold"
-	PresetsStorageStorageClassHot  PresetsStorageStorageClass = "hot"
+	PresetsStorageStorageClassCold     PresetsStorageStorageClass = "cold"
+	PresetsStorageStorageClassHot      PresetsStorageStorageClass = "hot"
+	PresetsStorageStorageClassStandard PresetsStorageStorageClass = "standard"
 )
 
 // Defines values for ProjectResourceType.
@@ -2097,7 +2099,7 @@ type Bucket struct {
 	// Status Статус хранилища.
 	Status BucketStatus `json:"status"`
 
-	// StorageClass Класс хранилища.
+	// StorageClass Класс хранилища. (HAND-PATCH feature 028: live catalog 2026-10-15 returns `standard` (panel "Standard", successor of the old `hot` tier; `hot` now = "Premium"); published enum is stale.)
 	StorageClass BucketStorageClass `json:"storage_class"`
 
 	// Type Тип хранилища.
@@ -2125,7 +2127,7 @@ type Bucket struct {
 // BucketStatus Статус хранилища.
 type BucketStatus string
 
-// BucketStorageClass Класс хранилища.
+// BucketStorageClass Класс хранилища. (HAND-PATCH feature 028: live catalog 2026-10-15 returns `standard` (panel "Standard", successor of the old `hot` tier; `hot` now = "Premium"); published enum is stale.)
 type BucketStorageClass string
 
 // BucketType Тип хранилища.
@@ -2660,7 +2662,7 @@ type PresetsStorage struct {
 	// Price Стоимость тарифа хранилища.
 	Price float32 `json:"price"`
 
-	// StorageClass Класс хранилища.
+	// StorageClass Класс хранилища. (HAND-PATCH feature 028: live catalog 2026-10-15 returns `standard` (panel "Standard", successor of the old `hot` tier; `hot` now = "Premium"); published enum is stale.)
 	StorageClass PresetsStorageStorageClass `json:"storage_class"`
 
 	// Tags Теги тарифа.
@@ -2670,7 +2672,7 @@ type PresetsStorage struct {
 // PresetsStorageLocation Географическое расположение тарифа.
 type PresetsStorageLocation string
 
-// PresetsStorageStorageClass Класс хранилища.
+// PresetsStorageStorageClass Класс хранилища. (HAND-PATCH feature 028: live catalog 2026-10-15 returns `standard` (panel "Standard", successor of the old `hot` tier; `hot` now = "Premium"); published enum is stale.)
 type PresetsStorageStorageClass string
 
 // Project Проект

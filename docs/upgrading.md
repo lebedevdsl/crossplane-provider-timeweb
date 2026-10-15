@@ -57,6 +57,16 @@ The kuttl e2e suite is **not** an operator tool: it provisions real, billable
 infrastructure and takes ~20 minutes for the Kubernetes bundles. It is a CI
 gate.
 
+## Version-specific notes
+
+- **v0.14.0** — `S3Bucket.storageClass` gains `standard` (the tier Timeweb sells
+  since the 2026-10-13 catalog rotation). Buckets bought as `hot` before 2026-09
+  were moved upstream to `standard` and show `StorageClassDrift=True` after the
+  upgrade (`Ready`/`Synced` unaffected). Set `storageClass: standard` on those
+  manifests — no request is sent, the condition clears. Until aligned, any other
+  edit of such a bucket is refused (`StorageClassMismatch`). See
+  [`docs/s3bucket.md`](./s3bucket.md#vendor-reclassification-storageclassdrift).
+
 ## Rollback
 
 **Downgrading across a field addition is one-way in practice.** If resources
