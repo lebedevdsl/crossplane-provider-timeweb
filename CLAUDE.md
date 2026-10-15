@@ -1,5 +1,22 @@
 <!-- SPECKIT START -->
-Current feature: **026-nodepool-min-zero** (feature, target **v0.13.0**, NON-BREAKING) — read
+Current feature: **028-s3-storage-classes** (bugfix, target **v0.14.0**, NON-BREAKING) — read
+the plan at `specs/028-s3-storage-classes/plan.md`. Incident infra/timeweb-infra#255: Timeweb
+rotated the S3 preset catalog 2026-10-13 — third class `standard` (= panel "Standard",
+successor of old `hot`), `hot` = "Premium" and `409 sold out`, `cold` 1 GB only; old presets
+2667/2669/2671/4613 gone. CRD enum `hot;cold` cannot order anything sellable; live read
+2026-10-15: 10 of 11 Ready buckets reclassified upstream to `standard` with spec `hot`
+(preface said four). Deltas: (1) enum `hot;standard;cold` + swagger hand-patch (two
+`storage_class` enums) + regen; (2) Update sends `preset_id` ONLY for a within-class resize
+(upstream `disk_stats.size` KB/1048576 ≠ `initialSizeGB`); declared class ≠ upstream class
+→ fail-closed `StorageClassMismatch` (clarify Q1 = A), `lockedPresetID` never consulted
+(stale on `gitlab-backup`); (3) Observe sets own condition type `StorageClassDrift`
+(`True/UpstreamReclassified` → `False/Aligned`), Ready/Synced untouched, `isUpToDate` still
+ignores class, NO auto-repair; (4) docs/example/kuttl 04 on `standard`; resolver hint already
+class-bearing — pin by test. 409 stays transient. HARD BOUNDARY: no cross-class moves, no
+assignment APIs. 027 work is in `git stash@{0}` (overlaps `types.go`/`external.go`/docs).
+Artifacts in `specs/028-s3-storage-classes/`.
+
+Prior feature: **026-nodepool-min-zero** (feature, target **v0.13.0**, NON-BREAKING) — read
 the plan at `specs/026-nodepool-min-zero/plan.md`. Scale-to-zero autoscaled nodepools: wire
 capture 2026-08-07 (panel PATCH, cluster 1096397 group 117127 `ci`) proves upstream accepts
 `min_size: 0` — the swagger `minimum: 2` floor is stale. Three deltas: (1) admission relax —
