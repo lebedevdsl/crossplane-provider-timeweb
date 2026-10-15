@@ -124,6 +124,20 @@ const (
 	// identity — the provider refuses to guess; the operator adopts
 	// explicitly by external-name and removes the extras.
 	ReasonAdoptionAmbiguous xpv2.ConditionReason = "AdoptionAmbiguous"
+	// ReasonStorageClassMismatch (feature 028) is set on an S3Bucket whose
+	// Update was refused fail-closed: the declared storageClass differs from
+	// the upstream-reported one (vendor reclassification), so any PATCH could
+	// silently re-tier the bucket. Nothing is sent; the operator aligns the
+	// spec to the upstream value. Cross-class moves are not supported.
+	ReasonStorageClassMismatch xpv2.ConditionReason = "StorageClassMismatch"
+	// ReasonUpstreamReclassified (feature 028) is the reason of the
+	// additional `StorageClassDrift=True` condition on an S3Bucket whose
+	// upstream class differs from the declared one. Ready/Synced unaffected.
+	ReasonUpstreamReclassified xpv2.ConditionReason = "UpstreamReclassified"
+	// ReasonStorageClassAligned (feature 028) is the reason of
+	// `StorageClassDrift=False` once a previously drifted bucket's declared
+	// and upstream classes match again.
+	ReasonStorageClassAligned xpv2.ConditionReason = "Aligned"
 )
 
 // SyncedFalse returns a Synced=False condition with the supplied reason and

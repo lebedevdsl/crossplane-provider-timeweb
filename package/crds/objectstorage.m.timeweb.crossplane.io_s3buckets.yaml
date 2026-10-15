@@ -90,7 +90,9 @@ spec:
                       controller maps `(initialSizeGB, location?, storageClass)` to one
                       upstream `preset_id` at reconcile time. Valid values match
                       Timeweb's published S3 storage tiers — bump this enum when the
-                      upstream catalog grows.
+                      upstream catalog grows. Mutable within the same storage class
+                      (a resize re-resolves the tier and PATCHes it); `cold` only has
+                      the 1 GB tier.
 
                       Note: the generated Timeweb client (PresetsStorage.Disk and the
                       CreateBucket body's size/preset fields) uses *float32 for disk
@@ -122,10 +124,17 @@ spec:
                     type: integer
                   storageClass:
                     description: |-
-                      StorageClass picks the upstream storage tier. `hot` is the
-                      frequently-accessed default; `cold` is optimized for archives.
+                      StorageClass picks the upstream storage tier, named after the
+                      Timeweb panel: `hot` = Premium, `standard` = Standard (the
+                      recommended default — what the panel sells), `cold` =
+                      pay-as-you-go (1 GB tier only). Create-time choice: if the
+                      upstream later reports a different class (vendor reclassification,
+                      e.g. the 2026-10-13 catalog rotation), updates are refused until
+                      the spec is aligned — see the `StorageClassDrift` condition.
+                      Cross-class moves on an existing bucket are not supported.
                     enum:
                     - hot
+                    - standard
                     - cold
                     type: string
                   type:
@@ -253,9 +262,10 @@ spec:
                     type: string
                   lockedPresetID:
                     description: |-
-                      LockedPresetID is the upstream preset ID locked at first Create —
-                      snapshot of what the resolver chose for `presetName`. Survives
-                      later resolver-cache rotations and dimension-registry edits.
+                      LockedPresetID is a historical snapshot of the last preset ID the
+                      provider chose (first Create or a within-class resize). It may name
+                      a preset that no longer exists in the catalog and is never consulted
+                      for reconcile decisions (feature 028).
                     format: int64
                     type: integer
                   movedInQuarantineAt:
@@ -270,8 +280,11 @@ spec:
                     description: Status is the upstream status string.
                     type: string
                   storageClass:
-                    description: StorageClass is the upstream-reported tier (hot /
-                      cold).
+                    description: |-
+                      StorageClass is the upstream-reported tier (`hot` / `standard` /
+                      `cold`). May differ from `spec.forProvider.storageClass` after a
+                      vendor-side reclassification — surfaced via the `StorageClassDrift`
+                      condition, never repaired automatically.
                     type: string
                 type: object
               conditions:

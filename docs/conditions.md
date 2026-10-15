@@ -41,7 +41,10 @@ controllers set, with its meaning and remediation. Generic runtime reasons
 | `ServiceConflict` | Synced=False | (Firewall) a declared service is already attached to a different rule group (1:1 exclusivity). Detach it first. |
 | `RepositoryNotPushed` | Ready=False | (ContainerRegistryRepository) no image has been pushed yet. Push an image. |
 | `BucketQuarantined` | Ready=False | (S3Bucket) the bucket is quarantined upstream. Resolve in the panel. |
-| `PresetNotFound` / `PresetAmbiguous` / `NoConfiguratorAvailable` | Synced=False | Sizing resolution failed — the requested size has no orderable preset, or is ambiguous. Adjust `initialSizeGB`/sizing or `location`. |
+| `PresetNotFound` / `PresetAmbiguous` / `NoConfiguratorAvailable` | Synced=False | Sizing resolution failed — the requested size has no orderable preset, or is ambiguous. Adjust `initialSizeGB`/sizing or `location` (for S3, the hint lists `<GB>/<location>/<storageClass>` combos). |
+| `StorageClassMismatch` | Synced=False | (S3Bucket) `spec.forProvider.storageClass` differs from the upstream-reported class, so the update was refused and nothing was sent — a PATCH could silently re-tier the bucket. Set the spec to the upstream value (cross-class moves are not supported). |
+| `UpstreamReclassified` | StorageClassDrift=True | (S3Bucket, additional condition type) the vendor moved the bucket to a different storage class than declared (e.g. the 2026-10-13 `hot`→`standard` rotation). Ready/Synced unaffected, nothing is repaired automatically; align `spec.forProvider.storageClass`. |
+| `Aligned` | StorageClassDrift=False | (S3Bucket) a previously drifted bucket's declared and upstream classes match again. Informational. |
 | `CatalogUnauthorized` / `CatalogTransient` / `DimensionValueNotFound` | Synced=False | Catalog lookup failed (auth / transient / unknown dimension value). Check the token and the requested values. |
 
 SSL lifecycle (`Cdn.status.atProvider.ssl.state`, not a condition reason):

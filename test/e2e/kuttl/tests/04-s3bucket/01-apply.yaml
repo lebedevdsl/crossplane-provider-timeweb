@@ -4,6 +4,9 @@
 #
 # 10 GB tier: the account permits only ONE 1 GB bucket, so e2e buckets use 10 GB
 # to avoid colliding with any pre-existing 1 GB bucket on the account.
+#
+# storageClass `standard`: Timeweb rotated the catalog on 2026-10-13 — `hot` now
+# means the Premium tier and is `409 sold out` (feature 028).
 apiVersion: objectstorage.m.timeweb.crossplane.io/v1alpha1
 kind: S3Bucket
 metadata:
@@ -13,7 +16,7 @@ spec:
   forProvider:
     name: "${TWE_S3_NAME}"
     type: private
-    storageClass: hot
+    storageClass: standard
     initialSizeGB: 10
     description: "kuttl e2e - initialSizeGB variant"
   writeConnectionSecretToRef:

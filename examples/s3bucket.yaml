@@ -7,11 +7,13 @@
 # examples/s3user.yaml) and consume ITS connection Secret.
 #
 # IMMUTABLE FIELDS: name.
-# Mutable: type, description, projectID, initialSizeGB (within-tier moves
-# reconcile via the preset resolver; the storageClass axis is immutable).
+# Mutable: type, description, projectID, initialSizeGB (within the same class —
+# the resolver re-resolves the tier and PATCHes it). storageClass is a
+# create-time choice: if upstream later reports a different class, updates are
+# refused until the spec is aligned (see the StorageClassDrift condition).
 #
 # See docs/presets.md for the full initialSizeGB + storageClass field reference.
-# See docs/resources/s3bucket.md for lifecycle and conditions.
+# See docs/s3bucket.md for lifecycle and conditions.
 ---
 apiVersion: objectstorage.m.timeweb.crossplane.io/v1alpha1
 kind: S3Bucket
@@ -24,10 +26,11 @@ spec:
     name: demo-images
     # MUTABLE — access policy: private or public.
     type: public
-    # Pick the tier by disk size. Valid values: 1, 10, 100, 250 (GB).
+    # Pick the tier by disk size. Valid values: 1, 10, 100, 250 (GB); cold: 1 only.
     initialSizeGB: 10
-    # Storage class: hot (frequently accessed) or cold (archives). IMMUTABLE.
-    storageClass: hot
+    # Storage class, by Timeweb panel name: standard (Standard — recommended),
+    # hot (Premium — not orderable since 2026-10-14), cold (pay-as-you-go, 1 GB).
+    storageClass: standard
     description: "User-uploaded images for example.com"
     # Optional project assignment (resolves via ProjectRef or ProjectID).
     # projectID: 12345

@@ -46474,10 +46474,11 @@
           },
           "storage_class": {
             "type": "string",
-            "description": "Класс хранилища.",
+            "description": "Класс хранилища. (HAND-PATCH feature 028: live catalog 2026-10-15 returns `standard` (panel \"Standard\", successor of the old `hot` tier; `hot` now = \"Premium\"); published enum is stale.)",
             "enum": [
               "cold",
-              "hot"
+              "hot",
+              "standard"
             ],
             "example": "cold"
           },
@@ -46728,10 +46729,11 @@
           },
           "storage_class": {
             "type": "string",
-            "description": "Класс хранилища.",
+            "description": "Класс хранилища. (HAND-PATCH feature 028: live catalog 2026-10-15 returns `standard` (panel \"Standard\", successor of the old `hot` tier; `hot` now = \"Premium\"); published enum is stale.)",
             "enum": [
               "cold",
-              "hot"
+              "hot",
+              "standard"
             ],
             "example": "hot"
           }

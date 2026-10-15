@@ -1,0 +1,24 @@
+# Conditions via `kubectl wait --for=condition` (order-independent, see 01-assert).
+# The tier check is a script assert: the upstream-reported class must still be
+# `standard` and the description must have reached upstream (status echoes it
+# only through Synced=True + ResourceUpToDate, so we re-GET the CR).
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 240
+commands:
+  - command: kubectl wait --for=condition=Synced=True --timeout=230s -n timeweb-e2e s3buckets.objectstorage.m.timeweb.crossplane.io/e2e-s3
+  - command: kubectl wait --for=condition=Ready=True  --timeout=230s -n timeweb-e2e s3buckets.objectstorage.m.timeweb.crossplane.io/e2e-s3
+  - script: |
+      # Context lock (fail-closed): the wrapper hands kuttl a minified
+      # single-context kubeconfig (kuttl renames that context "cluster" for
+      # command steps), so a single context is trusted; with several contexts
+      # the current one must equal E2E_KUBECONTEXT.
+      cur=$(kubectl config current-context); n=$(kubectl config get-contexts -o name | wc -l | tr -d " ")
+      if [ "$n" != "1" ] && [ "$cur" != "${E2E_KUBECONTEXT:-}" ]; then echo "FAIL: $n contexts and current $cur != ${E2E_KUBECONTEXT:-<unset>} — refusing to guess"; exit 1; fi
+      cls=$(kubectl -n timeweb-e2e get s3buckets.objectstorage.m.timeweb.crossplane.io/e2e-s3 -o jsonpath='{.status.atProvider.storageClass}')
+      size=$(kubectl -n timeweb-e2e get s3buckets.objectstorage.m.timeweb.crossplane.io/e2e-s3 -o jsonpath='{.status.atProvider.diskStats.sizeKB}')
+      drift=$(kubectl -n timeweb-e2e get s3buckets.objectstorage.m.timeweb.crossplane.io/e2e-s3 -o jsonpath='{.status.conditions[?(@.type=="StorageClassDrift")].status}')
+      echo "storageClass=$cls sizeKB=$size StorageClassDrift=${drift:-absent}"
+      [ "$cls" = "standard" ] || { echo "FAIL: upstream class changed to $cls after a description edit"; exit 1; }
+      [ "$size" = "10485760" ] || { echo "FAIL: upstream size changed to $size KB after a description edit"; exit 1; }
+      [ -z "$drift" ] || { echo "FAIL: StorageClassDrift present ($drift) on a never-drifted bucket"; exit 1; }

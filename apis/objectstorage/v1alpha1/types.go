@@ -21,6 +21,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// TypeStorageClassDrift is an additional condition type (alongside the
+// standard Ready/Synced) set by the S3Bucket controller when the
+// upstream-reported storage class differs from the declared one:
+// Status=True reason=UpstreamReclassified while they differ, Status=False
+// reason=Aligned once they match again; absent on a bucket that never
+// drifted. It never gates Ready or Synced and triggers no automatic
+// re-tiering (a class change is a paid move) — feature 028.
+const TypeStorageClassDrift xpv2.ConditionType = "StorageClassDrift"
+
 // S3BucketParameters are the operator-settable fields. Sizing is
 // preset-only: the Timeweb S3 surface exposes its volume tiers as
 // discrete presets (1 GB / 10 GB / 100 GB / 250 GB) in the dashboard,
@@ -40,16 +49,24 @@ type S3BucketParameters struct {
 	// +kubebuilder:validation:Enum=private;public
 	Type string `json:"type"`
 
-	// StorageClass picks the upstream storage tier. `hot` is the
-	// frequently-accessed default; `cold` is optimized for archives.
-	// +kubebuilder:validation:Enum=hot;cold
+	// StorageClass picks the upstream storage tier, named after the
+	// Timeweb panel: `hot` = Premium, `standard` = Standard (the
+	// recommended default — what the panel sells), `cold` =
+	// pay-as-you-go (1 GB tier only). Create-time choice: if the
+	// upstream later reports a different class (vendor reclassification,
+	// e.g. the 2026-10-13 catalog rotation), updates are refused until
+	// the spec is aligned — see the `StorageClassDrift` condition.
+	// Cross-class moves on an existing bucket are not supported.
+	// +kubebuilder:validation:Enum=hot;standard;cold
 	StorageClass string `json:"storageClass"`
 
 	// InitialSizeGB picks the bucket's tariff tier by disk size. The
 	// controller maps `(initialSizeGB, location?, storageClass)` to one
 	// upstream `preset_id` at reconcile time. Valid values match
 	// Timeweb's published S3 storage tiers — bump this enum when the
-	// upstream catalog grows.
+	// upstream catalog grows. Mutable within the same storage class
+	// (a resize re-resolves the tier and PATCHes it); `cold` only has
+	// the 1 GB tier.
 	//
 	// Note: the generated Timeweb client (PresetsStorage.Disk and the
 	// CreateBucket body's size/preset fields) uses *float32 for disk
@@ -95,15 +112,19 @@ type S3BucketObservation struct {
 	// Location is the geographic region.
 	// +optional
 	Location *string `json:"location,omitempty"`
-	// StorageClass is the upstream-reported tier (hot / cold).
+	// StorageClass is the upstream-reported tier (`hot` / `standard` /
+	// `cold`). May differ from `spec.forProvider.storageClass` after a
+	// vendor-side reclassification — surfaced via the `StorageClassDrift`
+	// condition, never repaired automatically.
 	// +optional
 	StorageClass *string `json:"storageClass,omitempty"`
 	// Status is the upstream status string.
 	// +optional
 	Status *string `json:"status,omitempty"`
-	// LockedPresetID is the upstream preset ID locked at first Create —
-	// snapshot of what the resolver chose for `presetName`. Survives
-	// later resolver-cache rotations and dimension-registry edits.
+	// LockedPresetID is a historical snapshot of the last preset ID the
+	// provider chose (first Create or a within-class resize). It may name
+	// a preset that no longer exists in the catalog and is never consulted
+	// for reconcile decisions (feature 028).
 	// +optional
 	LockedPresetID *int64 `json:"lockedPresetID,omitempty"`
 	// DiskStats is the disk-usage stats.

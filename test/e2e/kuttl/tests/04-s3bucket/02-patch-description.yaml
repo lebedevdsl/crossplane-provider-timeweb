@@ -1,0 +1,9 @@
+# Step 2 (feature 028, US2) — a description-only edit must converge WITHOUT
+# touching the tier: the PATCH carries no preset_id, so the upstream class
+# (and size) stay as they were. Asserted by re-observation in 02-assert.yaml.
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: |
+      kubectl -n timeweb-e2e patch s3buckets.objectstorage.m.timeweb.crossplane.io/e2e-s3 --type merge \
+        -p '{"spec":{"forProvider":{"description":"kuttl e2e - description edited (028)"}}}'

@@ -30,8 +30,8 @@ spec:
     type: public
     # Pick the tier by disk size. Valid values: 1, 10, 100, 250 (GB).
     initialSizeGB: 10
-    # Storage class: hot (frequently accessed) or cold (archives). Immutable.
-    storageClass: hot
+    # Storage class by panel name: standard (recommended), hot (Premium), cold (1 GB only).
+    storageClass: standard
     description: "User-uploaded images for example.com"
   writeConnectionSecretToRef:
     name: demo-images-creds
@@ -48,8 +48,8 @@ spec:
 | ----- | ---- | -------- | ------- | ----- |
 | `name` | string | yes | **no** | Globally unique. 3–63 chars, `^[a-z0-9][a-z0-9.\-]{1,61}[a-z0-9]$`. Immutable upstream. |
 | `type` | enum | yes | yes | `private` or `public`. |
-| `initialSizeGB` | integer | yes | no | Tariff tier by disk size. Valid values: 1, 10, 100, 250. Immutable — delete + recreate to change. |
-| `storageClass` | enum | yes | **no** | `hot` (frequent access) or `cold` (archives). Immutable. |
+| `initialSizeGB` | integer | yes | within class | Tariff tier by disk size. Valid values: 1, 10, 100, 250 (`cold`: 1 only). A change re-resolves the tier and PATCHes it; see [Tier changes](#tier-changes). |
+| `storageClass` | enum | yes | **no** (create-time) | `standard` (panel "Standard", recommended), `hot` (panel "Premium" — `409 sold out` since 2026-10-14), `cold` (pay-as-you-go, 1 GB only). If upstream reports a different class, updates are refused until the spec is aligned — see [Vendor reclassification](#vendor-reclassification-storageclassdrift). |
 | `location` | string | no | no | Region code (e.g. `ru-1`). Narrows preset resolution when the account has multiple regions. |
 | `description` | string | no | yes | Free-form comment. |
 | `projectID` | integer | no | yes | Assign bucket to a Timeweb project. |
@@ -61,7 +61,7 @@ spec:
 | `id` | integer | Timeweb bucket ID. |
 | `hostname` | string | S3 endpoint URL. |
 | `location` | string | Geographic region (read-only — Timeweb decides). |
-| `storageClass` | string | `cold` or `hot` (read-only — derived from preset/configurator). |
+| `storageClass` | string | Upstream-reported class: `hot`, `standard` or `cold`. May differ from `spec` after a vendor reclassification (surfaced by `StorageClassDrift`). |
 | `status` | string | Upstream status (`active`, etc). |
 | `diskStats` | object | `sizeKB`, `usedKB`, `isUnlimited`. |
 | `objectAmount` | integer | File count. |
@@ -86,20 +86,50 @@ authorize only the granted buckets.
 
 | Condition | True meaning | False reasons |
 | --------- | ------------ | -------------- |
-| `Synced` | Reconciliation reached upstream cleanly. | `ImmutableFieldChange`, `APIError`, `RateLimited`. |
-| `Ready` | Bucket exists upstream and is not quarantined. | `BucketNotFound`, `BucketQuarantined`, `Reconciling`. |
+| `Synced` | Reconciliation reached upstream cleanly. | `ImmutableFieldChange`, `StorageClassMismatch`, `PresetNotFound`, `APIError`, `RateLimited`. |
+| `Ready` | Bucket exists upstream and is not quarantined. | `BucketNotFound`, `BucketQuarantined`, `PaymentRequired`, `Reconciling`. |
+| `StorageClassDrift` | (additional type) upstream reports a different class than `spec` — reason `UpstreamReclassified`. | `Aligned` once they match again; absent on a bucket that never drifted. |
 
-## Immutable-field handling
+> Runtime gotcha: when the controller also returns an error (`ImmutableFieldChange`,
+> `StorageClassMismatch`, `PresetNotFound`), crossplane-runtime overwrites the
+> `Synced` reason with `ReconcileError` but keeps the message; the real reason is
+> on the Warning Event — see [`docs/conditions.md`](./conditions.md).
 
-Editing `spec.forProvider.name`, `initialSizeGB`, or `storageClass` triggers
-reject-and-surface:
+## Tier changes
 
-1. Controller GETs the upstream bucket, detects the diff.
-2. `Synced` flips to `False` with `reason=ImmutableFieldChange` naming the field.
-3. A Kubernetes Event (type `Warning`, reason `ImmutableFieldChange`) is emitted.
-4. Upstream is NOT modified.
+| Edit | Effect |
+| ---- | ------ |
+| `description`, `type`, `projectID` | PATCHed as-is. **No tier is sent** and no catalog lookup happens — the bucket's class and size are untouched (feature 028). |
+| `initialSizeGB` (same class) | The controller re-resolves `(initialSizeGB, storageClass, location?)`, PATCHes `preset_id`, and refreshes `status.atProvider.lockedPresetID`. The size is compared against the upstream-observed disk, never against the locked preset. |
+| `storageClass` ≠ upstream class | **Update refused fail-closed.** Nothing is sent; `Synced=False` with the message `storage class mismatch: spec declares "hot" but upstream reports "standard"; set spec.forProvider.storageClass to "standard" …` and a Warning Event `StorageClassMismatch`. Align the spec to the upstream value; the pending edit then applies. Cross-class moves on an existing bucket are not supported — delete and recreate, or change the class in the panel and align the spec. |
+| `name` | Rejected: `Synced=False reason=ImmutableFieldChange`, Warning Event, upstream untouched. |
 
-To change the tariff tier or storage class, delete and recreate the bucket.
+## Vendor reclassification (`StorageClassDrift`)
+
+Timeweb can move a bucket to another storage class without any API call from
+the provider (2026-10-13: every bucket bought as `hot` before 2026-09 became
+`standard`; `hot` now means the Premium tier). The provider shows it and does
+not touch it:
+
+```yaml
+status:
+  atProvider:
+    storageClass: standard      # upstream truth
+  conditions:
+  - type: StorageClassDrift
+    status: "True"
+    reason: UpstreamReclassified
+    message: declared "hot", upstream reports "standard"; set spec.forProvider.storageClass to "standard" to align (no automatic re-tiering — a class change is a paid move)
+```
+
+- `Ready` and `Synced` stay `True` — the bucket serves; GitOps health is unaffected.
+- No automatic re-tiering: the class is not part of the up-to-date check, so no
+  PATCH is sent for the mismatch alone.
+- To clear it, set `spec.forProvider.storageClass` to the upstream value. No
+  request results; the condition flips to `False` / `Aligned` on the next
+  observation.
+- Until aligned, any other edit of that bucket is refused with
+  `StorageClassMismatch` (see [Tier changes](#tier-changes)).
 
 ## Lifecycle
 

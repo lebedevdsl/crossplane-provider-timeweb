@@ -31,7 +31,7 @@ type PresetBySizeInput struct {
 	// Empty matches any location. Use this when the account has presets
 	// in multiple regions with the same size.
 	Location string
-	// StorageClass optionally narrows by storage tier (S3: "hot" / "cold").
+	// StorageClass optionally narrows by storage tier (S3: "hot" / "standard" / "cold").
 	// Empty matches any class. Non-storage dimensions ignore this field.
 	StorageClass string
 }
