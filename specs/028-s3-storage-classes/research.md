@@ -198,6 +198,39 @@ size edits re-resolve + PATCH (true). After 028:
 - Staging was left on the dev tag (previously `ghcr.io/…:v0.13.1`); the
   production rollout bumps it to `v0.14.0` via timeweb-infra.
 
+## Rollout record (2026-10-15, v0.14.0)
+
+- Release: tag `v0.14.0` → release workflow green →
+  `ghcr.io/lebedevdsl/provider-timeweb:v0.14.0`
+  (`sha256:da38653564ca640a77de11a54849e12e1896868d868d19566a16e9ccba4142de`).
+  The `ci` workflow on the same push failed in `make lint` only: the runner's
+  Go `stable` is 1.27.2 and golangci-lint v2.12.2 cannot read its export data
+  (version 5 > 4) — fixed in a follow-up commit (lint tool bump), unrelated
+  to the feature.
+- Staging (`inyan-staging`): provider moved dev tag → `v0.14.0`, Healthy,
+  preflight PASS.
+- Infra (`inyan-infra`, timeweb-infra `6f5f1a77`): Argo rolled the provider
+  in ~1 min, preflight PASS, CRD enum `hot/standard/cold`.
+- Buckets: 11 manifests aligned (`766bd2aa` flick-media, `b63c8bab` the
+  rest; `flick-static` stays `hot`, preset 4613 — upstream still `hot`).
+  Fleet is actually **13** MRs (a `tempo/tempo` bucket appeared since the
+  morning read). Every aligned bucket shows `StorageClassDrift=False/Aligned`
+  or no condition (alignment landed before its first drift observation);
+  `UpstreamReclassified` Warning Events were emitted for the ones observed
+  first; 0 `StorageClassMismatch` events; provider log errors over the
+  window: 0.
+- Incident bucket `flick-media-staging`: after the class change the first
+  Create attempt hit the runtime's "cannot determine creation result" guard
+  (external-create-pending left behind — the Argo selfHeal write raced the
+  status update). Verified upstream via an in-cluster read-only `GET
+  /api/v1/storages/buckets` (12 buckets, no `flick-media-staging`), removed
+  the two create annotations, next reconcile created **583105** on 5137
+  (`standard`, Ready/Synced True in 10 s); dependent `S3User
+  flick-media-staging` converged 30 s later. infra/timeweb-infra#255 closed
+  by convergence.
+- Left as-is: `PushSecret/flick-static` OutOfSync + 3 orphaned resources on
+  the `cloud-infra-flick-staging` app (pre-existing, unrelated).
+
 ## Support ticket draft (RU, project flick — owner action, T027)
 
 > После ротации каталога S3 (13.10.2026) прошу уточнить: (1) класс `hot`

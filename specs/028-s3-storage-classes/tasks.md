@@ -235,10 +235,10 @@ manifest flips to False with 0 PATCH calls in provider logs.
 - [x] T027 (ticket text drafted in research.md — sending it is the owner's action) Remove the consumed preface `specs/_next-s3-storage-classes.preface.md` (its
       open vendor questions now live in research.md); update the support ticket (RU) with
       the three open questions from research.md.
-- [ ] T028 Owner-gated release: tag `v0.14.0` on `main` → `.github/workflows/release.yaml`
+- [x] T028 Owner-gated release: tag `v0.14.0` on `main` → `.github/workflows/release.yaml`
       → `ghcr.io/lebedevdsl/provider-timeweb:v0.14.0` (cosign by digest). No push without
       an explicit ask.
-- [ ] T029 Production rollout in timeweb-infra (separate repo, direct push to main with
+- [x] T029 Production rollout in timeweb-infra (separate repo, direct push to main with
       `(#255)` one-liners): bump
       `deploy-manifests/kubernetes-configuration/crossplane/inyan-infra/provider.yaml` →
       Argo sync → `make preflight KUBECONTEXT=inyan-infra` (CRD enum shows `standard`;
